@@ -4,7 +4,7 @@ This repository contains an implementation of the [ROS 2](https://index.ros.org/
 RMW layer that supports both [RTI Connext DDS Professional](https://www.rti.com/products/connext-dds-professional)
 and [RTI Connext DDS Micro](https://www.rti.com/products/connext-dds-micro).
 
-The repository exposes two ROS packages:
+The repository exposes two ROS RMW packages:
 
 - `rmw_connextpro_cpp`
 
@@ -64,7 +64,7 @@ The repository exposes two ROS packages:
     ```
 
 
-6. Run ROS applications with RTI Connext DDS Professional:
+6. Run ROS applications with RTI Connext DDS Micro:
 
     ```sh
     RMW_IMPLEMENTATION=rmw_connextmicro_cpp ros2 run demo_nodes_py listener

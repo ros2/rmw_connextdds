@@ -47,7 +47,7 @@
 
 #include "DomainParticipant.h"
 
-#include "rmw_connextdds_cpp/rtime_ext.h"
+#include "rmw_connextdds_cpp/rtime_ext.hpp"
 
 DDS_ReturnCode_t
 DDS_DomainParticipant_lookup_type_pluginI(

@@ -18,8 +18,11 @@
 
 # Generated from @PROJECT_NAME@/cmake/@PROJECT_NAME@-extras.cmake.in
 
-set(rmw_connext_common_source   @RMW_CONNEXT_COMMON_SOURCE@)
+set(RTIConnextDDS_FOUND     @RTIConnextDDS_FOUND@
+    CACHE INTERNAL "" FORCE)
 
-find_package(rti_cmake_helper REQUIRED)
+set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
+    CACHE INTERNAL "" FORCE)
 
-rti_load_rmw_source(${@PROJECT_NAME@_DIR} ${rmw_connext_common_source})
+set(CONNEXTDDS_DIR          @CONNEXTDDS_DIR@
+    CACHE INTERNAL "" FORCE)

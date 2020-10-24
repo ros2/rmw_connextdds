@@ -1,5 +1,3 @@
-################################################################################
-#
 # (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-################################################################################
 
-# Generated from @PROJECT_NAME@/cmake/@PROJECT_NAME@-extras.cmake.in
+cmake_minimum_required(VERSION 3.5)
 
-set(rmw_connext_common_source   @RMW_CONNEXT_COMMON_SOURCE@)
+project(rti_cmake_helper)
 
-find_package(rti_cmake_helper REQUIRED)
+find_package(ament_cmake REQUIRED)
 
-rti_load_rmw_source(${@PROJECT_NAME@_DIR} ${rmw_connext_common_source})
+if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package(
+    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
+)
+
+install(
+    FILES cmake/rti_build_helper.cmake
+    DESTINATION "share/${PROJECT_NAME}/cmake")

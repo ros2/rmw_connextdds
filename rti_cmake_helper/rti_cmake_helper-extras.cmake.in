@@ -18,8 +18,10 @@
 
 # Generated from @PROJECT_NAME@/cmake/@PROJECT_NAME@-extras.cmake.in
 
-set(rmw_connext_common_source   @RMW_CONNEXT_COMMON_SOURCE@)
+set(RTI_BUILD_HELPER    ${@PROJECT_NAME@_DIR}/rti_build_helper.cmake
+    CACHE INTERNAL "Script providing CMake helper functions for RTI packages")
 
-find_package(rti_cmake_helper REQUIRED)
+# Load build helper
+include(${RTI_BUILD_HELPER})
 
-rti_load_rmw_source(${@PROJECT_NAME@_DIR} ${rmw_connext_common_source})
+rti_init_env()

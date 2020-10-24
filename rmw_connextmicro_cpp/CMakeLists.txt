@@ -18,39 +18,22 @@ project(rmw_connextmicro_cpp)
 
 find_package(ament_cmake REQUIRED)
 find_package(rmw_connextdds_common_cpp REQUIRED)
+find_package(rti_connext_dds_micro_vendor REQUIRED)
 
-load_rtimehome()
-if (NOT RTIMEHOME_FOUND)
+if(NOT RTIConnextDDSMicro_FOUND)
     ament_package()
-    message(WARNING "No RTI Connext DDS Micro installation found, "
-            "skipping ${PROJECT_NAME}")
+    message(WARNING
+        "RTI Connext DDS Micro not found, skipping ${PROJECT_NAME}")
     return()
 endif()
 
+set(connext_deps        rti_connext_dds_micro_vendor)
+set(connext_includes    ${RTIME_INCLUDE_DIR})
 set(connext_api         MICRO)
-set(connext_libs
-    rti_me${connext_lib_sfx}
-    rti_me_netiosdm${connext_lib_sfx}
-    rti_me_netioshmem${connext_lib_sfx}
-    rti_me_whsm${connext_lib_sfx}
-    rti_me_rhsm${connext_lib_sfx}
-    rti_me_discdpde${connext_lib_sfx})
-set(connext_includes
-    $<BUILD_INTERFACE:${RTIMEHOME}/include>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/domain>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/subscription>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/publication>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/infrastructure>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/topic>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/type>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/builtin_ipc>
-    $<BUILD_INTERFACE:${RTIMEHOME}/src/reda/sequence>)
+set(connext_libs        ${RTIME_DEPS} rti_connext_dds_micro_vendor)
 set(connext_src
     src/rmw_type_support_rtime.cpp
-    src/rtime_ext.cpp
     src/dds_api_rtime.cpp
-    include/rmw_connextdds_cpp/rtime_ext.hpp
     include/rmw_connextdds_cpp/type_support_impl.hpp)
 
-build_connextmicro()
-build_rmw_connext()
+rti_build_rmw_connext()

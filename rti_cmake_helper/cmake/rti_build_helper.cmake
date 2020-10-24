@@ -12,62 +12,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+################################################################################
+# 
+################################################################################
+function(rti_load_rmw_source basedir)
+    set(sources ${ARGN})
 
-if(DEFINED rmw_connextdds_common_cpp_DIR AND
-    EXISTS "${rmw_connextdds_common_cpp_DIR}")
-    get_filename_component(RMW_CONNEXT_DIR 
-        "${rmw_connextdds_common_cpp_DIR}/../../.." REALPATH CACHE FORCE)
-else()
-    get_filename_component(RMW_CONNEXT_DIR
-        "${CMAKE_CURRENT_LIST_DIR}/.." REALPATH CACHE FORCE)
-endif()
+    get_filename_component(RMW_CONNEXT_DIR "${basedir}/../../.." REALPATH CACHE)
 
-set(RMW_CONNEXT_COMMON_SOURCE
-    ${RMW_CONNEXT_DIR}/src/rmw_context.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_discovery.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_graph.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_event.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_impl.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_info.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_node.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_publication.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_serde.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_service.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_subscription.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_waitset.cpp
-    ${RMW_CONNEXT_DIR}/src/rmw_type_support.cpp
-    ${RMW_CONNEXT_DIR}/src/demangle.cpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/demangle.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/namespace_prefix.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/context.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/discovery.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/graph_cache.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/log.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/resource_limits.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/rmw_impl.hpp
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/static_config.h
-    ${RMW_CONNEXT_DIR}/include/rmw_connextdds_cpp/visibility_control.h)
+    if(NOT EXISTS "${RMW_CONNEXT_DIR}")
+        message(FATAL_ERROR "Invalid base directory for RMW common source: ${RMW_CONNEXT_DIR}")
+    endif()
+    
+    set(qsources)
+    foreach(src_f ${sources})
+        list(APPEND qsources "${RMW_CONNEXT_DIR}/${src_f}")
+    endforeach()
 
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    set(CMAKE_BUILD_TYPE "Release" CACHE
-        STRING "Default build type" FORCE)
-endif()
+    set(RMW_CONNEXT_COMMON_SOURCE ${qsources}
+        CACHE INTERNAL "Common source code for RMW implementations" FORCE)
 
-set(link_static                 false)
-set(connext_lib_sfx             "")
+endfunction()
 
-if(link_static)
-    string(APPEND connext_lib_sfx       "z")
-endif()
-if("${CMAKE_BUILD_TYPE}" MATCHES "[dD]ebug" OR
-    "${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo")
-    string(APPEND connext_lib_sfx       "d")
-endif()
 
 ################################################################################
 # 
 ################################################################################
-macro(load_rtimehome)
+function(rti_init_env)
+    if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+        set(CMAKE_BUILD_TYPE "Release"
+            CACHE STRING "Default build type" FORCE)
+    endif()
+
+    set(connext_lib_sfx             "")
+
+    if("${CMAKE_BUILD_TYPE}" MATCHES "[dD]ebug" OR
+        "${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo")
+        string(APPEND connext_lib_sfx       "d")
+    endif()
+
+    set(RTI_LIB_SUFFIX  ${connext_lib_sfx}
+        CACHE STRING "Suffix for RTI libraries based on target build")
+endfunction()
+
+################################################################################
+# 
+################################################################################
+macro(rti_load_rtimehome)
     # Locate Micro's installation from RTIMEHOME
     #message(STATUS "pre RTIMEHOME = ${RTIMEHOME}")
     #message(STATUS "pre ENV{RTIMEHOME} = $ENV{RTIMEHOME}")
@@ -75,7 +66,7 @@ macro(load_rtimehome)
         if(NOT "$ENV{RTIMEHOME}" STREQUAL "")
             set(RTIMEHOME       "$ENV{RTIMEHOME}")
         else()
-            load_connextddsdir()
+            rti_load_connextddsdir()
             set(RTIMEHOME "${CONNEXTDDS_DIR}/rti_connext_dds_micro-3.0.3")
         endif()
     endif()
@@ -89,7 +80,7 @@ macro(load_rtimehome)
     #message(STATUS "post RTIMEHOME = ${RTIMEHOME}")
 endmacro()
 
-macro(load_connextddsdir)
+macro(rti_load_connextddsdir)
     if(NOT DEFINED CONNEXTDDS_DIR)
         if(NOT "$ENV{CONNEXTDDS_DIR}" STREQUAL "")
             file(TO_CMAKE_PATH "$ENV{CONNEXTDDS_DIR}" connextdds_dir)
@@ -114,7 +105,7 @@ macro(load_connextddsdir)
     endif()
 endmacro()
 
-function(build_connextmicro)
+function(rti_build_connextmicro)
     # TODO try to load binary libraries from RTIMEHOME using
     # FindRTIConnextDDSMicro.cmake
 
@@ -132,31 +123,43 @@ function(build_connextmicro)
         set(RTIME_TARGET            "${RTIME_TARGET_NAME}")
     endif()
     set(RTIME_DDS_ENABLE_APPGEN     false CACHE BOOL "")
-    set(RTIME_NO_SHARED_LIB         ${link_static} CACHE BOOL "")
+    set(RTIME_NO_SHARED_LIB         false CACHE BOOL "")
     set(RTIME_EXCLUDE_DPSE          true CACHE BOOL "")
     set(RTIME_EXCLUDE_CPP           true CACHE BOOL "")
+    set(RTIME_BUILD_SINGLE_LIB      false CACHE BOOL "")
 
     add_subdirectory(${RTIMEHOME} rtime)
 
-    if(NOT link_static)
-        install(
-            TARGETS ${connext_libs}
-            ARCHIVE DESTINATION lib
-            LIBRARY DESTINATION lib
-            RUNTIME DESTINATION bin)
-    endif()
+    set(RTIME_LIBRARIES
+        rti_me${RTI_LIB_SUFFIX}
+        rti_me_netiosdm${RTI_LIB_SUFFIX}
+        rti_me_netioshmem${RTI_LIB_SUFFIX}
+        rti_me_whsm${RTI_LIB_SUFFIX}
+        rti_me_rhsm${RTI_LIB_SUFFIX}
+        rti_me_discdpde${RTI_LIB_SUFFIX}
+        CACHE INTERNAL "" FORCE)
     
-    foreach(rtime_lib ${connext_libs})
-        set_target_properties(${rtime_lib} PROPERTIES
-                POSITION_INDEPENDENT_CODE   ON)
-    endforeach()
+    # set(RTIME_LIBRARIES
+    #     rti_me${RTI_LIB_SUFFIX}
+    #     CACHE INTERNAL "" FORCE)
+
+    install(
+        TARGETS ${RTIME_LIBRARIES}
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)
+    
+    # foreach(rtime_lib ${RTIME_LIBRARIES})
+    #     set_target_properties(${rtime_lib} PROPERTIES
+    #             POSITION_INDEPENDENT_CODE   ON)
+    # endforeach()
 endfunction()
 
 ################################################################################
 # 
 ################################################################################
-function(load_connextpro)
-    load_connextddsdir()
+function(rti_load_connextpro)
+    rti_load_connextddsdir()
 
     if(NOT CONNEXTDDS_DIR_FOUND)
         set(RTIConnextDDS_FOUND false PARENT_SCOPE)
@@ -183,12 +186,15 @@ function(load_connextpro)
     endif()
 
     set(RTIConnextDDS_FOUND ${RTIConnextDDS_FOUND} PARENT_SCOPE)
+
+    set(CONNEXTDDS_ARCH     "${CONNEXTDDS_ARCH}"
+        CACHE INTERNAL "" FORCE)
 endfunction()
 
 ################################################################################
 # 
 ################################################################################
-macro(build_rmw_connext)
+macro(rti_build_rmw_connext)
     # for some reason, if we don't set this explicitly, cmake will only build
     # a static library
     set(BUILD_SHARED_LIBS       ON)
@@ -220,7 +226,7 @@ macro(build_rmw_connext)
         find_package(${pkg_dep} REQUIRED)
     endforeach()
 
-    ament_export_dependencies(${package_deps})
+    ament_export_dependencies(${package_deps} ${connext_deps})
 
     add_library(${PROJECT_NAME}
         ${RMW_CONNEXT_COMMON_SOURCE}
@@ -236,7 +242,7 @@ macro(build_rmw_connext)
 
     target_link_libraries(${PROJECT_NAME}   ${connext_libs} fastcdr)
 
-    ament_target_dependencies(${PROJECT_NAME} ${package_deps})
+    ament_target_dependencies(${PROJECT_NAME} ${package_deps} ${connext_deps})
 
     configure_rmw_library(${PROJECT_NAME})
 

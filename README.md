@@ -6,55 +6,51 @@ and [RTI Connext DDS Micro](https://www.rti.com/products/connext-dds-micro).
 
 The repository exposes two ROS RMW packages:
 
-- `rmw_connextpro_cpp`
+- [rmw_connextpro_cpp](#rmw_connextpro_cpp)
 
-- `rmw_connextmicro_cpp`
+- [rmw_connextmicro_cpp](#rmw_connextmicro_cpp)
 
-## Quick Start
+## rmw_connextpro_cpp
 
-1. Make sure to have RTI Connext DDS Professional and/or RTI Connext DDS Micro
-   installed on your system, and their install location configured via
-   variables `CONNEXTDDS_DIR` and `RTIMEHOME`. You can use the `set_env_*` 
-   script provided by RTI Connext DDS Professional, and derive `RTIMEHOME`
-   from `CONNEXTDDS_DIR`. E.g. on a sytem with RTI Connext DDS Professional 6.0.1
-   and RTI Connext DDS Micro 3.0.3 installed at default locations:
+1. Make sure to have RTI Connext DDS Professional 6.x installed on your system.
+   The install location must be configured using either `NDDSHOME`, or
+   `CONNEXTDDS_DIR`. If you have the old RMW for RTI Connext DDS installed
+   (`rmw_connext_cpp`), you should use `CONNEXTDDS_DIR` to override
+   the value of `NDDSHOME` exported by that package.
+   You can use the `set_env_<architecture>.bash`  script shipped with
+   RTI Connext DDS Professional, and derive `CONNEXTDDS_DIR` from `NDDSHOME`.
+   E.g. on a Linux sytem with RTI Connext DDS Professional 6.0.1:
 
    ```sh
     source ~/rti_connext_dds-6.0.1/resource/scripts/rtisetenv_x64Linux4gcc7.3.0.bash
     export CONNEXTDDS_DIR=${NDDSHOME}
-    export RTIMEHOME=${NDDSHOME}/rti_connext_dds_micro-3.0.3
    ```
 
-2. Create an overlay directory and clone the RMW repository:
-
-    ```sh
-    mkdir -p ~/ros2_connextdds/src
-    cd ~/ros2_connextdds
-    git clone https://github.com/rticommunity/rmw_connextdds.git src/rmw_connextdds
-    ```
-
-3. Build packages with Rolling (binary) release:
-
-    ```sh
-    source /opt/ros/rolling/setup.bash
-    colcon build --symlink-install
-    ```
-
-4. Alternatively, build packages with Foxy (binary) release:
+2. Load your ROS environment, e.g.:
 
     ```sh
     source /opt/ros/foxy/setup.bash
+    ```
+
+3. Create an overlay directory and clone the RMW repository:
+
+    ```sh
+    mkdir -p ~/ros2_connextdds/src/ros2
+    cd ~/ros2_connextdds
+    git clone https://github.com/rticommunity/rmw_connextdds.git src/ros2/rmw_connextdds
+    ```
+
+4. Build the RMW. If you are using the "rolling" release, there is no need to
+   pass additional arguments to cmake.
+
+    ```sh
     colcon build --symlink-install --cmake-args -DRMW_CONNEXT_RELEASE=foxy
     ```
 
-5. Source generated environment script. Make sure to source the
-   Connext DDS script again if you have the old Connext RMW installed,
-   otherwise the wrong version of Connext DDS libraries might be loaded
-   (i.e. 5.3.1):
+5. Source generated environment script:
 
     ```sh
     source ~/ros2_connextdds/install/setup.bash
-    source ~/rti_connext_dds-6.0.1/resource/scripts/rtisetenv_x64Linux4gcc7.3.0.bash
     ```
 
 6. Run ROS applications with RTI Connext DDS Professional:
@@ -63,75 +59,56 @@ The repository exposes two ROS RMW packages:
     RMW_IMPLEMENTATION=rmw_connextpro_cpp ros2 run demo_nodes_cpp talker
     ```
 
+## rmw_connextmicro_cpp
 
-6. Run ROS applications with RTI Connext DDS Micro:
+1. Make sure to have RTI Connext DDS Micro 3.x installed on your system.
+   The install location can be either specified explicitely via `RTIMEHOME`,
+   or it will be automatically detected from the installation of RTI Connext DDS
+   Professional, if available (see [rmw_connextpro_cpp](#rmw_connextpro_cpp)
+   section).
+
+2. Load your ROS environment, e.g.:
 
     ```sh
-    RMW_IMPLEMENTATION=rmw_connextmicro_cpp ros2 run demo_nodes_py listener
+    source /opt/ros/foxy/setup.bash
     ```
 
-## Installation
+3. Create an overlay directory and clone the RMW repository:
 
-The RMW implementation can be built as part of the [standard ROS build](https://index.ros.org/doc/ros2/Installation/Rolling/#building-from-source).
+    ```sh
+    mkdir -p ~/ros2_connextdds/src/ros2
+    cd ~/ros2_connextdds
+    git clone https://github.com/rticommunity/rmw_connextdds.git src/ros2/rmw_connextdds
+    ```
 
-The code is developed against the ROS "rolling" release, but it should also work with the latest stable release (Foxy).
+4. `rmw_connextmicro_cpp` requires some custom extensions to RTI Connext DDS
+   Micro 3.x which are available from a separate repository. Please contact
+   robotics@rti.com to request access to it. Once enabled, clone the repository
+   in your overlay directory:
 
-Only Linux has been tested at the moment (Darwin might work too).
+   ```sh
+   cd ~/ros2_connextdds
+   mkdir src/rti
+   git clone https://github.com/rticommunity/rti_connext_dds_micro_ext.git src/rti/rti_connext_dds_micro_ext
+   ```
 
-### RTI Connext DDS Installation
+5. Build the RMW. If you are using the "rolling" release, there is no need to
+   pass additional arguments to cmake.
 
-The installation of RTI Connext DDS Professional (v6.0.0+) can be 
-specified via variables `CONNEXTDDS_DIR`, or `NDDSHOME`. These
-variables can be either set in the shell environment, or
-specified as explicit arguments to `cmake`.
-If specified, `CONNEXTDDS_DIR` takes precedence over `NDDSHOME`,
-and so do `cmake` arguments over environment variables.
+    ```sh
+    colcon build --symlink-install --cmake-args -DRMW_CONNEXT_RELEASE=foxy
+    ```
 
-The installation of RTI Connext DDS Micro (v3.0.0+) can be specified
-via variable `RTIMEHOME`. If this variable is not set, then it
-defaults to `${NDDSHOME}/rti_connext_dds_micro-3.0.3`.
+6. Source generated environment script:
 
-### Installation from scratch
+    ```sh
+    source ~/ros2_connextdds/install/setup.bash
+    ```
 
-If you are installing ROS from scratch, follow the [instructions to build the "rolling" release](https://index.ros.org/doc/ros2/Installation/Rolling/#building-from-source).
+7. Run ROS applications with RTI Connext DDS Micro:
 
-During the "Get ROS 2 code" step, add the following entry to the end 
-of `ros2.repos`, before running `vcs import`:
+    ```sh
+    RMW_IMPLEMENTATION=rmw_connextmicro_cpp ros2 run demo_nodes_cpp talker
+    ```
 
-```yaml
-src/ros2/rmw_connextdds:
-    type: git
-    url: https://bitbucket.rti.com/scm/~asorbini/rmw_connextdds.git
-    version: master
-```
-
-In order to build `rmw_connextpro_cpp`, make sure to configure 
-`CONNEXTDDS_DIR` or `NDDSHOME` (as explained in [RTI Connext DDS Installation](#rti-connext-dds-installation)).
-
-### Existing installation
-
-If you already have ROS installed, clone this repository anywhere
-(e.g. in your ROS workspace), then source your ROS installation and
-build it with `colcon`:
-
-```bash
-source install/setup.bash
-
-git clone https://bitbucket.rti.com/scm/~asorbini/rmw_connextdds.git src/ros2/rmw_connextdds
-
-colcon build --merge-install
-```
-
-## Running ROS with RTI Connext DDS
-
-You can select your desired RMW implementation by setting variable
-`RMW_IMPLEMENTATION` to either `rmw_connextmicro_cpp`, or `rmw_connextpro_cpp`, e.g.:
-
-```bash
-# Run C++ demo talker with RTI Connext DDS Micro
-RMW_IMPLEMENTATION=rmw_connextmicro_cpp ros2 run demo_nodes_cpp talker
-
-# Run Python demo listener with RTI Connext DDS Professional
-RMW_IMPLEMENTATION=rmw_connextpro_cpp ros2 run demo_nodes_py listener
-```
 

@@ -17,9 +17,36 @@ cmake_minimum_required(VERSION 3.5)
 project(rmw_connextdds_common_cpp)
 
 find_package(ament_cmake REQUIRED)
+find_package(rti_cmake_helper REQUIRED)
+
+set(RMW_CONNEXT_COMMON_SOURCE
+    src/rmw_context.cpp
+    src/rmw_discovery.cpp
+    src/rmw_graph.cpp
+    src/rmw_event.cpp
+    src/rmw_impl.cpp
+    src/rmw_info.cpp
+    src/rmw_node.cpp
+    src/rmw_publication.cpp
+    src/rmw_serde.cpp
+    src/rmw_service.cpp
+    src/rmw_subscription.cpp
+    src/rmw_waitset.cpp
+    src/rmw_type_support.cpp
+    src/demangle.cpp
+    include/rmw_connextdds_cpp/demangle.hpp
+    include/rmw_connextdds_cpp/namespace_prefix.hpp
+    include/rmw_connextdds_cpp/context.hpp
+    include/rmw_connextdds_cpp/discovery.hpp
+    include/rmw_connextdds_cpp/graph_cache.hpp
+    include/rmw_connextdds_cpp/log.hpp
+    include/rmw_connextdds_cpp/resource_limits.hpp
+    include/rmw_connextdds_cpp/rmw_impl.hpp
+    include/rmw_connextdds_cpp/static_config.h
+    include/rmw_connextdds_cpp/visibility_control.h)
 
 ament_package(
-    CONFIG_EXTRAS_POST "rmw_connextdds_common_cpp-extras.cmake.in"
+    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
 )
 
 install(
@@ -31,7 +58,3 @@ install(
     DIRECTORY src/
     DESTINATION src
 )
-
-install(
-    FILES cmake/rmw_connextdds_builder.cmake
-    DESTINATION "share/${PROJECT_NAME}/cmake")

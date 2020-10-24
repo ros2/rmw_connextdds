@@ -114,7 +114,7 @@ macro(load_connextddsdir)
     endif()
 endmacro()
 
-function(build_connextmicro link_static)
+function(build_connextmicro)
     # TODO try to load binary libraries from RTIMEHOME using
     # FindRTIConnextDDSMicro.cmake
 
@@ -173,54 +173,33 @@ function(load_connextpro)
     list(APPEND CMAKE_MODULE_PATH   "${CONNEXTDDS_DIR}/resource/cmake")
 
     find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
-        REQUIRED COMPONENTS     core)
+        COMPONENTS     core)
     
     if (NOT RTIConnextDDS_FOUND)
-        message(FATAL_ERROR "Failed to load RTI Connext DDS libraries from ${CONNEXTDDS_DIR}")
+        message(STATUS "Failed to load RTI Connext DDS libraries from ${CONNEXTDDS_DIR}")
     else()
         message(STATUS "Loaded RTI Connext DDS libraries "
             "from ${CONNEXTDDS_DIR} (version >= ${CONNEXTDDS_VERSION})")
-        set(RTIConnextDDS_FOUND true PARENT_SCOPE)
     endif()
+
+    set(RTIConnextDDS_FOUND ${RTIConnextDDS_FOUND} PARENT_SCOPE)
 endfunction()
 
 ################################################################################
 # 
 ################################################################################
-macro(build_rmw_connext dds_api)
+macro(build_rmw_connext)
     # for some reason, if we don't set this explicitly, cmake will only build
     # a static library
     set(BUILD_SHARED_LIBS       ON)
-
-    message(STATUS "[DEBUG][${PROJECT_NAME}] BUILD_SHARED_LIBS = '${BUILD_SHARED_LIBS}'")
 
     # Default to C++14
     if(NOT CMAKE_CXX_STANDARD)
         set(CMAKE_CXX_STANDARD 14)
     endif()
-
-    message(STATUS "DDS implementation: ${dds_api}")
     
-    if("${dds_api}" STREQUAL "micro")
-        set(RMW_CONNEXT_DDS_API     RMW_CONNEXT_DDS_API_MICRO)
-        build_connextmicro(${link_static})
-    elseif("${dds_api}" STREQUAL "pro")
-        set(RMW_CONNEXT_DDS_API     RMW_CONNEXT_DDS_API_PRO)
-        load_connextpro()
-        
-        if(NOT RTIConnextDDS_FOUND)
-            # Skip package if Connext DDS Professional was not found
-            message(WARNING
-                "No RTI Connext DDS Professional installation found, "
-                "skipping ${PROJECT_NAME}")
-            return()
-        endif()
-    endif()
-
-    set(RMW_CONNEXT_DDS_API     "${RMW_CONNEXT_DDS_API}"
+    set(RMW_CONNEXT_DDS_API     "RMW_CONNEXT_DDS_API_${connext_api}"
         CACHE STRING "DDS implementation to use")
-
-    message(STATUS "[DEBUG][${PROJECT_NAME}] BUILD_SHARED_LIBS = '${BUILD_SHARED_LIBS}'")
 
     if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         add_compile_options(-Wall -Wextra -Wpedantic -Wimplicit-fallthrough)
@@ -243,8 +222,6 @@ macro(build_rmw_connext dds_api)
 
     ament_export_dependencies(${package_deps})
 
-    message(STATUS "[DEBUG][${PROJECT_NAME}] BUILD_SHARED_LIBS = '${BUILD_SHARED_LIBS}'")
-    
     add_library(${PROJECT_NAME}
         ${RMW_CONNEXT_COMMON_SOURCE}
         ${connext_src})

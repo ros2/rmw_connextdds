@@ -10,8 +10,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__RTIME_EXT_H_
-#define RMW_CONNEXT__RTIME_EXT_H_
+#ifndef RMW_CONNEXT__RTIME_EXT_HPP_
+#define RMW_CONNEXT__RTIME_EXT_HPP_
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,4 +33,4 @@ DDS_DomainParticipant_is_type_in_use(
 }
 #endif /* __cplusplus */
 
-#endif /* RMW_CONNEXT__RTIME_EXT_H_ */
+#endif /* RMW_CONNEXT__RTIME_EXT_HPP_ */

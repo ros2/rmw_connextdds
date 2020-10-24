@@ -16,9 +16,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(rmw_connextdds_common_cpp)
 
-set(build_helper cmake/rmw_connextdds_builder.cmake)
-
-find_package(ament_cmake_ros REQUIRED)
+find_package(ament_cmake REQUIRED)
 
 ament_package(
     CONFIG_EXTRAS_POST "rmw_connextdds_common_cpp-extras.cmake.in"
@@ -35,5 +33,5 @@ install(
 )
 
 install(
-    FILES ${build_helper}
+    FILES cmake/rmw_connextdds_builder.cmake
     DESTINATION "share/${PROJECT_NAME}/cmake")

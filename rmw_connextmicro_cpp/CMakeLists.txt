@@ -16,15 +16,18 @@ cmake_minimum_required(VERSION 3.5)
 
 project(rmw_connextmicro_cpp)
 
+find_package(ament_cmake REQUIRED)
 find_package(rmw_connextdds_common_cpp REQUIRED)
 
 load_rtimehome()
 if (NOT RTIMEHOME_FOUND)
+    ament_package()
     message(WARNING "No RTI Connext DDS Micro installation found, "
             "skipping ${PROJECT_NAME}")
     return()
 endif()
 
+set(connext_api         MICRO)
 set(connext_libs
     rti_me${connext_lib_sfx}
     rti_me_netiosdm${connext_lib_sfx}
@@ -44,10 +47,10 @@ set(connext_includes
     $<BUILD_INTERFACE:${RTIMEHOME}/src/reda/sequence>)
 set(connext_src
     src/rmw_type_support_rtime.cpp
-    src/rtime_ext.c
+    src/rtime_ext.cpp
     src/dds_api_rtime.cpp
-    include/rmw_connextdds_cpp/rtime_ext.h
+    include/rmw_connextdds_cpp/rtime_ext.hpp
     include/rmw_connextdds_cpp/type_support_impl.hpp)
-set(connext_defines )
 
-build_rmw_connext("micro")
+build_connextmicro()
+build_rmw_connext()

@@ -30,7 +30,7 @@
 #include "netio/netio_udp.h"
 #include "netio_shmem/netio_shmem.h"
 // #include "sec_core/sec_core_c.h"
-#include "rmw_connextdds_cpp/rtime_ext.h"
+#include "rmw_connextdds_cpp/rtime_ext.hpp"
 #include "REDASequence.h"
 #elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 #include "ndds/ndds_c.h"

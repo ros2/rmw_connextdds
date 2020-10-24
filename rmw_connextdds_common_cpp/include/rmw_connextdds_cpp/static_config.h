@@ -54,11 +54,11 @@
 /******************************************************************************
  * DDS Implementation
  ******************************************************************************/
-#define RMW_CONNEXT_DDS_API_MICRO       0
-#define RMW_CONNEXT_DDS_API_PRO         1
+#define RMW_CONNEXT_DDS_API_PRO         0
+#define RMW_CONNEXT_DDS_API_MICRO       1
 
 #ifndef RMW_CONNEXT_DDS_API
-#define RMW_CONNEXT_DDS_API             RMW_CONNEXT_DDS_API_MICRO
+#define RMW_CONNEXT_DDS_API             RMW_CONNEXT_DDS_API_PRO
 #endif /* RMW_CONNEXT_DDS_API */
 
 /******************************************************************************

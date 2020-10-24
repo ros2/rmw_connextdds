@@ -18,8 +18,6 @@ project(rmw_connextpro_cpp)
 
 find_package(rmw_connextdds_common_cpp REQUIRED)
 
-include(${RMW_CONNEXT_BUILD_HELPER})
-
 set(connext_libs        RTIConnextDDS::c_api)
 set(connext_includes    )
 set(connext_src

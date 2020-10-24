@@ -18,8 +18,6 @@ project(rmw_connextdds_common_cpp)
 
 set(build_helper cmake/rmw_connextdds_builder.cmake)
 
-include(${build_helper})
-
 find_package(ament_cmake_ros REQUIRED)
 
 ament_package(

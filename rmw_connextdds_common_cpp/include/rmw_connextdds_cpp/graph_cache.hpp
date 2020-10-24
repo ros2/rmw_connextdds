@@ -97,4 +97,22 @@ rmw_connextdds_graph_on_client_deleted(
 rmw_ret_t
 rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx);
 
+rmw_ret_t
+rmw_connextdds_graph_add_participant(
+    rmw_context_impl_t *const ctx,
+    const DDS_ParticipantBuiltinTopicData *const data);
+
+void
+rmw_connextdds_graph_add_entity(
+    rmw_context_impl_t * ctx,
+    const DDS_GUID_t *const endp_guid,
+    const DDS_GUID_t *const dp_guid,
+    const char *const topic_name,
+    const char *const type_name,
+    const DDS_ReliabilityQosPolicy *const reliability,
+    const DDS_DurabilityQosPolicy *const durability,
+    const DDS_DeadlineQosPolicy *const deadline,
+    const DDS_LivelinessQosPolicy *const liveliness,
+    const bool is_reader);
+
 #endif /* RMW_CONNEXT__GRAPH_HPP_ */

@@ -114,25 +114,27 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
     ctx->common.graph_cache.add_participant(
         ctx->common.gid, ctx->base->options.enclave);
     
-    ctx->dr_participants =
-        rmw_connextdds_get_builtin_reader_participants(ctx);
-    
-    ctx->dr_publications =
-        rmw_connextdds_get_builtin_reader_publications(ctx);
-    
-    ctx->dr_subscriptions =
-        rmw_connextdds_get_builtin_reader_subscriptions(ctx);
-
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    if (nullptr == ctx->dr_participants ||
-        nullptr == ctx->dr_publications ||
-        nullptr == ctx->dr_subscriptions)
+    if (RMW_RET_OK !=
+            rmw_connextdds_dcps_participant_get_reader(
+                ctx, &ctx->dr_participants))
     {
-        RMW_CONNEXT_LOG_ERROR("failed to lookup built-in data-readers")
         return RMW_RET_ERROR;
     }
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 
+    if (RMW_RET_OK !=
+            rmw_connextdds_dcps_publication_get_reader(
+                ctx, &ctx->dr_publications))
+    {
+        return RMW_RET_ERROR;
+    }
+
+    if (RMW_RET_OK !=
+            rmw_connextdds_dcps_subscription_get_reader(
+                ctx, &ctx->dr_subscriptions))
+    {
+        return RMW_RET_ERROR;
+    }
+    
     return RMW_RET_OK;
 }
 
@@ -567,4 +569,107 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
     } while (taken);
 
     return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_add_participant_to_graph(
+    rmw_context_impl_t *const ctx,
+    const DDS_ParticipantBuiltinTopicData *const data)
+{
+    DDS_GUID_t dp_guid;
+    rmw_gid_t gid;
+    rmw_connextdds_builtinkey_to_guid(&data->key, &dp_guid);
+    rmw_connextdds_guid_to_gid(dp_guid, gid);
+
+    if (0 == memcmp(gid.data, ctx->common.gid.data, RMW_GID_STORAGE_SIZE))
+    {
+        /* Ignore own announcements */
+        RMW_CONNEXT_LOG_DEBUG(
+            "[discovery thread] ignored own participant data")
+        return RMW_RET_OK;
+    }
+    
+    std::string enclave;
+    /* TODO retrieve enclave from USER_DATA */
+
+    RMW_CONNEXT_LOG_DEBUG_A(
+        "[discovery thread] assert participant: "
+        "gid=0x%08X.0x%08X.0x%08X.0x%08X",
+        ((uint32_t*)dp_guid.value)[0],
+        ((uint32_t*)dp_guid.value)[1],
+        ((uint32_t*)dp_guid.value)[2],
+        ((uint32_t*)dp_guid.value)[3])
+
+    std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+    ctx->common.graph_cache.add_participant(gid, enclave);
+
+    return RMW_RET_OK;
+}
+
+void
+rmw_connextdds_graph_add_entity(
+    rmw_context_impl_t * ctx,
+    const DDS_GUID_t *const endp_guid,
+    const DDS_GUID_t *const dp_guid,
+    const char *const topic_name,
+    const char *const type_name,
+    const DDS_ReliabilityQosPolicy *const reliability,
+    const DDS_DurabilityQosPolicy *const durability,
+    const DDS_DeadlineQosPolicy *const deadline,
+    const DDS_LivelinessQosPolicy *const liveliness,
+    const bool is_reader)
+{
+    rmw_gid_t gid;
+    rmw_gid_t dp_gid;
+    rmw_connextdds_guid_to_gid(*endp_guid, gid);
+    rmw_connextdds_guid_to_gid(*dp_guid, dp_gid);
+
+    if (0 == memcmp(dp_gid.data, ctx->common.gid.data, RMW_GID_STORAGE_SIZE))
+    {
+        /* Ignore own announcements */
+        return;
+    }
+
+    rmw_qos_profile_t qos_profile = rmw_qos_profile_unknown;
+
+    if (RMW_RET_OK !=
+            rmw_connextdds_readerwriter_qos_to_ros(
+                nullptr /* history */,
+                reliability,
+                durability,
+                deadline,
+                liveliness,
+                &qos_profile))
+    {
+        // this should never happen with a valid DDS implementation
+        RMW_CONNEXT_LOG_ERROR("failed to convert reader qos to ros")
+    }
+
+    RMW_CONNEXT_LOG_DEBUG_A(
+        "[discovery thread] assert endpoint: "
+        "dp_gid=0x%08X.0x%08X.0x%08X.0x%08X, "
+        "gid=0x%08X.0x%08X.0x%08X.0x%08X, "
+        "topic=%s, "
+        "type=%s, "
+        "reader=%d",
+        ((uint32_t*)dp_guid->value)[0],
+        ((uint32_t*)dp_guid->value)[1],
+        ((uint32_t*)dp_guid->value)[2],
+        ((uint32_t*)dp_guid->value)[3],
+        ((uint32_t*)endp_guid->value)[0],
+        ((uint32_t*)endp_guid->value)[1],
+        ((uint32_t*)endp_guid->value)[2],
+        ((uint32_t*)endp_guid->value)[3],
+        topic_name,
+        type_name,
+        is_reader)
+
+    std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+    ctx->common.graph_cache.add_entity(
+        gid,
+        std::string(topic_name),
+        std::string(type_name),
+        dp_gid,
+        qos_profile,
+        is_reader);
 }

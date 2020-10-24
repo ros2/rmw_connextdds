@@ -9,6 +9,7 @@
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
+  <depend>rmw_connextdds_common_cpp</depend>
   <depend>fastcdr</depend>
   <depend>rcutils</depend>
   <depend>rcpputils</depend>

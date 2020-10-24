@@ -13,8 +13,14 @@
 # limitations under the License.
 
 
-get_filename_component(
-    RMW_CONNEXT_DIR  "${CMAKE_CURRENT_LIST_FILE}" PATH CACHE FORCE)
+if(DEFINED rmw_connextdds_common_cpp_DIR AND
+    EXISTS "${rmw_connextdds_common_cpp_DIR}")
+    get_filename_component(RMW_CONNEXT_DIR 
+        "${rmw_connextdds_common_cpp_DIR}/../../.." REALPATH CACHE FORCE)
+else()
+    get_filename_component(RMW_CONNEXT_DIR
+        "${CMAKE_CURRENT_LIST_DIR}/.." REALPATH CACHE FORCE)
+endif()
 
 set(RMW_CONNEXT_COMMON_SOURCE
     ${RMW_CONNEXT_DIR}/src/rmw_context.cpp
@@ -193,14 +199,13 @@ macro(build_rmw_connext dds_api)
         set(CMAKE_CXX_STANDARD 14)
     endif()
 
-    set(RMW_CONNEXT_DDS_API     "${dds_api}"
-        CACHE STRING "DDS implementation to use")
-
-    message(STATUS "DDS implementation: ${RMW_CONNEXT_DDS_API}")
-
-    if("${RMW_CONNEXT_DDS_API}" STREQUAL "micro")
+    message(STATUS "DDS implementation: ${dds_api}")
+    
+    if("${dds_api}" STREQUAL "micro")
+        set(RMW_CONNEXT_DDS_API     RMW_CONNEXT_DDS_API_MICRO)
         build_connextmicro(${link_static})
-    elseif("${RMW_CONNEXT_DDS_API}" STREQUAL "pro")
+    elseif("${dds_api}" STREQUAL "pro")
+        set(RMW_CONNEXT_DDS_API     RMW_CONNEXT_DDS_API_PRO)
         load_connextpro()
         
         if(NOT RTIConnextDDS_FOUND)
@@ -211,6 +216,9 @@ macro(build_rmw_connext dds_api)
             return()
         endif()
     endif()
+
+    set(RMW_CONNEXT_DDS_API     "${RMW_CONNEXT_DDS_API}"
+        CACHE STRING "DDS implementation to use")
 
     message(STATUS "[DEBUG][${PROJECT_NAME}] BUILD_SHARED_LIBS = '${BUILD_SHARED_LIBS}'")
 
@@ -260,6 +268,7 @@ macro(build_rmw_connext dds_api)
             RMW_VERSION_MAJOR=${rmw_VERSION_MAJOR}
             RMW_VERSION_MINOR=${rmw_VERSION_MINOR}
             RMW_VERSION_PATCH=${rmw_VERSION_PATCH}
+            RMW_CONNEXT_DDS_API=${RMW_CONNEXT_DDS_API}
             ${connext_defines}
     )
 

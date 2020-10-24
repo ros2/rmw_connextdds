@@ -20,8 +20,6 @@
 #include "rmw_connextdds_cpp/typecode.hpp"
 #include "rmw_connextdds_cpp/rmw_impl.hpp"
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-
 #ifndef cdr_type_object_h
 #include "cdr/cdr_typeObject.h"
 #endif
@@ -844,7 +842,7 @@ RMW_Connext_TypePlugin_initialize(
  ******************************************************************************/
 
 RMW_Connext_MessageTypeSupport*
-RMW_Connext_NddsTypePlugin::register_type_support(
+rmw_connextdds_register_type_support(
     rmw_context_impl_t *const ctx,
     const rosidl_message_type_support_t *const type_supports,
     DDS_DomainParticipant *const participant,
@@ -852,7 +850,7 @@ RMW_Connext_NddsTypePlugin::register_type_support(
     const RMW_Connext_MessageType message_type,
     const void *const intro_members,
     const bool intro_members_cpp,
-    std::string *const type_name)
+    const char *const type_name)
 {
     UNUSED_ARG(ctx);
 
@@ -1012,7 +1010,7 @@ RMW_Connext_NddsTypePlugin::register_type_support(
 }
 
 rmw_ret_t
-RMW_Connext_NddsTypePlugin::unregister_type_support(
+rmw_connextdds_unregister_type_support(
     rmw_context_impl_t *const ctx,
     DDS_DomainParticipant *const participant,
     const char *const type_name)
@@ -1058,5 +1056,3 @@ RMW_Connext_NddsTypePlugin::unregister_type_support(
 
     return RMW_RET_OK;
 }
-
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */

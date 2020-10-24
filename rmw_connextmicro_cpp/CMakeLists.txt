@@ -16,7 +16,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(rmw_connextmicro_cpp)
 
-include(../rmw_connextdds_cpp/rmw_connextdds_cpp.cmake)
+find_package(rmw_connextdds_common_cpp REQUIRED)
 
 load_rtimehome()
 if (NOT RTIMEHOME_FOUND)
@@ -45,9 +45,9 @@ set(connext_includes
 set(connext_src
     src/rmw_type_support_rtime.cpp
     src/rtime_ext.c
+    src/dds_api_rtime.cpp
     include/rmw_connextdds_cpp/rtime_ext.h
-    include/rmw_connextdds_cpp/type_support_rtime.hpp)
-set(connext_defines
-    RMW_CONNEXT_DDS_API=RMW_CONNEXT_DDS_API_MICRO)
+    include/rmw_connextdds_cpp/type_support_impl.hpp)
+set(connext_defines )
 
 build_rmw_connext("micro")

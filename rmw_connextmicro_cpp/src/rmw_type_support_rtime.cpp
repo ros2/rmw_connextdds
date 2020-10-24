@@ -19,8 +19,6 @@
 #include "rmw_connextdds_cpp/type_support.hpp"
 #include "rmw_connextdds_cpp/rmw_impl.hpp"
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-
 #include <string.h>
 
 /******************************************************************************
@@ -912,7 +910,7 @@ rmw_connextdds_delete_type_if_unused(
 
 
 RMW_Connext_MessageTypeSupport*
-RMW_Connext_RtimeTypePlugin::register_type_support(
+rmw_connextdds_register_type_support(
     rmw_context_impl_t *const ctx,
     const rosidl_message_type_support_t *const type_supports,
     DDS_DomainParticipant *const participant,
@@ -920,7 +918,7 @@ RMW_Connext_RtimeTypePlugin::register_type_support(
     const RMW_Connext_MessageType message_type,
     const void *const intro_members,
     const bool intro_members_cpp,
-    std::string *const type_name)
+    const char *const type_name)
 {
     UNUSED_ARG(ctx);
     UNUSED_ARG(intro_members);
@@ -982,7 +980,7 @@ RMW_Connext_RtimeTypePlugin::register_type_support(
 }
 
 rmw_ret_t
-RMW_Connext_RtimeTypePlugin::unregister_type_support(
+rmw_connextdds_unregister_type_support(
     rmw_context_impl_t *const ctx,
     DDS_DomainParticipant *const participant,
     const char *const type_name)
@@ -1008,5 +1006,3 @@ RMW_Connext_RtimeTypePlugin::unregister_type_support(
 
     return RMW_RET_OK;
 }
-
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */

@@ -42,7 +42,7 @@ extern "C" rmw_ret_t rmw_serialize(
     try
     {
         RMW_Connext_MessageTypeSupport type_support(
-                    RMW_CONNEXT_MESSAGE_USERDATA, type_supports);
+                    RMW_CONNEXT_MESSAGE_USERDATA, type_supports, nullptr);
 
         const uint32_t ser_size = type_support.serialized_size_max(ros_message);
         rmw_ret_t ret = 
@@ -79,7 +79,7 @@ extern "C" rmw_ret_t rmw_deserialize(
     try
     {
         RMW_Connext_MessageTypeSupport type_support(
-                    RMW_CONNEXT_MESSAGE_USERDATA, type_supports);
+                    RMW_CONNEXT_MESSAGE_USERDATA, type_supports, nullptr);
         size_t deserialized_size = 0;
         rmw_ret_t ret =
             type_support.deserialize(

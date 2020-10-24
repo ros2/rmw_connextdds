@@ -480,18 +480,6 @@ RMW_Connext_DataReaderListener_on_data_available(
     void *listener_data,
     DDS_DataReader *reader);
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-
-DDS_Boolean
-    RMW_Connext_DataReaderListener_before_sample_commit_drop_local(
-        void *listener_data,
-        DDS_DataReader *reader,
-        const void *const sample,
-        const struct DDS_SampleInfo *const sample_info,
-        DDS_Boolean *dropped);
-
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
-
 class RMW_Connext_StdSubscriberStatusCondition : public RMW_Connext_StdStatusCondition
 {
 public:
@@ -614,17 +602,6 @@ public:
         return true;
     }
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    friend
-    DDS_Boolean
-    RMW_Connext_DataReaderListener_before_sample_commit_drop_local(
-        void *listener_data,
-        DDS_DataReader *reader,
-        const void *const sample,
-        const struct DDS_SampleInfo *const sample_info,
-        DDS_Boolean *dropped);
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
-
     friend
     void
     RMW_Connext_DataReaderListener_requested_deadline_missed(
@@ -736,6 +713,16 @@ public:
         {
             this->waitset_condition->notify_one();
         }
+    }
+
+    void set_drop_handle(const DDS_InstanceHandle_t handle)
+    {
+        this->listener_drop_handle = handle;
+    }
+
+    const DDS_InstanceHandle_t& drop_handle()
+    {
+        return this->listener_drop_handle;
     }
 
 protected:
@@ -954,14 +941,6 @@ public:
         DDS_SampleIdentity_t *const sample_identity,
         DDS_SampleIdentity_t *const related_sample_identity);
 
-
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO && 0
-    ~RMW_Connext_Publisher()
-    {
-        delete this->type_support;
-    }
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-
 private:
     rmw_context_impl_t *ctx;
     DDS_DataWriter *dds_writer;
@@ -1051,6 +1030,17 @@ public:
     reader() const
     {
         return this->dds_reader;
+    }
+
+    RMW_Connext_UntypedSampleSeq*
+    data_seq()
+    {
+        return &this->loan_data;
+    }
+    DDS_SampleInfoSeq*
+    info_seq()
+    {
+        return &this->loan_info;
     }
 
     RMW_Connext_MessageTypeSupport*
@@ -1234,9 +1224,6 @@ public:
     }
 
     bool
-    has_data_in_cache();
-
-    bool
     has_status(const rmw_event_type_t event_type)
     {
         return this->std_condition.has_status(event_type);
@@ -1261,13 +1248,6 @@ public:
     {
         return this->std_condition.detach();
     }
-
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO && 0
-    ~RMW_Connext_Subscriber()
-    {
-        delete this->type_support;
-    }
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 
 private:
     rmw_context_impl_t *ctx;
@@ -1619,10 +1599,6 @@ rmw_connextdds_sn_dds_to_ros(
     sn_ros_ = ((int64_t)(sn_dds_).high) << 32 | (sn_dds_).low;\
 }
 
-bool rmw_connextdds_ih_match_prefix(
-    const DDS_InstanceHandle_t *const a,
-    const DDS_InstanceHandle_t *const b);
-
 void rmw_connextdds_ih_to_gid(
     const DDS_InstanceHandle_t &ih, rmw_gid_t &gid);
 
@@ -1700,12 +1676,6 @@ rmw_connextdds_get_readerwriter_qos(
     DDS_DurabilityQosPolicy *const durability,
     DDS_DeadlineQosPolicy *const deadline,
     DDS_LivelinessQosPolicy *const liveliness,
-    DDS_ResourceLimitsQosPolicy *const resource_limits,
-    DDS_PropertyQosPolicy *const property,
-    DDS_DataReaderResourceLimitsQosPolicy *const reader_resource_limits,
-    DDS_DataWriterResourceLimitsQosPolicy *const writer_resource_limits,
-    DDS_DataReaderProtocolQosPolicy *const reader_protocol,
-    DDS_DataWriterProtocolQosPolicy *const writer_protocol,
     const rmw_qos_profile_t *const qos_policies,
     const rmw_publisher_options_t *const pub_options,
     const rmw_subscription_options_t *const sub_options);

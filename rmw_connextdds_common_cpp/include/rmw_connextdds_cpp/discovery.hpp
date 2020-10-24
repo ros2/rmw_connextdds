@@ -28,13 +28,13 @@ rmw_ret_t
 rmw_connextdds_discovery_thread_stop(rmw_context_impl_t * ctx);
 
 DDS_DataReader *
-rmw_connextdds_get_builtin_reader_participants(rmw_context_impl_t * ctx);
+rmw_connextdds_dcps_participant_get_reader(rmw_context_impl_t * ctx);
 
 DDS_DataReader *
-rmw_connextdds_get_builtin_reader_publications(rmw_context_impl_t * ctx);
+rmw_connextdds_dcps_publication_get_reader(rmw_context_impl_t * ctx);
 
 DDS_DataReader *
-rmw_connextdds_get_builtin_reader_subscriptions(rmw_context_impl_t * ctx);
+rmw_connextdds_dcps_subscription_get_reader(rmw_context_impl_t * ctx);
 
 rmw_ret_t
 rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * ctx);

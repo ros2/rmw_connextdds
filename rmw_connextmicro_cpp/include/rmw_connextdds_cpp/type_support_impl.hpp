@@ -16,36 +16,11 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__TYPE_SUPPORT_RTIME_HPP_
-#define RMW_CONNEXT__TYPE_SUPPORT_RTIME_HPP_
-
-struct RMW_Connext_RtimeTypePlugin
-{
-    static
-    RMW_Connext_MessageTypeSupport*
-    register_type_support(
-        rmw_context_impl_t *const ctx,
-        const rosidl_message_type_support_t *const type_supports,
-        DDS_DomainParticipant *const participant,
-        bool& registered,
-        const RMW_Connext_MessageType message_type,
-        const void *const intro_members = nullptr,
-        const bool intro_members_cpp = false,
-        std::string *const type_name = nullptr);
-    
-    static
-    rmw_ret_t
-    unregister_type_support(
-        rmw_context_impl_t *const ctx,
-        DDS_DomainParticipant *const participant,
-        const char *const type_name);
-};
-
-typedef struct RMW_Connext_RtimeTypePlugin
-        RMW_Connext_TypePlugin;
+#ifndef RMW_CONNEXT__TYPE_SUPPORT_IMPL_HPP_
+#define RMW_CONNEXT__TYPE_SUPPORT_IMPL_HPP_
         
 typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
 
 #define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER
 
-#endif /* RMW_CONNEXT__TYPE_SUPPORT_HPP_ */
+#endif /* RMW_CONNEXT__TYPE_SUPPORT_IMPL_HPP_ */

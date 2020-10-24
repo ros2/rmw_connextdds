@@ -29,7 +29,7 @@
 RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
     const RMW_Connext_MessageType message_type,
     const rosidl_message_type_support_t *const type_supports,
-    std::string *const type_name)
+    const char *const type_name)
     : _type_support_fastrtps(
         RMW_Connext_MessageTypeSupport::get_type_support_fastrtps(
             type_supports)),
@@ -52,7 +52,7 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
     case RMW_CONNEXT_MESSAGE_REPLY:
     {
         // assert(type_name != nullptr)
-        this->_type_name = *type_name;
+        this->_type_name = type_name;
         break;
     }
     default:
@@ -415,7 +415,7 @@ RMW_Connext_MessageTypeSupport::register_type_support(
     const bool intro_members_cpp,
     std::string *const type_name)
 {
-    return RMW_Connext_TypePlugin::register_type_support(
+    return rmw_connextdds_register_type_support(
                 ctx,
                 type_supports,
                 participant,
@@ -423,7 +423,7 @@ RMW_Connext_MessageTypeSupport::register_type_support(
                 message_type,
                 intro_members,
                 intro_members_cpp,
-                type_name);
+                (nullptr != type_name)?type_name->c_str():nullptr);
 }
 
 rmw_ret_t
@@ -432,7 +432,7 @@ RMW_Connext_MessageTypeSupport::unregister_type_support(
     DDS_DomainParticipant *const participant,
     const char *const type_name)
 {
-    return RMW_Connext_TypePlugin::unregister_type_support(
+    return rmw_connextdds_unregister_type_support(
                 ctx, participant, type_name);
 }
 

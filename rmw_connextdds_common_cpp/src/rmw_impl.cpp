@@ -126,16 +126,12 @@ rmw_connextdds_get_readerwriter_qos(
     DDS_DurabilityQosPolicy *const durability,
     DDS_DeadlineQosPolicy *const deadline,
     DDS_LivelinessQosPolicy *const liveliness,
-    DDS_ResourceLimitsQosPolicy *const resource_limits,
-    DDS_PropertyQosPolicy *const property,
-    DDS_DataReaderResourceLimitsQosPolicy *const reader_resource_limits,
-    DDS_DataWriterResourceLimitsQosPolicy *const writer_resource_limits,
-    DDS_DataReaderProtocolQosPolicy *const reader_protocol,
-    DDS_DataWriterProtocolQosPolicy *const writer_protocol,
     const rmw_qos_profile_t *const qos_policies,
     const rmw_publisher_options_t *const pub_options,
     const rmw_subscription_options_t *const sub_options)
 {
+    UNUSED_ARG(writer_qos);
+    UNUSED_ARG(type_support);
     UNUSED_ARG(pub_options);
     UNUSED_ARG(sub_options);
 
@@ -167,21 +163,6 @@ rmw_connextdds_get_readerwriter_qos(
     }
     case RMW_QOS_POLICY_HISTORY_KEEP_ALL:
     {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-        /* Using history->depth == DDS_LENGTH_UNLIMITED with durability>VOLATILE
-           causes a failure in History.c:892, because the (-1) becomes a 
-           large amount when converted to an unsigned value */
-        // history->depth = DDS_LENGTH_UNLIMITED;
-        history->depth = RMW_CONNEXT_LIMIT_KEEP_ALL_SAMPLES;
-        /* Allow users to configure the depth for keep all since micro
-           doesn't allocate samples dynamically */
-        if (qos_policies->depth > 0)
-        {
-            history->depth = static_cast<DDS_Long>(qos_policies->depth);
-        }
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-        history->depth = 1;
-#endif /* RMW_CONNEXT_DDS_API */
         history->kind = DDS_KEEP_ALL_HISTORY_QOS;
         break;
     }
@@ -287,178 +268,7 @@ rmw_connextdds_get_readerwriter_qos(
     }
     }
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    UNUSED_ARG(type_support);
-    UNUSED_ARG(property);
-    UNUSED_ARG(writer_qos);
-
-    /* Adjust resource limits according to other QoS policies */
-    size_t max_samples = RMW_CONNEXT_LIMIT_SAMPLES_MAX;
-
-    if (DDS_LENGTH_UNLIMITED != history->depth &&
-        (size_t)history->depth > max_samples)
-    {
-        max_samples = history->depth;
-    }
-    if (max_samples < RMW_CONNEXT_LIMIT_SAMPLES_MAX)
-    {
-        max_samples = RMW_CONNEXT_LIMIT_SAMPLES_MAX;
-    }
-
-    resource_limits->max_samples_per_instance = max_samples;
-    resource_limits->max_samples = max_samples;
-    resource_limits->max_instances = 1; /* ROS doesn't use instances */
-
-    RMW_CONNEXT_LOG_DEBUG_A("endpoint resource limits: "
-        "max_samples_per_instance=%d, "
-        "max_samples=%d, "
-        "max_instances=%d",
-        resource_limits->max_samples_per_instance,
-        resource_limits->max_samples,
-        resource_limits->max_instances);
-    
-    if (nullptr != reader_resource_limits)
-    {
-        reader_resource_limits->max_remote_writers = 
-            RMW_CONNEXT_LIMIT_WRITERS_LOCAL_MAX +
-            RMW_CONNEXT_LIMIT_WRITERS_REMOTE_MAX;
-        reader_resource_limits->max_remote_writers_per_instance =
-            RMW_CONNEXT_LIMIT_WRITERS_LOCAL_MAX +
-            RMW_CONNEXT_LIMIT_WRITERS_REMOTE_MAX;
-        // reader_resource_limits->max_samples_per_remote_writer = 0;
-        reader_resource_limits->max_outstanding_reads = 1;
-        reader_resource_limits->max_routes_per_writer = 1;
-    }
-
-    if (nullptr != writer_resource_limits)
-    {
-        writer_resource_limits->max_remote_readers =
-            RMW_CONNEXT_LIMIT_READERS_LOCAL_MAX +
-            RMW_CONNEXT_LIMIT_READERS_REMOTE_MAX;
-        writer_resource_limits->max_routes_per_reader = 1;
-    }
-
-    if (nullptr != reader_protocol)
-    {
-        reader_protocol->rtps_reliable_reader.nack_period.sec = 0;
-        reader_protocol->rtps_reliable_reader.nack_period.nanosec = 10000000;
-    }
-
-    if (nullptr != writer_protocol)
-    {
-        RMW_CONNEXT_ASSERT(nullptr != writer_resource_limits)
-        writer_protocol->rtps_reliable_writer.heartbeats_per_max_samples =
-            resource_limits->max_samples;
-    }
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    UNUSED_ARG(resource_limits);
-    UNUSED_ARG(writer_resource_limits);
-    UNUSED_ARG(reader_resource_limits);
-    UNUSED_ARG(writer_protocol);
-    UNUSED_ARG(reader_protocol);
-
-    /* if type is unbound set property force allocation of samples from heap */
-    if (type_support->unbounded())
-    {
-        const char *property_name = nullptr;
-        if (writer_qos)
-        {
-            property_name =
-                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size";
-        }
-        else
-        {
-            property_name =
-                "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size";
-        }
-        if (DDS_RETCODE_OK !=
-                DDS_PropertyQosPolicyHelper_assert_property(
-                    property, property_name, "0",
-                    DDS_BOOLEAN_FALSE /* propagate */))
-        {
-            RMW_CONNEXT_LOG_ERROR("failed to set property qos on writer")
-            return RMW_RET_ERROR;
-        }
-    }
-
-    // if (DDS_RETCODE_OK !=
-    //         DDS_DataRepresentationIdSeq_ensure_length(
-    //             &dr_qos.representation.value,
-    //             DDS_DataRepresentationIdSeq_get_length(
-    //                 &dr_qos.representation.value) + 1,
-    //             DDS_DataRepresentationIdSeq_get_maximum(
-    //                 &dr_qos.representation.value)))
-    // {
-    //     RMW_CONNEXT_LOG_ERROR("failed to set sequence maximum")
-    //     return nullptr;
-    // }
-    // DDS_DataRepresentationIdSeq_get_reference(&dr_qos.representation.value, 0) =
-    //     DDS_XCDR_DATA_REPRESENTATION;
-
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
-
     return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_get_datawriter_qos(
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_DataWriterQos *const qos,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_publisher_options_t *const pub_options)
-{
-    return rmw_connextdds_get_readerwriter_qos(
-                true /* writer_qos */,
-                type_support,
-                &qos->history,
-                &qos->reliability,
-                &qos->durability,
-                &qos->deadline,
-                &qos->liveliness,
-                &qos->resource_limits,
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-                nullptr /* property */,
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-                &qos->property,
-#endif /* RMW_CONNEXT_DDS_API */
-                nullptr /* reader_resource_limits */,
-                &qos->writer_resource_limits,
-                nullptr /* reader protocol */,
-                &qos->protocol,
-                qos_policies,
-                pub_options,
-                nullptr /* sub_options */);
-}
-
-
-rmw_ret_t
-rmw_connextdds_get_datareader_qos(
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_DataReaderQos *const qos,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_subscription_options_t *const sub_options)
-{
-    return rmw_connextdds_get_readerwriter_qos(
-                false /* writer_qos */,
-                type_support,
-                &qos->history,
-                &qos->reliability,
-                &qos->durability,
-                &qos->deadline,
-                &qos->liveliness,
-                &qos->resource_limits,
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-                nullptr /* property */,
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-                &qos->property,
-#endif /* RMW_CONNEXT_DDS_API */
-                &qos->reader_resource_limits,
-                nullptr /* writer_resource_limits */,
-                &qos->protocol,
-                nullptr /* writer protocol */,
-                qos_policies,
-                nullptr /* pub_options */,
-                sub_options);
 }
 
 rmw_ret_t
@@ -588,42 +398,6 @@ rmw_connextdds_datareader_qos_to_ros(
 }
 
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-
-void
-rmw_connextdds_get_default_profile_from_qos(
-    DDS_HistoryQosPolicy *const history,
-    DDS_ReliabilityQosPolicy *const reliability,
-    const char **const profile_lib_out,
-    const char **const profile_out)
-{
-    const bool reliable =
-        reliability->kind == DDS_RELIABLE_RELIABILITY_QOS;
-    
-    const bool keep_all =
-        history->kind == DDS_KEEP_ALL_HISTORY_QOS;
-    
-    if (reliable)
-    {
-        if (keep_all)
-        {
-            *profile_out = DDS_PROFILE_GENERIC_STRICT_RELIABLE_LOW_LATENCY;
-            *profile_lib_out = DDS_BUILTIN_QOS_LIB_EXP;
-        }
-        else
-        {
-            *profile_out = DDS_PROFILE_GENERIC_KEEP_LAST_RELIABLE;
-            *profile_lib_out = DDS_BUILTIN_QOS_LIB_EXP;
-        }
-    }
-    else
-    {
-        *profile_out = DDS_PROFILE_GENERIC_BEST_EFFORT;
-        *profile_lib_out = DDS_BUILTIN_QOS_LIB_EXP;
-    }
-}
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-
 /******************************************************************************
  * Node support
  ******************************************************************************/
@@ -678,136 +452,6 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
         RMW_CONNEXT_LOG_ERROR("failed to install condition on writer")
     }
 }
-
-
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-/*
-    Function rmw_connextdds_create_dds_writer() has differentiated
-    implementations only to test out using profiles to configure QoS in Pro.
-    That feature is currently disabled by default, so the implementations are
-    de facto identical and duplicated. If profile usage were to be discarded,
-    the two implementations should be consolidated into one to avoid
-    duplication.
-    Similar considerations apply to rmw_connextdds_create_dds_reader().
-*/
-
-DDS_DataWriter*
-rmw_connextdds_create_dds_writer(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipant *const participant,
-    DDS_Publisher *const pub,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_publisher_options_t *const publisher_options,
-    const bool internal,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_Topic *const topic,
-    DDS_DataWriterQos *const dw_qos)
-{
-    UNUSED_ARG(ctx);
-    UNUSED_ARG(participant);
-    UNUSED_ARG(internal);
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datawriter_qos(
-                type_support, dw_qos, qos_policies, publisher_options))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
-        return nullptr;
-    }
-
-    DDS_DataWriter *const writer =
-            DDS_Publisher_create_datawriter(
-                pub, topic, dw_qos,
-                NULL, DDS_STATUS_MASK_NONE);
-    
-    return writer;
-}
-
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-
-DDS_DataWriter*
-rmw_connextdds_create_dds_writer(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipant *const participant,
-    DDS_Publisher *const pub,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_publisher_options_t *const publisher_options,
-    const bool internal,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_Topic *const topic,
-    DDS_DataWriterQos *const dw_qos)
-{
-    UNUSED_ARG(ctx);
-    UNUSED_ARG(participant);
-    UNUSED_ARG(internal);
-
-#if !RMW_CONNEXT_USE_PROFILES
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datawriter_qos(
-                type_support, dw_qos, qos_policies, publisher_options))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
-        return nullptr;
-    }
-
-    DDS_DataWriter *const writer =
-            DDS_Publisher_create_datawriter(
-                pub, topic, dw_qos,
-                NULL, DDS_STATUS_MASK_NONE);
-
-#else
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datawriter_qos(
-                type_support, dw_qos, qos_policies, publisher_options))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
-        return nullptr;
-    }
-
-    const char *profile = nullptr;
-    const char *profile_lib = nullptr;
-
-    rmw_connextdds_get_default_profile_from_qos(
-        &dw_qos->history, &dw_qos->reliability, &profile_lib, &profile);
-
-    DDS_DataWriter *const writer  =
-            DDS_Publisher_create_datawriter_with_profile(
-                pub,
-                topic,
-                profile_lib,
-                profile,
-                NULL,
-                DDS_STATUS_MASK_NONE);
-    
-    if (nullptr == writer)
-    {
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(writer, dw_qos))
-    {
-        return nullptr;
-    }
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datawriter_qos(
-                type_support, dw_qos, qos_policies, publisher_options))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataWriter_set_qos(writer, dw_qos))
-    {
-        return nullptr;
-    }
-#endif /* RMW_CONNEXT_USE_PROFILES */
-    
-    return writer;
-}
-#endif /* RMW_CONNEXT_DDS_API */
 
 RMW_Connext_Publisher*
 RMW_Connext_Publisher::create(
@@ -930,7 +574,7 @@ RMW_Connext_Publisher::create(
     }
 
     DDS_DataWriter *const dds_writer = 
-        rmw_connextdds_create_dds_writer(
+        rmw_connextdds_create_datawriter(
             ctx,
             dp,
             pub,
@@ -1014,13 +658,7 @@ RMW_Connext_Publisher::finalize()
         DDS_ReturnCode_t rc =
             DDS_DomainParticipant_delete_topic(participant, topic);
 
-        if (DDS_RETCODE_OK != rc
-    #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO && 0
-            // for the moment, ignore the DDS_RETCODE_PRECONDITION_NOT_MET error
-            // assuming it means the topic is still in use
-            && DDS_RETCODE_PRECONDITION_NOT_MET != rc
-    #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-            )
+        if (DDS_RETCODE_OK != rc)
         {
             RMW_CONNEXT_LOG_ERROR("failed to delete DDS Topic")
             return RMW_RET_ERROR;
@@ -1076,69 +714,7 @@ RMW_Connext_Publisher::write(
     user_msg.user_data = ros_message;
     user_msg.serialized = serialized;
     
-    // void *msg = nullptr;
-    
-    // if (this->type_support->type_requestreply())
-    // {
-    //     msg = rr_msg;
-    // }
-    // else
-    // {
-    //     msg = &user_msg;
-    // }
-
-    void *msg = &user_msg;
-
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    if (DDS_RETCODE_OK !=
-            DDS_DataWriter_write(this->dds_writer, msg, &DDS_HANDLE_NIL))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to write message to DDS")
-        return RMW_RET_ERROR;
-    }
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-
-#if !RMW_CONNEXT_EMULATE_REQUESTREPLY
-
-    if (this->type_support->type_requestreply())
-    {
-        RMW_Connext_RequestReplyMessage *const rr_msg = 
-            (RMW_Connext_RequestReplyMessage*)ros_message;
-        DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
-
-        if (RMW_RET_OK !=
-                this->requestreply_header_to_dds(
-                    rr_msg,
-                    &write_params.identity,
-                    &write_params.related_sample_identity))
-        {
-            RMW_CONNEXT_LOG_ERROR("failed to convert request information")
-            return RMW_RET_ERROR;
-        }
-
-        if (DDS_RETCODE_OK !=
-                DDS_DataWriter_write_w_params_untypedI(
-                    this->dds_writer, msg, &write_params))
-        {
-            RMW_CONNEXT_LOG_ERROR(
-                "failed to write request/reply message to DDS")
-            return RMW_RET_ERROR;
-        }
-
-        return RMW_RET_OK;
-    }
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
-
-    if (DDS_RETCODE_OK !=
-            DDS_DataWriter_write_untypedI(
-                this->dds_writer, msg, &DDS_HANDLE_NIL))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to write message to DDS")
-        return RMW_RET_ERROR;
-    }
-#endif /* RMW_CONNEXT_DDS_API */
-
-    return RMW_RET_OK;
+    return rmw_connextdds_write_message(this, &user_msg);
 }
 
 
@@ -1422,117 +998,6 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
     }
 }
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-
-DDS_DataReader*
-rmw_connextdds_create_dds_reader(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipant *const participant,
-    DDS_Subscriber *const sub,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_subscription_options_t *const subscriber_options,
-    const bool internal,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_Topic *const topic,
-    DDS_DataReaderQos *const dr_qos)
-{
-    UNUSED_ARG(ctx);
-    UNUSED_ARG(participant);
-    UNUSED_ARG(internal);
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datareader_qos(
-                type_support, dr_qos, qos_policies, subscriber_options))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
-        return nullptr;
-    }
-
-    return DDS_Subscriber_create_datareader(
-                sub,
-                DDS_Topic_as_topicdescription(topic),
-                dr_qos,
-                NULL, DDS_STATUS_MASK_NONE);
-}
-
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-
-DDS_DataReader*
-rmw_connextdds_create_dds_reader(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipant *const participant,
-    DDS_Subscriber *const sub,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_subscription_options_t *const subscriber_options,
-    const bool internal,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_Topic *const topic,
-    DDS_DataReaderQos *const dr_qos)
-{
-    UNUSED_ARG(ctx);
-    UNUSED_ARG(participant);
-    UNUSED_ARG(internal);
-
-#if !RMW_CONNEXT_USE_PROFILES
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datareader_qos(
-                type_support, dr_qos, qos_policies, subscriber_options))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
-        return nullptr;
-    }
-
-    DDS_DataReader *const reader =
-            DDS_Subscriber_create_datareader(
-                sub,
-                DDS_Topic_as_topicdescription(topic),
-                dr_qos,
-                NULL, DDS_STATUS_MASK_NONE);
-
-#else
-
-    const char *profile = nullptr;
-    const char *profile_lib = nullptr;
-    rmw_connextdds_get_default_profile_from_qos(
-        &dr_qos->history, &dr_qos->reliability, &profile_lib, &profile);
-
-    DDS_DataReader *const reader  =
-            DDS_Subscriber_create_datareader_with_profile(
-                sub,
-                DDS_Topic_as_topicdescription(topic),
-                profile_lib,
-                profile,
-                NULL, DDS_STATUS_MASK_NONE);
-    
-    if (nullptr == reader)
-    {
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataReader_get_qos(reader, dr_qos))
-    {
-        return nullptr;
-    }
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datareader_qos(
-                type_support, dr_qos, qos_policies, subscriber_options))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataReader_set_qos(reader, dr_qos))
-    {
-        return nullptr;
-    }
-#endif /* RMW_CONNEXT_USE_PROFILES */
-    
-    return reader;
-}
-#endif /* RMW_CONNEXT_DDS_API */
-
 RMW_Connext_Subscriber*
 RMW_Connext_Subscriber::create(
     rmw_context_impl_t *const ctx,
@@ -1654,7 +1119,7 @@ RMW_Connext_Subscriber::create(
     }
 
     DDS_DataReader *dds_reader =
-        rmw_connextdds_create_dds_reader(
+        rmw_connextdds_create_datareader(
             ctx,
             dp,
             sub,
@@ -1765,13 +1230,7 @@ RMW_Connext_Subscriber::finalize()
         DDS_ReturnCode_t rc =
             DDS_DomainParticipant_delete_topic(participant, topic);
 
-        if (DDS_RETCODE_OK != rc
-    #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO && 0
-            // for the moment, ignore the DDS_RETCODE_PRECONDITION_NOT_MET error
-            // assuming it means the topic is still in use
-            && DDS_RETCODE_PRECONDITION_NOT_MET != rc
-    #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-            )
+        if (DDS_RETCODE_OK != rc)
         {
             RMW_CONNEXT_LOG_ERROR("failed to delete DDS Topic")
             return RMW_RET_ERROR;
@@ -1936,43 +1395,6 @@ RMW_Connext_Subscriber::disable_status(const DDS_StatusMask status_mask)
     return RMW_RET_OK;
 }
 
-bool
-RMW_Connext_Subscriber::has_data_in_cache()
-{
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    DDS_UntypedSampleSeq data_seq = DDS_SEQUENCE_INITIALIZER;
-    DDS_SampleInfoSeq info_seq = DDS_SEQUENCE_INITIALIZER;
-
-    DDS_ReturnCode_t rc = DDS_DataReader_read(
-                                this->dds_reader,
-                                &data_seq,
-                                &info_seq,
-                                1,
-                                DDS_ANY_SAMPLE_STATE,
-                                DDS_ANY_VIEW_STATE,
-                                DDS_ANY_INSTANCE_STATE);
-    if (DDS_RETCODE_NO_DATA == rc)
-    {
-        return false;
-    }
-    else if (DDS_RETCODE_OK != rc)
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to read from dds reader")
-        return false;
-    }
-
-    if (DDS_RETCODE_OK !=
-            DDS_DataReader_return_loan(
-                this->dds_reader, &data_seq, &info_seq))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to return loan to dds reader")
-        return false;
-    }
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
-    return true;
-}
-
-
 rmw_ret_t
 RMW_Connext_Subscriber::loan_messages()
 {
@@ -1981,85 +1403,12 @@ RMW_Connext_Subscriber::loan_messages()
     RMW_CONNEXT_ASSERT(this->loan_len == 0)
     RMW_CONNEXT_ASSERT(this->loan_next == 0)
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    DDS_ReturnCode_t rc = 
-        DDS_DataReader_take(
-            this->dds_reader,
-            &this->loan_data,
-            &this->loan_info,
-            DDS_LENGTH_UNLIMITED,
-            DDS_ANY_VIEW_STATE,
-            DDS_ANY_SAMPLE_STATE,
-            DDS_ANY_INSTANCE_STATE);
-
-    if (DDS_RETCODE_NO_DATA == rc)
+    if (RMW_RET_OK != rmw_connextdds_take_samples(this))
     {
-        return RMW_RET_OK;
-    }
-    else if (DDS_RETCODE_OK != rc)
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to take data from DDS reader")
         return RMW_RET_ERROR;
     }
-
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    DDS_Boolean is_loan = DDS_BOOLEAN_TRUE;
-    DDS_Long data_len = 0;
-    void **data_buffer = nullptr;
-
-    DDS_ReturnCode_t rc = 
-        DDS_DataReader_read_or_take_instance_untypedI(
-            this->dds_reader,
-            &is_loan,
-            &data_buffer,
-            &data_len,
-            &this->loan_info,
-            0 /* data_seq_len */,
-            0 /* data_seq_max_len */,
-            DDS_BOOLEAN_TRUE /* data_seq_has_ownership */,
-            NULL /* data_seq_contiguous_buffer_for_copy */,
-            1 /* data_size -- ignored because loaning*/,
-            DDS_LENGTH_UNLIMITED /* max_samples */,
-            &DDS_HANDLE_NIL /* a_handle */,
-            NULL /* topic_query_guid */,
-            DDS_ANY_VIEW_STATE,
-            DDS_ANY_SAMPLE_STATE,
-            DDS_ANY_INSTANCE_STATE,
-            DDS_BOOLEAN_TRUE /* take */);
-    if (DDS_RETCODE_OK != rc)
-    {
-        if (DDS_RETCODE_NO_DATA == rc)
-        {
-            return RMW_RET_OK;
-        }
-        RMW_CONNEXT_LOG_ERROR("failed to take data from DDS reader")
-        return RMW_RET_ERROR;
-    }
-    RMW_CONNEXT_ASSERT(data_len > 0)
-    
-    (void)RMW_Connext_Uint8ArrayPtrSeq_loan_contiguous
-            (&this->loan_data,
-            (rcutils_uint8_array_t**)data_buffer,
-            data_len,
-            data_len);
-#endif /* RMW_CONNEXT_DDS_API */
 
     this->loan_len = DDS_UntypedSampleSeq_get_length(&this->loan_data);
-
-    // printf("[reader][%p] loaned=%lu\n", (void*)this, this->loan_len);
-
-    // RMW_CONNEXT_LOG_DEBUG_A("messages LOANED: reader=%p, len=%lu",
-    //                 (void*)this->dds_reader, this->loan_len)
-    // for (size_t i = 0; i < this->loan_len; i++)
-    // {
-    //     rcutils_uint8_array_t *const buf =
-    //         DDS_UntypedSampleSeq_get_reference(&this->loan_data, i);
-    //     RMW_CONNEXT_LOG_DEBUG_A("loaned [%lu]: "
-    //         "sample=%p, sample.buffer=%p, "
-    //         "sample.length=%lu, sample.capacity=%lu",
-    //         i, (void*)buf, (void*)buf->buffer,
-    //         buf->buffer_length, buf->buffer_capacity);
-    // }
     
     return RMW_RET_OK;
 }
@@ -2067,47 +1416,13 @@ RMW_Connext_Subscriber::loan_messages()
 rmw_ret_t
 RMW_Connext_Subscriber::return_messages()
 {
-    /* this function should be called only if a loan is outstanding */
+    /* this function should be called only if a loan is available */
     RMW_CONNEXT_ASSERT(this->loan_len > 0)
-
-    // RMW_CONNEXT_LOG_DEBUG_A("messages RETURNED: reader=%p, len=%lu",
-    //                 (void*)this->dds_reader, this->loan_len)
 
     this->loan_len = 0;
     this->loan_next = 0;
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    if (DDS_RETCODE_OK !=
-            DDS_DataReader_return_loan(
-                this->dds_reader, &this->loan_data, &this->loan_info))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to return data to DDS reader")
-        return RMW_RET_ERROR;
-    }
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    void **data_buffer = (void**)
-        RMW_Connext_Uint8ArrayPtrSeq_get_contiguous_buffer(&this->loan_data);
-    const size_t data_len =
-        RMW_Connext_Uint8ArrayPtrSeq_get_length(&this->loan_data);
-    
-    if (!RMW_Connext_Uint8ArrayPtrSeq_unloan(&this->loan_data))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to unloan sample sequence")
-        return RMW_RET_ERROR;
-    }
-    if (DDS_RETCODE_OK !=
-            DDS_DataReader_return_loan_untypedI(
-                this->dds_reader,
-                data_buffer,
-                data_len,
-                &this->loan_info))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to return loan to DDS reader")
-        return RMW_RET_ERROR;
-    }
-#endif /* RMW_CONNEXT_DDS_API */
-
-    return RMW_RET_OK;
+    return rmw_connextdds_return_samples(this);
 }
 
 void
@@ -2178,21 +1493,17 @@ RMW_Connext_Subscriber::take_next(
 
             if (info->valid_data)
             {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-                if (this->ignore_local())
+                bool accepted = false;
+                if (RMW_RET_OK != rmw_connextdds_filter_sample(
+                        this, data_buffer, info, &accepted))
                 {
-                    DDS_InstanceHandle_t reader_ih = this->instance_handle();
-                    
-                    if (0 == memcmp(
-                                reader_ih.keyHash.value,
-                                info->original_publication_virtual_guid.value,
-                                12))
-                    {
-                        // Ignore message from local publication
-                        continue;
-                    }
+                    RMW_CONNEXT_LOG_ERROR("failed to filter received sample")
+                        return RMW_RET_ERROR;
                 }
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
+                if (!accepted)
+                {
+                    continue;
+                }
 
                 void *ros_message = ros_messages[*taken];
 
@@ -2496,15 +1807,6 @@ RMW_Connext_WaitSet::create()
 rmw_ret_t
 RMW_Connext_WaitSet::finalize()
 {
-#if 0
-    /* TODO should we detach conditions before deleting? It doesn't seem to
-       make a difference. */
-    if (RMW_RET_OK != this->detach())
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to detach all conditions")
-        return RMW_RET_ERROR;
-    }
-#endif
     if (!DDS_ConditionSeq_finalize(&this->active_conditions))
     {
         RMW_CONNEXT_LOG_ERROR("failed to finalize conditions sequence")
@@ -3401,54 +2703,6 @@ rmw_connextdds_guid_to_gid(const struct DDS_GUID_t &guid, rmw_gid_t &gid)
     return RMW_RET_OK;
 }
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-bool rmw_connextdds_ih_match_prefix(
-    const DDS_InstanceHandle_t *const a,
-    const DDS_InstanceHandle_t *const b)
-{
-    return memcmp(a->octet, b->octet, 12) == 0;
-}
-
-void rmw_connextdds_ih_to_gid(
-    const DDS_InstanceHandle_t &ih, rmw_gid_t &gid)
-{
-    RTPS_Guid guid = RTPS_GUID_UNKNOWN;
-    DDS_InstanceHandle_to_rtps(&guid, &ih);
-
-    static_assert(
-        RMW_GID_STORAGE_SIZE >= sizeof(guid),
-        "rmw_gid_t type too small for an RTI Connext DDS Micro GUID");
-    
-    memset(&gid, 0, sizeof(gid));
-    gid.implementation_identifier = RMW_CONNEXTDDS_ID;
-    gid.data[0] = guid.prefix.host_id;
-    gid.data[1] = guid.prefix.app_id ;
-    gid.data[2] = guid.prefix.instance_id ;
-    gid.data[3] = guid.object_id;
-}
-
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-bool rmw_connextdds_ih_match_prefix(
-    const DDS_InstanceHandle_t *const a,
-    const DDS_InstanceHandle_t *const b)
-{
-    return memcmp(a->keyHash.value, b->keyHash.value, 12) == 0;
-}
-
-void rmw_connextdds_ih_to_gid(
-    const DDS_InstanceHandle_t &ih, rmw_gid_t &gid)
-{
-    static_assert(
-        RMW_GID_STORAGE_SIZE >= MIG_RTPS_KEY_HASH_MAX_LENGTH,
-        "rmw_gid_t type too small for an RTI Connext DDS Micro GUID");
-    
-    memset(&gid, 0, sizeof(gid));
-    gid.implementation_identifier = RMW_CONNEXTDDS_ID;
-    memcpy(gid.data, ih.keyHash.value, MIG_RTPS_KEY_HASH_MAX_LENGTH);
-}
-
-#endif /* RMW_CONNEXT_DDS_API */
-
 void rmw_connextdds_get_entity_gid(
     DDS_Entity *const entity,
     rmw_gid_t & gid)
@@ -4246,31 +3500,6 @@ RMW_Connext_Event::active(rmw_event_t *const event)
  * StdWaitSet
  ******************************************************************************/
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-DDS_Boolean
-RMW_Connext_DataReaderListener_before_sample_commit_drop_local(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const void *const sample,
-    const struct DDS_SampleInfo *const sample_info,
-    DDS_Boolean *dropped)
-{
-    UNUSED_ARG(reader);
-    UNUSED_ARG(sample);
-
-    RMW_Connext_StdSubscriberStatusCondition *const self =
-        (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
-    
-    *dropped = memcmp(
-                self->listener_drop_handle.octet,
-                sample_info->publication_handle.octet,
-                12) == 0 ?
-                    DDS_BOOLEAN_TRUE : DDS_BOOLEAN_FALSE;
-
-    return DDS_BOOLEAN_TRUE;
-}
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
-
 void
 RMW_Connext_DataReaderListener_requested_deadline_missed(
     void *listener_data,
@@ -4791,13 +4020,9 @@ RMW_Connext_StdSubscriberStatusCondition::install(
     DDS_DataReaderListener listener = DDS_DataReaderListener_INITIALIZER;
     DDS_StatusMask listener_mask = DDS_STATUS_MASK_NONE;
 
+
     if (sub->ignore_local())
     {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-        listener.on_before_sample_commit =
-            RMW_Connext_DataReaderListener_before_sample_commit_drop_local;
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
-        
         this->listener_drop_handle = sub->instance_handle();
     }
     listener.on_requested_deadline_missed =
@@ -4818,6 +4043,9 @@ RMW_Connext_StdSubscriberStatusCondition::install(
         DDS_LIVELINESS_CHANGED_STATUS | 
         DDS_SAMPLE_LOST_STATUS |
         DDS_DATA_AVAILABLE_STATUS;
+
+    rmw_connextdds_configure_subscriber_condition_listener(
+        sub, this, &listener, &listener_mask);
     
     if (DDS_RETCODE_OK !=
             DDS_DataReader_set_listener(

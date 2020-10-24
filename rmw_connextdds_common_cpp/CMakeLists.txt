@@ -1,4 +1,4 @@
-# Copyright 2020 Real-Time Innovations, Inc.
+# (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,20 +14,28 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(rmw_connextpro_cpp)
+project(rmw_connextdds_common_cpp)
 
-find_package(rmw_connextdds_common_cpp REQUIRED)
+set(build_helper cmake/rmw_connextdds_builder.cmake)
 
-include(${RMW_CONNEXT_BUILD_HELPER})
+include(${build_helper})
 
-set(connext_libs        RTIConnextDDS::c_api)
-set(connext_includes    )
-set(connext_src
-    src/rmw_type_support_ndds.cpp
-    src/rmw_typecode.cpp
-    src/dds_api_ndds.cpp
-    include/rmw_connextdds_cpp/type_support_impl.hpp
-    include/rmw_connextdds_cpp/typecode.hpp)
-set(connext_defines )
+find_package(ament_cmake_ros REQUIRED)
 
-build_rmw_connext("pro")
+ament_package(
+    CONFIG_EXTRAS_POST "rmw_connextdds_common_cpp-extras.cmake.in"
+)
+
+install(
+    DIRECTORY include/
+    DESTINATION include
+)
+
+install(
+    DIRECTORY src/
+    DESTINATION src
+)
+
+install(
+    FILES ${build_helper}
+    DESTINATION "share/${PROJECT_NAME}/cmake")

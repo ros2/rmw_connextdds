@@ -21,8 +21,6 @@
 
 #if RMW_CONNEXT_EXPORT_MESSAGE_TYPES
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-
 static RTIBool
 RMW_Connext_TypeCodePtr_initialize_w_params(
     DDS_TypeCode **self,
@@ -675,7 +673,5 @@ rmw_connextdds_release_typecode_cache(
     RMW_Connext_TypeCodePtrSeq_finalize_elements(tc_cache);
     RMW_Connext_TypeCodePtrSeq_finalize(tc_cache);
 }
-
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 
 #endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */

@@ -40,13 +40,6 @@
 #include "rosidl_typesupport_introspection_c/service_introspection.h"
 #include "rosidl_typesupport_introspection_c/visibility_control.h"
 
-enum RMW_Connext_MessageType
-{
-    RMW_CONNEXT_MESSAGE_USERDATA,
-    RMW_CONNEXT_MESSAGE_REQUEST,
-    RMW_CONNEXT_MESSAGE_REPLY
-};
-
 struct RMW_Connext_RequestReplyMessage
 {
     bool request;
@@ -55,11 +48,13 @@ struct RMW_Connext_RequestReplyMessage
     void *payload;
 };
 
+
 struct RMW_Connext_Message
 {
     const void *user_data;
     bool serialized;
 };
+
 
 class RMW_Connext_MessageTypeSupport
 {
@@ -76,7 +71,7 @@ public:
     RMW_Connext_MessageTypeSupport(
         const RMW_Connext_MessageType message_type,
         const rosidl_message_type_support_t *const type_supports,
-        std::string *const type_name = nullptr);
+        const char *const type_name);
     
     // ~RMW_Connext_MessageTypeSupport()
     // {
@@ -274,10 +269,5 @@ public:
         const rosidl_service_type_support_t *const type_supports);
 };
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-#include "rmw_connextdds_cpp/type_support_rtime.hpp"
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-#include "rmw_connextdds_cpp/type_support_ndds.hpp"
-#endif /* RMW_CONNEXT_DDS_API */
 
 #endif /* RMW_CONNEXT__TYPE_SUPPORT_HPP_ */

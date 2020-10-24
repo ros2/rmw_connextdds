@@ -19,14 +19,13 @@
 #ifndef RMW_CONNEXT__CONTEXT_HPP_
 #define RMW_CONNEXT__CONTEXT_HPP_
 
-#include "rmw_connextdds_cpp/static_config.h"
+#include "rmw_connextdds_cpp/dds_api.hpp"
 #include "rmw_connextdds_cpp/log.hpp"
 
 #include <limits>
 
 #include <stdio.h>
 
-#include "rmw/rmw.h"
 #include "rmw/error_handling.h"
 #include "rmw/impl/cpp/macros.hpp"
 
@@ -35,37 +34,12 @@
 
 #include "rcutils/strdup.h"
 
-#include "rosidl_typesupport_cpp/message_type_support.hpp"
-
 
 #if RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_FOXY
 #include "scope_exit.hpp"
 #else
 #include "rcpputils/scope_exit.hpp"
 #endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_FOXY */
-
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-#include "rti_me_c.h"
-#include "disc_dpde/disc_dpde_discovery_plugin.h"
-#include "wh_sm/wh_sm_history.h"
-#include "rh_sm/rh_sm_history.h"
-#include "netio/netio_udp.h"
-#include "netio_shmem/netio_shmem.h"
-// #include "sec_core/sec_core_c.h"
-#include "rmw_connextdds_cpp/rtime_ext.h"
-#include "REDASequence.h"
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-#include "ndds/ndds_c.h"
-#else
-#error "invalid DDS API selected"
-#endif /* RMW_CONNEXT_DDS_API */
-
-#ifndef UNUSED_ARG
-#define UNUSED_ARG(arg_)        (void)(arg_)
-#endif /* UNUSED_ARG */
-
-extern const char * const RMW_CONNEXTDDS_ID;
-extern const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT;
 
 struct rmw_context_impl_t
 {
@@ -74,15 +48,7 @@ struct rmw_context_impl_t
     
     DDS_DomainParticipantFactory *factory;
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    bool rt_whsm;
-    bool rt_rhsm;
-    bool rt_udp;
-    bool rt_shmem;
-    bool rt_dpde;
-    bool rt_sec;
-    struct UDP_InterfaceFactoryProperty *udp_property;
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
+    void *api;
 
 #if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING
     DDS_DomainId_t domain_id;
@@ -113,15 +79,6 @@ struct rmw_context_impl_t
     : common(),
       base(base),
       factory(nullptr),
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-      rt_whsm(false),
-      rt_rhsm(false),
-      rt_udp(false),
-      rt_shmem(false),
-      rt_dpde(false),
-      rt_sec(false),
-      udp_property(nullptr),
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
 #if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING
       domain_id(0),
 #endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_ROLLING */
@@ -173,5 +130,10 @@ private:
     clean_up();
 
 };
+
+rmw_ret_t
+rmw_connextdds_initialize_participant_factory_qos(
+    rmw_context_impl_t *const ctx,
+    DDS_DomainParticipantFactory *const factory);
 
 #endif /* RMW_CONNEXT__CONTEXT_HPP_ */

@@ -508,7 +508,7 @@ rmw_connextdds_initialize_participant_qos_impl(
 
     seq_ref = 
         REDA_StringSeq_get_reference(
-            &dp_qos->user_traffic.enabled_transports, 1);
+            &dp_qos->user_traffic.enabled_transports, 0);
     
     std::ostringstream udp_ss;
     udp_ss << NETIO_DEFAULT_UDP_NAME << "://";
@@ -522,7 +522,7 @@ rmw_connextdds_initialize_participant_qos_impl(
 #if RMW_CONNEXT_TRANSPORT_SHMEM
     seq_ref = 
         REDA_StringSeq_get_reference(
-            &dp_qos->user_traffic.enabled_transports, 0);
+            &dp_qos->user_traffic.enabled_transports, 1);
     std::ostringstream shmem_ss;
     shmem_ss << NETIO_DEFAULT_SHMEM_NAME << "://";
     
@@ -696,6 +696,12 @@ rmw_connextdds_get_datawriter_qos(
     {
         return RMW_RET_ERROR;
     }
+
+#if RMW_CONNEXT_ASYNC_PUBLISH && 0
+    // qos->publish_mode.flow_controller_name = DDS_String_dup(DDS_DEFAULT_FLOW_CONTROLLER_NAME);
+    qos->publish_mode.flow_controller_name = DDS_DEFAULT_FLOW_CONTROLLER_NAME;
+    qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+#endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 
     return rmw_connextdds_get_qos_policies(
                 true /* writer_qos */,

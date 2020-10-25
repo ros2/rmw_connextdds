@@ -127,6 +127,7 @@ rmw_connextdds_get_readerwriter_qos(
     DDS_DeadlineQosPolicy *const deadline,
     DDS_LivelinessQosPolicy *const liveliness,
     DDS_ResourceLimitsQosPolicy *const resource_limits,
+    DDS_PublishModeQosPolicy *const publish_mode,
     const rmw_qos_profile_t *const qos_policies,
     const rmw_publisher_options_t *const pub_options,
     const rmw_subscription_options_t *const sub_options)
@@ -283,6 +284,15 @@ rmw_connextdds_get_readerwriter_qos(
                 resource_limits->max_samples_per_instance;
         }
     }
+
+#if RMW_CONNEXT_ASYNC_PUBLISH
+    if (nullptr != publish_mode)
+    {
+        publish_mode->kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+    }
+#else
+    UNUSED_ARG(publish_mode);
+#endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 
     return RMW_RET_OK;
 }

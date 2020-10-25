@@ -18,81 +18,10 @@
 
 # Generated from @PROJECT_NAME@/cmake/@PROJECT_NAME@-extras.cmake.in
 
-set(RTIConnextDDSMicro_FOUND    @RTIConnextDDSMicro_FOUND@
-    CACHE INTERNAL "" FORCE)
-
-set(RTIME_LIBRARIES     @RTIME_LIBRARIES@
-    CACHE INTERNAL "" FORCE)
-
-get_filename_component(RTIME_BASEDIR
-    "${@PROJECT_NAME@_DIR}/../../.." REALPATH CACHE)
-
-set(RTIME_INCLUDE_DIR   "${RTIME_BASEDIR}/include"
-    CACHE INTERNAL "" FORCE)
-
-set(RTIME_LIB_DIR "${RTIME_BASEDIR}/lib"
-    CACHE INTERNAL "" FORCE)
-
-macro(rti_find_connextmicro_lib rtime_lib)
-    set(rtime_tgt   lib${rtime_lib})
-    find_library(${rtime_tgt}
-        NAME
-            ${rtime_lib}
-        PATHS
-            "${RTIME_LIB_DIR}"
-        NO_DEFAULT_PATH
-        NO_CMAKE_PATH
-        NO_CMAKE_ENVIRONMENT_PATH
-        NO_SYSTEM_ENVIRONMENT_PATH
-        NO_CMAKE_SYSTEM_PATH)
-    
-    if(${rtime_tgt}-NOTFOUND)
-        message(FATAL_ERROR "required library ${rtime_lib} not found under ${RTIME_LIB_DIR}")
-    else()
-        message(STATUS "RTIME lib found: ${rtime_tgt}")
-    endif()
-endmacro()
-
-function(rti_find_connextmicro)
-    set(location_property IMPORTED_LOCATION)
-    if(WIN32)
-        set(location_property IMPORTED_IMPLIB)
-    endif()
-
-    list(GET RTIME_LIBRARIES 0 rtime_core)
-    set(rtime_extra ${RTIME_LIBRARIES})
-    list(REMOVE_AT rtime_extra 0)
-
-    rti_find_connextmicro_lib(${rtime_core})
-    add_library(RTIConnextDDSMicro::${rtime_core} SHARED IMPORTED)
-    set_target_properties(RTIConnextDDSMicro::${rtime_core}
-        PROPERTIES
-            IMPORTED_NO_SONAME TRUE
-            ${location_property}
-                "${${rtime_tgt}}"
-            INTERFACE_INCLUDE_DIRECTORIES
-                "${RTIME_INCLUDE_DIR}")
-
-    set(rtime_libraries     RTIConnextDDSMicro::${rtime_core})
-    foreach(rtime_lib ${rtime_extra})
-        rti_find_connextmicro_lib(${rtime_lib})
-        add_library(RTIConnextDDSMicro::${rtime_lib} SHARED IMPORTED)
-        set_target_properties(RTIConnextDDSMicro::${rtime_lib}
-            PROPERTIES
-                IMPORTED_NO_SONAME TRUE
-                ${location_property}
-                    "${${rtime_tgt}}"
-                INTERFACE_INCLUDE_DIRECTORIES
-                    "${RTIME_INCLUDE_DIR}"
-                INTERFACE_LINK_LIBRARIES
-                   RTIConnextDDSMicro::${rtime_core})
-        list(APPEND rtime_libraries RTIConnextDDSMicro::${rtime_lib})
-    endforeach()
-
-    set(RTIME_DEPS      ${rtime_libraries}
+if(@RTIConnextDDSMicro_FOUND@)
+    set(RTIMEHOME               @RTIMEHOME@
         CACHE INTERNAL "" FORCE)
 
-    message(STATUS "RTIME_DEPS = ${RTIME_DEPS}")
-endfunction()
-
-rti_find_connextmicro()
+    set(RTIME_TARGET_NAME       @RTIME_TARGET_NAME@
+        CACHE INTERNAL "" FORCE)
+endif()

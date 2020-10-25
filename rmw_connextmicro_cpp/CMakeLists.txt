@@ -19,6 +19,9 @@ project(rmw_connextmicro_cpp)
 find_package(ament_cmake REQUIRED)
 find_package(rmw_connextdds_common_cpp REQUIRED)
 find_package(rti_connext_dds_micro_vendor REQUIRED)
+find_package(rti_connext_dds_micro_ext REQUIRED)
+
+rti_find_connextmicro()
 
 if(NOT RTIConnextDDSMicro_FOUND)
     ament_package()
@@ -27,10 +30,10 @@ if(NOT RTIConnextDDSMicro_FOUND)
     return()
 endif()
 
-set(connext_deps        rti_connext_dds_micro_vendor)
-set(connext_includes    ${RTIME_INCLUDE_DIR})
+set(connext_deps        rti_connext_dds_micro_ext)
+set(connext_includes    )
 set(connext_api         MICRO)
-set(connext_libs        ${RTIME_DEPS} rti_connext_dds_micro_vendor)
+set(connext_libs        ${RTIME_TARGETS})
 set(connext_src
     src/rmw_type_support_rtime.cpp
     src/dds_api_rtime.cpp

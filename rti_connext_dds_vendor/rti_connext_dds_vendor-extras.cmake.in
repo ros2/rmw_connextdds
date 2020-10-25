@@ -18,11 +18,10 @@
 
 # Generated from @PROJECT_NAME@/cmake/@PROJECT_NAME@-extras.cmake.in
 
-set(RTIConnextDDS_FOUND     @RTIConnextDDS_FOUND@
-    CACHE INTERNAL "" FORCE)
+if(@RTIConnextDDS_FOUND@)
+    set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
+        CACHE INTERNAL "" FORCE)
 
-set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
-    CACHE INTERNAL "" FORCE)
-
-set(CONNEXTDDS_DIR          @CONNEXTDDS_DIR@
-    CACHE INTERNAL "" FORCE)
+    set(CONNEXTDDS_DIR          @CONNEXTDDS_DIR@
+        CACHE INTERNAL "" FORCE)
+endif()

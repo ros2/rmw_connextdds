@@ -34,6 +34,16 @@ function(rti_load_rmw_source basedir)
 
 endfunction()
 
+function(rti_lib_suffix var)
+    set(rti_lib_sfx         "")
+
+    if("${CMAKE_BUILD_TYPE}" MATCHES "[dD]ebug" OR
+        "${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo")
+        string(APPEND rti_lib_sfx "d")
+    endif()
+
+    set(${var} "${rti_lib_sfx}" PARENT_SCOPE)
+endfunction()
 
 ################################################################################
 # 
@@ -55,32 +65,217 @@ function(rti_init_env)
         CACHE STRING "Suffix for RTI libraries based on target build")
 endfunction()
 
+function(_list_first_element list_var match_prefix out_var)
+    file(GLOB ${list_var} "${match_prefix}")
+    list(LENGTH ${list_var} ${list_var}_len)
+    if (${${list_var}_len} GREATER 0)
+        list(GET ${list_var} 0 first_el)
+        set(${out_var} "${first_el}" PARENT_SCOPE)
+    endif()
+endfunction()
+
 ################################################################################
 # 
 ################################################################################
-macro(rti_load_rtimehome)
-    # Locate Micro's installation from RTIMEHOME
-    #message(STATUS "pre RTIMEHOME = ${RTIMEHOME}")
-    #message(STATUS "pre ENV{RTIMEHOME} = $ENV{RTIMEHOME}")
+function(rti_load_rtimehome)
     if(NOT DEFINED RTIMEHOME)
         if(NOT "$ENV{RTIMEHOME}" STREQUAL "")
             set(RTIMEHOME       "$ENV{RTIMEHOME}")
         else()
             rti_load_connextddsdir()
-            set(RTIMEHOME "${CONNEXTDDS_DIR}/rti_connext_dds_micro-3.0.3")
+
+            if(CONNEXTDDS_DIR_FOUND)
+                _list_first_element(rtime_installations
+                    "${CONNEXTDDS_DIR}/rti_connext_dds_micro-*"
+                    RTIMEHOME)
+            endif()
         endif()
     endif()
 
     if("${RTIMEHOME}" STREQUAL "" OR
-        NOT EXISTS "${RTIMEHOME}")
+        NOT EXISTS "${RTIMEHOME}" OR
+        NOT EXISTS "${RTIMEHOME}/CMakeLists.txt")
         set(RTIMEHOME_FOUND false)
+        message(STATUS "Invalid RTIMEHOME = '${RTIMEHOME}'")
     else()
         set(RTIMEHOME_FOUND true)
+        message(STATUS "Detected RTIMEHOME = '${RTIMEHOME}'")
     endif()
-    #message(STATUS "post RTIMEHOME = ${RTIMEHOME}")
-endmacro()
 
-macro(rti_load_connextddsdir)
+    set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
+    set(RTIMEHOME_FOUND "${RTIMEHOME_FOUND}" PARENT_SCOPE)
+endfunction()
+
+################################################################################
+# 
+################################################################################
+function(rti_build_connextmicro)
+    set(RTIMEHOME_FOUND false PARENT_SCOPE)
+    set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
+    set(RTIME_TARGETS "" PARENT_SCOPE)
+
+    rti_load_rtimehome()
+
+    if(WIN32 OR CYGWIN)
+        set(RTIME_TARGET_NAME       "Windows")
+    elseif(APPLE)
+        set(RTIME_TARGET_NAME       "Darwin")
+    else()
+        set(RTIME_TARGET_NAME       "Linux")
+    endif()
+    set(RTIME_TARGET_NAME           "${RTIME_TARGET_NAME}")
+    set(RTIME_DDS_ENABLE_APPGEN     false)
+    set(RTIME_NO_SHARED_LIB         false)
+    set(RTIME_EXCLUDE_DPSE          true)
+    set(RTIME_EXCLUDE_CPP           true)
+
+    add_subdirectory(${RTIMEHOME} rtime)
+
+    rti_lib_suffix(rti_lib_sfx)
+
+    set(rtime_targets
+        rti_me${rti_lib_sfx}
+        rti_me_netiosdm${rti_lib_sfx}
+        rti_me_netioshmem${rti_lib_sfx}
+        rti_me_whsm${rti_lib_sfx}
+        rti_me_rhsm${rti_lib_sfx}
+        rti_me_discdpde${rti_lib_sfx})
+    
+    set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
+    set(RTIMEHOME_FOUND false PARENT_SCOPE)
+    set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
+    set(RTIME_TARGETS "" PARENT_SCOPE)
+endfunction()
+
+################################################################################
+# 
+################################################################################
+function(rti_find_connextmicro_lib basedir rtime_lib)
+    find_library(lib${rtime_lib}
+        NAME
+            ${rtime_lib}
+        PATHS
+            "${basedir}"
+        NO_DEFAULT_PATH
+        NO_CMAKE_PATH
+        NO_CMAKE_ENVIRONMENT_PATH
+        NO_SYSTEM_ENVIRONMENT_PATH
+        NO_CMAKE_SYSTEM_PATH)
+    
+    if("${lib${rtime_lib}}" MATCHES NOTFOUND)
+        message(STATUS "Library ${rtime_lib} not found in ${basedir}. RTI Connext DDS Micro will not be available")
+        set(${rtime_lib}_FOUND false PARENT_SCOPE)
+        return()
+    endif()
+
+    set(lib${rtime_lib} ${lib${rtime_lib}} PARENT_SCOPE)
+    message(STATUS "Found library ${rtime_lib}: ${lib${rtime_lib}} (${lib${rtime_lib}-NOTFOUND})")
+    set(${rtime_lib}_FOUND true PARENT_SCOPE)
+endfunction()
+
+################################################################################
+# 
+################################################################################
+function(rti_find_connextmicro)
+    set(lib_prefix      RTIConnextDDSMicro)
+    set(RTIMEHOME_FOUND false PARENT_SCOPE)
+    set(${lib_prefix}_FOUND false PARENT_SCOPE)
+    set(RTIME_TARGETS "" PARENT_SCOPE)
+
+    rti_lib_suffix(rti_lib_sfx)
+
+    set(rtime_libraries
+        rti_me${rti_lib_sfx}
+        rti_me_netiosdm${rti_lib_sfx}
+        rti_me_netioshmem${rti_lib_sfx}
+        rti_me_whsm${rti_lib_sfx}
+        rti_me_rhsm${rti_lib_sfx}
+        rti_me_discdpde${rti_lib_sfx})
+
+    rti_load_rtimehome()
+
+    if (NOT RTIMEHOME_FOUND)
+        message(STATUS "RTIMEHOME not found")
+        return()
+    endif()
+
+    if(NOT DEFINED RTIME_TARGET_NAME)
+        _list_first_element(rtime_installations
+            "${RTIMEHOME}/lib/*"
+            rtime_target_dir)
+
+        if("${rtime_target_dir}" STREQUAL "")
+            message(STATUS "No RTI Connext DDS Micro libraries found under ${RTIMEHOME}/lib")
+        else()
+            get_filename_component(RTIME_TARGET_NAME
+                "${rtime_target_dir}" NAME CACHE)
+            message(STATUS "Automatically detected RTIME_TARGET_NAME = '${RTIME_TARGET_NAME}'")
+        endif()
+    endif()
+
+    set(rtime_lib_dir       "${RTIMEHOME}/lib/${RTIME_TARGET_NAME}")
+    set(rtime_inc_dir       "${RTIMEHOME}/include")
+
+    set(location_property IMPORTED_LOCATION)
+    if(WIN32)
+        set(location_property IMPORTED_IMPLIB)
+    endif()
+
+    list(GET rtime_libraries 0 rtime_core)
+    set(rtime_extra ${rtime_libraries})
+    list(REMOVE_AT rtime_extra 0)
+
+    rti_find_connextmicro_lib(${rtime_lib_dir} ${rtime_core})
+
+    if(NOT ${rtime_core}_FOUND)
+        return()
+    endif()
+
+    set(rtime_core_inc_dirs
+            "${rtime_inc_dir}"
+            "${RTIMEHOME}/src/reda/sequence")
+
+    add_library(${lib_prefix}::${rtime_core} SHARED IMPORTED)
+    set_target_properties(${lib_prefix}::${rtime_core}
+        PROPERTIES
+            IMPORTED_NO_SONAME TRUE
+            ${location_property}
+                "${lib${rtime_core}}"
+            INTERFACE_INCLUDE_DIRECTORIES
+                "${rtime_core_inc_dirs}")
+
+    set(rtime_targets     ${lib_prefix}::${rtime_core})
+
+    foreach(rtime_lib ${rtime_extra})
+        rti_find_connextmicro_lib(${rtime_lib_dir} ${rtime_lib})
+
+        if(NOT ${rtime_lib}_FOUND)
+            return()
+        endif()
+
+        add_library(${lib_prefix}::${rtime_lib} SHARED IMPORTED)
+        set_target_properties(${lib_prefix}::${rtime_lib}
+            PROPERTIES
+                IMPORTED_NO_SONAME TRUE
+                ${location_property}
+                    "${lib${rtime_lib}}"
+                INTERFACE_INCLUDE_DIRECTORIES
+                    "${rtime_inc_dir}"
+                INTERFACE_LINK_LIBRARIES
+                    ${lib_prefix}::${rtime_core})
+        list(APPEND rtime_targets ${lib_prefix}::${rtime_lib})
+    endforeach()
+
+    set(RTIMEHOME_FOUND false PARENT_SCOPE)
+    set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
+    set(${lib_prefix}_FOUND true PARENT_SCOPE)
+    set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
+endfunction()
+
+################################################################################
+# 
+################################################################################
+function(rti_load_connextddsdir)
     if(NOT DEFINED CONNEXTDDS_DIR)
         if(NOT "$ENV{CONNEXTDDS_DIR}" STREQUAL "")
             file(TO_CMAKE_PATH "$ENV{CONNEXTDDS_DIR}" connextdds_dir)
@@ -100,95 +295,37 @@ macro(rti_load_connextddsdir)
     if("${CONNEXTDDS_DIR}" STREQUAL "" OR
         NOT EXISTS "${CONNEXTDDS_DIR}")
         set(CONNEXTDDS_DIR_FOUND false)
+        message(STATUS "Invalid CONNEXTDDS_DIR = '${CONNEXTDDS_DIR}'")
     else()
         set(CONNEXTDDS_DIR_FOUND true)
+        message(STATUS "Detected CONNEXTDDS_DIR = '${CONNEXTDDS_DIR}'")
     endif()
-endmacro()
 
-function(rti_build_connextmicro)
-    # TODO try to load binary libraries from RTIMEHOME using
-    # FindRTIConnextDDSMicro.cmake
-
-    set(RTIME_CMAKE_ROOT            "${CMAKE_CURRENT_BINARY_DIR}/rtime-build")
-    if(NOT DEFINED RTIME_TARGET_NAME)    
-        if(WIN32 OR CYGWIN)
-            set(RTIME_TARGET_NAME           "Windows")
-        elseif(APPLE)
-            set(RTIME_TARGET_NAME           "Darwin")
-        else()
-            set(RTIME_TARGET_NAME           "Linux")
-        endif()
-    endif()
-    if(NOT DEFINED RTIME_TARGET)
-        set(RTIME_TARGET            "${RTIME_TARGET_NAME}")
-    endif()
-    set(RTIME_DDS_ENABLE_APPGEN     false CACHE BOOL "")
-    set(RTIME_NO_SHARED_LIB         false CACHE BOOL "")
-    set(RTIME_EXCLUDE_DPSE          true CACHE BOOL "")
-    set(RTIME_EXCLUDE_CPP           true CACHE BOOL "")
-    set(RTIME_BUILD_SINGLE_LIB      false CACHE BOOL "")
-
-    add_subdirectory(${RTIMEHOME} rtime)
-
-    set(RTIME_LIBRARIES
-        rti_me${RTI_LIB_SUFFIX}
-        rti_me_netiosdm${RTI_LIB_SUFFIX}
-        rti_me_netioshmem${RTI_LIB_SUFFIX}
-        rti_me_whsm${RTI_LIB_SUFFIX}
-        rti_me_rhsm${RTI_LIB_SUFFIX}
-        rti_me_discdpde${RTI_LIB_SUFFIX}
-        CACHE INTERNAL "" FORCE)
-    
-    # set(RTIME_LIBRARIES
-    #     rti_me${RTI_LIB_SUFFIX}
-    #     CACHE INTERNAL "" FORCE)
-
-    install(
-        TARGETS ${RTIME_LIBRARIES}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin)
-    
-    # foreach(rtime_lib ${RTIME_LIBRARIES})
-    #     set_target_properties(${rtime_lib} PROPERTIES
-    #             POSITION_INDEPENDENT_CODE   ON)
-    # endforeach()
+    set(CONNEXTDDS_DIR "${CONNEXTDDS_DIR}" PARENT_SCOPE)
+    set(CONNEXTDDS_DIR_FOUND "${CONNEXTDDS_DIR_FOUND}" PARENT_SCOPE)
 endfunction()
 
 ################################################################################
 # 
 ################################################################################
-function(rti_load_connextpro)
+function(rti_find_connextpro)
     rti_load_connextddsdir()
 
     if(NOT CONNEXTDDS_DIR_FOUND)
-        set(RTIConnextDDS_FOUND false PARENT_SCOPE)
-        return()
-    endif()
-
-    if (NOT DEFINED CONNEXTDDS_VERSION)
-        if(NOT "$ENV{CONNEXTDDS_VERSION}" STREQUAL "")
-            set(CONNEXTDDS_VERSION              "$ENV{CONNEXTDDS_VERSION}")
-        else()
-            set(CONNEXTDDS_VERSION              "6.0.0")
-        endif()
-    endif()
-    list(APPEND CMAKE_MODULE_PATH   "${CONNEXTDDS_DIR}/resource/cmake")
-
-    find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
-        COMPONENTS     core)
-    
-    if (NOT RTIConnextDDS_FOUND)
-        message(STATUS "Failed to load RTI Connext DDS libraries from ${CONNEXTDDS_DIR}")
+        set(RTIConnextDDS_FOUND false)
     else()
-        message(STATUS "Loaded RTI Connext DDS libraries "
-            "from ${CONNEXTDDS_DIR} (version >= ${CONNEXTDDS_VERSION})")
+        set(CONNEXTDDS_VERSION      "6.0.0")
+
+        list(APPEND CMAKE_MODULE_PATH
+            "${CONNEXTDDS_DIR}/resource/cmake")
+
+        find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
+            COMPONENTS     core)
     endif()
 
     set(RTIConnextDDS_FOUND ${RTIConnextDDS_FOUND} PARENT_SCOPE)
-
-    set(CONNEXTDDS_ARCH     "${CONNEXTDDS_ARCH}"
-        CACHE INTERNAL "" FORCE)
+    set(CONNEXTDDS_DIR      "${CONNEXTDDS_DIR}" PARENT_SCOPE)
+    set(CONNEXTDDS_ARCH     "${CONNEXTDDS_ARCH}" PARENT_SCOPE)
 endfunction()
 
 ################################################################################

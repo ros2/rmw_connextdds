@@ -19,21 +19,23 @@ project(rti_connext_dds_vendor C)
 find_package(ament_cmake REQUIRED)
 find_package(rti_cmake_helper REQUIRED)
 
-rti_load_connextpro()
+rti_find_connextpro()
 
-if(RTIConnextDDS_FOUND)
-    if(WIN32)
-        # TODO implement support for Windows
-        # ament_environment_hooks(env_hook/rti_connext_dds.bat.in)
-    else()
-        ament_environment_hooks(env_hook/rti_connext_dds.sh.in)
-    endif()
+if(WIN32)
+    # TODO implement support for Windows
+    # ament_environment_hooks(env_hook/rti_connext_dds.bat.in)
+else()
+    ament_environment_hooks(env_hook/rti_connext_dds.sh.in)
 endif()
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     ament_lint_auto_find_test_dependencies()
 endif()
+
+ament_export_dependencies(
+    rti_cmake_helper
+)
 
 ament_package(
     CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"

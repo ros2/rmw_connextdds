@@ -12,6 +12,7 @@
   <depend>rmw_connextdds_common_cpp</depend>
   
   <depend>rti_connext_dds_micro_vendor</depend>
+  <depend>rti_connext_dds_micro_ext</depend>
   <depend>fastcdr</depend>
   <depend>rcutils</depend>
   <depend>rcpputils</depend>

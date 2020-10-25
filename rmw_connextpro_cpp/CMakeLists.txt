@@ -20,6 +20,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rmw_connextdds_common_cpp REQUIRED)
 find_package(rti_connext_dds_vendor REQUIRED)
 
+rti_find_connextpro()
+
 if(NOT RTIConnextDDS_FOUND)
     ament_package()
     # Skip package if Connext DDS Professional was not found
@@ -38,5 +40,4 @@ set(connext_src
     include/rmw_connextdds_cpp/type_support_impl.hpp
     include/rmw_connextdds_cpp/typecode.hpp)
 
-rti_load_connextpro()
 rti_build_rmw_connext()

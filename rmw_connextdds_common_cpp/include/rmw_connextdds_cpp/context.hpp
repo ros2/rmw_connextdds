@@ -64,6 +64,9 @@ struct rmw_context_impl_t
     DDS_DataReader *dr_publications;
     DDS_DataReader *dr_subscriptions;
 
+    /* Keep track of whether the DomainParticipant is localhost only */
+    bool localhost_only;
+
     /* Participant reference count*/
     size_t node_count{0};
     std::mutex initialization_mutex;
@@ -87,7 +90,8 @@ struct rmw_context_impl_t
       dds_sub(nullptr),
       dr_participants(nullptr),
       dr_publications(nullptr),
-      dr_subscriptions(nullptr)
+      dr_subscriptions(nullptr),
+      localhost_only(base->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED)
     {
         /* destructor relies on these being initialized properly */
         common.thread_is_running.store(false);
@@ -99,7 +103,7 @@ struct rmw_context_impl_t
     // Initializes the participant, if it wasn't done already.
     // node_count is increased
     rmw_ret_t
-    initialize_node();
+    initialize_node(const bool localhost_only);
 
     // Destroys the participant, when node_count reaches 0.
     rmw_ret_t

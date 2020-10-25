@@ -121,8 +121,9 @@ rmw_connextdds_initialize_participant_qos_impl(
     dp_qos->resource_limits.type_code_max_serialized_length = 0;
 #endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
 
-    if (ctx->base->options.localhost_only)
+    if (ctx->localhost_only)
     {
+        printf("LOCALHOST only\n");
         if (DDS_RETCODE_OK !=
                 DDS_PropertyQosPolicyHelper_assert_property(
                     &dp_qos->property,

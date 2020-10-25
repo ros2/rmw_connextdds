@@ -2769,63 +2769,113 @@ std::string
 rmw_connextdds_create_type_name(
     const char *const message_namespace,
     const char *const message_name,
-    const char *const message_suffix = "_")
+    const char *const message_suffix,
+    const bool mangle_prefix)
 {
+    const char *prefix_sfx = "";
+    if (mangle_prefix)
+    {
+        prefix_sfx = "_";
+    }
+
     std::ostringstream ss;
     std::string msg_namespace(message_namespace);
     if (!msg_namespace.empty())
     {
         ss << msg_namespace << "::";
     }
-    ss << "dds_::" << message_name << message_suffix;
+    ss << "dds" << prefix_sfx << "::" << message_name << message_suffix;
     return ss.str();
 }
 
 std::string
 rmw_connextdds_create_type_name(
-    const message_type_support_callbacks_t * callbacks)
+    const message_type_support_callbacks_t * callbacks,
+    const bool mangle_names)
 {
+    const char *msg_prefix = "";
+    const bool mangle_prefix = mangle_names;
+    if (mangle_names)
+    {
+        msg_prefix = "_";
+    }
     return rmw_connextdds_create_type_name(
                 callbacks->message_namespace_,
-                callbacks->message_name_);
+                callbacks->message_name_,
+                msg_prefix,
+                mangle_prefix);
 }
 
 std::string
 rmw_connextdds_create_type_name(
-    const rosidl_typesupport_introspection_cpp::MessageMembers *const members)
+    const rosidl_typesupport_introspection_cpp::MessageMembers *const members,
+    const bool mangle_names)
 {
+    const char *msg_prefix = "";
+    const bool mangle_prefix = mangle_names;
+    if (mangle_names)
+    {
+        msg_prefix = "_";
+    }
     return rmw_connextdds_create_type_name(
                 members->message_namespace_,
-                members->message_name_);
+                members->message_name_,
+                msg_prefix,
+                mangle_prefix);
 }
 
 std::string
 rmw_connextdds_create_type_name(
-    const rosidl_typesupport_introspection_c__MessageMembers *const members)
+    const rosidl_typesupport_introspection_c__MessageMembers *const members,
+    const bool mangle_names)
 {
+    const char *msg_prefix = "";
+    const bool mangle_prefix = mangle_names;
+    if (mangle_names)
+    {
+        msg_prefix = "_";
+    }
     return rmw_connextdds_create_type_name(
                 members->message_namespace_,
-                members->message_name_);
+                members->message_name_,
+                msg_prefix,
+                mangle_prefix);
 }
 
 std::string
 rmw_connextdds_create_type_name_request(
-    const service_type_support_callbacks_t * callbacks)
+    const service_type_support_callbacks_t * callbacks,
+    const bool mangle_names)
 {
+    const char *msg_prefix = "Request";
+    const bool mangle_prefix = mangle_names;
+    if (mangle_names)
+    {
+        msg_prefix = "_Request_";
+    }
     return rmw_connextdds_create_type_name(
                 callbacks->service_namespace_,
                 callbacks->service_name_,
-                "_Request_");
+                msg_prefix,
+                mangle_prefix);
 }
 
 std::string
 rmw_connextdds_create_type_name_response(
-    const service_type_support_callbacks_t * callbacks)
+    const service_type_support_callbacks_t * callbacks,
+    const bool mangle_names)
 {
+    const char *msg_prefix = "Response";
+    const bool mangle_prefix = mangle_names;
+    if (mangle_names)
+    {
+        msg_prefix = "_Response_";
+    }
     return rmw_connextdds_create_type_name(
                 callbacks->service_namespace_,
                 callbacks->service_name_,
-                "_Response_");
+                msg_prefix,
+                mangle_prefix);
 }
 
 /******************************************************************************

@@ -1628,23 +1628,28 @@ void rmw_connextdds_get_entity_gid(
  ******************************************************************************/
 std::string
 rmw_connextdds_create_type_name(
-    const message_type_support_callbacks_t * callbacks);
+    const message_type_support_callbacks_t * callbacks,
+    const bool mangle_names = true);
 
 std::string
 rmw_connextdds_create_type_name(
-    const rosidl_typesupport_introspection_cpp::MessageMembers *const members);
+    const rosidl_typesupport_introspection_cpp::MessageMembers *const members,
+    const bool mangle_names = true);
 
 std::string
 rmw_connextdds_create_type_name(
-    const rosidl_typesupport_introspection_c__MessageMembers *const members);
+    const rosidl_typesupport_introspection_c__MessageMembers *const members,
+    const bool mangle_names = true);
 
 std::string
 rmw_connextdds_create_type_name_request(
-    const service_type_support_callbacks_t * callbacks);
+    const service_type_support_callbacks_t * callbacks,
+    const bool mangle_names = true);
 
 std::string
 rmw_connextdds_create_type_name_response(
-    const service_type_support_callbacks_t * callbacks);
+    const service_type_support_callbacks_t * callbacks,
+    const bool mangle_names = true);
 
 /******************************************************************************
  * Topic Helpers

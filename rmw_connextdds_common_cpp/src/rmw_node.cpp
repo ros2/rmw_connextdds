@@ -38,9 +38,13 @@ extern "C" rmw_node_t * rmw_create_node(
 #endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_ROLLING */
     )
 {
+    bool node_localhost_only = false;
+
 #if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING
     UNUSED_ARG(domain_id);
     UNUSED_ARG(localhost_only);
+
+    node_localhost_only = localhost_only;
 #endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_ROLLING */
     RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
     RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -97,7 +101,7 @@ extern "C" rmw_node_t * rmw_create_node(
         return nullptr;
     }
 
-    ret = ctx->initialize_node();
+    ret = ctx->initialize_node(node_localhost_only);
     if (RMW_RET_OK != ret)
     {
         RMW_CONNEXT_LOG_ERROR("failed to initialize node in context")

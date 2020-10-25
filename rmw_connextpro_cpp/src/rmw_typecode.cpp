@@ -381,13 +381,21 @@ rmw_connextdds_convert_type_member(
         {
             type_name = rmw_connextdds_create_type_name(
                 (rosidl_typesupport_introspection_cpp::MessageMembers*)
-                    type_support_intro->data);
+                    type_support_intro->data
+#if RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
+                    , false /* mangle_names */
+#endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
+                );
         }
         else
         {
             type_name = rmw_connextdds_create_type_name(
                 (rosidl_typesupport_introspection_c__MessageMembers*)
-                    type_support_intro->data);
+                    type_support_intro->data
+#if RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
+                    , false /* mangle_names */
+#endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
+                );
         }
         
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(

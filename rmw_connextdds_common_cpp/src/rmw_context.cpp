@@ -123,15 +123,24 @@ rmw_connextdds_initialize_participant_qos(
 
 
 rmw_ret_t
-rmw_context_impl_t::initialize_node()
+rmw_context_impl_t::initialize_node(const bool localhost_only)
 {
     RMW_CONNEXT_LOG_DEBUG_A(
-        "initializing new node: total=%lu", this->node_count)
+        "initializing new node: total=%lu, localhost=%d",
+        this->node_count, localhost_only)
 
     std::lock_guard<std::mutex> guard(this->initialization_mutex);
     if (0u != this->node_count)
     {
-        // initialization has already been done
+        if ((this->localhost_only && !localhost_only) ||
+            (!this->localhost_only && !localhost_only))
+        {
+            RMW_CONNEXT_LOG_ERROR_A("incompatible node for context:"
+                "ctx.localhost_only=%d, node.localhost_only=%d",
+                this->localhost_only, localhost_only)
+            return RMW_RET_ERROR;
+        }
+
         this->node_count += 1;
         RMW_CONNEXT_LOG_DEBUG_A(
             "initialized new node: total=%lu", this->node_count)

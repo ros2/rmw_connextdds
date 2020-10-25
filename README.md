@@ -64,38 +64,44 @@ For any question or feedback, please contact robotics@rti.com.
 
 ## Requirements
 
-Both RMW packages required the appropriate version of RTI Connext DDS to be
-available on your system.
+Both RMW packages require the appropriate version of RTI Connext DDS to be
+available on the build and target systems.
 
-`rmw_connextpro_cpp` requires RTI Connext DDS Professional version 6.0.0 or later,
-while `rmw_connextmicro_cpp` requires RTI Connext DDS Micro version 3.0.0 or later.
+`rmw_connextpro_cpp` requires RTI Connext DDS Professional (version 6 or later),
+while `rmw_connextmicro_cpp` requires RTI Connext DDS Micro (version 3 or later).
 
 The installations must be made available via environment variables. If no
 valid installation is detected, the packages will be skipped and not be built.
 
-|RMW|Product|Environment Variable|Default|
-|---|-------|--------|-------|
-|`rmw_connextpro_cpp`|RTI Connext DDS Professional 6.x|`CONNEXTDDS_DIR`, or `NDDSHOME`|None|
-|`rmw_connextmicro_cpp`|RTI Connext DDS Micro 3.x |`RTIMEHOME`|Guessed from contents of RTI Connext DDS Professional installation.|
+|RMW|RTI Product|Environment Variable(s)|Required|Default|
+|---|-----------|-----------------------|--------|-------|
+|`rmw_connextpro_cpp`|RTI Connext DDS Professional 6.x|`CONNEXTDDS_DIR`, or `NDDSHOME`|Yes|None|
+|`rmw_connextmicro_cpp`|RTI Connext DDS Micro 3.x |`RTIMEHOME`|No (if RTI Connext DDS Professional 6.x is available)|Guessed from contents of RTI Connext DDS Professional installation.|
 
-### OSRF RMW (rmw_connext_cpp)
+### Compatibility with rmw_connext_cpp
 
-Users of the old RMW by OSRF (`rmw_connext_cpp`) who are using the version of
-RTI Connext DDS Professional 5.3.1 installed via `apt` should either:
+Users of the old RMW developed by OSRF (`rmw_connext_cpp`) might be using
+RTI Connext DDS Professional 5.3.1 installed via `apt`, in which
+case they should either:
 
-- Uninstall RTI Connext DDS Professional 5.3.1 and the old RMW.
+- Uninstall RTI Connext DDS Professional 5.3.1 with `apt`, and manually install
+  RTI Connext DDS Professional 6 or later.
 
 - Avoid pointing `${NDDSHOME}` to RTI Connext DDS Professional 5.3.1,
   e.g. by not sourcing `/opt/rti.com/rti_connext_dds-5.3.1/setenv_ros2rti.bash`.
 
-  - This might not be sufficient since ROS environment hooks installed by the old
-    RMW may override the variable and used the `apt` package version.
+  - This might not be sufficient since ROS environment hooks installed by
+    `connext_cmake_module` (used by `rmw_connext-cpp`) may override the
+    variable and cause the packaged version to be used.
 
-- Specify an installation of RTI Connext DDS Professional 6.x via `${CONNEXTDDS_DIR}`.
+- Specify an installation of RTI Connext DDS Professional 6 or later via
+  `${CONNEXTDDS_DIR}`.
 
   - Package `rti_connext_dds_vendor` will first check `${CONNEXTDDS_DIR}` and then
     fall back to `${NDDSHOME}` to determine the libraries used by `rmw_connextpro_cpp`.
 
-  - If you use the `set_env_<architecture>.bash` script after loading your ROS
-    environment, you might not be able to use the old RMW in the same shell
-    (unless you were already using it with RTI Connext DDS Professional 6.x).
+If the `set_env_<architecture>.bash` script provided by RTI Connext DDS Professional
+is used after loading the ROS environment, `rmw_connext_cpp` might not be usable
+within in the same shell (unless it was already configured to use RTI Connext
+DDS Professional 6.x) since the script modifies `${PATH}` and `${LD_LIBRARY_PATH}`
+(or `${DYLD_LIBRARY_PATH}`, on Darwin).

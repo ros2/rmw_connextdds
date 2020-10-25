@@ -211,9 +211,9 @@ extern "C" rmw_ret_t rmw_take(
 
     RMW_Connext_Subscriber *const sub_impl =
         (RMW_Connext_Subscriber*)subscription->data;
-    // return sub_impl->take_message(ros_message, nullptr, taken);
+    
     rmw_ret_t rc = sub_impl->take_message(ros_message, nullptr, taken);
-    // printf("TAKE sub=%p res=%d\n", (void*)sub_impl, *taken);
+    
     return rc;
 }
 
@@ -239,9 +239,8 @@ extern "C" rmw_ret_t rmw_take_with_info(
     RMW_Connext_Subscriber *const sub_impl =
         (RMW_Connext_Subscriber*)subscription->data;
 
-    // return sub_impl->take_message(ros_message, message_info, taken);
     rmw_ret_t rc = sub_impl->take_message(ros_message, message_info, taken);
-    // printf("TAKE_W_INFO sub=%p res=%d\n", (void*)sub_impl, *taken);
+    
     return rc;
 }
 
@@ -269,11 +268,9 @@ extern "C" rmw_ret_t rmw_take_sequence(
     RMW_Connext_Subscriber *const sub_impl =
         (RMW_Connext_Subscriber*)subscription->data;
 
-    // return sub_impl->take(
-    //             message_sequence, message_info_sequence, count, taken);
     rmw_ret_t rc = sub_impl->take(
                     message_sequence, message_info_sequence, count, taken);;
-    // printf("TAKE_SEQ sub=%p res=%lu\n", (void*)sub_impl, *taken);
+    
     return rc;
 }
 

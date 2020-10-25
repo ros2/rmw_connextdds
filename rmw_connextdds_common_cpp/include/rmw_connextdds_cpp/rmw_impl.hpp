@@ -1676,6 +1676,7 @@ rmw_connextdds_get_readerwriter_qos(
     DDS_DurabilityQosPolicy *const durability,
     DDS_DeadlineQosPolicy *const deadline,
     DDS_LivelinessQosPolicy *const liveliness,
+    DDS_ResourceLimitsQosPolicy *const resource_limits,
     const rmw_qos_profile_t *const qos_policies,
     const rmw_publisher_options_t *const pub_options,
     const rmw_subscription_options_t *const sub_options);

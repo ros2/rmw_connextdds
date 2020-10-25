@@ -396,22 +396,30 @@ macro(rti_build_rmw_connext)
         string(TOUPPER "${RMW_CONNEXT_RELEASE}" rmw_connext_release)
         target_compile_definitions(${PROJECT_NAME}
             PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${rmw_connext_release})
+        set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}"
+            CACHE INTERNAL "")
     endif()
 
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
         string(TOUPPER "${RMW_CONNEXT_LOG_MODE}" rmw_connext_log_mode)
         target_compile_definitions(${PROJECT_NAME}
             PRIVATE RMW_CONNEXT_LOG_MODE=RMW_CONNEXT_LOG_MODE_${rmw_connext_log_mode})
+        set(RMW_CONNEXT_LOG_MODE "${RMW_CONNEXT_LOG_MODE}"
+            CACHE INTERNAL "")
     endif()
 
     if(NOT "${RMW_CONNEXT_EXPORT_MESSAGE_TYPES}" STREQUAL "")
         target_compile_definitions(${PROJECT_NAME}
             PRIVATE RMW_CONNEXT_EXPORT_MESSAGE_TYPES=${RMW_CONNEXT_EXPORT_MESSAGE_TYPES})
+        set(RMW_CONNEXT_EXPORT_MESSAGE_TYPES "${RMW_CONNEXT_EXPORT_MESSAGE_TYPES}"
+            CACHE INTERNAL "")
     endif()
 
     if(NOT "${RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES}" STREQUAL "")
         target_compile_definitions(${PROJECT_NAME}
             PRIVATE RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES=${RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES})
+        set(RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES "${RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES}"
+            CACHE INTERNAL "")
     endif()
 
     # Causes the visibility macros to use dllexport rather than dllimport,

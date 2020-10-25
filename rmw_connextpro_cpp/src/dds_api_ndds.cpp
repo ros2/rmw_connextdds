@@ -115,10 +115,70 @@ rmw_connextdds_initialize_participant_qos_impl(
     UNUSED_ARG(dp_qos);
 
 #if !RMW_CONNEXT_EXPORT_MESSAGE_TYPES
-    dp_qos.resource_limits.type_code_max_serialized_length = 0;
-    dp_qos.resource_limits.type_object_max_serialized_length = 0;
+    dp_qos->resource_limits.type_code_max_serialized_length = 0;
+    dp_qos->resource_limits.type_object_max_serialized_length = 0;
+#else
+    dp_qos->resource_limits.type_code_max_serialized_length = 0;
 #endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
+
+    if (ctx->base->options.localhost_only)
+    {
+        if (DDS_RETCODE_OK !=
+                DDS_PropertyQosPolicyHelper_assert_property(
+                    &dp_qos->property,
+                    "dds.transport.UDPv4.builtin.parent.allow_interfaces",
+                    "127.0.0.1",
+                    DDS_BOOLEAN_FALSE /* propagate */))
+        {
+            RMW_CONNEXT_LOG_ERROR("failed to assert property on participant")
+            return RMW_RET_ERROR;
+        }
+    }
+
+    const char *const user_data_fmt = "enclave=%s;";
+
+    const int user_data_len =
+        std::snprintf(
+            nullptr, 0, user_data_fmt, ctx->base->options.enclave) + 1;
+
+    if (!DDS_OctetSeq_ensure_length(
+            &dp_qos->user_data.value, user_data_len, user_data_len))
+    {
+        RMW_CONNEXT_LOG_ERROR("failed to set user_data length")
+        return RMW_RET_ERROR;
+    }
+
+    char *const user_data_ptr = (char*)
+        DDS_OctetSeq_get_contiguous_buffer(&dp_qos->user_data.value);
     
+    const int user_data_rc =
+        std::snprintf(
+            user_data_ptr,
+            user_data_len,
+            user_data_fmt,
+            ctx->base->options.enclave);
+    
+    if (user_data_rc < 0 || user_data_rc != user_data_len - 1)
+    {
+        RMW_CONNEXT_LOG_ERROR("failed to set user_data")
+        return RMW_RET_ERROR;
+    }
+
+    // According to the RTPS spec, ContentFilterProperty_t has the following fields:
+    // -contentFilteredTopicName (max length 256)
+    // -relatedTopicName (max length 256)
+    // -filterClassName (max length 256)
+    // -filterName (DDSSQL)
+    // -filterExpression
+    // In Connext, contentfilter_property_max_length is sum of lengths of all these fields,
+    // which by default is 256.
+    // So we set the limit to 1024, to accomodate the complete topic name with namespaces.
+    if (dp_qos->resource_limits.contentfilter_property_max_length !=
+            DDS_LENGTH_UNLIMITED)
+    {
+        dp_qos->resource_limits.contentfilter_property_max_length = 1024;
+    }
+
     return RMW_RET_OK;
 }
 
@@ -182,6 +242,7 @@ rmw_connextdds_get_datawriter_qos(
                 &qos->durability,
                 &qos->deadline,
                 &qos->liveliness,
+                &qos->resource_limits,
                 qos_policies,
                 pub_options,
                 nullptr /* sub_options */))
@@ -217,6 +278,7 @@ rmw_connextdds_get_datareader_qos(
                 &qos->durability,
                 &qos->deadline,
                 &qos->liveliness,
+                &qos->resource_limits,
                 qos_policies,
                 nullptr /* pub_options */,
                 sub_options))

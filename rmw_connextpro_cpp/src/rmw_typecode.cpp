@@ -642,9 +642,6 @@ rmw_connextdds_create_typecode(
         return nullptr;
     }
 
-    // printf("GENERATED TYPE CODE %s:\n", type_name);
-    // DDS_TypeCode_print_IDL(tc, 4, &ex);
-
     return tc;
 }
 

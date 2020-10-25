@@ -126,6 +126,7 @@ rmw_connextdds_get_readerwriter_qos(
     DDS_DurabilityQosPolicy *const durability,
     DDS_DeadlineQosPolicy *const deadline,
     DDS_LivelinessQosPolicy *const liveliness,
+    DDS_ResourceLimitsQosPolicy *const resource_limits,
     const rmw_qos_profile_t *const qos_policies,
     const rmw_publisher_options_t *const pub_options,
     const rmw_subscription_options_t *const sub_options)
@@ -266,6 +267,21 @@ rmw_connextdds_get_readerwriter_qos(
     {
         return RMW_RET_ERROR;
     }
+    }
+
+    // Make sure that resource limits are consistent with history qos
+    // TODO do not overwrite if using non-default QoS
+    if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
+        history->depth > 1 &&
+        resource_limits->max_samples_per_instance == DDS_LENGTH_UNLIMITED)
+    {
+        resource_limits->max_samples_per_instance = history->depth;
+        if (resource_limits->max_samples != DDS_LENGTH_UNLIMITED &&
+            resource_limits->max_samples < resource_limits->max_samples_per_instance)
+        {
+            resource_limits->max_samples =
+                resource_limits->max_samples_per_instance;
+        }
     }
 
     return RMW_RET_OK;
@@ -1566,13 +1582,6 @@ RMW_Connext_Subscriber::take_next(
                 }
 
                 *taken += 1;
-                // printf("[reader][%p] message taken\n", (void*)this);
-                // RMW_CONNEXT_LOG_DEBUG_A("message TAKEN (%lu/%lu): "
-                //     "reader=%p, type=%s, msg=%p",
-                //     this->loan_next + 1, this->loan_len,
-                //     (void*)this->dds_reader,
-                //     this->type_support->type_name(),
-                //     (void*)ros_message)
                 continue;
             }
         }
@@ -2492,8 +2501,6 @@ RMW_Connext_WaitSet::wait(
                     (void*)this->waitset,
                     (void*)sub->condition(),
                     (void*)sub)
-                
-                // printf("ACTIVE READER %p\n", (void*)sub->reader());
             }
         },
         /* on inactive */

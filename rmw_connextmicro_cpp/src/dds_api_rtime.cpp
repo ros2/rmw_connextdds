@@ -666,6 +666,7 @@ rmw_connextdds_get_datawriter_qos(
                 &qos->durability,
                 &qos->deadline,
                 &qos->liveliness,
+                &qos->resource_limits,
                 qos_policies,
                 pub_options,
                 nullptr /* sub_options */))
@@ -710,6 +711,7 @@ rmw_connextdds_get_datareader_qos(
                 &qos->durability,
                 &qos->deadline,
                 &qos->liveliness,
+                &qos->resource_limits,
                 qos_policies,
                 nullptr /* pub_options */,
                 sub_options))

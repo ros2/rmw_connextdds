@@ -123,6 +123,13 @@ rmw_connextdds_initialize_participant_factory(
                     RMW_CONNEXT_LOG_ERROR("failed to unregister udp")
                 }
             }
+            if (ctx_api->rt_shmem)
+            {
+                if (!RT_Registry_unregister( registry, shmem_name, NULL, NULL))
+                {
+                    RMW_CONNEXT_LOG_ERROR("failed to unregister shmem")
+                }
+            }
             if (ctx_api->rt_dpde)
             {
                 if(!RT_Registry_unregister(registry, dpde_name, NULL, NULL))
@@ -257,6 +264,7 @@ rmw_connextdds_initialize_participant_factory(
 
     ctx_api->rt_udp = true;
 
+#if RMW_CONNEXT_TRANSPORT_SHMEM
     struct NETIO_SHMEMInterfaceFactoryProperty shmem_property =
         NETIO_SHMEMInterfaceFactoryProperty_INITIALIZER;
 
@@ -270,6 +278,7 @@ rmw_connextdds_initialize_participant_factory(
     }
 
     ctx_api->rt_shmem = true;
+#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
 
     struct DPDE_DiscoveryPluginProperty discovery_plugin_properties =
                 DPDE_DiscoveryPluginProperty_INITIALIZER;
@@ -452,12 +461,19 @@ rmw_connextdds_initialize_participant_qos_impl(
     //     }
     // }
 
+    size_t max_transports = 1;
+#if RMW_CONNEXT_TRANSPORT_SHMEM
+    max_transports += 1;
+#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+
     /* Mark only UDP transport as enabled, and skip INTRA */
-    if (!REDA_StringSeq_set_maximum(&dp_qos->transports.enabled_transports, 2))
+    if (!REDA_StringSeq_set_maximum(
+            &dp_qos->transports.enabled_transports, max_transports))
     {
         return RMW_RET_ERROR;
     }
-    if (!REDA_StringSeq_set_length(&dp_qos->transports.enabled_transports, 2))
+    if (!REDA_StringSeq_set_length(
+            &dp_qos->transports.enabled_transports, max_transports))
     {
         return RMW_RET_ERROR;
     }
@@ -469,6 +485,7 @@ rmw_connextdds_initialize_participant_qos_impl(
         return RMW_RET_ERROR;
     }
 
+#if RMW_CONNEXT_TRANSPORT_SHMEM
     seq_ref = 
         REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 1);
     *seq_ref = REDA_String_dup(NETIO_DEFAULT_SHMEM_NAME);
@@ -476,24 +493,15 @@ rmw_connextdds_initialize_participant_qos_impl(
     {
         return RMW_RET_ERROR;
     }
+#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
 
-    if (!REDA_StringSeq_set_maximum(&dp_qos->user_traffic.enabled_transports, 2))
+    if (!REDA_StringSeq_set_maximum(
+            &dp_qos->user_traffic.enabled_transports, max_transports))
     {
         return RMW_RET_ERROR;
     }
-    if (!REDA_StringSeq_set_length(&dp_qos->user_traffic.enabled_transports, 2))
-    {
-        return RMW_RET_ERROR;
-    }
-
-    seq_ref = 
-        REDA_StringSeq_get_reference(
-            &dp_qos->user_traffic.enabled_transports, 0);
-    std::ostringstream shmem_ss;
-    shmem_ss << NETIO_DEFAULT_SHMEM_NAME << "://";
-    
-    *seq_ref = REDA_String_dup(shmem_ss.str().c_str());
-    if (nullptr == *seq_ref)
+    if (!REDA_StringSeq_set_length(
+            &dp_qos->user_traffic.enabled_transports, max_transports))
     {
         return RMW_RET_ERROR;
     }
@@ -510,6 +518,20 @@ rmw_connextdds_initialize_participant_qos_impl(
     {
         return RMW_RET_ERROR;
     }
+
+#if RMW_CONNEXT_TRANSPORT_SHMEM
+    seq_ref = 
+        REDA_StringSeq_get_reference(
+            &dp_qos->user_traffic.enabled_transports, 0);
+    std::ostringstream shmem_ss;
+    shmem_ss << NETIO_DEFAULT_SHMEM_NAME << "://";
+    
+    *seq_ref = REDA_String_dup(shmem_ss.str().c_str());
+    if (nullptr == *seq_ref)
+    {
+        return RMW_RET_ERROR;
+    }
+#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
 
     /* Increate Participant resource limits */
     dp_qos->resource_limits.local_type_allocation =

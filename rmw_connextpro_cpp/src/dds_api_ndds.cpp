@@ -123,7 +123,6 @@ rmw_connextdds_initialize_participant_qos_impl(
 
     if (ctx->localhost_only)
     {
-        printf("LOCALHOST only\n");
         if (DDS_RETCODE_OK !=
                 DDS_PropertyQosPolicyHelper_assert_property(
                     &dp_qos->property,
@@ -179,6 +178,12 @@ rmw_connextdds_initialize_participant_qos_impl(
     {
         dp_qos->resource_limits.contentfilter_property_max_length = 1024;
     }
+
+    dp_qos->transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
+
+#if RMW_CONNEXT_TRANSPORT_SHMEM
+    dp_qos->transport_builtin.mask |= DDS_TRANSPORTBUILTIN_SHMEM;
+#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
 
     return RMW_RET_OK;
 }

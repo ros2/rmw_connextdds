@@ -94,6 +94,13 @@
 #endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 
 /******************************************************************************
+ * Shmem Transport
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_TRANSPORT_SHMEM
+#define RMW_CONNEXT_TRANSPORT_SHMEM     0
+#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+
+/******************************************************************************
  * Qos Profile support
  ******************************************************************************/
 #ifndef RMW_CONNEXT_USE_PROFILES

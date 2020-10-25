@@ -285,14 +285,8 @@ rmw_connextdds_get_readerwriter_qos(
         }
     }
 
-#if RMW_CONNEXT_ASYNC_PUBLISH
-    if (nullptr != publish_mode)
-    {
-        publish_mode->kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-    }
-#else
+    // TODO enable ASYNC publish_mode for both Pro and Micro
     UNUSED_ARG(publish_mode);
-#endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 
     return RMW_RET_OK;
 }

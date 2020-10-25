@@ -252,6 +252,10 @@ rmw_connextdds_get_datawriter_qos(
         return RMW_RET_ERROR;
     }
 
+#if RMW_CONNEXT_ASYNC_PUBLISH
+    qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+#endif /* RMW_CONNEXT_ASYNC_PUBLISH */
+
     return rmw_connextdds_get_qos_policies(
                 true /* writer_qos */,
                 type_support,

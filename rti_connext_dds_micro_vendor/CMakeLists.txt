@@ -25,6 +25,11 @@ find_package(rti_cmake_helper REQUIRED)
 
 rti_find_connextmicro()
 if (NOT RTIConnextDDSMicro_FOUND)
+    if(NOT RTIMEHOME_FOUND)
+        ament_package()
+        message(STATUS "No RTI Connext DDS Micro installation detected. Skipping ${PROJECT_NAME}")
+        return()
+    endif()
     rti_build_connextmicro()
 endif()
 

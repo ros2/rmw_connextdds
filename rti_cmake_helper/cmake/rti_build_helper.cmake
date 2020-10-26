@@ -266,7 +266,7 @@ function(rti_find_connextmicro)
         list(APPEND rtime_targets ${lib_prefix}::${rtime_lib})
     endforeach()
 
-    set(RTIMEHOME_FOUND false PARENT_SCOPE)
+    set(RTIMEHOME_FOUND true PARENT_SCOPE)
     set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
     set(${lib_prefix}_FOUND true PARENT_SCOPE)
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)

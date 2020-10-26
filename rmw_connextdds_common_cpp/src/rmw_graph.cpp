@@ -245,6 +245,7 @@ rmw_connextdds_graph_on_node_created(
     const rmw_node_t *const node)
 {
     std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+
     RMW_CONNEXT_LOG_DEBUG_A("[graph] local node created: "
         "node=%s::%s, "
         "dp_gid=%08X.%08X.%08X.%08X",
@@ -401,12 +402,12 @@ rmw_connextdds_graph_on_subscriber_deleted(
     RMW_Connext_Subscriber *const sub)
 {
     std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-        rmw_dds_common::msg::ParticipantEntitiesInfo msg =
-            ctx->common.graph_cache.dissociate_reader(
-                *sub->gid(),
-                ctx->common.gid,
-                node->name,
-                node->namespace_);
+    rmw_dds_common::msg::ParticipantEntitiesInfo msg =
+        ctx->common.graph_cache.dissociate_reader(
+            *sub->gid(),
+            ctx->common.gid,
+            node->name,
+            node->namespace_);
     if (RMW_RET_OK !=
             rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
     {
@@ -564,6 +565,7 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
         }
         if (taken)
         {
+            std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
             ctx->common.graph_cache.update_participant_entities(msg);
         }
     } while (taken);

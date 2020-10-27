@@ -638,12 +638,17 @@ RMW_Connext_TypePlugin_get_serialized_sample_max_size(
         (struct PRESTypePluginDefaultEndpointData*)endpoint_data;
     RMW_Connext_MessageTypeSupport *const type_support =
          (RMW_Connext_MessageTypeSupport*)epd->userData;
-        
-    // RMW_CONNEXT_LOG_DEBUG_A("get serialized sample max size: "
-    //         "type_support=%p", (void*)type_support)
 
+    if (type_support->unbounded())
+    {
+        // TODO do unbounded types need to be handled differently?
+        current_alignment += type_support->type_serialized_size_max();
+    }
+    else
+    {
+        current_alignment += type_support->type_serialized_size_max();
+    }
 
-    current_alignment += type_support->type_serialized_size_max();
     
     if (!include_encapsulation)
     {

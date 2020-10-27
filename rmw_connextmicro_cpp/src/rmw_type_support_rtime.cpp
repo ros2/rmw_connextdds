@@ -409,14 +409,23 @@ RMW_Connext_EncapsulationPlugin_get_serialized_sample_size(
     RTI_UINT32 current_alignment)
 {
     UNUSED_ARG(ep);
-    
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
     
     RTI_UINT32 tot_alignment = current_alignment;
 
-    tot_alignment += type_support->type_serialized_size_max();
-
-    /* TODO what happens if the type is unbounded? */
+    if (type_support->unbounded())
+    {
+#if RMW_CONNEXT_ASYNC_PUBLISH
+        // Report a size that will cause the final payload to exceed the (udp) mtu
+        tot_alignment += RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE;
+#else
+        tot_alignment += type_support->type_serialized_size_max();
+#endif /* RMW_CONNEXT_ASYNC_PUBLISH */
+    }
+    else
+    {
+        tot_alignment += type_support->type_serialized_size_max();
+    }
 
     return tot_alignment - current_alignment;
 }

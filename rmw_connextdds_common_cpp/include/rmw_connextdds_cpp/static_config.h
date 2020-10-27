@@ -97,7 +97,7 @@
  * Shmem Transport
  ******************************************************************************/
 #ifndef RMW_CONNEXT_TRANSPORT_SHMEM
-#define RMW_CONNEXT_TRANSPORT_SHMEM     0
+#define RMW_CONNEXT_TRANSPORT_SHMEM     1
 #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
 
 /******************************************************************************
@@ -107,6 +107,9 @@
 #define RMW_CONNEXT_USE_PROFILES        0
 #endif /* RMW_CONNEXT_USE_PROFILES */
 
+/******************************************************************************
+ * Message type discovery
+ ******************************************************************************/
 #ifndef RMW_CONNEXT_EXPORT_MESSAGE_TYPES
 #define RMW_CONNEXT_EXPORT_MESSAGE_TYPES        1
 #endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
@@ -115,12 +118,19 @@
 #define RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES    1
 #endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
 
-#define RMW_CONNEXT_RELEASE_ROLLING     0
-#define RMW_CONNEXT_RELEASE_FOXY        1
+/******************************************************************************
+ * Message type discovery
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE
+#define RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE        65535
+#endif /* RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE */
 
 /******************************************************************************
  * ROS Target Release
  ******************************************************************************/
+#define RMW_CONNEXT_RELEASE_ROLLING     0
+#define RMW_CONNEXT_RELEASE_FOXY        1
+
 #ifndef RMW_CONNEXT_RELEASE
 #define RMW_CONNEXT_RELEASE             RMW_CONNEXT_RELEASE_ROLLING
 #endif /* RMW_CONNEXT_RELEASE */

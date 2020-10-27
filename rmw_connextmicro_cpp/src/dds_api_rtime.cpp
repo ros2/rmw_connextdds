@@ -697,9 +697,13 @@ rmw_connextdds_get_datawriter_qos(
         return RMW_RET_ERROR;
     }
 
-#if RMW_CONNEXT_ASYNC_PUBLISH && 0
+#if RMW_CONNEXT_ASYNC_PUBLISH
+    // Ideally we shouldn't need to use DDS_String_dup() with a built-in name.
     qos->publish_mode.flow_controller_name = DDS_String_dup(DDS_DEFAULT_FLOW_CONTROLLER_NAME);
-    // qos->publish_mode.flow_controller_name = DDS_DEFAULT_FLOW_CONTROLLER_NAME;
+    if (nullptr == qos->publish_mode.flow_controller_name)
+    {
+        return RMW_RET_ERROR;
+    }
     qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
 #endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 

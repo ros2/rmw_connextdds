@@ -206,6 +206,7 @@ RMW_Connext_EncapsulationPlugin_serialize(
             {
                 return RTI_FALSE;
             }
+            memset(msg_buffer_unbound->buffer, 0, msg_buffer_unbound->buffer_capacity);
         }
         msg_buffer_unbound->buffer_length = 0;
 

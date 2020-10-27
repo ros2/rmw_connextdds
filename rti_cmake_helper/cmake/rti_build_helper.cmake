@@ -177,10 +177,9 @@ endfunction()
 # 
 ################################################################################
 function(rti_find_connextmicro)
-    set(lib_prefix      RTIConnextDDSMicro)
-    set(RTIMEHOME_FOUND false PARENT_SCOPE)
-    set(${lib_prefix}_FOUND false PARENT_SCOPE)
-    set(RTIME_TARGETS "" PARENT_SCOPE)
+    set(RTIMEHOME_FOUND             false PARENT_SCOPE)
+    set(RTIConnextDDSMicro_FOUND    false PARENT_SCOPE)
+    set(RTIME_TARGETS               "" PARENT_SCOPE)
 
     rti_lib_suffix(rti_lib_sfx)
 
@@ -198,6 +197,9 @@ function(rti_find_connextmicro)
         message(STATUS "RTIMEHOME not found")
         return()
     endif()
+
+    set(RTIMEHOME_FOUND     true PARENT_SCOPE)
+    set(RTIMEHOME           "${RTIMEHOME}" PARENT_SCOPE)
 
     if(NOT DEFINED RTIME_TARGET_NAME)
         _list_first_element(rtime_installations
@@ -235,8 +237,8 @@ function(rti_find_connextmicro)
             "${rtime_inc_dir}"
             "${RTIMEHOME}/src/reda/sequence")
 
-    add_library(${lib_prefix}::${rtime_core} SHARED IMPORTED)
-    set_target_properties(${lib_prefix}::${rtime_core}
+    add_library(RTIConnextDDSMicro::${rtime_core} SHARED IMPORTED)
+    set_target_properties(RTIConnextDDSMicro::${rtime_core}
         PROPERTIES
             IMPORTED_NO_SONAME TRUE
             ${location_property}
@@ -244,7 +246,7 @@ function(rti_find_connextmicro)
             INTERFACE_INCLUDE_DIRECTORIES
                 "${rtime_core_inc_dirs}")
 
-    set(rtime_targets     ${lib_prefix}::${rtime_core})
+    set(rtime_targets     RTIConnextDDSMicro::${rtime_core})
 
     foreach(rtime_lib ${rtime_extra})
         rti_find_connextmicro_lib(${rtime_lib_dir} ${rtime_lib})
@@ -253,8 +255,8 @@ function(rti_find_connextmicro)
             return()
         endif()
 
-        add_library(${lib_prefix}::${rtime_lib} SHARED IMPORTED)
-        set_target_properties(${lib_prefix}::${rtime_lib}
+        add_library(RTIConnextDDSMicro::${rtime_lib} SHARED IMPORTED)
+        set_target_properties(RTIConnextDDSMicro::${rtime_lib}
             PROPERTIES
                 IMPORTED_NO_SONAME TRUE
                 ${location_property}
@@ -262,13 +264,13 @@ function(rti_find_connextmicro)
                 INTERFACE_INCLUDE_DIRECTORIES
                     "${rtime_inc_dir}"
                 INTERFACE_LINK_LIBRARIES
-                    ${lib_prefix}::${rtime_core})
-        list(APPEND rtime_targets ${lib_prefix}::${rtime_lib})
+                    RTIConnextDDSMicro::${rtime_core})
+        list(APPEND rtime_targets RTIConnextDDSMicro::${rtime_lib})
     endforeach()
 
     set(RTIMEHOME_FOUND true PARENT_SCOPE)
     set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
-    set(${lib_prefix}_FOUND true PARENT_SCOPE)
+    set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
 endfunction()
 

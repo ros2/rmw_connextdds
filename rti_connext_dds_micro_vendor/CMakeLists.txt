@@ -30,6 +30,7 @@ if (NOT RTIConnextDDSMicro_FOUND)
         message(STATUS "No RTI Connext DDS Micro installation detected. Skipping ${PROJECT_NAME}")
         return()
     endif()
+    message(STATUS "Building RTI Connext DDS Micro from source...")
     rti_build_connextmicro()
 endif()
 

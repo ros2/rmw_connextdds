@@ -698,8 +698,8 @@ rmw_connextdds_get_datawriter_qos(
     }
 
 #if RMW_CONNEXT_ASYNC_PUBLISH && 0
-    // qos->publish_mode.flow_controller_name = DDS_String_dup(DDS_DEFAULT_FLOW_CONTROLLER_NAME);
-    qos->publish_mode.flow_controller_name = DDS_DEFAULT_FLOW_CONTROLLER_NAME;
+    qos->publish_mode.flow_controller_name = DDS_String_dup(DDS_DEFAULT_FLOW_CONTROLLER_NAME);
+    // qos->publish_mode.flow_controller_name = DDS_DEFAULT_FLOW_CONTROLLER_NAME;
     qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
 #endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 

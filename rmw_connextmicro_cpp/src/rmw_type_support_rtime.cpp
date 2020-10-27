@@ -415,7 +415,7 @@ RMW_Connext_EncapsulationPlugin_get_serialized_sample_size(
 
     if (type_support->unbounded())
     {
-#if RMW_CONNEXT_ASYNC_PUBLISH
+#if RMW_CONNEXT_ASYNC_PUBLISH && 0
         // Report a size that will cause the final payload to exceed the (udp) mtu
         tot_alignment += RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE;
 #else

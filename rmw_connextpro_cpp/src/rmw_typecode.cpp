@@ -383,7 +383,7 @@ rmw_connextdds_convert_type_member(
                 (rosidl_typesupport_introspection_cpp::MessageMembers*)
                     type_support_intro->data
 #if RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
-                    , false /* mangle_names */
+                    , true /* mangle_names */
 #endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
                 );
         }
@@ -393,7 +393,7 @@ rmw_connextdds_convert_type_member(
                 (rosidl_typesupport_introspection_c__MessageMembers*)
                     type_support_intro->data
 #if RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
-                    , false /* mangle_names */
+                    , true /* mangle_names */
 #endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
                 );
         }

@@ -14,29 +14,31 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(rmw_connextddsmicro_cpp)
+project(rmw_connextdds)
 
 find_package(ament_cmake REQUIRED)
 find_package(rti_connext_dds_cmake_module REQUIRED)
 
-rti_find_connextmicro()
+rti_find_connextpro()
 
-if(NOT RTIConnextDDSMicro_FOUND)
+if(NOT RTIConnextDDS_FOUND)
     ament_package()
+    # Skip package if Connext DDS Professional was not found
     message(WARNING
-        "RTI Connext DDS Micro not found, skipping ${PROJECT_NAME}")
+        "RTI Connext DDS Professional not found, skipping ${PROJECT_NAME}")
     return()
 endif()
 
 find_package(rmw_connextdds_common REQUIRED)
 
 set(connext_deps        rti_connext_dds_cmake_module)
-set(connext_includes    )
-set(connext_api         MICRO)
-set(connext_libs        ${RTIME_TARGETS})
+set(connext_api         PRO)
+set(connext_libs        RTIConnextDDS::c_api)
 set(connext_src
-    src/rmw_type_support_rtime.cpp
-    src/dds_api_rtime.cpp
-    include/rmw_connextdds/type_support_impl.hpp)
+    src/rmw_type_support_ndds.cpp
+    src/rmw_typecode.cpp
+    src/dds_api_ndds.cpp
+    include/rmw_connextdds/type_support_impl.hpp
+    include/rmw_connextdds/typecode.hpp)
 
 rti_build_rmw_connext()

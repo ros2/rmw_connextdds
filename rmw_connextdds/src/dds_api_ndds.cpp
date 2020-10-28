@@ -20,7 +20,7 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-const char * const RMW_CONNEXTDDS_ID = "rmw_connextdds_cpp";
+const char * const RMW_CONNEXTDDS_ID = "rmw_connextdds";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 
 rmw_ret_t

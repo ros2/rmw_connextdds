@@ -44,7 +44,7 @@ struct rmw_connextdds_api_micro
     }
 };
 
-const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro_cpp";
+const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 
 rmw_ret_t

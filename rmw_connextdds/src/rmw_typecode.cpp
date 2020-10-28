@@ -221,11 +221,11 @@ rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
     }
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_BYTE:
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_UINT8:
+    case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_INT8:
     {
         return DDS_TK_OCTET;
     }
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_CHAR:
-    case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_INT8:
     {
         return DDS_TK_CHAR;
     }

@@ -14,11 +14,10 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(rmw_connextpro_cpp)
+project(rmw_connextdds_pro_cpp)
 
 find_package(ament_cmake REQUIRED)
-find_package(rmw_connextdds_common_cpp REQUIRED)
-find_package(rti_connext_dds_vendor REQUIRED)
+find_package(rti_connextdds_cmake_module REQUIRED)
 
 rti_find_connextpro()
 
@@ -30,7 +29,9 @@ if(NOT RTIConnextDDS_FOUND)
     return()
 endif()
 
-set(connext_deps        rti_connext_dds_vendor)
+find_package(rmw_connextdds_common_cpp REQUIRED)
+
+set(connext_deps        rti_connextdds_cmake_module)
 set(connext_api         PRO)
 set(connext_libs        RTIConnextDDS::c_api)
 set(connext_src

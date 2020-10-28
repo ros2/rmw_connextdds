@@ -20,6 +20,6 @@
 
 set(rmw_connext_common_source   @RMW_CONNEXT_COMMON_SOURCE@)
 
-find_package(rti_cmake_helper REQUIRED)
+find_package(rti_connextdds_cmake_module REQUIRED)
 
 rti_load_rmw_source(${@PROJECT_NAME@_DIR} ${rmw_connext_common_source})

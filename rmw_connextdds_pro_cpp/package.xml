@@ -1,18 +1,17 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>rmw_connextmicro_cpp</name>
+  <name>rmw_connextdds_pro_cpp</name>
   <version>0.1.0</version>
-  <description>A ROS2 RMW implementation built with RTI Connext DDS Micro.</description>
+  <description>A ROS2 RMW implementation built with RTI Connext DDS Professional.</description>
   <maintainer email="asorbini@rti.com">Andrea Sorbini</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
-  <depend>rmw_connextdds_common_cpp</depend>
+  <build_depend>rmw_connextdds_common_cpp</build_depend>
   
-  <depend>rti_connext_dds_micro_vendor</depend>
-  <depend>rti_connext_dds_micro_ext</depend>
+  <depend>rti_connextdds_cmake_module</depend>
   <depend>fastcdr</depend>
   <depend>rcutils</depend>
   <depend>rcpputils</depend>

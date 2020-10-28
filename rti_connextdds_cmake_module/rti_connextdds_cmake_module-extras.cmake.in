@@ -18,10 +18,26 @@
 
 # Generated from @PROJECT_NAME@/cmake/@PROJECT_NAME@-extras.cmake.in
 
-if(@RTIConnextDDS_FOUND@)
-    set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
-        CACHE INTERNAL "" FORCE)
+set(RTI_BUILD_HELPER    ${@PROJECT_NAME@_DIR}/rti_build_helper.cmake
+    CACHE INTERNAL "Script providing CMake helper functions for RTI packages")
 
+# Load build helper
+include(${RTI_BUILD_HELPER})
+
+rti_init_env()
+
+if(@RTIConnextDDSMicro_FOUND@)
+    set(RTIMEHOME               @RTIMEHOME@
+        CACHE INTERNAL "Installation directory for RTI Connext DDS Micro")
+
+    set(RTIME_TARGET_NAME       @RTIME_TARGET_NAME@
+        CACHE INTERNAL "Architecture target for RTI Connext DDS Micro libraries")
+endif()
+
+if(@RTIConnextDDS_FOUND@)
     set(CONNEXTDDS_DIR          @CONNEXTDDS_DIR@
-        CACHE INTERNAL "" FORCE)
+        CACHE INTERNAL "Installation directory for RTI Connext DDS Professional")
+    
+    set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
+        CACHE INTERNAL "Architecture target for RTI Connext DDS Professional")
 endif()

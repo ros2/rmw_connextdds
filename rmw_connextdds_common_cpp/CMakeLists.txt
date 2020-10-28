@@ -17,7 +17,7 @@ cmake_minimum_required(VERSION 3.5)
 project(rmw_connextdds_common_cpp)
 
 find_package(ament_cmake REQUIRED)
-find_package(rti_cmake_helper REQUIRED)
+find_package(rti_connextdds_cmake_module REQUIRED)
 
 set(RMW_CONNEXT_COMMON_SOURCE
     src/rmw_context.cpp

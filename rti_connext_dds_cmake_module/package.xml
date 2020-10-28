@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>rti_connextdds_cmake_module</name>
+  <name>rti_connext_dds_cmake_module</name>
   <version>0.1.0</version>
   <description>Helper module to provide access to RTI products like Connext DDS Professional</description>
   <maintainer email="asorbini@rti.com">Andrea Sorbini</maintainer>

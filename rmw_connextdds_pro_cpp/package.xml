@@ -11,7 +11,7 @@
 
   <build_depend>rmw_connextdds_common_cpp</build_depend>
   
-  <depend>rti_connextdds_cmake_module</depend>
+  <depend>rti_connext_dds_cmake_module</depend>
   <depend>fastcdr</depend>
   <depend>rcutils</depend>
   <depend>rcpputils</depend>

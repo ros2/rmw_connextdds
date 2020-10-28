@@ -14,7 +14,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(rti_connextdds_cmake_module)
+project(rti_connext_dds_cmake_module)
 
 find_package(ament_cmake REQUIRED)
 

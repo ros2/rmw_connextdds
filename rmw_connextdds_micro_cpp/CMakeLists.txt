@@ -17,7 +17,7 @@ cmake_minimum_required(VERSION 3.5)
 project(rmw_connextdds_micro_cpp)
 
 find_package(ament_cmake REQUIRED)
-find_package(rti_connextdds_cmake_module REQUIRED)
+find_package(rti_connext_dds_cmake_module REQUIRED)
 
 rti_find_connextmicro()
 
@@ -30,7 +30,7 @@ endif()
 
 find_package(rmw_connextdds_common_cpp REQUIRED)
 
-set(connext_deps        rti_connextdds_cmake_module)
+set(connext_deps        rti_connext_dds_cmake_module)
 set(connext_includes    )
 set(connext_api         MICRO)
 set(connext_libs        ${RTIME_TARGETS})

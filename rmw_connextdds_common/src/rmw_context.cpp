@@ -133,7 +133,7 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
     if (0u != this->node_count)
     {
         if ((this->localhost_only && !localhost_only) ||
-            (!this->localhost_only && !localhost_only))
+            (!this->localhost_only && localhost_only))
         {
             RMW_CONNEXT_LOG_ERROR_A("incompatible node for context:"
                 "ctx.localhost_only=%d, node.localhost_only=%d",

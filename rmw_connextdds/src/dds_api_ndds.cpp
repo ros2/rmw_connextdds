@@ -637,7 +637,7 @@ rmw_connextdds_filter_sample(
     {
         DDS_InstanceHandle_t reader_ih = sub->instance_handle();
         
-        *accepted =  (0 == memcmp(
+        *accepted =  (0 != memcmp(
                             reader_ih.keyHash.value,
                             info->original_publication_virtual_guid.value,
                             12));

@@ -100,7 +100,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
         cond_dcps_part =
             rmw_connextdds_attach_reader_to_waitset(
                 ctx->dr_participants, waitset);
-        if (nullptr != cond_dcps_part)
+        if (nullptr == cond_dcps_part)
         {
             goto cleanup;
         }
@@ -112,7 +112,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
         cond_dcps_pub =
             rmw_connextdds_attach_reader_to_waitset(
                 ctx->dr_publications, waitset);
-        if (nullptr != cond_dcps_pub)
+        if (nullptr == cond_dcps_pub)
         {
             goto cleanup;
         }
@@ -124,7 +124,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
         cond_dcps_sub =
             rmw_connextdds_attach_reader_to_waitset(
                 ctx->dr_subscriptions, waitset);
-        if (nullptr != cond_dcps_sub)
+        if (nullptr == cond_dcps_sub)
         {
             goto cleanup;
         }

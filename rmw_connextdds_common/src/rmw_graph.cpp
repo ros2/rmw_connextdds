@@ -566,21 +566,6 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
         if (taken)
         {
             std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-            RMW_CONNEXT_LOG_DEBUG_A("ParticipantEntitiesInfo received: "
-                "gid=0x%08X.0x%08X.0x%08X.0x%08X",
-                ((uint32_t*)&msg.gid.data)[0],
-                ((uint32_t*)&msg.gid.data)[1],
-                ((uint32_t*)&msg.gid.data)[2],
-                ((uint32_t*)&msg.gid.data)[3])
-            for (auto const& node : msg.node_entities_info_seq)
-            {
-                RMW_CONNEXT_LOG_DEBUG_A("NodeEntitiesInfo %s%s: "
-                    "readers=%lu, writers=%lu",
-                    node.node_namespace.c_str(),
-                    node.node_name.c_str(),
-                    node.reader_gid_seq.size(),
-                    node.writer_gid_seq.size())
-            }
             ctx->common.graph_cache.update_participant_entities(msg);
         }
     } while (taken);

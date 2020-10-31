@@ -673,7 +673,7 @@ extern "C" rmw_ret_t rmw_init(
 #if RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
     context->actual_domain_id =
 #else
-    const DDS_DomainId_t actual_domain_id =
+    context->impl->domain_id =
 #endif /* RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
 #if !RMW_CONNEXT_HAVE_OPTIONS
         RMW_CONNEXT_DEFAULT_DOMAIN;
@@ -710,9 +710,6 @@ extern "C" rmw_ret_t rmw_init(
         return RMW_RET_ERROR;
     }
 
-#if RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX || 1
-    context->impl->domain_id = actual_domain_id;
-#endif /* RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
 #if RMW_CONNEXT_HAVE_OPTIONS
     scope_exit_context_finalize.cancel();
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */

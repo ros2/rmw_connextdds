@@ -85,14 +85,14 @@ struct rmw_context_impl_t
 
     rmw_context_impl_t(rmw_context_t *const base)
     :
-#if RMW_CONNEXT_HAVE_PKG_DDS_COMMON
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
       common(),
-#endif /* RMW_CONNEXT_HAVE_PKG_DDS_COMMON */
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
       base(base),
       factory(nullptr),
-#if RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
+#if !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
       domain_id(0),
-#endif /* RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
+#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
       participant(nullptr),
       dds_pub(nullptr),
       dds_sub(nullptr),
@@ -105,13 +105,13 @@ struct rmw_context_impl_t
       localhost_only(false)
 #endif /* RMW_CONNEXT_HAVE_LOCALHOST_ONLY */
     {
-#if RMW_CONNEXT_HAVE_PKG_DDS_COMMON
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
         /* destructor relies on these being initialized properly */
         common.thread_is_running.store(false);
         common.graph_guard_condition = nullptr;
         common.pub = nullptr;
         common.sub = nullptr;
-#endif /* RMW_CONNEXT_HAVE_PKG_DDS_COMMON */
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
     }
 
     // Initializes the participant, if it wasn't done already.

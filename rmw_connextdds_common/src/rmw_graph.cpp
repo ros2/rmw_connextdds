@@ -19,7 +19,7 @@
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#if RMW_CONNEXT_HAVE_PKG_DDS_COMMON
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
 
 rmw_ret_t
 rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
@@ -888,4 +888,4 @@ rmw_connextdds_graph_add_entity(
     UNUSED_ARG(is_reader);
 }
 
-#endif /* RMW_CONNEXT_HAVE_PKG_DDS_COMMON */
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

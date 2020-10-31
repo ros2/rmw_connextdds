@@ -24,7 +24,7 @@
  * Discovery Thread
  ******************************************************************************/
 
-#if RMW_CONNEXT_HAVE_PKG_DDS_COMMON
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
 
 static
 DDS_Condition*
@@ -411,4 +411,4 @@ rmw_connextdds_discovery_thread_stop(rmw_context_impl_t * ctx)
     return RMW_RET_OK;
 }
 
-#endif /* RMW_CONNEXT_HAVE_PKG_DDS_COMMON */
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

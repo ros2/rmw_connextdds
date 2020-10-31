@@ -107,6 +107,22 @@ extern "C" rmw_node_t * rmw_create_node(
         return nullptr;
     }
 
+#if RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
+    {
+        std::lock_guard<std::mutex> guard(this->initialization_mutex);
+        if (0u == this->node_count)
+        {
+            ctx->impl->domain_id = domain_id;
+        }
+        else if (ctx->impl->domain_id != domain_id)
+        {
+            RMW_CONNEXT_LOG_ERROR_A("invalid domain id: context=%d, node=%d\n",
+                ctx->impl->domain_id, domain_id))
+            return nullptr;
+        }
+    }
+#endif /* RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
+
     ret = ctx->initialize_node(node_localhost_only);
     if (RMW_RET_OK != ret)
     {

@@ -27,7 +27,7 @@ For any question or feedback, please contact robotics@rti.com.
 2. Load ROS into the shell environment, e.g.:
 
     ```sh
-    source /opt/ros/rolling/setup.bash
+    source /opt/ros/dashing/setup.bash
     ```
 
 3. Create an overlay directory and clone the repository:

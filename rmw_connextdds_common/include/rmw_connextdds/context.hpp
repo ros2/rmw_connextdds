@@ -23,36 +23,41 @@
 #include "rmw_connextdds/log.hpp"
 
 #include <limits>
+#include <mutex>
 
 #include <stdio.h>
 
 #include "rmw/error_handling.h"
 #include "rmw/impl/cpp/macros.hpp"
 
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
 #include "rmw_dds_common/context.hpp"
 #include "rmw_dds_common/msg/participant_entities_info.hpp"
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #include "rcutils/strdup.h"
 
 
-#if RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_FOXY
-#include "scope_exit.hpp"
-#else
+#if RMW_CONNEXT_HAVE_SCOPE_EXIT
 #include "rcpputils/scope_exit.hpp"
-#endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_FOXY */
+#else
+#include "scope_exit.hpp"
+#endif /* RMW_CONNEXT_HAVE_SCOPE_EXIT */
 
 struct rmw_context_impl_t
 {
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
     rmw_dds_common::Context common;
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
     rmw_context_t *base;
     
     DDS_DomainParticipantFactory *factory;
 
     void *api;
 
-#if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING
+#if !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
     DDS_DomainId_t domain_id;
-#endif /* RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING */
+#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
     DDS_DomainParticipant *participant;
 
     /* DDS publisher, subscriber used for ROS 2 publishers and subscriptions */
@@ -79,25 +84,34 @@ struct rmw_context_impl_t
     uint32_t client_service_id{0};
 
     rmw_context_impl_t(rmw_context_t *const base)
-    : common(),
+    :
+#if RMW_CONNEXT_HAVE_PKG_DDS_COMMON
+      common(),
+#endif /* RMW_CONNEXT_HAVE_PKG_DDS_COMMON */
       base(base),
       factory(nullptr),
-#if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING
+#if RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
       domain_id(0),
-#endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_ROLLING */
+#endif /* RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
       participant(nullptr),
       dds_pub(nullptr),
       dds_sub(nullptr),
       dr_participants(nullptr),
       dr_publications(nullptr),
       dr_subscriptions(nullptr),
+#if RMW_CONNEXT_HAVE_LOCALHOST_ONLY
       localhost_only(base->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED)
+#else
+      localhost_only(false)
+#endif /* RMW_CONNEXT_HAVE_LOCALHOST_ONLY */
     {
+#if RMW_CONNEXT_HAVE_PKG_DDS_COMMON
         /* destructor relies on these being initialized properly */
         common.thread_is_running.store(false);
         common.graph_guard_condition = nullptr;
         common.pub = nullptr;
         common.sub = nullptr;
+#endif /* RMW_CONNEXT_HAVE_PKG_DDS_COMMON */
     }
 
     // Initializes the participant, if it wasn't done already.

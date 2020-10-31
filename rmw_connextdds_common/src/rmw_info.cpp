@@ -18,6 +18,8 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
+
 #include "rmw/names_and_types.h"
 #include "rmw/topic_endpoint_info_array.h"
 #include "rmw/get_node_info_and_types.h"
@@ -508,3 +510,192 @@ extern "C" rmw_ret_t rmw_get_subscriptions_info_by_topic(
                 allocator,
                 subscriptions_info);
 }
+
+#else
+
+
+#include "rmw/get_node_info_and_types.h"
+#include "rmw/get_topic_names_and_types.h"
+#include "rmw/get_service_names_and_types.h"
+#include "rmw/names_and_types.h"
+
+extern "C" rmw_ret_t rmw_get_node_names(
+  const rmw_node_t * node,
+  rcutils_string_array_t * node_names,
+  rcutils_string_array_t * node_namespaces)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(node_names);
+    UNUSED_ARG(node_namespaces);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_node_names_with_enclaves(
+    const rmw_node_t * node,
+    rcutils_string_array_t * node_names,
+    rcutils_string_array_t * node_namespaces,
+    rcutils_string_array_t * enclaves)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(node_names);
+    UNUSED_ARG(node_namespaces);
+    UNUSED_ARG(enclaves);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_topic_names_and_types(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    bool no_demangle,
+    rmw_names_and_types_t * tptyp)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(no_demangle);
+    UNUSED_ARG(tptyp);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_service_names_and_types(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    rmw_names_and_types_t * sntyp)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(sntyp);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_service_server_is_available(
+    const rmw_node_t * node,
+    const rmw_client_t * client,
+    bool * is_available)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(client);
+    UNUSED_ARG(is_available);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_count_publishers(
+    const rmw_node_t * node,
+    const char * topic_name,
+    size_t * count)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(topic_name);
+    UNUSED_ARG(count);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_count_subscribers(
+    const rmw_node_t * node,
+    const char * topic_name,
+    size_t * count)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(topic_name);
+    UNUSED_ARG(count);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_subscriber_names_and_types_by_node(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    const char * node_name,
+    const char * node_namespace,
+    bool no_demangle,
+    rmw_names_and_types_t * tptyp)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(node_name);
+    UNUSED_ARG(node_namespace);
+    UNUSED_ARG(no_demangle);
+    UNUSED_ARG(tptyp);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_publisher_names_and_types_by_node(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    const char * node_name,
+    const char * node_namespace,
+    bool no_demangle,
+    rmw_names_and_types_t * tptyp)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(node_name);
+    UNUSED_ARG(node_namespace);
+    UNUSED_ARG(no_demangle);
+    UNUSED_ARG(tptyp);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_service_names_and_types_by_node(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    const char * node_name,
+    const char * node_namespace,
+    rmw_names_and_types_t * sntyp)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(node_name);
+    UNUSED_ARG(node_namespace);
+    UNUSED_ARG(sntyp);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_client_names_and_types_by_node(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    const char * node_name,
+    const char * node_namespace,
+    rmw_names_and_types_t * sntyp)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(node_name);
+    UNUSED_ARG(node_namespace);
+    UNUSED_ARG(sntyp);
+    return RMW_RET_UNSUPPORTED;
+}
+
+#if RMW_CONNEXT_HAVE_GET_INFO_BY_TOPIC
+
+extern "C" rmw_ret_t rmw_get_publishers_info_by_topic(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    const char * topic_name,
+    bool no_mangle,
+    rmw_topic_endpoint_info_array_t * publishers_info)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(topic_name);
+    UNUSED_ARG(no_mangle);
+    UNUSED_ARG(publishers_info);
+    return RMW_RET_UNSUPPORTED;
+}
+
+extern "C" rmw_ret_t rmw_get_subscriptions_info_by_topic(
+    const rmw_node_t * node,
+    rcutils_allocator_t * allocator,
+    const char * topic_name,
+    bool no_mangle,
+    rmw_topic_endpoint_info_array_t * subscriptions_info)
+{
+    UNUSED_ARG(node);
+    UNUSED_ARG(allocator);
+    UNUSED_ARG(topic_name);
+    UNUSED_ARG(no_mangle);
+    UNUSED_ARG(subscriptions_info);
+    return RMW_RET_UNSUPPORTED;
+}
+
+#endif /* RMW_CONNEXT_HAVE_GET_INFO_BY_TOPIC */
+
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

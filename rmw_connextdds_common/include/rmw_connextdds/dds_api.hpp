@@ -19,7 +19,7 @@
 #ifndef RMW_CONNEXT__DDS_API_HPP_
 #define RMW_CONNEXT__DDS_API_HPP_
 
-#include "rmw_connextdds/static_config.h"
+#include "rmw_connextdds/static_config.hpp"
 
 
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
@@ -84,16 +84,24 @@ rmw_connextdds_get_datawriter_qos(
     rmw_context_impl_t *const ctx,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_DataWriterQos *const qos,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_publisher_options_t *const pub_options);
+    const rmw_qos_profile_t *const qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+    ,
+    const rmw_publisher_options_t *const pub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    );
 
 rmw_ret_t
 rmw_connextdds_get_datareader_qos(
     rmw_context_impl_t *const ctx,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_DataReaderQos *const qos,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_subscription_options_t *const sub_options);
+    const rmw_qos_profile_t *const qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+    ,
+    const rmw_subscription_options_t *const sub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    );
 
 DDS_DataWriter*
 rmw_connextdds_create_datawriter(
@@ -101,7 +109,9 @@ rmw_connextdds_create_datawriter(
     DDS_DomainParticipant *const participant,
     DDS_Publisher *const pub,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_publisher_options_t *const publisher_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_Topic *const topic,
@@ -113,7 +123,9 @@ rmw_connextdds_create_datareader(
     DDS_DomainParticipant *const participant,
     DDS_Subscriber *const sub,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_subscription_options_t *const subscriber_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_Topic *const topic,

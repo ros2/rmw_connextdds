@@ -34,15 +34,18 @@ set(RMW_CONNEXT_COMMON_SOURCE
     src/rmw_waitset.cpp
     src/rmw_type_support.cpp
     src/demangle.cpp
-    include/rmw_connextdds/demangle.hpp
-    include/rmw_connextdds/namespace_prefix.hpp
     include/rmw_connextdds/context.hpp
+    include/rmw_connextdds/dds_api.hpp
+    include/rmw_connextdds/demangle.hpp
     include/rmw_connextdds/discovery.hpp
     include/rmw_connextdds/graph_cache.hpp
     include/rmw_connextdds/log.hpp
+    include/rmw_connextdds/namespace_prefix.hpp
     include/rmw_connextdds/resource_limits.hpp
     include/rmw_connextdds/rmw_impl.hpp
-    include/rmw_connextdds/static_config.h
+    include/rmw_connextdds/scope_exit.hpp
+    include/rmw_connextdds/static_config.hpp
+    include/rmw_connextdds/type_support.hpp
     include/rmw_connextdds/visibility_control.h)
 
 ament_package(

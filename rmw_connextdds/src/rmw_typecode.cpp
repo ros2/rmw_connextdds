@@ -563,7 +563,7 @@ rmw_connextdds_create_typecode(
                 RMW_Connext_TypeCodePtrSeq_finalize_elements(tc_cache_new_ptr);
                 RMW_Connext_TypeCodePtrSeq_finalize(tc_cache_new_ptr);
             });
-    
+
     if (nullptr == intro_members_in)
     {
         intro_ts =

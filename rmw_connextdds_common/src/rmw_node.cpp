@@ -31,21 +31,27 @@ extern "C" rmw_node_t * rmw_create_node(
     rmw_context_t * context,
     const char * name,
     const char * ns
-#if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING
+#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
+    ,
+    size_t domain_id,
+    const rmw_node_security_options_t * security_options
+#elif !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
     ,
     size_t domain_id,
     bool localhost_only
-#endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_ROLLING */
+#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
     )
 {
     bool node_localhost_only = false;
 
-#if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_ROLLING
+#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
+    UNUSED_ARG(security_options);
+#elif !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
     UNUSED_ARG(domain_id);
     UNUSED_ARG(localhost_only);
 
     node_localhost_only = localhost_only;
-#endif /* RMW_CONNEXT_RELEASE == RMW_CONNEXT_RELEASE_ROLLING */
+#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
     RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
     RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
         context,
@@ -252,3 +258,35 @@ rmw_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
     
     return node_impl->graph_guard_condition();
 }
+
+#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
+extern "C" rmw_ret_t
+rmw_node_assert_liveliness(const rmw_node_t * node)
+{
+    UNUSED_ARG(node);
+    return RMW_RET_UNSUPPORTED;
+}
+
+// extern "C" rmw_ret_t
+// rmw_get_topic_names_and_types(
+//   const rmw_node_t * node,
+//   rcutils_allocator_t * allocator,
+//   bool no_demangle,
+//   rmw_names_and_types_t * topic_names_and_types)
+// {
+//     UNUSED_ARG(node);
+//     UNUSED_ARG(allocator);
+//     UNUSED_ARG(no_demangle);
+//     UNUSED_ARG(topic_names_and_types);
+//     return RMW_RET_UNSUPPORTED;
+// }
+
+// rmw_ret_t
+// rmw_get_service_names_and_types(
+//   const rmw_node_t * node,
+//   rcutils_allocator_t * allocator,
+//   rmw_names_and_types_t * service_names_and_types)
+// {
+
+// }
+#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING */

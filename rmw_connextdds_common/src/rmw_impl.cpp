@@ -20,6 +20,8 @@
 
 #include "rmw_connextdds/graph_cache.hpp"
 
+#include <algorithm>
+
 #define ROS_TOPIC_PREFIX_STR             "rt"
 #define ROS_SERVICE_REQUESTER_PREFIX_STR "rq"
 #define ROS_SERVICE_RESPONSE_PREFIX_STR  "rr"
@@ -92,7 +94,7 @@ rcutils_uint8_array_copy(
 /******************************************************************************
  * Qos Helpers
  ******************************************************************************/
-#if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_FOXY
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
 rmw_qos_policy_kind_t
 dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id)
 {
@@ -115,7 +117,7 @@ dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id)
     }
     return RMW_QOS_POLICY_INVALID;
 }
-#endif /* RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_FOXY */
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
 
 rmw_ret_t
 rmw_connextdds_get_readerwriter_qos(
@@ -128,14 +130,20 @@ rmw_connextdds_get_readerwriter_qos(
     DDS_LivelinessQosPolicy *const liveliness,
     DDS_ResourceLimitsQosPolicy *const resource_limits,
     DDS_PublishModeQosPolicy *const publish_mode,
-    const rmw_qos_profile_t *const qos_policies,
+    const rmw_qos_profile_t *const qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+    ,
     const rmw_publisher_options_t *const pub_options,
-    const rmw_subscription_options_t *const sub_options)
+    const rmw_subscription_options_t *const sub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    )
 {
     UNUSED_ARG(writer_qos);
     UNUSED_ARG(type_support);
+#if RMW_CONNEXT_HAVE_OPTIONS
     UNUSED_ARG(pub_options);
     UNUSED_ARG(sub_options);
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
     switch (qos_policies->history)
     {
@@ -444,6 +452,19 @@ RMW_Connext_Node::finalize()
     return RMW_RET_OK;
 }
 
+#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
+RMW_Connext_Node::RMW_Connext_Node(rmw_context_impl_t *const ctx)
+: ctx(ctx)
+{
+    this->gcond = rmw_connextdds_create_guard_condition();
+    if (nullptr == this->gcond)
+    {
+        RMW_CONNEXT_LOG_ERROR(
+            "failed to create graph guard condition")
+    }
+}
+#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
+
 /******************************************************************************
  * Publisher Implementation functions
  ******************************************************************************/
@@ -481,14 +502,18 @@ RMW_Connext_Publisher::create(
     const rosidl_message_type_support_t *const type_supports,
     const char *const topic_name,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_publisher_options_t *const publisher_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal,
     const RMW_Connext_MessageType msg_type,
     const void *const intro_members,
     const bool intro_members_cpp,
     std::string *const type_name)
 {
+#if RMW_CONNEXT_HAVE_COMMON_MUTEX
     std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
     UNUSED_ARG(internal);
 
     bool type_registered = false;
@@ -599,7 +624,9 @@ RMW_Connext_Publisher::create(
             dp,
             pub,
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             publisher_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             internal,
             type_support,
             topic,
@@ -652,7 +679,9 @@ RMW_Connext_Publisher::create(
 rmw_ret_t
 RMW_Connext_Publisher::finalize()
 {
+#if RMW_CONNEXT_HAVE_COMMON_MUTEX
     std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
 
     RMW_CONNEXT_LOG_DEBUG_A("finalizing publisher: pub=%p, type=%s",
         (void*)this, this->type_support->type_name())
@@ -854,7 +883,9 @@ rmw_connextdds_create_publisher(
     const rosidl_message_type_support_t *const type_supports,
     const char *const topic_name,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_publisher_options_t *const publisher_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal)
 {
     RMW_Connext_Publisher *rmw_pub_impl =
@@ -865,7 +896,9 @@ rmw_connextdds_create_publisher(
             type_supports,
             topic_name,
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             publisher_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             internal);
     
     if (nullptr == rmw_pub_impl)
@@ -921,8 +954,12 @@ rmw_connextdds_create_publisher(
         const_cast<char *>(rmw_publisher->topic_name),
         topic_name,
         topic_name_len + 1);
+#if RMW_CONNEXT_HAVE_OPTIONS
     rmw_publisher->options = *publisher_options;
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#if RMW_CONNEXT_HAVE_LOAN_MESSAGE
     rmw_publisher->can_loan_messages = false;
+#endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
 
     if (!internal)
     {
@@ -1026,14 +1063,20 @@ RMW_Connext_Subscriber::create(
     const rosidl_message_type_support_t *const type_supports,
     const char *const topic_name,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_subscription_options_t *const subscriber_options,
+#else
+    const bool ignore_local_publications,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal,
     const RMW_Connext_MessageType msg_type,
     const void *const intro_members,
     const bool intro_members_cpp,
     std::string *const type_name)
 {
+#if RMW_CONNEXT_HAVE_COMMON_MUTEX
     std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
     UNUSED_ARG(internal);
 
     bool type_registered = false;
@@ -1144,7 +1187,9 @@ RMW_Connext_Subscriber::create(
             dp,
             sub,
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             subscriber_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             internal,
             type_support,
             topic,
@@ -1187,7 +1232,11 @@ RMW_Connext_Subscriber::create(
                                 dds_reader,
                                 topic,
                                 type_support,
+#if RMW_CONNEXT_HAVE_OPTIONS
                                 subscriber_options->ignore_local_publications,
+#else
+                                ignore_local_publications,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
                                 topic_created);
     
     if (nullptr == rmw_sub_impl)
@@ -1215,7 +1264,9 @@ RMW_Connext_Subscriber::create(
 rmw_ret_t
 RMW_Connext_Subscriber::finalize()
 {
+#if RMW_CONNEXT_HAVE_COMMON_MUTEX
     std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
 
     RMW_CONNEXT_LOG_DEBUG_A("finalizing subscriber: sub=%p, type=%s",
         (void*)this, this->type_support->type_name())
@@ -1320,6 +1371,7 @@ RMW_Connext_Subscriber::take_message(
     return rc;
 }
 
+#if RMW_CONNEXT_HAVE_TAKE_SEQ
 rmw_ret_t
 RMW_Connext_Subscriber::take(
     rmw_message_sequence_t *const message_sequence,
@@ -1334,6 +1386,7 @@ RMW_Connext_Subscriber::take(
                 taken,
                 false /* serialized*/);
 }
+#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
 
 rmw_ret_t
 RMW_Connext_Subscriber::take_serialized(
@@ -1608,7 +1661,11 @@ rmw_connextdds_create_subscriber(
     const rosidl_message_type_support_t *const type_supports,
     const char *const topic_name,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_subscription_options_t *const subscriber_options,
+#else
+    const bool ignore_local_publications,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal)
 {
     UNUSED_ARG(internal);
@@ -1621,7 +1678,11 @@ rmw_connextdds_create_subscriber(
             type_supports,
             topic_name,
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             subscriber_options,
+#else
+            ignore_local_publications,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             internal);
     
     if (nullptr == rmw_sub_impl)
@@ -1676,8 +1737,12 @@ rmw_connextdds_create_subscriber(
         const_cast<char *>(rmw_subscriber->topic_name),
         topic_name,
         topic_name_len + 1);
+#if RMW_CONNEXT_HAVE_OPTIONS
     rmw_subscriber->options = *subscriber_options;
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#if RMW_CONNEXT_HAVE_LOAN_MESSAGE
     rmw_subscriber->can_loan_messages = false;
+#endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
 
     if (!internal)
     {
@@ -1740,8 +1805,10 @@ rmw_connextdds_message_info_from_dds(
     const DDS_SampleInfo *const from)
 {
     rmw_connextdds_ih_to_gid(from->publication_handle, to->publisher_gid);
+#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
     to->source_timestamp = dds_time_to_u64(&from->source_timestamp);
     to->received_timestamp = dds_time_to_u64(&from->reception_timestamp);
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
 }
 
 /******************************************************************************
@@ -2947,9 +3014,11 @@ RMW_Connext_Client::create(
             RMW_Connext_ServiceTypeSupportWrapper::get_response_type_name(
                 type_supports);
 
+#if RMW_CONNEXT_HAVE_OPTIONS
     rmw_publisher_options_t pub_options = rmw_get_default_publisher_options();
     rmw_subscription_options_t sub_options =
         rmw_get_default_subscription_options();
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     
 
     RMW_CONNEXT_LOG_DEBUG_A("creating request publisher: "
@@ -2966,7 +3035,9 @@ RMW_Connext_Client::create(
             type_support_req,
             request_topic.c_str(),
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             &pub_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             false /* internal */,
             RMW_CONNEXT_MESSAGE_REQUEST,
             svc_members_req,
@@ -2993,7 +3064,11 @@ RMW_Connext_Client::create(
             type_support_res,
             reply_topic.c_str(),
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             &sub_options,
+#else
+            false /* ignore_local_publications */,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             false /* internal */,
             RMW_CONNEXT_MESSAGE_REPLY,
             svc_members_res,
@@ -3022,7 +3097,11 @@ RMW_Connext_Client::is_service_available(bool &available)
 
 rmw_ret_t
 RMW_Connext_Client::take_response(
+#if RMW_CONNEXT_HAVE_SERVICE_INFO
     rmw_service_info_t *const request_header,
+#else
+    rmw_request_id_t * request_header,
+#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     void *const ros_response,
     bool *const taken)
 {
@@ -3045,6 +3124,7 @@ RMW_Connext_Client::take_response(
 
     if (taken_msg)
     {
+#if RMW_CONNEXT_HAVE_SERVICE_INFO
         request_header->request_id.sequence_number = rr_msg.sn;
         memcpy(
             request_header->request_id.writer_guid,
@@ -3052,6 +3132,13 @@ RMW_Connext_Client::take_response(
             16);
         request_header->source_timestamp = message_info.source_timestamp;
         request_header->received_timestamp = message_info.received_timestamp;
+#else
+        request_header->sequence_number = rr_msg.sn;
+        memcpy(
+            request_header->writer_guid,
+            rr_msg.gid.data,
+            16);
+#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
         *taken = true;
 
         RMW_CONNEXT_LOG_DEBUG_A("[%s] taken RESPONSE: "
@@ -3181,10 +3268,12 @@ RMW_Connext_Service::create(
         reply_type =
             RMW_Connext_ServiceTypeSupportWrapper::get_response_type_name(
                 type_supports);
-    
+
+#if RMW_CONNEXT_HAVE_OPTIONS
     rmw_publisher_options_t pub_options = rmw_get_default_publisher_options();
     rmw_subscription_options_t sub_options =
         rmw_get_default_subscription_options();
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
     RMW_CONNEXT_LOG_DEBUG_A("creating reply publisher: "
         "service=%s, "
@@ -3200,7 +3289,9 @@ RMW_Connext_Service::create(
             type_support_res,
             reply_topic.c_str(),
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             &pub_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             false /* internal */,
             RMW_CONNEXT_MESSAGE_REPLY,
             svc_members_res,
@@ -3227,7 +3318,11 @@ RMW_Connext_Service::create(
             type_support_req,
             request_topic.c_str(),
             qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
             &sub_options,
+#else
+            false /* ignore_local_publications */,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
             false /* internal */,
             // &request_type,
             RMW_CONNEXT_MESSAGE_REQUEST,
@@ -3247,7 +3342,11 @@ RMW_Connext_Service::create(
 
 rmw_ret_t
 RMW_Connext_Service::take_request(
+#if RMW_CONNEXT_HAVE_SERVICE_INFO
     rmw_service_info_t *const request_header,
+#else
+    rmw_request_id_t * request_header,
+#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     void *const ros_request,
     bool *const taken)
 {
@@ -3271,6 +3370,7 @@ RMW_Connext_Service::take_request(
 
     if (taken_msg)
     {
+#if RMW_CONNEXT_HAVE_SERVICE_INFO
         request_header->request_id.sequence_number = rr_msg.sn;
         
         memcpy(
@@ -3280,6 +3380,14 @@ RMW_Connext_Service::take_request(
 
         request_header->source_timestamp = message_info.source_timestamp;
         request_header->received_timestamp = message_info.received_timestamp;
+#else
+        request_header->sequence_number = rr_msg.sn;
+        
+        memcpy(
+            request_header->writer_guid,
+            rr_msg.gid.data,
+            16);
+#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
         *taken = true;
 
         RMW_CONNEXT_LOG_DEBUG_A("[%s] taken REQUEST: "
@@ -3372,6 +3480,7 @@ ros_event_to_dds(const rmw_event_type_t ros, bool *const invalid)
     {
         return DDS_OFFERED_DEADLINE_MISSED_STATUS;
     }
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
     {
         return DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS;
@@ -3380,12 +3489,13 @@ ros_event_to_dds(const rmw_event_type_t ros, bool *const invalid)
     {
         return DDS_OFFERED_INCOMPATIBLE_QOS_STATUS;
     }
-#if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_FOXY
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
+#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
     {
         return DDS_SAMPLE_LOST_STATUS;
     }
-#endif /* RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_FOXY */
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     default:
     {
         if (nullptr != invalid)
@@ -3444,10 +3554,12 @@ ros_event_for_reader(const rmw_event_type_t ros)
     {
     case RMW_EVENT_LIVELINESS_CHANGED:
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-#if RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_FOXY
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
+#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
-#endif /* RMW_CONNEXT_RELEASE != RMW_CONNEXT_RELEASE_FOXY */
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     {
         return true;
     }

@@ -20,6 +20,8 @@ find_package(ament_cmake REQUIRED)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/rti_build_helper.cmake)
 
+rti_init_env()
+
 rti_find_connextpro()
 
 if(RTIConnextDDS_FOUND)
@@ -69,7 +71,8 @@ else()
         include/rtiros/visibility_control.h)
         
     target_include_directories(${RTIME_EXT}
-        PRIVATE "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/domain>"
+        PRIVATE "$<BUILD_INTERFACE:${RTIMEHOME}/include>"
+                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/domain>"
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/subscription>"
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/publication>"
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/infrastructure>"

@@ -372,7 +372,7 @@ RMW_Connext_MessageTypeSupport::get_type_support_fastrtps(
     }
     return type_support;
 }
-
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
 const rosidl_message_type_support_t*
 RMW_Connext_MessageTypeSupport::get_type_support_intro(
     const rosidl_message_type_support_t *const type_supports,
@@ -403,6 +403,7 @@ RMW_Connext_MessageTypeSupport::get_type_support_intro(
     }
     return type_support;
 }
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 RMW_Connext_MessageTypeSupport *
 RMW_Connext_MessageTypeSupport::register_type_support(
@@ -474,7 +475,7 @@ void RMW_Connext_MessageTypeSupport::type_info(
 /******************************************************************************
  * Service Type Support
  ******************************************************************************/
-
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
 const rosidl_service_type_support_t *
 RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
     const rosidl_service_type_support_t *const type_supports,
@@ -503,6 +504,7 @@ RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
 
     return type_support;
 }
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 const rosidl_service_type_support_t *
 RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(

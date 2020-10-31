@@ -27,7 +27,11 @@
 
 extern "C" rmw_ret_t rmw_init_subscription_allocation(
     const rosidl_message_type_support_t * type_support,
+#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
+    const rosidl_message_bounds_t * message_bounds,
+#else
     const rosidl_runtime_c__Sequence__bound * message_bounds,
+#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING */
     rmw_subscription_allocation_t * allocation)
 {
     UNUSED_ARG(type_support);
@@ -51,7 +55,12 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
     const rosidl_message_type_support_t * type_supports,
     const char * topic_name,
     const rmw_qos_profile_t * qos_policies,
-    const rmw_subscription_options_t * subscription_options)
+#if RMW_CONNEXT_HAVE_OPTIONS
+    const rmw_subscription_options_t * subscription_options
+#else
+    bool ignore_local_publications
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    )
 {
     RMW_CHECK_ARGUMENT_FOR_NULL(node, nullptr);
     RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -62,7 +71,9 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
     RMW_CHECK_ARGUMENT_FOR_NULL(type_supports, nullptr);
     RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, nullptr);
     RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
+#if RMW_CONNEXT_HAVE_OPTIONS
     RMW_CHECK_ARGUMENT_FOR_NULL(subscription_options, nullptr);
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
     RMW_CONNEXT_LOG_DEBUG_A(
         "creating new subscription: topic=%s",
@@ -105,7 +116,12 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
             type_supports,
             topic_name,
             qos_policies,
-            subscription_options);
+#if RMW_CONNEXT_HAVE_OPTIONS
+            subscription_options
+#else
+            ignore_local_publications
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+            );
     
     if (nullptr == rmw_sub)
     {
@@ -244,6 +260,8 @@ extern "C" rmw_ret_t rmw_take_with_info(
     return rc;
 }
 
+#if RMW_CONNEXT_HAVE_TAKE_SEQ
+
 extern "C" rmw_ret_t rmw_take_sequence(
     const rmw_subscription_t * subscription,
     size_t count,
@@ -273,6 +291,8 @@ extern "C" rmw_ret_t rmw_take_sequence(
     
     return rc;
 }
+
+#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
 
 extern "C" rmw_ret_t rmw_take_serialized_message(
     const rmw_subscription_t * subscription,

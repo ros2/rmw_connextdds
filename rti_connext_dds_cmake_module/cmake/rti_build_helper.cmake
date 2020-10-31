@@ -109,6 +109,29 @@ endfunction()
 ################################################################################
 # 
 ################################################################################
+
+# macro(get_directories _result _root)
+#     file(GLOB_RECURSE dirs RELATIVE ${_root} LIST_DIRECTORIES ON ${_root}/*)
+#     foreach(dir ${dirs})
+#         if(IS_DIRECTORY ${dir})
+#             list(APPEND ${_result} ${dir})
+#         endif()
+#     endforeach()
+# endmacro()
+# macro(get_targets_by_directory _result _dir)
+#     get_property(_target DIRECTORY ${_dir} PROPERTY BUILDSYSTEM_TARGETS)
+#     set(_result ${_target})
+# endmacro()
+# macro(get_all_targets _result _root_dir)
+#     get_directories(_all_directories ${_root_dir})
+#     foreach(_dir ${_all_directories})
+#         get_targets_by_directory(_target ${_dir})
+#         if(_target)
+#             list(APPEND ${_result} ${_target})
+#         endif()
+#     endforeach()
+# endmacro()
+
 function(rti_build_connextmicro)
     set(RTIMEHOME_FOUND false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
@@ -140,6 +163,11 @@ function(rti_build_connextmicro)
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
+    
+    # set_target_properties(rti_me${rti_lib_sfx}
+    #     PROPERTIES
+    #         INTERFACE_INCLUDE_DIRECTORIES
+    #             "${RTIMEHOME}/include;${RTIMEHOME}/src/reda/sequence")
     
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
     set(RTIMEHOME_FOUND false PARENT_SCOPE)
@@ -354,9 +382,6 @@ macro(rti_build_rmw_connext)
         rcutils
         rcpputils
         rmw
-        rmw_dds_common
-        rosidl_runtime_c
-        rosidl_runtime_cpp
         fastcdr
         rosidl_typesupport_fastrtps_c
         rosidl_typesupport_fastrtps_cpp)

@@ -594,9 +594,13 @@ rmw_connextdds_get_qos_policies(
     DDS_DataWriterResourceLimitsQosPolicy *const writer_resource_limits,
     DDS_DataReaderProtocolQosPolicy *const reader_protocol,
     DDS_DataWriterProtocolQosPolicy *const writer_protocol,
-    const rmw_qos_profile_t *const qos_policies,
+    const rmw_qos_profile_t *const qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+    ,
     const rmw_publisher_options_t *const pub_options,
-    const rmw_subscription_options_t *const sub_options)
+    const rmw_subscription_options_t *const sub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    )
 {
     UNUSED_ARG(type_support);
     UNUSED_ARG(writer_qos);
@@ -605,8 +609,10 @@ rmw_connextdds_get_qos_policies(
     UNUSED_ARG(deadline);
     UNUSED_ARG(liveliness);
     UNUSED_ARG(qos_policies);
+#if RMW_CONNEXT_HAVE_OPTIONS
     UNUSED_ARG(pub_options);
     UNUSED_ARG(sub_options);
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
     /* Adjust resource limits according to other QoS policies */
     size_t max_samples = RMW_CONNEXT_LIMIT_SAMPLES_MAX;
@@ -674,8 +680,12 @@ rmw_connextdds_get_datawriter_qos(
     rmw_context_impl_t *const ctx,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_DataWriterQos *const qos,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_publisher_options_t *const pub_options)
+    const rmw_qos_profile_t *const qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+    ,
+    const rmw_publisher_options_t *const pub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    )
 {
     UNUSED_ARG(ctx);
 
@@ -690,9 +700,13 @@ rmw_connextdds_get_datawriter_qos(
                 &qos->liveliness,
                 &qos->resource_limits,
                 &qos->publish_mode,
-                qos_policies,
+                qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+                ,
                 pub_options,
-                nullptr /* sub_options */))
+                nullptr /* sub_options */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+                ))
     {
         return RMW_RET_ERROR;
     }
@@ -720,9 +734,13 @@ rmw_connextdds_get_datawriter_qos(
                 &qos->writer_resource_limits,
                 nullptr /* reader protocol */,
                 &qos->protocol,
-                qos_policies,
+                qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+                ,
                 pub_options,
-                nullptr /* sub_options */);
+                nullptr /* sub_options */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+                );
 }
 
 rmw_ret_t
@@ -730,8 +748,11 @@ rmw_connextdds_get_datareader_qos(
     rmw_context_impl_t *const ctx,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_DataReaderQos *const qos,
-    const rmw_qos_profile_t *const qos_policies,
-    const rmw_subscription_options_t *const sub_options)
+    const rmw_qos_profile_t *const qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+    , const rmw_subscription_options_t *const sub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    )
 {
     UNUSED_ARG(ctx);
 
@@ -746,9 +767,13 @@ rmw_connextdds_get_datareader_qos(
                 &qos->liveliness,
                 &qos->resource_limits,
                 nullptr /* publish_mode */,
-                qos_policies,
+                qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+                ,
                 nullptr /* pub_options */,
-                sub_options))
+                sub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+                ))
     {
         return RMW_RET_ERROR;
     }
@@ -765,9 +790,13 @@ rmw_connextdds_get_datareader_qos(
                 nullptr /* writer_resource_limits */,
                 &qos->protocol,
                 nullptr /* writer protocol */,
-                qos_policies,
+                qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+                ,
                 nullptr /* pub_options */,
-                sub_options);
+                sub_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+                );
 }
 
 DDS_DataWriter*
@@ -776,7 +805,9 @@ rmw_connextdds_create_datawriter(
     DDS_DomainParticipant *const participant,
     DDS_Publisher *const pub,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_publisher_options_t *const publisher_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_Topic *const topic,
@@ -788,7 +819,11 @@ rmw_connextdds_create_datawriter(
 
     if (RMW_RET_OK !=
             rmw_connextdds_get_datawriter_qos(
-                ctx, type_support, dw_qos, qos_policies, publisher_options))
+                ctx, type_support, dw_qos, qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+                , publisher_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+                ))
     {
         RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
         return nullptr;
@@ -807,7 +842,9 @@ rmw_connextdds_create_datareader(
     DDS_DomainParticipant *const participant,
     DDS_Subscriber *const sub,
     const rmw_qos_profile_t *const qos_policies,
+#if RMW_CONNEXT_HAVE_OPTIONS
     const rmw_subscription_options_t *const subscriber_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     const bool internal,
     RMW_Connext_MessageTypeSupport *const type_support,
     DDS_Topic *const topic,
@@ -819,7 +856,11 @@ rmw_connextdds_create_datareader(
 
     if (RMW_RET_OK !=
             rmw_connextdds_get_datareader_qos(
-                ctx, type_support, dr_qos, qos_policies, subscriber_options))
+                ctx, type_support, dr_qos, qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+                , subscriber_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+                ))
     {
         RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
         return nullptr;

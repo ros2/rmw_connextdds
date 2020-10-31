@@ -90,7 +90,11 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
 
 extern "C" rmw_ret_t rmw_init_publisher_allocation(
     const rosidl_message_type_support_t * type_support,
+#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
+    const rosidl_message_bounds_t * message_bounds,
+#else
     const rosidl_runtime_c__Sequence__bound * message_bounds,
+#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING */
     rmw_publisher_allocation_t * allocation)
 {
     UNUSED_ARG(type_support);
@@ -112,8 +116,12 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
     const rmw_node_t * node,
     const rosidl_message_type_support_t * type_supports,
     const char * topic_name,
-    const rmw_qos_profile_t * qos_policies,
-    const rmw_publisher_options_t * publisher_options)
+    const rmw_qos_profile_t * qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+    ,
+    const rmw_publisher_options_t * publisher_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+    )
 {
     RMW_CHECK_ARGUMENT_FOR_NULL(node, nullptr);
     RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -124,7 +132,9 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
     RMW_CHECK_ARGUMENT_FOR_NULL(type_supports, nullptr);
     RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, nullptr);
     RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
+#if RMW_CONNEXT_HAVE_OPTIONS
     RMW_CHECK_ARGUMENT_FOR_NULL(publisher_options, nullptr);
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
     RMW_CONNEXT_LOG_DEBUG_A(
         "creating new publisher: topic=%s",
@@ -166,8 +176,12 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
             ctx->dds_pub,
             type_supports,
             topic_name,
-            qos_policies,
-            publisher_options);
+            qos_policies
+#if RMW_CONNEXT_HAVE_OPTIONS
+            ,
+            publisher_options
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+            );
     
     if (nullptr == rmw_pub)
     {

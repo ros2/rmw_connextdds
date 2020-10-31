@@ -19,7 +19,7 @@
 #ifndef RMW_CONNEXT__LOG_HPP_
 #define RMW_CONNEXT__LOG_HPP_
 
-#include "rmw_connextdds/static_config.h"
+#include "rmw_connextdds/static_config.hpp"
 
 #include "rcutils/logging_macros.h"
 

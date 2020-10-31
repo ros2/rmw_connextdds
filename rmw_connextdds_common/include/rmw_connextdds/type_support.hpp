@@ -145,10 +145,12 @@ public:
 
     static const rosidl_message_type_support_t * get_type_support_fastrtps(
         const rosidl_message_type_support_t *const type_supports);
-    
+
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     static const rosidl_message_type_support_t * get_type_support_intro(
         const rosidl_message_type_support_t *const type_supports,
         bool &cpp_version);
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
     
     static void type_info(
         const rosidl_message_type_support_t *const type_support,
@@ -166,11 +168,13 @@ public:
     get_type_support_fastrtps(
         const rosidl_service_type_support_t *const type_supports);
     
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     static
     const rosidl_service_type_support_t *
     get_type_support_intro(
         const rosidl_service_type_support_t *const type_supports,
         bool &cpp_version);
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
     
     static
     const rosidl_message_type_support_t *
@@ -186,11 +190,11 @@ public:
         {
             return nullptr;
         }
-
         auto svc_callbacks =
             static_cast<const service_type_support_callbacks_t *>(
                 svc_type_support_fastrtps->data);
 
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
         const rosidl_service_type_support_t *const svc_type_support_intro =  
             RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
                 type_supports, svc_members_cpp);
@@ -213,6 +217,10 @@ public:
             
             *svc_members_out = svc_members->request_members_;
         }
+#else
+    UNUSED_ARG(svc_members_out);
+    UNUSED_ARG(svc_members_cpp);
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
         return svc_callbacks->request_members_;
     }
@@ -235,7 +243,8 @@ public:
         auto svc_callbacks =
             static_cast<const service_type_support_callbacks_t *>(
                 svc_type_support_fastrtps->data);
-        
+
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
         const rosidl_service_type_support_t *const svc_type_support_intro =  
             RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
                 type_supports, svc_members_cpp);
@@ -258,6 +267,10 @@ public:
             
             *svc_members_out = svc_members->response_members_;
         }
+#else
+        UNUSED_ARG(svc_members_out);
+        UNUSED_ARG(svc_members_cpp);
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
         return svc_callbacks->response_members_;
     }

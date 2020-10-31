@@ -111,7 +111,7 @@
  * Message type discovery
  ******************************************************************************/
 #ifndef RMW_CONNEXT_EXPORT_MESSAGE_TYPES
-#define RMW_CONNEXT_EXPORT_MESSAGE_TYPES        0
+#define RMW_CONNEXT_EXPORT_MESSAGE_TYPES        1
 #endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
 
 #ifndef RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES

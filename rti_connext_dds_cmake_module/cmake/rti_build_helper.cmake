@@ -382,9 +382,14 @@ macro(rti_build_rmw_connext)
         rcutils
         rcpputils
         rmw
+        rmw_dds_common
+        rosidl_runtime_c
+        rosidl_runtime_cpp
         fastcdr
         rosidl_typesupport_fastrtps_c
-        rosidl_typesupport_fastrtps_cpp)
+        rosidl_typesupport_fastrtps_cpp
+        rosidl_typesupport_introspection_c
+        rosidl_typesupport_introspection_cpp)
 
     foreach(pkg_dep ${package_deps})
         find_package(${pkg_dep} REQUIRED)

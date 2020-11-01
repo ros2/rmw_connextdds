@@ -1622,6 +1622,7 @@ RMW_Connext_Subscriber::take_next(
                     }
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
                     size_t deserialized_size = 0;
+
                     if (RMW_RET_OK !=
                             this->type_support->deserialize(
                                 ros_message, data_buffer, deserialized_size))
@@ -3160,8 +3161,6 @@ RMW_Connext_Client::send_request(
     const void *const ros_request,
     int64_t *const sequence_id)
 {
-    // static std::atomic_int64_t next_request_id;
-    // *sequence_id = ++next_request_id;
     *sequence_id = this->next_request_id;
     this->next_request_id += 1;
 

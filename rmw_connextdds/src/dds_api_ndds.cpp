@@ -274,7 +274,13 @@ rmw_connextdds_get_datawriter_qos(
     }
 
 #if RMW_CONNEXT_ASYNC_PUBLISH
-    qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+    // At the moment there is a problem with enabling ASYNC publisher and
+    // writing inline QoS (required by request/reply), so we don't enable
+    // for clients and services.
+    if (!type_support->type_requestreply())
+    {
+        qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+    }
 #endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 
     return rmw_connextdds_get_qos_policies(

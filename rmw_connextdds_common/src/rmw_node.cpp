@@ -106,7 +106,7 @@ extern "C" rmw_node_t * rmw_create_node(
             "invalid node namespace: %s", reason);
         return nullptr;
     }
-
+#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
     {
         std::lock_guard<std::mutex> guard(ctx->initialization_mutex);
         if (0u == ctx->node_count)
@@ -120,6 +120,7 @@ extern "C" rmw_node_t * rmw_create_node(
             return nullptr;
         }
     }
+#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY */
 
     ret = ctx->initialize_node(node_localhost_only);
     if (RMW_RET_OK != ret)

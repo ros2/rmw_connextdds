@@ -457,17 +457,17 @@ macro(rti_build_rmw_connext)
         ament_lint_auto_find_test_dependencies()
     endif()
 
-    ament_package()
+    # ament_package()
 
-    install(
-        DIRECTORY include/
-        DESTINATION include
-    )
+    # install(
+    #     DIRECTORY include/
+    #     DESTINATION include
+    # )
 
-    install(
-        DIRECTORY ${RMW_CONNEXT_DIR}/include/
-        DESTINATION include
-    )
+    # install(
+    #     DIRECTORY ${RMW_CONNEXT_DIR}/include/
+    #     DESTINATION include
+    # )
 
     install(
         TARGETS ${PROJECT_NAME}

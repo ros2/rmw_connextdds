@@ -28,7 +28,7 @@ if(NOT RTIConnextDDSMicro_FOUND)
     return()
 endif()
 
-find_package(rmw_connextdds_common REQUIRED)
+find_package(rmw_connextdds REQUIRED)
 
 set(connext_deps        rti_connext_dds_cmake_module)
 set(connext_includes    )
@@ -40,3 +40,15 @@ set(connext_src
     include/rmw_connextdds/type_support_impl.hpp)
 
 rti_build_rmw_connext()
+
+install(
+    DIRECTORY include/
+    DESTINATION include
+)
+
+install(
+    DIRECTORY ${RMW_CONNEXT_DIR}/include/
+    DESTINATION include
+)
+
+ament_package()

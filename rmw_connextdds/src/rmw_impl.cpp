@@ -2878,6 +2878,8 @@ rmw_connextdds_create_type_name(
                 mangle_prefix);
 }
 
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
+
 std::string
 rmw_connextdds_create_type_name(
     const rosidl_typesupport_introspection_cpp::MessageMembers *const members,
@@ -2913,6 +2915,8 @@ rmw_connextdds_create_type_name(
                 msg_prefix,
                 mangle_prefix);
 }
+
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 std::string
 rmw_connextdds_create_type_name_request(

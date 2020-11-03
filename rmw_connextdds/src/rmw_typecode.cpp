@@ -296,6 +296,7 @@ rmw_connextdds_convert_type_member(
 
     switch (member->type_id_)
     {
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_BOOL:
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_BYTE:
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_UINT8:
@@ -363,7 +364,6 @@ rmw_connextdds_convert_type_member(
     }
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_MESSAGE:
     {
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
         bool cpp_version = false;
         const rosidl_message_type_support_t *const type_support_intro =
             RMW_Connext_MessageTypeSupport::get_type_support_intro(
@@ -393,12 +393,9 @@ rmw_connextdds_convert_type_member(
         
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
                     tc_cache, member->members_, type_name.c_str());
-#else
-        // Introspection type support must be available to generated nested tc.
-        return nullptr;
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
         break;
     }
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
     default:
     {
         RMW_CONNEXT_LOG_ERROR_A("unknown ROS type id: %d", member->type_id_)

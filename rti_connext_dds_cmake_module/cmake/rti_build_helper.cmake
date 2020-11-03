@@ -440,20 +440,6 @@ macro(rti_build_rmw_connext)
             CACHE INTERNAL "")
     endif()
 
-    if(NOT "${RMW_CONNEXT_EXPORT_MESSAGE_TYPES}" STREQUAL "")
-        target_compile_definitions(${PROJECT_NAME}
-            PRIVATE RMW_CONNEXT_EXPORT_MESSAGE_TYPES=${RMW_CONNEXT_EXPORT_MESSAGE_TYPES})
-        set(RMW_CONNEXT_EXPORT_MESSAGE_TYPES "${RMW_CONNEXT_EXPORT_MESSAGE_TYPES}"
-            CACHE INTERNAL "")
-    endif()
-
-    if(NOT "${RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES}" STREQUAL "")
-        target_compile_definitions(${PROJECT_NAME}
-            PRIVATE RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES=${RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES})
-        set(RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES "${RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES}"
-            CACHE INTERNAL "")
-    endif()
-
     # Causes the visibility macros to use dllexport rather than dllimport,
     # which is appropriate when building the dll but not consuming it.
     target_compile_definitions(${PROJECT_NAME}

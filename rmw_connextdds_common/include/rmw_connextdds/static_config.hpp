@@ -53,6 +53,7 @@
 
 /******************************************************************************
  * DDS Implementation
+ * Select the DDS implementation used to build the RMW library.
  ******************************************************************************/
 #define RMW_CONNEXT_DDS_API_PRO         0
 #define RMW_CONNEXT_DDS_API_MICRO       1
@@ -62,18 +63,41 @@
 #endif /* RMW_CONNEXT_DDS_API */
 
 /******************************************************************************
- * Log configuration
+ * Log configuration.
+ * This option controls the logging output of the RMW and which logging
+ * calls will actually be compiled into the library:
+ *   - NONE: disable all logging
+ *   - DEFAULT: include INFO to ERROR log calls, log through rclutils
+ *   - ALL: include all log calls, log through rclutils
+ *   - PRINTF: include all log calls, log through printf()
  ******************************************************************************/
+#define RMW_CONNEXT_LOG_MODE_NONE       0
+#define RMW_CONNEXT_LOG_MODE_DEFAULT    1
+#define RMW_CONNEXT_LOG_MODE_ALL        2
+#define RMW_CONNEXT_LOG_MODE_PRINTF     3
+
 #ifndef RMW_CONNEXT_LOG_MODE
 #define RMW_CONNEXT_LOG_MODE            RMW_CONNEXT_LOG_MODE_DEFAULT
 #endif /* RMW_CONNEXT_LOG_MODE */
 
+/******************************************************************************
+ * Code assertion.
+ * Enable various precondition assertions in the code.
+ ******************************************************************************/
 #ifndef RMW_CONNEXT_ASSERT_ENABLE
 #define RMW_CONNEXT_ASSERT_ENABLE       0
 #endif /* RMW_CONNEXT_ASSERT_ENABLE */
 
 /******************************************************************************
- * Request/Reply support
+ * Request/Reply support.
+ * If this option is enabled, the RMW will implement RPC requests between 
+ * Clients and Servers using a custom protocol that serializes a "request header"
+ * (containing GUID and SN) before the message payload, instead of using the
+ * standard DDS RPC protocol. This allows the RMW to interoperate with DDS
+ * implementations which don't support propagation and correlation of
+ * "sample identity".
+ * This option is enabled by default only for RTI Connext DDS Micro, and it must
+ * be enable at build time not interoperable with the Pro version. 
  ******************************************************************************/
 #ifndef RMW_CONNEXT_EMULATE_REQUESTREPLY
 #define RMW_CONNEXT_EMULATE_REQUESTREPLY \
@@ -81,49 +105,13 @@
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
 
 /******************************************************************************
- ******************************************************************************
- * Experimental features below
- ******************************************************************************
- ******************************************************************************/
-
-/******************************************************************************
- * Async Publishining
- ******************************************************************************/
-#ifndef RMW_CONNEXT_ASYNC_PUBLISH
-#define RMW_CONNEXT_ASYNC_PUBLISH       1
-#endif /* RMW_CONNEXT_ASYNC_PUBLISH */
-
-/******************************************************************************
- * Shmem Transport
+ * Shmem Transport.
+ * If disabled, the shared memory transport will not be used by the
+ * DomainParticipant.
  ******************************************************************************/
 #ifndef RMW_CONNEXT_TRANSPORT_SHMEM
 #define RMW_CONNEXT_TRANSPORT_SHMEM     1
 #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
-
-/******************************************************************************
- * Qos Profile support
- ******************************************************************************/
-#ifndef RMW_CONNEXT_USE_PROFILES
-#define RMW_CONNEXT_USE_PROFILES        0
-#endif /* RMW_CONNEXT_USE_PROFILES */
-
-/******************************************************************************
- * Message type discovery
- ******************************************************************************/
-#ifndef RMW_CONNEXT_EXPORT_MESSAGE_TYPES
-#define RMW_CONNEXT_EXPORT_MESSAGE_TYPES        1
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
-
-#ifndef RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
-#define RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES    1
-#endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
-
-/******************************************************************************
- * Message type discovery
- ******************************************************************************/
-#ifndef RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE
-#define RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE        65535
-#endif /* RMW_CONNEXT_UNBOUNDED_TYPE_MAX_SERIALIZED_SIZE */
 
 /******************************************************************************
  * ROS Target Release
@@ -177,7 +165,6 @@
     (RMW_CONNEXT_RELEASE >= RMW_CONNEXT_RELEASE_FOXY)
 #endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
 
-
 #ifndef RMW_CONNEXT_HAVE_LOCALHOST_ONLY
 #define RMW_CONNEXT_HAVE_LOCALHOST_ONLY \
     (RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_DASHING)
@@ -219,7 +206,5 @@
 
 
 #include "resource_limits.hpp"
-
-
 
 #endif /* RMW_CONNEXT__STATIC_CONFIG_HPP_ */

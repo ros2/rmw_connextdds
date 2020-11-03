@@ -23,8 +23,6 @@
 
 DDS_SEQUENCE(RMW_Connext_TypeCodePtrSeq, DDS_TypeCode*);
 
-#if RMW_CONNEXT_EXPORT_MESSAGE_TYPES
-
 DDS_TypeCode*
 rmw_connextdds_create_typecode(
     const rosidl_message_type_support_t *const type_supports,
@@ -39,7 +37,5 @@ rmw_connextdds_delete_typecode(DDS_TypeCode *const tc);
 void
 rmw_connextdds_release_typecode_cache(
     RMW_Connext_TypeCodePtrSeq *const tc_cache);
-
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
 
 #endif /* RMW_CONNEXT__TYPECODE_HPP_ */

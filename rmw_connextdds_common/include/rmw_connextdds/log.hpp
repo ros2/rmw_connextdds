@@ -23,11 +23,6 @@
 
 #include "rcutils/logging_macros.h"
 
-#define RMW_CONNEXT_LOG_MODE_NONE       0
-#define RMW_CONNEXT_LOG_MODE_DEFAULT    1
-#define RMW_CONNEXT_LOG_MODE_ALL        2
-#define RMW_CONNEXT_LOG_MODE_PRINTF     3
-
 #if RMW_CONNEXT_LOG_MODE == RMW_CONNEXT_LOG_MODE_ALL
 
 #define RMW_CONNEXT_LOG_ERROR(msg_) \

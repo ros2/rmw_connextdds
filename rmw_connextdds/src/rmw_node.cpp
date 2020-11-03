@@ -115,7 +115,7 @@ extern "C" rmw_node_t * rmw_create_node(
         }
         else if ((size_t)ctx->domain_id != domain_id)
         {
-            RMW_CONNEXT_LOG_ERROR_A("invalid domain id: context=%d, node=%d\n",
+            RMW_CONNEXT_LOG_ERROR_A("invalid domain id: context=%d, node=%ld\n",
                 ctx->domain_id, domain_id)
             return nullptr;
         }

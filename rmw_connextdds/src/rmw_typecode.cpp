@@ -207,13 +207,13 @@ RMW_Connext_TypeCodePtrSeq_finalize_elements(
     }
 }
 
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
 static
 DDS_TCKind
 rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
 {
     switch (ros_type_id)
     {
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_BOOL:
     {
         return DDS_TK_BOOLEAN;
@@ -272,7 +272,6 @@ rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
     {
         return DDS_TK_STRUCT;
     }
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
     default:
     {
         RMW_CONNEXT_LOG_ERROR_A("unknown ROS type id: %d", ros_type_id)
@@ -281,6 +280,7 @@ rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
     }
 
 }
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 #define length_unbound          RTIXCdrLong_MAX
 
@@ -620,6 +620,9 @@ rmw_connextdds_create_typecode(
             return nullptr;
         }
     }
+#else
+    UNUSED_ARG(cpp_version);
+    UNUSED_ARG(intro_members);
 #endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 

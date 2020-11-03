@@ -75,26 +75,20 @@ typedef struct rmw_qos_incompatible_event_status_t rmw_offered_qos_incompatible_
 #endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
 
 #if !RMW_CONNEXT_HAVE_MESSAGE_LOST
-
-typedef struct RMW_PUBLIC_TYPE rmw_message_lost_status_t
-{
-  size_t total_count;
-  size_t total_count_change;
-} rmw_message_lost_status_t;
-
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
-
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST_EVENT
 /******************************************************************************
  * Define value for RMW_EVENT_MESSAGE_LOST as an invalid value,
  * since it's not defined by rmw_event_type_t.
  ******************************************************************************/
 #define RMW_EVENT_MESSAGE_LOST  (RMW_EVENT_INVALID+3)
 
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST_EVENT */
+typedef struct RMW_PUBLIC_TYPE rmw_message_lost_status_t
+{
+  size_t total_count;
+  size_t total_count_change;
+} rmw_message_lost_status_t;
+#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
 
 #if !RMW_CONNEXT_HAVE_SERVICE_INFO
-
 typedef rcutils_time_point_value_t rmw_time_point_value_t;
 
 typedef struct RMW_PUBLIC_TYPE rmw_service_info_t

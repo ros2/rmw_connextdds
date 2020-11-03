@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCPPUTILS__SCOPE_EXIT_HPP_
-#define RCPPUTILS__SCOPE_EXIT_HPP_
+#ifndef RMW_CONNEXT__SCOPE_EXIT_HPP_
+#define RMW_CONNEXT__SCOPE_EXIT_HPP_
+
+/**
+ * This header file is only needed when building the RMW with a version of
+ * ROS equal or older than Foxy, since those versions don't include
+ * rcpputils/scope_exit.hpp
+ */
 
 #include <utility>
 
@@ -60,4 +66,4 @@ make_scope_exit(CallableT && callable)
 
 }  // namespace rcpputils
 
-#endif  // RCPPUTILS__SCOPE_EXIT_HPP_
+#endif  // RMW_CONNEXT__SCOPE_EXIT_HPP_

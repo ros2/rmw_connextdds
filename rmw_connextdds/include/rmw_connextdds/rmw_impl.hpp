@@ -45,18 +45,6 @@ typedef enum RMW_PUBLIC_TYPE rmw_qos_policy_kind_t
   RMW_QOS_POLICY_LIFESPAN = 1 << 6
 } rmw_qos_policy_kind_t;
 
-#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-
-#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-
-/******************************************************************************
- * Define value for RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE, and
- * RMW_EVENT_OFFERED_QOS_INCOMPATIBLE as invalid values,
- * since they're not defined by rmw_event_type_t.
- ******************************************************************************/
-#define RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE    (RMW_EVENT_INVALID+1)
-#define RMW_EVENT_OFFERED_QOS_INCOMPATIBLE      (RMW_EVENT_INVALID+2)
-
 /******************************************************************************
  * rmw_qos_incompatible_event_status_t is defined by rmw/incompatible_qos.h
  * from Foxy onward.
@@ -71,6 +59,19 @@ struct RMW_PUBLIC_TYPE rmw_qos_incompatible_event_status_t
 typedef struct rmw_qos_incompatible_event_status_t rmw_requested_qos_incompatible_event_status_t;
 
 typedef struct rmw_qos_incompatible_event_status_t rmw_offered_qos_incompatible_event_status_t;
+
+#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
+
+#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
+
+/******************************************************************************
+ * Define value for RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE, and
+ * RMW_EVENT_OFFERED_QOS_INCOMPATIBLE as invalid values,
+ * since they're not defined by rmw_event_type_t.
+ ******************************************************************************/
+#define RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE    (RMW_EVENT_INVALID+1)
+#define RMW_EVENT_OFFERED_QOS_INCOMPATIBLE      (RMW_EVENT_INVALID+2)
+
 #endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
 
 #if !RMW_CONNEXT_HAVE_MESSAGE_LOST

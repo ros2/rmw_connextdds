@@ -114,12 +114,8 @@ rmw_connextdds_initialize_participant_qos_impl(
     UNUSED_ARG(ctx);
     UNUSED_ARG(dp_qos);
 
-#if !RMW_CONNEXT_EXPORT_MESSAGE_TYPES
+    // Only propagate type object
     dp_qos->resource_limits.type_code_max_serialized_length = 0;
-    dp_qos->resource_limits.type_object_max_serialized_length = 0;
-#else
-    dp_qos->resource_limits.type_code_max_serialized_length = 0;
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
 
     if (ctx->localhost_only)
     {
@@ -273,9 +269,7 @@ rmw_connextdds_get_datawriter_qos(
         return RMW_RET_ERROR;
     }
 
-#if RMW_CONNEXT_ASYNC_PUBLISH
     qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-#endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 
     return rmw_connextdds_get_qos_policies(
                 true /* writer_qos */,
@@ -337,42 +331,6 @@ rmw_connextdds_get_datareader_qos(
                 );
 }
 
-#if RMW_CONNEXT_USE_PROFILES
-static
-void
-rmw_connextdds_get_default_profile_from_qos(
-    DDS_HistoryQosPolicy *const history,
-    DDS_ReliabilityQosPolicy *const reliability,
-    const char **const profile_lib_out,
-    const char **const profile_out)
-{
-    const bool reliable =
-        reliability->kind == DDS_RELIABLE_RELIABILITY_QOS;
-    
-    const bool keep_all =
-        history->kind == DDS_KEEP_ALL_HISTORY_QOS;
-    
-    if (reliable)
-    {
-        if (keep_all)
-        {
-            *profile_out = DDS_PROFILE_GENERIC_STRICT_RELIABLE_LOW_LATENCY;
-            *profile_lib_out = DDS_BUILTIN_QOS_LIB_EXP;
-        }
-        else
-        {
-            *profile_out = DDS_PROFILE_GENERIC_KEEP_LAST_RELIABLE;
-            *profile_lib_out = DDS_BUILTIN_QOS_LIB_EXP;
-        }
-    }
-    else
-    {
-        *profile_out = DDS_PROFILE_GENERIC_BEST_EFFORT;
-        *profile_lib_out = DDS_BUILTIN_QOS_LIB_EXP;
-    }
-}
-#endif /* RMW_CONNEXT_USE_PROFILES */
-
 DDS_DataWriter*
 rmw_connextdds_create_datawriter(
     rmw_context_impl_t *const ctx,
@@ -391,8 +349,6 @@ rmw_connextdds_create_datawriter(
     UNUSED_ARG(participant);
     UNUSED_ARG(internal);
 
-#if !RMW_CONNEXT_USE_PROFILES
-
     if (RMW_RET_OK !=
             rmw_connextdds_get_datawriter_qos(
                 ctx, type_support, dw_qos, qos_policies
@@ -410,63 +366,6 @@ rmw_connextdds_create_datawriter(
                 pub, topic, dw_qos,
                 NULL, DDS_STATUS_MASK_NONE);
 
-#else
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datawriter_qos(
-                ctx, type_support, dw_qos, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS
-                , publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-                ))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
-        return nullptr;
-    }
-
-    const char *profile = nullptr;
-    const char *profile_lib = nullptr;
-
-    rmw_connextdds_get_default_profile_from_qos(
-        &dw_qos->history, &dw_qos->reliability, &profile_lib, &profile);
-
-    DDS_DataWriter *const writer  =
-            DDS_Publisher_create_datawriter_with_profile(
-                pub,
-                topic,
-                profile_lib,
-                profile,
-                NULL,
-                DDS_STATUS_MASK_NONE);
-    
-    if (nullptr == writer)
-    {
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(writer, dw_qos))
-    {
-        return nullptr;
-    }
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datawriter_qos(
-                ctx, type_support, dw_qos, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS
-                , publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-                ))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataWriter_set_qos(writer, dw_qos))
-    {
-        return nullptr;
-    }
-#endif /* RMW_CONNEXT_USE_PROFILES */
-    
     return writer;
 }
 
@@ -488,8 +387,6 @@ rmw_connextdds_create_datareader(
     UNUSED_ARG(participant);
     UNUSED_ARG(internal);
 
-#if !RMW_CONNEXT_USE_PROFILES
-
     if (RMW_RET_OK !=
             rmw_connextdds_get_datareader_qos(
                 ctx, type_support, dr_qos, qos_policies
@@ -509,49 +406,6 @@ rmw_connextdds_create_datareader(
                 dr_qos,
                 NULL, DDS_STATUS_MASK_NONE);
 
-#else
-
-    const char *profile = nullptr;
-    const char *profile_lib = nullptr;
-    rmw_connextdds_get_default_profile_from_qos(
-        &dr_qos->history, &dr_qos->reliability, &profile_lib, &profile);
-
-    DDS_DataReader *const reader  =
-            DDS_Subscriber_create_datareader_with_profile(
-                sub,
-                DDS_Topic_as_topicdescription(topic),
-                profile_lib,
-                profile,
-                NULL, DDS_STATUS_MASK_NONE);
-    
-    if (nullptr == reader)
-    {
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataReader_get_qos(reader, dr_qos))
-    {
-        return nullptr;
-    }
-
-    if (RMW_RET_OK !=
-            rmw_connextdds_get_datareader_qos(
-                ctx, type_support, dr_qos, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS
-                , subscriber_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-                ))
-    {
-        RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
-        return nullptr;
-    }
-
-    if (DDS_RETCODE_OK != DDS_DataReader_set_qos(reader, dr_qos))
-    {
-        return nullptr;
-    }
-#endif /* RMW_CONNEXT_USE_PROFILES */
-    
     return reader;
 }
 

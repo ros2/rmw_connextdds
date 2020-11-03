@@ -42,13 +42,11 @@ struct RMW_Connext_NddsTypeCode
 
     ~RMW_Connext_NddsTypeCode()
     {
-#if RMW_CONNEXT_EXPORT_MESSAGE_TYPES
         if (nullptr != this->dds_tc)
         {
             rmw_connextdds_delete_typecode(this->dds_tc);
         }
         rmw_connextdds_release_typecode_cache(&this->tc_cache);
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
     }
     
     RMW_Connext_NddsTypeCode(
@@ -58,7 +56,6 @@ struct RMW_Connext_NddsTypeCode
     : type_plugin(type_plugin),
       dds_tc(dds_tc)
     {
-#if RMW_CONNEXT_EXPORT_MESSAGE_TYPES
         this->base = this->dds_tc->_data;
         if (nullptr != tc_cache)
         {
@@ -68,10 +65,6 @@ struct RMW_Connext_NddsTypeCode
         {
             RMW_Connext_TypeCodePtrSeq_initialize(&this->tc_cache);
         }
-#else
-        UNUSED_ARG(tc_cache);
-        RTICdrTypeCode_initialize(&this->base);
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
     }
     
 };
@@ -912,7 +905,6 @@ rmw_connextdds_register_type_support(
         DDS_TypeCode *dds_tc = nullptr;
         struct RMW_Connext_TypeCodePtrSeq tc_cache = DDS_SEQUENCE_INITIALIZER;
 
-#if RMW_CONNEXT_EXPORT_MESSAGE_TYPES
         struct RMW_Connext_TypeCodePtrSeq *const tc_cache_ptr = &tc_cache;
         auto scope_exit_tc_cache_delete = 
             rcpputils::make_scope_exit(
@@ -939,10 +931,6 @@ rmw_connextdds_register_type_support(
                 {
                 rmw_connextdds_delete_typecode(dds_tc);
                 });
-#else
-    UNUSED_ARG(intro_members);
-    UNUSED_ARG(intro_members_cpp);
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
 
         RMW_Connext_NddsTypePluginI *type_plugin = 
             new (std::nothrow) RMW_Connext_NddsTypePluginI(
@@ -958,12 +946,9 @@ rmw_connextdds_register_type_support(
                 type_support->type_name())
             return nullptr;
         }
-
-
-#if RMW_CONNEXT_EXPORT_MESSAGE_TYPES
+        
         scope_exit_tc_cache_delete.cancel();
         scope_exit_dds_tc_delete.cancel();
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */
 
         scope_exit_pool_samples_delete.cancel();
 

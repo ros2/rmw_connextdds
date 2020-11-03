@@ -19,8 +19,6 @@
 #include "rmw_connextdds/typecode.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
 
-#if RMW_CONNEXT_EXPORT_MESSAGE_TYPES
-
 static RTIBool
 RMW_Connext_TypeCodePtr_initialize_w_params(
     DDS_TypeCode **self,
@@ -381,21 +379,13 @@ rmw_connextdds_convert_type_member(
         {
             type_name = rmw_connextdds_create_type_name(
                 (rosidl_typesupport_introspection_cpp::MessageMembers*)
-                    type_support_intro->data
-#if RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
-                    , true /* mangle_names */
-#endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
-                );
+                    type_support_intro->data, true /* mangle_names */);
         }
         else
         {
             type_name = rmw_connextdds_create_type_name(
                 (rosidl_typesupport_introspection_c__MessageMembers*)
-                    type_support_intro->data
-#if RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
-                    , true /* mangle_names */
-#endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES */
-                );
+                    type_support_intro->data, true /* mangle_names */);
         }
         
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
@@ -489,8 +479,9 @@ rmw_connextdds_convert_type_members(
         DDS_StructMember *const tc_member =
             DDS_StructMemberSeq_get_reference(tc_members, i);
         const auto * member = members->members_ + i;
-        size_t member_name_len = strlen(member->name_);
+        
         /* Check that member has a non-empty name */
+        size_t member_name_len = strlen(member->name_);
         if (nullptr == member->name_ || member_name_len == 0 ||
                 (member_name_len == 1 &&
                     member->name_[member_name_len - 1] == '_'))
@@ -499,29 +490,11 @@ rmw_connextdds_convert_type_members(
         }
 
         /* Names in the introspection plugin don't actually end with "_" */
-
-#if RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES
         tc_member->name = DDS_String_dup(member->name_);
         if (nullptr == tc_member->name)
         {
             return RMW_RET_BAD_ALLOC;
         }
-        // if (tc_member->name[member_name_len - 1] == '_')
-        // {
-        //     tc_member->name[member_name_len - 1] = '\0';
-        // }
-#else
-        /* Add a trailing "_" to ROS member to be compatible with
-           current ROS IDL to OMG IDL mapping */
-        tc_member->name = DDS_String_alloc(member_name_len + 1);
-        if (nullptr == tc_member->name)
-        {
-            return RMW_RET_BAD_ALLOC;
-        }
-        // DDS_String_replace(&tc_member->name, member->name_);
-        strcpy(tc_member->name, member->name_);
-        tc_member->name[member_name_len] = '_';
-#endif /* RMW_CONNEXT_COMPATIBLE_MESSAGE_TYPES*/
 
         tc_member->type =
             rmw_connextdds_convert_type_member(tc_factory, member, tc_cache);
@@ -529,8 +502,6 @@ rmw_connextdds_convert_type_members(
         {
             return RMW_RET_ERROR;
         }
-        
-        // RMW_CONNEXT_LOG_INFO_A("converted member: name=%s", tc_member->name)
     }
 
 
@@ -670,7 +641,6 @@ rmw_connextdds_delete_typecode(DDS_TypeCode *const tc)
     }
 }
 
-
 void
 rmw_connextdds_release_typecode_cache(
     RMW_Connext_TypeCodePtrSeq *const tc_cache)
@@ -678,5 +648,3 @@ rmw_connextdds_release_typecode_cache(
     RMW_Connext_TypeCodePtrSeq_finalize_elements(tc_cache);
     RMW_Connext_TypeCodePtrSeq_finalize(tc_cache);
 }
-
-#endif /* RMW_CONNEXT_EXPORT_MESSAGE_TYPES */

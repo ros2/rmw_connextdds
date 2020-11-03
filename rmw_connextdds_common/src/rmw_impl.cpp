@@ -757,13 +757,15 @@ RMW_Connext_Publisher::requestreply_header_to_dds(
 
 rmw_ret_t
 RMW_Connext_Publisher::write(
-    const void *const ros_message, const bool serialized)
+    const void *const ros_message,
+    const bool serialized,
+    int64_t *const sn_out)
 {
     RMW_Connext_Message user_msg;
     user_msg.user_data = ros_message;
     user_msg.serialized = serialized;
     
-    return rmw_connextdds_write_message(this, &user_msg);
+    return rmw_connextdds_write_message(this, &user_msg, sn_out);
 }
 
 
@@ -3161,12 +3163,16 @@ RMW_Connext_Client::send_request(
     const void *const ros_request,
     int64_t *const sequence_id)
 {
-    *sequence_id = this->next_request_id;
-    this->next_request_id += 1;
-
     RMW_Connext_RequestReplyMessage rr_msg;
     rr_msg.request = true;
+
+#if RMW_CONNEXT_EMULATE_REQUESTREPLY
+    *sequence_id = this->next_request_id;
+    this->next_request_id += 1;
     rr_msg.sn = *sequence_id;
+#else
+    rr_msg.sn = -1;
+#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
     rr_msg.gid = *this->request_pub->gid();
     rr_msg.payload = (void*)ros_request;
 
@@ -3179,8 +3185,8 @@ RMW_Connext_Client::send_request(
             ((uint32_t*)rr_msg.gid.data)[2],
             ((uint32_t*)rr_msg.gid.data)[3],
             rr_msg.sn)
-
-    return this->request_pub->write(&rr_msg, false /* serialized */);
+    
+    return this->request_pub->write(&rr_msg, false /* serialized */, sequence_id);
 }
 
 rmw_ret_t

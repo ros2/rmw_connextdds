@@ -274,13 +274,7 @@ rmw_connextdds_get_datawriter_qos(
     }
 
 #if RMW_CONNEXT_ASYNC_PUBLISH
-    // At the moment there is a problem with enabling ASYNC publisher and
-    // writing inline QoS (required by request/reply), so we don't enable
-    // for clients and services.
-    if (!type_support->type_requestreply())
-    {
-        qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-    }
+    qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
 #endif /* RMW_CONNEXT_ASYNC_PUBLISH */
 
     return rmw_connextdds_get_qos_policies(
@@ -564,24 +558,38 @@ rmw_connextdds_create_datareader(
 rmw_ret_t
 rmw_connextdds_write_message(
     RMW_Connext_Publisher *const pub,
-    RMW_Connext_Message *const message)
+    RMW_Connext_Message *const message,
+    int64_t *const sn_out)
 {
 #if !RMW_CONNEXT_EMULATE_REQUESTREPLY
-
     if (pub->message_type_support()->type_requestreply())
     {
         RMW_Connext_RequestReplyMessage *const rr_msg = 
             (RMW_Connext_RequestReplyMessage*)message->user_data;
         DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
 
-        if (RMW_RET_OK !=
-                pub->requestreply_header_to_dds(
-                    rr_msg,
-                    &write_params.identity,
-                    &write_params.related_sample_identity))
+        if (!rr_msg->request)
         {
-            RMW_CONNEXT_LOG_ERROR("failed to convert request information")
-            return RMW_RET_ERROR;
+            /* If this is a reply, propagate the request's sample identity
+               via the related_sample_identity field */
+            rmw_ret_t rc = RMW_RET_ERROR;
+            
+            rmw_connextdds_sn_ros_to_dds(
+                rr_msg->sn,
+                write_params.related_sample_identity.sequence_number);
+
+            rc = rmw_connextdds_gid_to_guid(
+                    rr_msg->gid,
+                    write_params.related_sample_identity.writer_guid);
+            if (RMW_RET_OK != rc)
+            {
+                return rc;
+            }
+        }
+        else
+        {
+            // enable WriteParams::replace_auto to retrieve SN of published message
+            write_params.replace_auto = DDS_BOOLEAN_TRUE;
         }
 
         if (DDS_RETCODE_OK !=
@@ -593,8 +601,21 @@ rmw_connextdds_write_message(
             return RMW_RET_ERROR;
         }
 
+        if (rr_msg->request)
+        {
+            int64_t sn = 0;
+
+            // Read assigned sn from write_params
+            rmw_connextdds_sn_dds_to_ros(
+                write_params.identity.sequence_number, sn);
+            
+            *sn_out = sn;
+        }
+        
         return RMW_RET_OK;
     }
+#else
+    UNUSED_ARG(sn_out);
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
 
     if (DDS_RETCODE_OK !=

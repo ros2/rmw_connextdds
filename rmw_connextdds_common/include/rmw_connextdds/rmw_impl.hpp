@@ -902,7 +902,10 @@ public:
     }
 
     rmw_ret_t
-    write(const void *const ros_message, const bool serialized);
+    write(
+        const void *const ros_message,
+        const bool serialized,
+        int64_t *const sn_out = nullptr);
 
     rmw_ret_t
     enable() const

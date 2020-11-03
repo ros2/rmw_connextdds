@@ -134,7 +134,8 @@ rmw_connextdds_create_datareader(
 rmw_ret_t
 rmw_connextdds_write_message(
     RMW_Connext_Publisher *const pub,
-    RMW_Connext_Message *const message);
+    RMW_Connext_Message *const message,
+    int64_t *const sn_out);
 
 rmw_ret_t
 rmw_connextdds_take_samples(

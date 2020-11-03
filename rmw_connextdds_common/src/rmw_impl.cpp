@@ -94,7 +94,6 @@ rcutils_uint8_array_copy(
 /******************************************************************************
  * Qos Helpers
  ******************************************************************************/
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
 rmw_qos_policy_kind_t
 dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id)
 {
@@ -117,7 +116,6 @@ dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id)
     }
     return RMW_QOS_POLICY_INVALID;
 }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
 
 rmw_ret_t
 rmw_connextdds_get_readerwriter_qos(
@@ -3100,11 +3098,7 @@ RMW_Connext_Client::is_service_available(bool &available)
 
 rmw_ret_t
 RMW_Connext_Client::take_response(
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
     rmw_service_info_t *const request_header,
-#else
-    rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     void *const ros_response,
     bool *const taken)
 {
@@ -3127,21 +3121,16 @@ RMW_Connext_Client::take_response(
 
     if (taken_msg)
     {
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
         request_header->request_id.sequence_number = rr_msg.sn;
         memcpy(
             request_header->request_id.writer_guid,
             rr_msg.gid.data,
             16);
+#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
         request_header->source_timestamp = message_info.source_timestamp;
         request_header->received_timestamp = message_info.received_timestamp;
-#else
-        request_header->sequence_number = rr_msg.sn;
-        memcpy(
-            request_header->writer_guid,
-            rr_msg.gid.data,
-            16);
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
+
         *taken = true;
 
         RMW_CONNEXT_LOG_DEBUG_A("[%s] taken RESPONSE: "
@@ -3347,11 +3336,7 @@ RMW_Connext_Service::create(
 
 rmw_ret_t
 RMW_Connext_Service::take_request(
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
     rmw_service_info_t *const request_header,
-#else
-    rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     void *const ros_request,
     bool *const taken)
 {
@@ -3375,24 +3360,17 @@ RMW_Connext_Service::take_request(
 
     if (taken_msg)
     {
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
         request_header->request_id.sequence_number = rr_msg.sn;
         
         memcpy(
             request_header->request_id.writer_guid,
             rr_msg.gid.data,
             16);
-
+#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
         request_header->source_timestamp = message_info.source_timestamp;
         request_header->received_timestamp = message_info.received_timestamp;
-#else
-        request_header->sequence_number = rr_msg.sn;
-        
-        memcpy(
-            request_header->writer_guid,
-            rr_msg.gid.data,
-            16);
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
+
         *taken = true;
 
         RMW_CONNEXT_LOG_DEBUG_A("[%s] taken REQUEST: "
@@ -3485,7 +3463,6 @@ ros_event_to_dds(const rmw_event_type_t ros, bool *const invalid)
     {
         return DDS_OFFERED_DEADLINE_MISSED_STATUS;
     }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
     {
         return DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS;
@@ -3494,13 +3471,10 @@ ros_event_to_dds(const rmw_event_type_t ros, bool *const invalid)
     {
         return DDS_OFFERED_INCOMPATIBLE_QOS_STATUS;
     }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
     {
         return DDS_SAMPLE_LOST_STATUS;
     }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     default:
     {
         if (nullptr != invalid)
@@ -3559,12 +3533,8 @@ ros_event_for_reader(const rmw_event_type_t ros)
     {
     case RMW_EVENT_LIVELINESS_CHANGED:
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     {
         return true;
     }
@@ -3574,60 +3544,6 @@ ros_event_for_reader(const rmw_event_type_t ros)
     }
     }
 }
-
-// RMW_Connext_Event*
-// RMW_Connext_Event::create(
-//     RMW_Connext_Publisher *const pub, const rmw_event_type_t event_type)
-// {
-//     RMW_Connext_Event *const event =
-//         new (std::nothrow) RMW_Connext_Event();
-    
-//     if (nullptr == event)
-//     {
-//         RMW_CONNEXT_LOG_ERROR("failed to allocate event")
-//         return nullptr;
-//     }
-//     event->_entity = pub;
-//     event->_reader_event = false;
-//     event->_dds_event = ros_event_to_dds(event_type, nullptr);
-
-//     RMW_CONNEXT_LOG_DEBUG_A("new event: "
-//         "publisher=%p, "
-//         "event=%p, "
-//         "event.type=%s",
-//         (void*)pub,
-//         (void*)event,
-//         dds_event_to_str(event->_dds_event))
-
-//     return event;
-// }
-
-// RMW_Connext_Event*
-// RMW_Connext_Event::create(
-//     RMW_Connext_Subscriber *const sub, const rmw_event_type_t event_type)
-// {
-//     RMW_Connext_Event *const event =
-//         new (std::nothrow) RMW_Connext_Event();
-    
-//     if (nullptr == event)
-//     {
-//         RMW_CONNEXT_LOG_ERROR("failed to allocate event")
-//         return nullptr;
-//     }
-//     event->_entity = sub;
-//     event->_reader_event = true;
-//     event->_dds_event = ros_event_to_dds(event_type, nullptr);
-
-//     RMW_CONNEXT_LOG_DEBUG_A("new event: "
-//         "subscriber=%p, "
-//         "event=%p, "
-//         "event.type=%s",
-//         (void*)sub,
-//         (void*)event,
-//         dds_event_to_str(event->_dds_event))
-
-//     return event;
-// }
 
 rmw_ret_t
 RMW_Connext_Event::enable(rmw_event_t *const event)
@@ -4238,6 +4154,210 @@ RMW_Connext_StdSubscriberStatusCondition::install(
     return RMW_RET_OK;
 }
 
+RMW_Connext_StdSubscriberStatusCondition::RMW_Connext_StdSubscriberStatusCondition()
+    : triggered_deadline(false),
+      triggered_liveliness(false),
+      triggered_qos(false),
+      triggered_sample_lost(false),
+      triggered_data(false),
+      listener_drop_handle(DDS_HANDLE_NIL),
+      sub(nullptr)
+{
+
+}
+
+bool
+RMW_Connext_StdSubscriberStatusCondition::has_status(
+    const rmw_event_type_t event_type)
+{
+    switch (event_type)
+    {
+    case RMW_EVENT_LIVELINESS_CHANGED:
+    {
+        return this->triggered_liveliness;
+    }
+    case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
+    {
+        return this->triggered_deadline;
+    }
+    case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+    {
+        return this->triggered_qos;
+    }
+    case RMW_EVENT_MESSAGE_LOST:
+    {
+        return this->triggered_sample_lost;
+    }
+    default:
+        /* TODO assert unreachable */
+        return false;
+    }
+}
+
+bool
+RMW_Connext_StdSubscriberStatusCondition::get_status(
+    const rmw_event_type_t event_type, void *const event_info)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    switch (event_type)
+    {
+    case RMW_EVENT_LIVELINESS_CHANGED:
+    {
+        rmw_liveliness_changed_status_t *status =
+            (rmw_liveliness_changed_status_t*)event_info;
+        
+        status->alive_count = this->status_liveliness.alive_count;
+        status->alive_count_change =
+            this->status_liveliness.alive_count_change;
+        status->not_alive_count =
+            this->status_liveliness.not_alive_count;
+        status->not_alive_count_change =
+            this->status_liveliness.not_alive_count_change;
+
+        this->status_liveliness.alive_count_change = 0;
+        this->status_liveliness.not_alive_count_change = 0;
+        this->triggered_liveliness = false;
+        break;
+    }
+    case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
+    {
+        rmw_requested_deadline_missed_status_t * status =
+            (rmw_requested_deadline_missed_status_t *)event_info;
+        
+        status->total_count = this->status_deadline.total_count;
+        status->total_count_change =
+            this->status_deadline.total_count_change;
+        
+        this->status_deadline.total_count_change = 0;
+        this->triggered_deadline = false;
+        break;
+    }
+    case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+    {
+        rmw_requested_qos_incompatible_event_status_t *const status =
+            (rmw_requested_qos_incompatible_event_status_t*)event_info;
+        
+        status->total_count = this->status_qos.total_count;
+        status->total_count_change =
+            this->status_qos.total_count_change;
+        status->last_policy_kind =
+            dds_qos_policy_to_rmw_qos_policy(
+                this->status_qos.last_policy_id);
+        
+        this->status_qos.total_count_change = 0;
+        this->triggered_qos = false;
+        break;
+    }
+    case RMW_EVENT_MESSAGE_LOST:
+    {
+        rmw_message_lost_status_t *const status =
+            (rmw_message_lost_status_t*)event_info;
+
+        status->total_count = this->status_sample_lost.total_count;
+        status->total_count_change =
+            this->status_sample_lost.total_count_change;
+        
+        this->status_sample_lost.total_count_change = 0;
+        this->triggered_sample_lost = false;
+        break;
+    }
+    default:
+        /* TODO assert unreachable */
+        return false;
+    }
+
+    return true;
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::on_requested_deadline_missed(
+    const DDS_RequestedDeadlineMissedStatus *const status)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->update_status_deadline(status);
+
+    if (nullptr != this->waitset_condition)
+    {
+        this->waitset_condition->notify_one();
+    }
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::on_requested_incompatible_qos(
+    const DDS_RequestedIncompatibleQosStatus *const status)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->update_status_qos(status);
+
+    if (nullptr != this->waitset_condition)
+    {
+        this->waitset_condition->notify_one();
+    }
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::on_liveliness_changed(
+    const DDS_LivelinessChangedStatus *const status)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->update_status_liveliness(status);
+
+    if (nullptr != this->waitset_condition)
+    {
+        this->waitset_condition->notify_one();
+    }
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::on_sample_lost(
+    const DDS_SampleLostStatus *const status)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->update_status_sample_lost(status);
+
+    if (nullptr != this->waitset_condition)
+    {
+        this->waitset_condition->notify_one();
+    }
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::update_status_deadline(
+    const DDS_RequestedDeadlineMissedStatus *const status)
+{
+    this->status_deadline = *status;
+    this->triggered_deadline = true;
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::update_status_liveliness(
+    const DDS_LivelinessChangedStatus *const status)
+{
+    this->status_liveliness = *status;
+    this->triggered_liveliness = true;
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::update_status_qos(
+    const DDS_RequestedIncompatibleQosStatus *const status)
+{
+    this->status_qos = *status;
+    this->triggered_qos = true;
+}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::update_status_sample_lost(
+    const DDS_SampleLostStatus *const status)
+{
+    this->status_sample_lost = *status;
+    this->triggered_sample_lost = true;
+}
+
 rmw_ret_t
 RMW_Connext_StdPublisherStatusCondition::install(
     RMW_Connext_Publisher *const pub)
@@ -4271,3 +4391,167 @@ RMW_Connext_StdPublisherStatusCondition::install(
     return RMW_RET_OK;
 }
 
+RMW_Connext_StdPublisherStatusCondition::RMW_Connext_StdPublisherStatusCondition()
+    : triggered_deadline(false),
+      triggered_liveliness(false),
+      triggered_qos(false)
+{
+    const DDS_OfferedDeadlineMissedStatus def_status_deadline =
+        DDS_OfferedDeadlineMissedStatus_INITIALIZER;
+    const DDS_OfferedIncompatibleQosStatus def_status_qos =
+        DDS_OfferedIncompatibleQosStatus_INITIALIZER;
+    const DDS_LivelinessLostStatus def_status_liveliness = 
+        DDS_LivelinessLostStatus_INITIALIZER;
+    
+    this->status_deadline = def_status_deadline;
+    this->status_liveliness = def_status_liveliness;
+    this->status_qos = def_status_qos;
+}
+
+bool
+RMW_Connext_StdPublisherStatusCondition::has_status(
+    const rmw_event_type_t event_type)
+{
+    switch (event_type)
+    {
+    case RMW_EVENT_LIVELINESS_LOST:
+    {
+        return this->triggered_liveliness;
+    }
+    case RMW_EVENT_OFFERED_DEADLINE_MISSED:
+    {
+        return this->triggered_deadline;
+    }
+    case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
+    {
+        return this->triggered_qos;
+    }
+    default:
+        /* TODO assert unreachable */
+        return false;
+    }
+}
+
+bool
+RMW_Connext_StdPublisherStatusCondition::get_status(
+    const rmw_event_type_t event_type, void *const event_info)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    switch (event_type)
+    {
+    case RMW_EVENT_LIVELINESS_LOST:
+    {
+        rmw_liveliness_lost_status_t *status =
+            (rmw_liveliness_lost_status_t*)event_info;
+        
+        status->total_count = this->status_liveliness.total_count;
+        status->total_count_change =
+            this->status_liveliness.total_count_change;
+
+        this->status_liveliness.total_count_change = 0;
+        this->triggered_liveliness = false;
+        break;
+    }
+    case RMW_EVENT_OFFERED_DEADLINE_MISSED:
+    {
+        rmw_offered_deadline_missed_status_t * status =
+            (rmw_offered_deadline_missed_status_t *)event_info;
+        
+        status->total_count = this->status_deadline.total_count;
+        status->total_count_change =
+            this->status_deadline.total_count_change;
+        
+        this->status_deadline.total_count_change = 0;
+        this->triggered_deadline = false;
+        break;
+    }
+    case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
+    {
+        rmw_offered_qos_incompatible_event_status_t *const status =
+            (rmw_offered_qos_incompatible_event_status_t*)event_info;
+        
+        status->total_count = this->status_qos.total_count;
+        status->total_count_change =
+            this->status_qos.total_count_change;
+        status->last_policy_kind =
+            dds_qos_policy_to_rmw_qos_policy(
+                this->status_qos.last_policy_id);
+        
+        this->status_qos.total_count_change = 0;
+        this->triggered_qos = false;
+        break;
+    }
+    default:
+        /* TODO assert unreachable */
+        return false;
+    }
+
+    return true;
+}
+
+void
+RMW_Connext_StdPublisherStatusCondition::on_offered_deadline_missed(
+    const DDS_OfferedDeadlineMissedStatus *const status)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->update_status_deadline(status);
+
+    if (nullptr != this->waitset_condition)
+    {
+        this->waitset_condition->notify_one();
+    }
+}
+
+void
+RMW_Connext_StdPublisherStatusCondition::on_offered_incompatible_qos(
+    const DDS_OfferedIncompatibleQosStatus *const status)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->update_status_qos(status);
+
+    if (nullptr != this->waitset_condition)
+    {
+        this->waitset_condition->notify_one();
+    }
+}
+
+void
+RMW_Connext_StdPublisherStatusCondition::on_liveliness_lost(
+    const DDS_LivelinessLostStatus *const status)
+{
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->update_status_liveliness(status);
+
+    if (nullptr != this->waitset_condition)
+    {
+        this->waitset_condition->notify_one();
+    }
+}
+
+void
+RMW_Connext_StdPublisherStatusCondition::update_status_deadline(
+    const DDS_OfferedDeadlineMissedStatus *const status)
+{
+    this->status_deadline = *status;
+    this->triggered_deadline = true;
+}
+
+void
+RMW_Connext_StdPublisherStatusCondition::update_status_liveliness(
+    const DDS_LivelinessLostStatus *const status)
+{
+    this->status_liveliness = *status;
+    this->triggered_liveliness = true;
+}
+
+void
+RMW_Connext_StdPublisherStatusCondition::update_status_qos(
+    const DDS_OfferedIncompatibleQosStatus *const status)
+{
+    this->status_qos = *status;
+    this->triggered_qos = true;
+}

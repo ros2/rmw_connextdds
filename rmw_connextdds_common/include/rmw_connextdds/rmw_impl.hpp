@@ -28,7 +28,7 @@
 #include "rcutils/types/uint8_array.h"
 #include "rmw/event.h"
 
-#if RMW_CONNEXT_RELEASE < RMW_CONNEXT_RELEASE_FOXY && 0
+#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
 
 /******************************************************************************
  * Symbols provided by rmw/incompatible_qos.h from Foxy onward
@@ -45,40 +45,69 @@ typedef enum RMW_PUBLIC_TYPE rmw_qos_policy_kind_t
   RMW_QOS_POLICY_LIFESPAN = 1 << 6
 } rmw_qos_policy_kind_t;
 
+#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
+
+#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
+
 /******************************************************************************
- * Symbols provided by rmw/event.h from Foxy onward
+ * Define value for RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE, and
+ * RMW_EVENT_OFFERED_QOS_INCOMPATIBLE as invalid values,
+ * since they're not defined by rmw_event_type_t.
  ******************************************************************************/
+#define RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE    (RMW_EVENT_INVALID+1)
+#define RMW_EVENT_OFFERED_QOS_INCOMPATIBLE      (RMW_EVENT_INVALID+2)
 
-/// Define publisher/subscription events
-typedef enum rmw_event_type_t
+/******************************************************************************
+ * rmw_qos_incompatible_event_status_t is defined by rmw/incompatible_qos.h
+ * from Foxy onward.
+ ******************************************************************************/
+struct RMW_PUBLIC_TYPE rmw_qos_incompatible_event_status_t
 {
-  // subscription events
-  RMW_EVENT_LIVELINESS_CHANGED,
-  RMW_EVENT_REQUESTED_DEADLINE_MISSED,
-  RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE,
-  RMW_EVENT_MESSAGE_LOST,
+  int32_t total_count;
+  int32_t total_count_change;
+  rmw_qos_policy_kind_t last_policy_kind;
+};
 
-  // publisher events
-  RMW_EVENT_LIVELINESS_LOST,
-  RMW_EVENT_OFFERED_DEADLINE_MISSED,
-  RMW_EVENT_OFFERED_QOS_INCOMPATIBLE,
+typedef struct rmw_qos_incompatible_event_status_t rmw_requested_qos_incompatible_event_status_t;
 
-  // sentinel value
-  RMW_EVENT_INVALID
-} rmw_event_type_t;
+typedef struct rmw_qos_incompatible_event_status_t rmw_offered_qos_incompatible_event_status_t;
+#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
 
-#endif /* RMW_CONNEXT_RELEASE < RMW_CONNEXT_RELEASE_FOXY */
+#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
+/******************************************************************************
+ * Define value for RMW_EVENT_MESSAGE_LOST as an invalid value,
+ * since it's not defined by rmw_event_type_t.
+ ******************************************************************************/
+#define RMW_EVENT_MESSAGE_LOST  (RMW_EVENT_INVALID+3)
+
+typedef struct RMW_PUBLIC_TYPE rmw_message_lost_status_t
+{
+  size_t total_count;
+  size_t total_count_change;
+} rmw_message_lost_status_t;
+
+
+#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
+
+#if !RMW_CONNEXT_HAVE_SERVICE_INFO
+
+typedef rcutils_time_point_value_t rmw_time_point_value_t;
+
+typedef struct RMW_PUBLIC_TYPE rmw_service_info_t
+{
+  rmw_time_point_value_t source_timestamp;
+  rmw_time_point_value_t received_timestamp;
+  rmw_request_id_t request_id;
+} rmw_service_info_t;
+#endif /* !RMW_CONNEXT_HAVE_SERVICE_INFO */
 
 rcutils_ret_t
 rcutils_uint8_array_copy(
     rcutils_uint8_array_t *const dst,
     const rcutils_uint8_array_t *const src);
 
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
 rmw_qos_policy_kind_t
 dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id);
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-
 
 /******************************************************************************
  * StdWaitSet: custom waitset implementation using std library
@@ -291,106 +320,13 @@ class RMW_Connext_StdPublisherStatusCondition : public RMW_Connext_StdStatusCond
 {
 public:
 
-    RMW_Connext_StdPublisherStatusCondition()
-    : triggered_deadline(false),
-      triggered_liveliness(false),
-      triggered_qos(false)
-    {
-        const DDS_OfferedDeadlineMissedStatus def_status_deadline =
-            DDS_OfferedDeadlineMissedStatus_INITIALIZER;
-        const DDS_OfferedIncompatibleQosStatus def_status_qos =
-            DDS_OfferedIncompatibleQosStatus_INITIALIZER;
-        const DDS_LivelinessLostStatus def_status_liveliness = 
-            DDS_LivelinessLostStatus_INITIALIZER;
-        
-        this->status_deadline = def_status_deadline;
-        this->status_liveliness = def_status_liveliness;
-        this->status_qos = def_status_qos;
-    }
+    RMW_Connext_StdPublisherStatusCondition();
 
     bool
-    has_status(const rmw_event_type_t event_type)
-    {
-        switch (event_type)
-        {
-        case RMW_EVENT_LIVELINESS_LOST:
-        {
-            return this->triggered_liveliness;
-        }
-        case RMW_EVENT_OFFERED_DEADLINE_MISSED:
-        {
-            return this->triggered_deadline;
-        }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-        case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
-        {
-            return this->triggered_qos;
-        }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-        default:
-            /* TODO assert unreachable */
-            return false;
-        }
-    }
+    has_status(const rmw_event_type_t event_type);
 
     bool
-    get_status(const rmw_event_type_t event_type, void *const event_info)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        switch (event_type)
-        {
-        case RMW_EVENT_LIVELINESS_LOST:
-        {
-            rmw_liveliness_lost_status_t *status =
-                (rmw_liveliness_lost_status_t*)event_info;
-            
-            status->total_count = this->status_liveliness.total_count;
-            status->total_count_change =
-                this->status_liveliness.total_count_change;
-
-            this->status_liveliness.total_count_change = 0;
-            this->triggered_liveliness = false;
-            break;
-        }
-        case RMW_EVENT_OFFERED_DEADLINE_MISSED:
-        {
-            rmw_offered_deadline_missed_status_t * status =
-                (rmw_offered_deadline_missed_status_t *)event_info;
-            
-            status->total_count = this->status_deadline.total_count;
-            status->total_count_change =
-                this->status_deadline.total_count_change;
-            
-            this->status_deadline.total_count_change = 0;
-            this->triggered_deadline = false;
-            break;
-        }
-        #if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
-        case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
-        {
-            rmw_offered_qos_incompatible_event_status_t *const status =
-                (rmw_offered_qos_incompatible_event_status_t*)event_info;
-            
-            status->total_count = this->status_qos.total_count;
-            status->total_count_change =
-                this->status_qos.total_count_change;
-            status->last_policy_kind =
-                dds_qos_policy_to_rmw_qos_policy(
-                    this->status_qos.last_policy_id);
-            
-            this->status_qos.total_count_change = 0;
-            this->triggered_qos = false;
-            break;
-        }
-        #endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-        default:
-            /* TODO assert unreachable */
-            return false;
-        }
-
-        return true;
-    }
+    get_status(const rmw_event_type_t event_type, void *const event_info);
 
     friend
     void
@@ -418,67 +354,25 @@ public:
 
     void
     on_offered_deadline_missed(
-        const DDS_OfferedDeadlineMissedStatus *const status)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        this->update_status_deadline(status);
-
-        if (nullptr != this->waitset_condition)
-        {
-            this->waitset_condition->notify_one();
-        }
-    }
+        const DDS_OfferedDeadlineMissedStatus *const status);
 
     void
     on_offered_incompatible_qos(
-        const DDS_OfferedIncompatibleQosStatus *const status)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        this->update_status_qos(status);
-
-        if (nullptr != this->waitset_condition)
-        {
-            this->waitset_condition->notify_one();
-        }
-    }
+        const DDS_OfferedIncompatibleQosStatus *const status);
 
     void
     on_liveliness_lost(
-        const DDS_LivelinessLostStatus *const status)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        this->update_status_liveliness(status);
-
-        if (nullptr != this->waitset_condition)
-        {
-            this->waitset_condition->notify_one();
-        }
-    }
+        const DDS_LivelinessLostStatus *const status);
 
 protected:
     void update_status_deadline(
-            const DDS_OfferedDeadlineMissedStatus *const status)
-    {
-        this->status_deadline = *status;
-        this->triggered_deadline = true;
-    }
+            const DDS_OfferedDeadlineMissedStatus *const status);
 
     void update_status_liveliness(
-            const DDS_LivelinessLostStatus *const status)
-    {
-        this->status_liveliness = *status;
-        this->triggered_liveliness = true;
-    }
+            const DDS_LivelinessLostStatus *const status);
 
     void update_status_qos(
-            const DDS_OfferedIncompatibleQosStatus *const status)
-    {
-        this->status_qos = *status;
-        this->triggered_qos = true;
-    }
+            const DDS_OfferedIncompatibleQosStatus *const status);
 
     bool triggered_deadline;
     bool triggered_liveliness;
@@ -527,127 +421,13 @@ class RMW_Connext_StdSubscriberStatusCondition : public RMW_Connext_StdStatusCon
 {
 public:
 
-    RMW_Connext_StdSubscriberStatusCondition()
-    : triggered_deadline(false),
-      triggered_liveliness(false),
-      triggered_qos(false),
-      triggered_sample_lost(false),
-      triggered_data(false),
-      listener_drop_handle(DDS_HANDLE_NIL),
-      sub(nullptr)
-    {
-
-    }
+    RMW_Connext_StdSubscriberStatusCondition();
 
     bool
-    has_status(const rmw_event_type_t event_type)
-    {
-        switch (event_type)
-        {
-        case RMW_EVENT_LIVELINESS_CHANGED:
-        {
-            return this->triggered_liveliness;
-        }
-        case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
-        {
-            return this->triggered_deadline;
-        }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-        case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-        {
-            return this->triggered_qos;
-        }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-        case RMW_EVENT_MESSAGE_LOST:
-        {
-            return this->triggered_sample_lost;
-        }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
-        default:
-            /* TODO assert unreachable */
-            return false;
-        }
-    }
+    has_status(const rmw_event_type_t event_type);
 
     bool
-    get_status(const rmw_event_type_t event_type, void *const event_info)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        switch (event_type)
-        {
-        case RMW_EVENT_LIVELINESS_CHANGED:
-        {
-            rmw_liveliness_changed_status_t *status =
-                (rmw_liveliness_changed_status_t*)event_info;
-            
-            status->alive_count = this->status_liveliness.alive_count;
-            status->alive_count_change =
-                this->status_liveliness.alive_count_change;
-            status->not_alive_count =
-                this->status_liveliness.not_alive_count;
-            status->not_alive_count_change =
-                this->status_liveliness.not_alive_count_change;
-
-            this->status_liveliness.alive_count_change = 0;
-            this->status_liveliness.not_alive_count_change = 0;
-            this->triggered_liveliness = false;
-            break;
-        }
-        case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
-        {
-            rmw_requested_deadline_missed_status_t * status =
-                (rmw_requested_deadline_missed_status_t *)event_info;
-            
-            status->total_count = this->status_deadline.total_count;
-            status->total_count_change =
-                this->status_deadline.total_count_change;
-            
-            this->status_deadline.total_count_change = 0;
-            this->triggered_deadline = false;
-            break;
-        }
-        #if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
-        case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-        {
-            rmw_requested_qos_incompatible_event_status_t *const status =
-                (rmw_requested_qos_incompatible_event_status_t*)event_info;
-            
-            status->total_count = this->status_qos.total_count;
-            status->total_count_change =
-                this->status_qos.total_count_change;
-            status->last_policy_kind =
-                dds_qos_policy_to_rmw_qos_policy(
-                    this->status_qos.last_policy_id);
-            
-            this->status_qos.total_count_change = 0;
-            this->triggered_qos = false;
-            break;
-        }
-        #endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-        #if RMW_CONNEXT_HAVE_MESSAGE_LOST
-        case RMW_EVENT_MESSAGE_LOST:
-        {
-            rmw_message_lost_status_t *const status =
-                (rmw_message_lost_status_t*)event_info;
-
-            status->total_count = this->status_sample_lost.total_count;
-            status->total_count_change =
-                this->status_sample_lost.total_count_change;
-            
-            this->status_sample_lost.total_count_change = 0;
-            this->triggered_sample_lost = false;
-            break;
-        }
-        #endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
-        default:
-            /* TODO assert unreachable */
-            return false;
-        }
-
-        return true;
-    }
+    get_status(const rmw_event_type_t event_type, void *const event_info);
 
     friend
     void
@@ -705,62 +485,19 @@ public:
         }
     }
     
-
     void
     on_requested_deadline_missed(
-        const DDS_RequestedDeadlineMissedStatus *const status)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        this->update_status_deadline(status);
-
-        if (nullptr != this->waitset_condition)
-        {
-            this->waitset_condition->notify_one();
-        }
-    }
+        const DDS_RequestedDeadlineMissedStatus *const status);
 
     void
     on_requested_incompatible_qos(
-        const DDS_RequestedIncompatibleQosStatus *const status)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        this->update_status_qos(status);
-
-        if (nullptr != this->waitset_condition)
-        {
-            this->waitset_condition->notify_one();
-        }
-    }
+        const DDS_RequestedIncompatibleQosStatus *const status);
 
     void
-    on_liveliness_changed(
-        const DDS_LivelinessChangedStatus *const status)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        this->update_status_liveliness(status);
-
-        if (nullptr != this->waitset_condition)
-        {
-            this->waitset_condition->notify_one();
-        }
-    }
+    on_liveliness_changed(const DDS_LivelinessChangedStatus *const status);
 
     void
-    on_sample_lost(
-        const DDS_SampleLostStatus *const status)
-    {
-        std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-        this->update_status_sample_lost(status);
-
-        if (nullptr != this->waitset_condition)
-        {
-            this->waitset_condition->notify_one();
-        }
-    }
+    on_sample_lost(const DDS_SampleLostStatus *const status);
 
     void set_drop_handle(const DDS_InstanceHandle_t handle)
     {
@@ -774,32 +511,16 @@ public:
 
 protected:
     void update_status_deadline(
-            const DDS_RequestedDeadlineMissedStatus *const status)
-    {
-        this->status_deadline = *status;
-        this->triggered_deadline = true;
-    }
+            const DDS_RequestedDeadlineMissedStatus *const status);
 
     void update_status_liveliness(
-            const DDS_LivelinessChangedStatus *const status)
-    {
-        this->status_liveliness = *status;
-        this->triggered_liveliness = true;
-    }
+            const DDS_LivelinessChangedStatus *const status);
 
     void update_status_qos(
-            const DDS_RequestedIncompatibleQosStatus *const status)
-    {
-        this->status_qos = *status;
-        this->triggered_qos = true;
-    }
+            const DDS_RequestedIncompatibleQosStatus *const status);
 
     void update_status_sample_lost(
-            const DDS_SampleLostStatus *const status)
-    {
-        this->status_sample_lost = *status;
-        this->triggered_sample_lost = true;
-    }
+            const DDS_SampleLostStatus *const status);
 
     std::atomic_bool triggered_deadline;
     std::atomic_bool triggered_liveliness;
@@ -955,11 +676,9 @@ public:
     offered_deadline_missed_status(
         rmw_offered_deadline_missed_status_t *const status);
 
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
     rmw_ret_t
     offered_incompatible_qos_status(
         rmw_offered_qos_incompatible_event_status_t *const status);
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
     
     bool
     has_status(const DDS_StatusMask status_mask);
@@ -1252,15 +971,12 @@ public:
     requested_deadline_missed_status(
         rmw_requested_deadline_missed_status_t *const status);
 
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
     rmw_ret_t
     requested_incompatible_qos_status(
         rmw_requested_qos_incompatible_event_status_t *const status);
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
+
     rmw_ret_t
     message_lost_status(rmw_message_lost_status_t *const status);
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
 
     bool
     has_status(const DDS_StatusMask status_mask);
@@ -1421,11 +1137,7 @@ public:
 
     rmw_ret_t
     take_response(
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
         rmw_service_info_t *const request_header,
-#else
-        rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
         void *const ros_response,
         bool *const taken);
     
@@ -1469,11 +1181,7 @@ public:
 
     rmw_ret_t
     take_request(
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
         rmw_service_info_t *const request_header,
-#else
-        rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
         void *const ros_request,
         bool *const taken);
     

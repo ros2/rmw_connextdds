@@ -56,7 +56,10 @@ struct RMW_Connext_NddsTypeCode
     : type_plugin(type_plugin),
       dds_tc(dds_tc)
     {
-        this->base = this->dds_tc->_data;
+        if (nullptr != this->dds_tc)
+        {
+            this->base = this->dds_tc->_data;
+        }
         if (nullptr != tc_cache)
         {
             this->tc_cache = *tc_cache;
@@ -913,6 +916,7 @@ rmw_connextdds_register_type_support(
                     rmw_connextdds_release_typecode_cache(tc_cache_ptr);
                 });
         
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
         dds_tc = rmw_connextdds_create_typecode(
                     type_supports,
                     type_support->type_name(),
@@ -925,11 +929,19 @@ rmw_connextdds_register_type_support(
                 type_support->type_name())
             return nullptr;
         }
+#else
+        UNUSED_ARG(intro_members);
+        UNUSED_ARG(intro_members_cpp);
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
+
         auto scope_exit_dds_tc_delete = 
             rcpputils::make_scope_exit(
                 [dds_tc]()
                 {
-                rmw_connextdds_delete_typecode(dds_tc);
+                    if (nullptr == dds_tc)
+                    {
+                        rmw_connextdds_delete_typecode(dds_tc);
+                    }
                 });
 
         RMW_Connext_NddsTypePluginI *type_plugin = 

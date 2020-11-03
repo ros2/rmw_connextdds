@@ -55,9 +55,7 @@ struct rmw_context_impl_t
 
     void *api;
 
-#if !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
     DDS_DomainId_t domain_id;
-#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
     DDS_DomainParticipant *participant;
 
     /* DDS publisher, subscriber used for ROS 2 publishers and subscriptions */
@@ -90,9 +88,7 @@ struct rmw_context_impl_t
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
       base(base),
       factory(nullptr),
-#if !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
-      domain_id(0),
-#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
+      domain_id(RMW_CONNEXT_DEFAULT_DOMAIN),
       participant(nullptr),
       dds_pub(nullptr),
       dds_sub(nullptr),

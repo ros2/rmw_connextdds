@@ -159,14 +159,8 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
         return RMW_RET_ERROR;
     }
 
-    // (void)rmw_set_log_severity(RMW_LOG_SEVERITY_DEBUG);
-
     DDS_DomainId_t domain_id =
-#if RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
-        static_cast<DDS_DomainId_t>(this->base->actual_domain_id);
-#else
         static_cast<DDS_DomainId_t>(this->domain_id);
-#endif /* RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
 
     struct DDS_DomainParticipantQos dp_qos =
         DDS_DomainParticipantQos_INITIALIZER;
@@ -668,13 +662,7 @@ extern "C" rmw_ret_t rmw_init(
 
     context->instance_id = options->instance_id;
     context->implementation_identifier = RMW_CONNEXTDDS_ID;
-    // No custom handling of RMW_DEFAULT_DOMAIN_ID. Simply use a reasonable
-    // domain id.
-#if RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
-    context->actual_domain_id =
-#else
     const DDS_DomainId_t actual_domain_id =
-#endif /* RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
 #if !RMW_CONNEXT_HAVE_OPTIONS
         RMW_CONNEXT_DEFAULT_DOMAIN;
 #else
@@ -710,9 +698,8 @@ extern "C" rmw_ret_t rmw_init(
         return RMW_RET_ERROR;
     }
 
-#if !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
     context->impl->domain_id = actual_domain_id;
-#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
+    
 #if RMW_CONNEXT_HAVE_OPTIONS
     scope_exit_context_finalize.cancel();
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */

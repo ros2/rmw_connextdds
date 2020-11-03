@@ -35,23 +35,23 @@ extern "C" rmw_node_t * rmw_create_node(
     ,
     size_t domain_id,
     const rmw_node_security_options_t * security_options
-#elif !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
+#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
     ,
     size_t domain_id,
     bool localhost_only
-#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
+#endif /* RMW_CONNEXT_RELEASE */
     )
 {
     bool node_localhost_only = false;
 
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
     UNUSED_ARG(security_options);
-#elif !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
+#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
     UNUSED_ARG(domain_id);
     UNUSED_ARG(localhost_only);
 
     node_localhost_only = localhost_only;
-#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
+#endif /* RMW_CONNEXT_RELEASE */
     RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
     RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
         context,
@@ -107,7 +107,6 @@ extern "C" rmw_node_t * rmw_create_node(
         return nullptr;
     }
 
-#if !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX
     {
         std::lock_guard<std::mutex> guard(ctx->initialization_mutex);
         if (0u == ctx->node_count)
@@ -121,7 +120,6 @@ extern "C" rmw_node_t * rmw_create_node(
             return nullptr;
         }
     }
-#endif /* !RMW_CONNEXT_HAVE_DOMAIN_ID_IN_CTX */
 
     ret = ctx->initialize_node(node_localhost_only);
     if (RMW_RET_OK != ret)

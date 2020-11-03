@@ -28,6 +28,8 @@
 #define RMW_FASTRTPS_CPP_TYPESUPPORT_C rosidl_typesupport_fastrtps_c__identifier
 #define RMW_FASTRTPS_CPP_TYPESUPPORT_CPP rosidl_typesupport_fastrtps_cpp::typesupport_identifier
 
+#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
+
 #include "rosidl_typesupport_introspection_cpp/field_types.hpp"
 #include "rosidl_typesupport_introspection_cpp/identifier.hpp"
 #include "rosidl_typesupport_introspection_cpp/message_introspection.hpp"
@@ -39,6 +41,8 @@
 #include "rosidl_typesupport_introspection_c/message_introspection.h"
 #include "rosidl_typesupport_introspection_c/service_introspection.h"
 #include "rosidl_typesupport_introspection_c/visibility_control.h"
+
+#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 struct RMW_Connext_RequestReplyMessage
 {

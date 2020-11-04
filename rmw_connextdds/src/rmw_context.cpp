@@ -78,8 +78,6 @@ rmw_connextdds_initialize_participant_qos(
         return RMW_RET_ERROR;
     }
 
-    // dp_qos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
-
     /* Lookup and configure initial peer from environment */
     const char *initial_peer = nullptr;
     const char *lookup_rc =

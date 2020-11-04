@@ -51,7 +51,7 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
     case RMW_CONNEXT_MESSAGE_REQUEST:
     case RMW_CONNEXT_MESSAGE_REPLY:
     {
-        // assert(type_name != nullptr)
+        RMW_CONNEXT_ASSERT(type_name != nullptr)
         this->_type_name = type_name;
         break;
     }
@@ -148,8 +148,6 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
             {
                 if (!callbacks->cdr_serialize(payload, cdr_stream))
                 {
-                    // RMW_CONNEXT_LOG_ERROR(
-                    //     "failed to deserialize message from cdr stream")
                     return RMW_RET_ERROR;
                 }
             }
@@ -256,8 +254,6 @@ RMW_Connext_MessageTypeSupport::deserialize(
             {
                 if (!callbacks->cdr_deserialize(cdr_stream, payload))
                 {
-                    // RMW_CONNEXT_LOG_ERROR(
-                    //     "failed to deserialize message from cdr stream")
                     return RMW_RET_ERROR;
                 }
             }
@@ -348,8 +344,6 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
     }
 
-    // serialized_size += callbacks->get_serialized_size(ros_msg);
-
     return serialized_size;
 }
 
@@ -364,11 +358,6 @@ RMW_Connext_MessageTypeSupport::get_type_support_fastrtps(
     {
         type_support = get_message_typesupport_handle(
         type_supports, RMW_FASTRTPS_CPP_TYPESUPPORT_CPP);
-        if (nullptr == type_support)
-        {
-            // RMW_CONNEXT_LOG_ERROR(
-            //     "type support not from this implementation")
-        }
     }
     return type_support;
 }
@@ -387,12 +376,7 @@ RMW_Connext_MessageTypeSupport::get_type_support_intro(
             get_message_typesupport_handle(
                 type_supports,
                 rosidl_typesupport_introspection_cpp::typesupport_identifier);
-        if (nullptr == type_support)
-        {
-            // RMW_CONNEXT_LOG_ERROR(
-            //     "type support not from this implementation")
-        }
-        else
+        if (nullptr != type_support)
         {
             cpp_version = true;
         }
@@ -492,11 +476,7 @@ RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
             get_service_typesupport_handle(
                 type_supports,
                 rosidl_typesupport_introspection_cpp::typesupport_identifier);
-        if (nullptr == type_support)
-        {
-            // RMW_CONNEXT_LOG_ERROR("failed to lookup service type support")
-        }
-        else
+        if (nullptr != type_support)
         {
             cpp_version = true;
         }
@@ -518,10 +498,6 @@ RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
     {
         type_support = get_service_typesupport_handle(
             type_supports, RMW_FASTRTPS_CPP_TYPESUPPORT_CPP);
-        if (nullptr == type_support)
-        {
-            // RMW_CONNEXT_LOG_ERROR("failed to lookup service type support")
-        }
     }
 
     return type_support;
@@ -534,10 +510,10 @@ RMW_Connext_ServiceTypeSupportWrapper::get_request_type_name(
     const rosidl_service_type_support_t *const svc_type_support_fastrtps =  
         RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
             type_supports);
-    if (svc_type_support_fastrtps == NULL)
+    if (nullptr == svc_type_support_fastrtps)
     {
-        // RMW_CONNEXT_LOG_ERROR("failed to lookup FastRTPS type support")
-        // return nullptr;
+        std::string empty_name;
+        return empty_name;
     }
     auto svc_callbacks =
         static_cast<const service_type_support_callbacks_t *>(
@@ -553,10 +529,10 @@ RMW_Connext_ServiceTypeSupportWrapper::get_response_type_name(
     const rosidl_service_type_support_t *const svc_type_support_fastrtps =  
         RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
             type_supports);
-    if (svc_type_support_fastrtps == NULL)
+    if (nullptr == svc_type_support_fastrtps)
     {
-        // RMW_CONNEXT_LOG_ERROR("failed to lookup FastRTPS type support")
-        // return nullptr;
+        std::string empty_name;
+        return empty_name;
     }
     auto svc_callbacks =
         static_cast<const service_type_support_callbacks_t *>(

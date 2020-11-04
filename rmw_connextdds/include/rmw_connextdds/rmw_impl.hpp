@@ -992,7 +992,6 @@ public:
         const bool on_data_triggered = this->std_condition.on_data_triggered();
 
         std::lock_guard<std::mutex> lock(this->loan_mutex);
-        // this->loan_begin();
 
         if (on_data_triggered)
         {
@@ -1000,8 +999,6 @@ public:
         }
         bool has_data = this->loan_len > 0;
         RMW_CONNEXT_ASSERT(!has_data || this->loan_next < this->loan_len)
-
-        // this->loan_end();
 
         return has_data;
     }

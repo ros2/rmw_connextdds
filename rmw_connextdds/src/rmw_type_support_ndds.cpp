@@ -190,20 +190,6 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     unsigned int current_alignment,
     const void * sample);
 
-#if 0
-#define RMW_Connext_TypePlugin_get_buffer \
-        PRESTypePluginDefaultEndpointData_getBuffer 
-#define RMW_Connext_TypePlugin_return_buffer \
-        PRESTypePluginDefaultEndpointData_returnBuffer
-
-#define RMW_Connext_TypePlugin_get_sample \
-        PRESTypePluginDefaultEndpointData_getSample 
-#define RMW_Connext_TypePlugin_create_sample \
-        PRESTypePluginDefaultEndpointData_createSample 
-#define RMW_Connext_TypePlugin_destroy_sample \
-        PRESTypePluginDefaultEndpointData_deleteSample 
-#endif
-
 RTIBool
 RMW_Connext_TypePlugin_get_buffer(
     PRESTypePluginEndpointData endpointData,
@@ -283,9 +269,6 @@ RMW_Connext_TypePlugin_create_data(void ** sample, void * user_data)
         delete data_buffer;
         return RTI_FALSE;
     }
-
-    // RMW_CONNEXT_LOG_DEBUG("allocated sample: type_support=%p, sample=%p",
-    //     (void*)type_support, (void*)data_buffer)
 
     *sample = data_buffer;
 
@@ -578,17 +561,6 @@ RMW_Connext_TypePlugin_deserialize(
     const size_t deserialize_size = RTICdrStream_getRemainder(stream);
     void *const src_ptr = RTICdrStream_getCurrentPosition(stream);
 
-    // RMW_CONNEXT_LOG_INFO_A("[type_plugin] deserialize sample: "
-    //     "type_support=%p, sample=%p, sample.buffer=%p, "
-    //     "sample.buffer_length=%lu, "
-    //     "sample.buffer_capacity=%lu, "
-    //     "size=%lu, remainder=%d",
-    //     (void*)type_support, (void*)data_buffer,
-    //     (void*)data_buffer->buffer,
-    //     data_buffer->buffer_length,
-    //     data_buffer->buffer_capacity,
-    //     deserialize_size, RTICdrStream_getRemainder(stream))
-
     if (data_buffer->buffer_capacity < deserialize_size)
     {
         if (RCUTILS_RET_OK !=
@@ -603,17 +575,6 @@ RMW_Connext_TypePlugin_deserialize(
     data_buffer->buffer_length = deserialize_size;
 
     RTICdrStream_setCurrentPosition(stream, (char*)src_ptr + deserialize_size);
-
-    // RMW_CONNEXT_LOG_INFO_A("[type_plugin] deserialize sample RESULT: "
-    //     "type_support=%p, sample=%p, sample.buffer=%p, "
-    //     "sample.buffer_length=%lu, "
-    //     "sample.buffer_capacity=%lu, "
-    //     "size=%lu, remainder=%d",
-    //     (void*)type_support, (void*)data_buffer,
-    //     (void*)data_buffer->buffer,
-    //     data_buffer->buffer_length,
-    //     data_buffer->buffer_capacity,
-    //     deserialize_size, RTICdrStream_getRemainder(stream))
 
     return RTI_TRUE;
 }
@@ -635,17 +596,10 @@ RMW_Connext_TypePlugin_get_serialized_sample_max_size(
     RMW_Connext_MessageTypeSupport *const type_support =
          (RMW_Connext_MessageTypeSupport*)epd->userData;
 
-    if (type_support->unbounded())
-    {
-        // TODO do unbounded types need to be handled differently?
-        current_alignment += type_support->type_serialized_size_max();
-    }
-    else
-    {
-        current_alignment += type_support->type_serialized_size_max();
-    }
+    // For unbounded types this function will only return the maximum size of
+    // the "bounded" part of the message.
+    current_alignment += type_support->type_serialized_size_max();
 
-    
     if (!include_encapsulation)
     {
         current_alignment -=
@@ -691,7 +645,6 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     }
     if (endpoint_data == NULL)
     {
-        // RMW_CONNEXT_LOG_ERROR("no endpoint data supplied")
         return 0;
     }
 
@@ -702,10 +655,6 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     
     RMW_Connext_Message *const msg = (RMW_Connext_Message*)sample;
     
-    // RMW_CONNEXT_LOG_DEBUG_A("get serialized sample size: "
-    //         "type_support=%p, sample=%p",
-    //         (void*)type_support, (void*)msg->user_data)
-
     if (msg->serialized)
     {
         rcutils_uint8_array_t *const serialized_msg = 
@@ -862,8 +811,6 @@ rmw_connextdds_register_type_support(
         RMW_Connext_MessageTypeSupport(message_type, type_supports, type_name);
     if (nullptr == type_support)
     {
-        // RMW_CONNEXT_LOG_ERROR(
-        //     "failed to allocate type support wrapper")
         return nullptr;
     }
 
@@ -992,9 +939,6 @@ rmw_connextdds_register_type_support(
             "name=%s, type_support=%p",
             type_support->type_name(), (void*)type_support)
 
-        // RMW_CONNEXT_LOG_INFO_A("registered type %p: %s (%u)",
-        //     (void*)type_plugin, type_support->type_name(), type_plugin->attached_count)
-
         scope_exit_intf_delete.cancel();
 
         type_support_res = type_support;
@@ -1003,8 +947,6 @@ rmw_connextdds_register_type_support(
     else
     {
         tc->type_plugin->attached_count += 1;
-        // RMW_CONNEXT_LOG_INFO_A("re-registered type %p: %s (%u)",
-        //     (void*)tc->type_plugin, type_support->type_name(), tc->type_plugin->attached_count)
         type_support_res = tc->type_plugin->wrapper;
     }
 
@@ -1029,9 +971,6 @@ rmw_connextdds_unregister_type_support(
         return RMW_RET_ERROR;
     }
 
-    // RMW_CONNEXT_LOG_INFO_A("unregistering type %p: %s (%u)",
-    //     (void*)tc->type_plugin, type_name, tc->type_plugin->attached_count)
-    
     tc->type_plugin->attached_count -= 1;
 
     if (tc->type_plugin->attached_count == 0)
@@ -1048,13 +987,7 @@ rmw_connextdds_unregister_type_support(
                 "failed to unregister type: %s", tname.c_str())
             return RMW_RET_ERROR;
         }
-
-        // RMW_CONNEXT_LOG_INFO_A("unregistered type: %s", tname.c_str())
     }
-    // else
-    // {
-    //     RMW_CONNEXT_LOG_INFO_A("type still in use: %s (%u)", type_name, tc->type_plugin->attached_count)
-    // }
 
     return RMW_RET_OK;
 }

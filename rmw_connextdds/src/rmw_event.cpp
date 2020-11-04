@@ -49,14 +49,6 @@ extern "C" rmw_ret_t rmw_publisher_event_init(
         RMW_CONNEXT_LOG_ERROR("unsupported publisher event")
         return RMW_RET_UNSUPPORTED;
     }
-    // RMW_Connext_Event *const event = RMW_Connext_Event::create(
-    //                                     (RMW_Connext_Publisher*)publisher->data,
-    //                                     event_type);
-    // if (nullptr == event)
-    // {
-    //     RMW_CONNEXT_LOG_ERROR("failed to allocate event")
-    //     return RMW_RET_ERROR;
-    // }
 
     rmw_event->implementation_identifier = RMW_CONNEXTDDS_ID;
     rmw_event->data = publisher->data;
@@ -91,17 +83,6 @@ extern "C" rmw_ret_t rmw_subscription_event_init(
         RMW_CONNEXT_LOG_ERROR("unsupported subscription event")
         return RMW_RET_UNSUPPORTED;
     }
-
-    // RMW_Connext_Event *const event =
-    //     RMW_Connext_Event::create(
-    //         (RMW_Connext_Subscriber*)subscription->data,
-    //         event_type);
-    
-    // if (nullptr == event)
-    // {
-    //     RMW_CONNEXT_LOG_ERROR("failed to allocate event")
-    //     return RMW_RET_ERROR;
-    // }
 
     rmw_event->implementation_identifier = RMW_CONNEXTDDS_ID;
     rmw_event->data = subscription->data;

@@ -76,11 +76,6 @@ public:
         const RMW_Connext_MessageType message_type,
         const rosidl_message_type_support_t *const type_supports,
         const char *const type_name);
-    
-    // ~RMW_Connext_MessageTypeSupport()
-    // {
-    //     delete this->_type_support_fastrtps;
-    // }
 
     const message_type_support_callbacks_t * callbacks_fastrtps()
     {

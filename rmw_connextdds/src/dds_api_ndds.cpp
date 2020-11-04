@@ -843,15 +843,6 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t *const ctx)
                 continue;
             }
 
-            // if (0 ==
-            //     memcmp(data->key.value, ctx->common.gid.data, 12))
-            // {
-            //     /* Ignore own announcements */
-            //     RMW_CONNEXT_LOG_DEBUG(
-            //         "[discovery thread] ignored own publication data")
-            //     continue;
-            // }
-
             DDS_GUID_t endp_guid;
             DDS_GUID_t dp_guid;
 
@@ -928,15 +919,6 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t *const ctx)
                     "[discovery thread] ignored subscription invalid data")
                 continue;
             }
-
-            // if (0 ==
-            //     memcmp(data->key.value, ctx->common.gid.data, 12))
-            // {
-            //     /* Ignore own announcements */
-            //     RMW_CONNEXT_LOG_DEBUG(
-            //         "[discovery thread] ignored own subscription data")
-            //     continue;
-            // }
 
             DDS_GUID_t endp_guid;
             DDS_GUID_t dp_guid;

@@ -445,21 +445,9 @@ rmw_connextdds_initialize_participant_qos_impl(
 {
     UNUSED_ARG(ctx);
     
-    /* Store enclave's name in USER_DATA field */
-    // std::string user_data = std::string("enclave=") + std::string(
-    //     options->enclave) + std::string(";");
-
-    /* TODO Micro doesn't support USER DATA */
+    /* TODO Store enclave's name in USER_DATA field */
     
-    /* Configure DDS Security options */
-    // if (configure_qos_for_security(
-    //     ppant_qos.get(),
-    //     &options->security_options) != RMW_RET_OK)
-    // {
-    //     if (RMW_SECURITY_ENFORCEMENT_ENFORCE == options->security_options.enforce_security) {
-    //     return RMW_RET_ERROR;
-    //     }
-    // }
+    /*  TODO Configure DDS Security options */
 
     size_t max_transports = 1;
 #if RMW_CONNEXT_TRANSPORT_SHMEM

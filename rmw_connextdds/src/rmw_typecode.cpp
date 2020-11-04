@@ -292,7 +292,6 @@ rmw_connextdds_convert_type_member(
     struct RMW_Connext_TypeCodePtrSeq *const tc_cache)
 {
     DDS_TypeCode *el_tc = nullptr;
-    // bool primitive = false;
 
     switch (member->type_id_)
     {
@@ -313,7 +312,7 @@ rmw_connextdds_convert_type_member(
     {
         DDS_TCKind dds_type_id =
             rmw_connextdds_type_id_ros_to_dds(member->type_id_);
-        // primitive = true;
+        
         el_tc =
             /* TODO refactor out this cast */
             (DDS_TypeCode*)
@@ -582,9 +581,6 @@ rmw_connextdds_create_typecode(
                         DDS_StructMemberSeq_get_reference(tc_members_ptr, i);
                     DDS_String_free(tc_member->name);
                     tc_member->name = nullptr;
-
-                    // rmw_connextdds_delete_typecode(
-                    //     (DDS_TypeCode*)tc_member->type);
                 }
                 
                 DDS_StructMemberSeq_finalize(tc_members_ptr);

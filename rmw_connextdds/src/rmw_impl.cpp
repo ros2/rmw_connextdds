@@ -1030,7 +1030,6 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   type_support(type_support),
   opt_ignore_local(ignore_local),
   created_topic(created_topic)
-//   loan_active(loan_mutex)
 {
     rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
 
@@ -1535,21 +1534,18 @@ RMW_Connext_Subscriber::take_next(
     *taken = 0;
 
     std::lock_guard<std::mutex> lock(this->loan_mutex);
-    // this->loan_begin();
 
     while (*taken < max_samples)
     {
         rc = this->loan_messages_if_needed();
         if (RMW_RET_OK != rc)
         {
-            // this->loan_end();
             return rc;
         }
 
         if (this->loan_len == 0)
         {
             /* no data available on reader */
-            // this->loan_end();
             return RMW_RET_OK;
         }
 
@@ -1580,15 +1576,6 @@ RMW_Connext_Subscriber::take_next(
 
                 void *ros_message = ros_messages[*taken];
 
-                // RMW_CONNEXT_LOG_DEBUG_A("take message: ros=%p, sample=%p, "
-                //     "sample.buffer=%p, sample.buffer_length=%lu, "
-                //     "sample.buffer_capacity=%lu",
-                //     ros_message,
-                //     (void*)data_buffer,
-                //     (void*)data_buffer->buffer,
-                //     data_buffer->buffer_length,
-                //     data_buffer->buffer_capacity)
-
                 if (serialized)
                 {
                     if (RCUTILS_RET_OK !=
@@ -1597,7 +1584,6 @@ RMW_Connext_Subscriber::take_next(
                                 data_buffer))
                     {
                         RMW_CONNEXT_LOG_ERROR("failed to copy uint8 array")
-                        // this->loan_end();
                         return RMW_RET_ERROR;
                     }
                 }
@@ -2013,9 +1999,6 @@ RMW_Connext_WaitSet::detach()
     }
     for (auto && event : this->attached_events)
     {
-        // RMW_Connext_Event *const event =
-        //             (RMW_Connext_Event*)rmw_event->data;
-        
         if (RMW_RET_OK != RMW_Connext_Event::disable(event))
         {
             RMW_CONNEXT_LOG_ERROR("failed to disable event")
@@ -2222,9 +2205,7 @@ RMW_Connext_WaitSet::attach(
             for (size_t i = 0; i < evs->event_count; i++)
             {
                 rmw_event_t *const event = (rmw_event_t *) evs->events[i];
-                // RMW_Connext_Event *const event =
-                //     (RMW_Connext_Event*)rmw_event->data;
-
+                
                 if (RMW_RET_OK != RMW_Connext_Event::enable(event))
                 {
                     RMW_CONNEXT_LOG_ERROR("failed to enable event")
@@ -2450,14 +2431,6 @@ RMW_Connext_WaitSet::wait(
         this->waiting = true;
     }
 
-    // RMW_Connext_WaitSet *const ws = this;
-    // auto scope_exit_ws_unlock = rcpputils::make_scope_exit(
-    //     [ws]()
-    //     {
-    //         std::lock_guard<std::mutex> lock(ws->waiting_lock);
-    //         ws->waiting = false;
-    //     });
-
 
     if (RMW_RET_OK != this->attach(subs, gcs, srvs, cls, evs))
     {
@@ -2497,7 +2470,7 @@ RMW_Connext_WaitSet::wait(
             (void*)this->waitset, active_len)
     }
 
-    // assert(timedout || active_len > 0)
+    RMW_CONNEXT_ASSERT(timedout || active_len > 0)
 
 #define trigger_if_active(cond_, on_active_, on_inactive_) \
 {\
@@ -2584,7 +2557,6 @@ RMW_Connext_WaitSet::wait(
     for (size_t i = 0; nullptr != evs && i < evs->event_count; i++)
     {
         rmw_event_t *const event = (rmw_event_t *) evs->events[i];
-        // RMW_Connext_Event *const event = (RMW_Connext_Event*)rmw_event->data;
         
         trigger_if_active(RMW_Connext_Event::condition(event),
         /* on active */
@@ -3322,7 +3294,6 @@ RMW_Connext_Service::create(
             false /* ignore_local_publications */,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
             false /* internal */,
-            // &request_type,
             RMW_CONNEXT_MESSAGE_REQUEST,
             svc_members_req,
             svc_members_req_cpp,

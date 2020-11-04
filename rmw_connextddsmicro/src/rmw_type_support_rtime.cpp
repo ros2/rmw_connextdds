@@ -295,15 +295,6 @@ RMW_Connext_EncapsulationPlugin_deserialize(
     
     data_buffer->buffer_length = deserialize_size;
 
-    // RMW_CONNEXT_LOG_DEBUG_A("deserialized %s: "
-    //     "buffer=%p, "
-    //     "buffer.length=%lu, "
-    //     "buffer.capacity=%lu",
-    //     type_support->type_name(),
-    //     data_buffer->buffer,
-    //     data_buffer->buffer_length,
-    //     data_buffer->buffer_capacity)
-    
     return RTI_TRUE;
 }
 
@@ -535,7 +526,6 @@ RMW_Connext_EncapsulationPlugin_create(
         
         if (nullptr == plugin->pool)
         {
-            // RMW_CONNEXT_LOG_ERROR("failed to allocate buffer pool")
             return nullptr;
         }
 
@@ -782,7 +772,6 @@ RMW_Connext_TypePlugin_create(
         RMW_Connext_get_endpoint_type_name(endpoint_mode, endpoint);
     if (nullptr == type_name)
     {
-        // RMW_CONNEXT_LOG_ERROR("failed to retrieve endpoint's type name")
         return nullptr;
     }
     DDS_TypePluginI *type_plugin_intfI = nullptr;
@@ -790,7 +779,6 @@ RMW_Connext_TypePlugin_create(
                             participant, type_name, &type_plugin_intfI);
     if (DDS_RETCODE_OK != rc || nullptr == type_plugin_intfI)
     {
-        // RMW_CONNEXT_LOG_ERROR("failed to look up existing type")
         return nullptr;
     }
 
@@ -810,7 +798,6 @@ RMW_Connext_TypePlugin_create(
     
     if (nullptr == base_tp)
     {
-        // RMW_CONNEXT_LOG_ERROR("failed to allocate type plugin")
         return nullptr;
     }
 
@@ -840,7 +827,6 @@ rmw_connextdds_assert_type(
             DDS_DomainParticipant_lookup_type_pluginI(
                 participant, type_name, &existing_type))
     {
-        // RMW_CONNEXT_LOG_ERROR("failed to look up existing type")
         return RMW_RET_ERROR;
     }
 
@@ -850,8 +836,6 @@ rmw_connextdds_assert_type(
                 DDS_DomainParticipant_register_type(
                     participant, type_name, new_intf))
         {
-            // RMW_CONNEXT_LOG_ERROR(
-            //     "failed to register type support with participant");
             return RMW_RET_ERROR;
         }
 
@@ -933,8 +917,6 @@ rmw_connextdds_register_type_support(
     
     if (nullptr == type_support)
     {
-        // RMW_CONNEXT_LOG_ERROR(
-        //     "failed to allocate type support")
         return nullptr;
     }
     
@@ -943,8 +925,6 @@ rmw_connextdds_register_type_support(
 
     if (nullptr == type_plugin_intf)
     {
-        // RMW_CONNEXT_LOG_ERROR(
-        //     "failed to allocate type plugin interface")
         delete type_support;
         return nullptr;
     }
@@ -966,8 +946,6 @@ rmw_connextdds_register_type_support(
                 &reg_intf,
                 registered))
     {
-        // RMW_CONNEXT_LOG_ERROR_A(
-        //     "failed to assert type: %s", type_support->type_name())
         return nullptr;
     }
     

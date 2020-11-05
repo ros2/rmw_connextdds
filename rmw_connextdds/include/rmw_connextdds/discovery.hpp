@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__DISCOVERY_HPP_
-#define RMW_CONNEXT__DISCOVERY_HPP_
+#ifndef RMW_CONNEXTDDS__DISCOVERY_HPP_
+#define RMW_CONNEXTDDS__DISCOVERY_HPP_
 
 #include "rmw_connextdds/context.hpp"
 
@@ -39,4 +39,4 @@ rmw_connextdds_dcps_subscription_get_reader(rmw_context_impl_t * ctx);
 rmw_ret_t
 rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * ctx);
 
-#endif /* RMW_CONNEXT__DISCOVERY_HPP_ */
+#endif // RMW_CONNEXTDDS__DISCOVERY_HPP_

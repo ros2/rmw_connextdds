@@ -23,4 +23,4 @@ typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
 
 #define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER
 
-#endif /* RMW_CONNEXT__TYPE_SUPPORT_IMPL_HPP_ */
+#endif // RMW_CONNEXT__TYPE_SUPPORT_IMPL_HPP_

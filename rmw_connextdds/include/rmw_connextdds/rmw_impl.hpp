@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__RMW_IMPL_HPP_
-#define RMW_CONNEXT__RMW_IMPL_HPP_
+#ifndef RMW_CONNEXTDDS__RMW_IMPL_HPP_
+#define RMW_CONNEXTDDS__RMW_IMPL_HPP_
 
 #include "rmw_connextdds/context.hpp"
 #include "rmw_connextdds/type_support.hpp"
@@ -1488,4 +1488,4 @@ rmw_connextdds_readerwriter_qos_to_ros(
     const DDS_LivelinessQosPolicy *const liveliness,
     rmw_qos_profile_t *const qos_policies);
 
-#endif /* RMW_CONNEXT__RMW_IMPL_HPP_ */
+#endif // RMW_CONNEXTDDS__RMW_IMPL_HPP_

@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__STATIC_CONFIG_HPP_
-#define RMW_CONNEXT__STATIC_CONFIG_HPP_
+#ifndef RMW_CONNEXTDDS__STATIC_CONFIG_HPP_
+#define RMW_CONNEXTDDS__STATIC_CONFIG_HPP_
 
 /******************************************************************************
  * Default User Configuration
@@ -202,4 +202,4 @@
 
 #include "resource_limits.hpp"
 
-#endif /* RMW_CONNEXT__STATIC_CONFIG_HPP_ */
+#endif // RMW_CONNEXTDDS__STATIC_CONFIG_HPP_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RMW_CONNEXT__SCOPE_EXIT_HPP_
-#define RMW_CONNEXT__SCOPE_EXIT_HPP_
+#ifndef RMW_CONNEXTDDS__SCOPE_EXIT_HPP_
+#define RMW_CONNEXTDDS__SCOPE_EXIT_HPP_
 
 /**
  * This header file is only needed when building the RMW with a version of
@@ -66,4 +66,4 @@ make_scope_exit(CallableT && callable)
 
 }  // namespace rcpputils
 
-#endif  // RMW_CONNEXT__SCOPE_EXIT_HPP_
+#endif  // RMW_CONNEXTDDS__SCOPE_EXIT_HPP_

@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__CONTEXT_HPP_
-#define RMW_CONNEXT__CONTEXT_HPP_
+#ifndef RMW_CONNEXTDDS__CONTEXT_HPP_
+#define RMW_CONNEXTDDS__CONTEXT_HPP_
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
@@ -150,4 +150,4 @@ rmw_connextdds_initialize_participant_factory_qos(
     rmw_context_impl_t *const ctx,
     DDS_DomainParticipantFactory *const factory);
 
-#endif /* RMW_CONNEXT__CONTEXT_HPP_ */
+#endif // RMW_CONNEXTDDS__CONTEXT_HPP_

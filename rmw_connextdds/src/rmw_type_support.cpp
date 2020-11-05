@@ -16,11 +16,12 @@
  *
  ******************************************************************************/
 
+#include <string.h>
+
 #include "rmw_connextdds/type_support.hpp"
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
-#include <string.h>
 
 /******************************************************************************
  * RMW_Connext_MessageTypeSupport

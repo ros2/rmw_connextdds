@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <string>
+
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 

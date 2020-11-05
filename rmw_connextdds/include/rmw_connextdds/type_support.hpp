@@ -19,6 +19,8 @@
 #ifndef RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 #define RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 
+#include <string>
+
 #include "rmw_connextdds/context.hpp"
 
 #include "rosidl_typesupport_fastrtps_c/identifier.h"

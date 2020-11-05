@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXTDDS__GRAPH_HPP_
-#define RMW_CONNEXTDDS__GRAPH_HPP_
+#ifndef RMW_CONNEXTDDS__GRAPH_CACHE_HPP_
+#define RMW_CONNEXTDDS__GRAPH_CACHE_HPP_
 
 #include "rmw_connextdds/context.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
@@ -115,4 +115,4 @@ rmw_connextdds_graph_add_entity(
     const DDS_LivelinessQosPolicy *const liveliness,
     const bool is_reader);
 
-#endif // RMW_CONNEXTDDS__GRAPH_HPP_
+#endif // RMW_CONNEXTDDS__GRAPH_CACHE_HPP_

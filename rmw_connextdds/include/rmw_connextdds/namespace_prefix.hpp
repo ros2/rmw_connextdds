@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAMESPACE_PREFIX_HPP_
-#define NAMESPACE_PREFIX_HPP_
+#ifndef RMW_CONNEXTDDS__NAMESPACE_PREFIX_HPP_
+#define RMW_CONNEXTDDS__NAMESPACE_PREFIX_HPP_
 
 extern const char *const ROS_TOPIC_PREFIX;
 extern const char *const ROS_SERVICE_REQUESTER_PREFIX;
 extern const char *const ROS_SERVICE_RESPONSE_PREFIX;
 
-#endif  // NAMESPACE_PREFIX_HPP_
+#endif  // RMW_CONNEXTDDS__NAMESPACE_PREFIX_HPP_

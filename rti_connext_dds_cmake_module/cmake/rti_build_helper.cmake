@@ -152,6 +152,9 @@ function(rti_build_connextmicro)
     set(RTIME_EXCLUDE_DPSE          true)
     set(RTIME_EXCLUDE_CPP           true)
 
+    set(RTIME_CMAKE_ROOT            ${CMAKE_CURRENT_BINARY_DIR}/rtime/${RTIME_TARGET_NAME})
+    set(RTIME_BUILD_ROOT            ${CMAKE_CURRENT_BINARY_DIR}/rtime/build)
+
     add_subdirectory(${RTIMEHOME} rtime)
 
     rti_lib_suffix(rti_lib_sfx)

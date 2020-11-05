@@ -19,13 +19,13 @@
 #ifndef RMW_CONNEXTDDS__CONTEXT_HPP_
 #define RMW_CONNEXTDDS__CONTEXT_HPP_
 
-#include "rmw_connextdds/dds_api.hpp"
-#include "rmw_connextdds/log.hpp"
+#include <stdio.h>
 
 #include <limits>
 #include <mutex>
 
-#include <stdio.h>
+#include "rmw_connextdds/dds_api.hpp"
+#include "rmw_connextdds/log.hpp"
 
 #include "rmw/error_handling.h"
 #include "rmw/impl/cpp/macros.hpp"

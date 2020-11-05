@@ -21,6 +21,7 @@
 #include "rmw_connextdds/graph_cache.hpp"
 
 #include <functional>
+#include <memory>
 
 /******************************************************************************
  * Context Implementation

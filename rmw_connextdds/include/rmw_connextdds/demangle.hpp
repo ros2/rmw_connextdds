@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DEMANGLE_HPP_
-#define DEMANGLE_HPP_
+#ifndef RMW_CONNEXTDDS__DEMANGLE_HPP_
+#define RMW_CONNEXTDDS__DEMANGLE_HPP_
 
 #include <string>
 
@@ -54,4 +54,4 @@ _identity_demangle(const std::string & name);
 using DemangleFunction = std::string (*)(const std::string &);
 using MangleFunction = DemangleFunction;
 
-#endif  // DEMANGLE_HPP_
+#endif  // RMW_CONNEXTDDS__DEMANGLE_HPP_

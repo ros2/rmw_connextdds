@@ -18,9 +18,10 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
+#include <algorithm>
+
 #include "rmw_connextdds/graph_cache.hpp"
 
-#include <algorithm>
 
 #define ROS_TOPIC_PREFIX_STR             "rt"
 #define ROS_SERVICE_REQUESTER_PREFIX_STR "rq"

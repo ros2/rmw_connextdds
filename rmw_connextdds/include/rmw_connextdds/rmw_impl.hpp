@@ -19,6 +19,9 @@
 #ifndef RMW_CONNEXTDDS__RMW_IMPL_HPP_
 #define RMW_CONNEXTDDS__RMW_IMPL_HPP_
 
+#include <string>
+#include <vector>
+
 #include "rmw_connextdds/context.hpp"
 #include "rmw_connextdds/type_support.hpp"
 

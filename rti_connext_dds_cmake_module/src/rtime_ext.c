@@ -105,7 +105,7 @@ DDS_DomainParticipant_lookup_type_pluginI(
     }
 
     retcode = DDS_RETCODE_OK;
-    
+
 done:
     if (DB_RETCODE_OK != DB_Database_unlock(self->database))
     {
@@ -167,7 +167,7 @@ DDS_DomainParticipant_is_type_in_use(
                     DDS_BOOLEAN_TRUE : DDS_BOOLEAN_FALSE;
 
     retcode = DDS_RETCODE_OK;
-    
+
 done:
     if (DB_RETCODE_OK != DB_Database_unlock(self->database))
     {

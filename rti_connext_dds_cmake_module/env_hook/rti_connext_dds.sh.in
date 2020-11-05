@@ -94,7 +94,7 @@ fi
 # otherwise inspect environment to see if another one is available.
 if [ -d "${_CONNEXTDDS_DIR_BUILD}" ]; then
     # Warn about unused environment variable.
-    
+
     if [ -n "${_CONNEXTDDS_DIR_ENV}" -a \
         "${_CONNEXTDDS_DIR_ENV}" != "${_CONNEXTDDS_DIR_BUILD}" -a \
         -z "${CONNEXTDDS_IGNORE_BUILD}" ]; then

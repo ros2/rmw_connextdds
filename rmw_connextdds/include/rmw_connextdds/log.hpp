@@ -27,46 +27,46 @@
 
 #define RMW_CONNEXT_LOG_ERROR(msg_) \
     RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID,\
+            RMW_CONNEXTDDS_ID, \
             (msg_));
 
 #define RMW_CONNEXT_LOG_ERROR_A(fmt_, ...) \
     RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID,\
-            (fmt_),\
+            RMW_CONNEXTDDS_ID, \
+            (fmt_), \
             __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_WARNING(msg_) \
     RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID,\
+            RMW_CONNEXTDDS_ID, \
             (msg_));
 
 #define RMW_CONNEXT_LOG_WARNING_A(fmt_, ...) \
     RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID,\
-            (fmt_),\
+            RMW_CONNEXTDDS_ID, \
+            (fmt_), \
             __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_INFO(msg_) \
     RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID,\
+            RMW_CONNEXTDDS_ID, \
             (msg_));
 
 #define RMW_CONNEXT_LOG_INFO_A(fmt_, ...) \
     RCUTILS_LOG_INFO_NAMED(\
-            RMW_CONNEXTDDS_ID,\
-            (fmt_),\
+            RMW_CONNEXTDDS_ID, \
+            (fmt_), \
             __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_DEBUG(msg_) \
     RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID,\
+            RMW_CONNEXTDDS_ID, \
             (msg_));
 
 #define RMW_CONNEXT_LOG_DEBUG_A(fmt_, ...) \
     RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID,\
-            (fmt_),\
+            RMW_CONNEXTDDS_ID, \
+            (fmt_), \
             __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_TRACE(msg_)
@@ -109,35 +109,35 @@
 
 #define RMW_CONNEXT_LOG_ERROR(msg_) \
     RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID,\
+            RMW_CONNEXTDDS_ID, \
             (msg_));
 
 #define RMW_CONNEXT_LOG_ERROR_A(fmt_, ...) \
     RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID,\
-            (fmt_),\
+            RMW_CONNEXTDDS_ID, \
+            (fmt_), \
             __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_WARNING(msg_) \
     RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID,\
+            RMW_CONNEXTDDS_ID, \
             (msg_));
 
 #define RMW_CONNEXT_LOG_WARNING_A(fmt_, ...) \
     RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID,\
-            (fmt_),\
+            RMW_CONNEXTDDS_ID, \
+            (fmt_), \
             __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_INFO(msg_) \
     RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID,\
+            RMW_CONNEXTDDS_ID, \
             (msg_));
 
 #define RMW_CONNEXT_LOG_INFO_A(fmt_, ...) \
     RCUTILS_LOG_INFO_NAMED(\
-            RMW_CONNEXTDDS_ID,\
-            (fmt_),\
+            RMW_CONNEXTDDS_ID, \
+            (fmt_), \
             __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_DEBUG(msg_)
@@ -188,4 +188,4 @@
 
 #endif /* RMW_CONNEXT_ASSERT_ENABLE */
 
-#endif // RMW_CONNEXTDDS__LOG_HPP_
+#endif  // RMW_CONNEXTDDS__LOG_HPP_

@@ -50,7 +50,7 @@ struct RMW_Connext_NddsTypeCode
         }
         rmw_connextdds_release_typecode_cache(&this->tc_cache);
     }
-    
+
     RMW_Connext_NddsTypeCode(
         RMW_Connext_NddsTypePluginI *const type_plugin,
         DDS_TypeCode *const dds_tc = nullptr,
@@ -70,8 +70,7 @@ struct RMW_Connext_NddsTypeCode
         {
             RMW_Connext_TypeCodePtrSeq_initialize(&this->tc_cache);
         }
-    }
-    
+    }    
 };
 
 struct RMW_Connext_NddsTypePluginI
@@ -92,7 +91,7 @@ struct RMW_Connext_NddsTypePluginI
       pool_samples(pool_samples),
       attached_count(1)
     { }
-    
+
     ~RMW_Connext_NddsTypePluginI()
     {
         REDAFastBufferPool_delete(this->pool_samples);
@@ -111,7 +110,6 @@ struct RMW_Connext_NddsTypePluginI
     {
         REDAFastBufferPool_returnBuffer(this->pool_samples, sample);
     }
-
 };
 
 
@@ -126,7 +124,7 @@ struct RMW_Connext_NddsParticipantData
     : pres_data(pres_data),
       type_plugin(type_plugin)
     { }
-    
+
     ~RMW_Connext_NddsParticipantData()
     {
         PRESTypePluginDefaultParticipantData_delete(this->pres_data);
@@ -241,7 +239,7 @@ RMW_Connext_TypePlugin_create_data(void ** sample, void * user_data)
 {
     RMW_Connext_MessageTypeSupport *const type_support =
         reinterpret_cast<RMW_Connext_MessageTypeSupport*>(user_data);
-    
+
     rcutils_uint8_array_t *data_buffer =
         new (std::nothrow) rcutils_uint8_array_t();
     if (nullptr == data_buffer)
@@ -279,14 +277,13 @@ RMW_Connext_TypePlugin_destroy_data(void ** sample, void * user_data)
 {
     RMW_Connext_MessageTypeSupport *const type_support =
         reinterpret_cast<RMW_Connext_MessageTypeSupport*>(user_data);
-    
+
     UNUSED_ARG(type_support);
 
     rcutils_uint8_array_t *data_buffer =
         reinterpret_cast<rcutils_uint8_array_t *>(*sample);
 
-    if (RCUTILS_RET_OK != rcutils_uint8_array_fini(data_buffer))
-    { }
+    (void)rcutils_uint8_array_fini(data_buffer);
 
     delete data_buffer;
 }
@@ -307,10 +304,10 @@ RMW_Connext_TypePlugin_on_participant_attached(
     UNUSED_ARG(registration_data);
     UNUSED_ARG(top_level_registration);
     UNUSED_ARG(container_plugin_context);
-    
+
     RMW_Connext_NddsTypeCode *const tc =
         reinterpret_cast<struct RMW_Connext_NddsTypeCode*>(type_code);
-    
+
     struct PRESTypePluginDefaultParticipantData * const pres_data =
         reinterpret_cast<PRESTypePluginDefaultParticipantData*>(
             PRESTypePluginDefaultParticipantData_new(participant_info));
@@ -322,7 +319,7 @@ RMW_Connext_TypePlugin_on_participant_attached(
     RMW_Connext_NddsParticipantData *const pdata =
         new (std::nothrow) RMW_Connext_NddsParticipantData(
                                 pres_data, tc->type_plugin);
-    
+
     if (nullptr == pdata)
     {
         PRESTypePluginDefaultParticipantData_delete(pres_data);
@@ -339,7 +336,7 @@ RMW_Connext_TypePlugin_on_participant_detached(
 {
     RMW_Connext_NddsParticipantData *const pdata =
         reinterpret_cast<RMW_Connext_NddsParticipantData*>(participant_data);
-    
+
     delete pdata;
 }
 
@@ -353,10 +350,10 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
 {
     UNUSED_ARG(top_level_registration);
     UNUSED_ARG(containerPluginContext);
-    
+
     RMW_Connext_NddsParticipantData *const pdata =
         reinterpret_cast<RMW_Connext_NddsParticipantData*>(participant_data);
-    
+
     PRESTypePluginDefaultEndpointData * const epd =
         reinterpret_cast<PRESTypePluginDefaultEndpointData*>(
             PRESTypePluginDefaultEndpointData_newWithNotification(
@@ -412,7 +409,6 @@ void
 RMW_Connext_TypePlugin_on_endpoint_detached(
     PRESTypePluginEndpointData endpoint_data)
 {  
-
     PRESTypePluginDefaultEndpointData_delete(endpoint_data);
 }
 
@@ -473,7 +469,7 @@ RMW_Connext_TypePlugin_serialize(
     RMW_Connext_MessageTypeSupport *const type_support =
         reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
 
-    
+
     if (!serialize_encapsulation)
     {
         // currently not supported
@@ -553,7 +549,7 @@ RMW_Connext_TypePlugin_deserialize(
     RMW_Connext_MessageTypeSupport *const type_support =
         reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
     UNUSED_ARG(type_support);
-    
+
     rcutils_uint8_array_t *const data_buffer =
         reinterpret_cast<rcutils_uint8_array_t *>(*sample);
     const size_t deserialize_size = RTICdrStream_getRemainder(stream);
@@ -569,10 +565,10 @@ RMW_Connext_TypePlugin_deserialize(
     }
 
     memcpy(data_buffer->buffer, src_ptr, deserialize_size);
-    
+
     data_buffer->buffer_length = deserialize_size;
 
-    RTICdrStream_setCurrentPosition(stream, (char*)src_ptr + deserialize_size);
+    RTICdrStream_setCurrentPosition(stream, reinterpret_cast<char*>(src_ptr) + deserialize_size);
 
     return RTI_TRUE;
 }
@@ -648,10 +644,10 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
         reinterpret_cast<PRESTypePluginDefaultEndpointData*>(endpoint_data);
     RMW_Connext_MessageTypeSupport *const type_support =
         reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
-    
+
     const RMW_Connext_Message *const msg =
         reinterpret_cast<const RMW_Connext_Message*>(sample);
-    
+
     if (msg->serialized)
     {
         const rcutils_uint8_array_t *const serialized_msg = 
@@ -736,7 +732,7 @@ RMW_Connext_TypePlugin_initialize(
     plugin->finalizeOptionalMembersFnc =
         (PRESTypePluginFinalizeOptionalMembersFunction)
             NULL /* TODO(asorbini): implement? */;
-    
+
     plugin->getWriterLoanedSampleFnc = NULL; 
     plugin->returnWriterLoanedSampleFnc = NULL;
     plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
@@ -817,7 +813,7 @@ rmw_connextdds_register_type_support(
             {
                 delete type_support;
             });
-    
+
     /* We can't use DDS_DomainParticipant_get_type_pluginI because the
        type plugin gets copied into the database record, so lookup the
        associated type code and retrieve the custom type plugin from it */

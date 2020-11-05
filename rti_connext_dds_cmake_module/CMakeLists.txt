@@ -80,7 +80,7 @@ else()
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/type>"
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/builtin_ipc>"
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/reda/sequence>")
-    
+
     target_include_directories(${RTIME_EXT}
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                "$<INSTALL_INTERFACE:include>")

@@ -38,4 +38,4 @@ void
 rmw_connextdds_release_typecode_cache(
     RMW_Connext_TypeCodePtrSeq *const tc_cache);
 
-#endif // RMW_CONNEXTDDS__TYPECODE_HPP_
+#endif  // RMW_CONNEXTDDS__TYPECODE_HPP_

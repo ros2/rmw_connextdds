@@ -32,7 +32,7 @@ extern "C" rmw_ret_t rmw_publish(
     rmw_publisher_allocation_t * allocation)
 {
     UNUSED_ARG(allocation);
-    
+
     RMW_CHECK_ARGUMENT_FOR_NULL(publisher, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(ros_message, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -40,7 +40,7 @@ extern "C" rmw_ret_t rmw_publish(
         publisher->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A(
         "publishing data: publisher=%p, topic=%s, msg=%p",
         (void*)publisher, publisher->topic_name, (void*)ros_message)
@@ -57,7 +57,7 @@ extern "C" rmw_ret_t rmw_publish_serialized_message(
     rmw_publisher_allocation_t * allocation)
 {
     UNUSED_ARG(allocation);
-    
+
     RMW_CHECK_ARGUMENT_FOR_NULL(publisher, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(serialized_message, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -65,7 +65,7 @@ extern "C" rmw_ret_t rmw_publish_serialized_message(
         publisher->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A(
         "publishing serialized data: publisher=%p, topic=%s",
         (void*)publisher, publisher->topic_name)
@@ -139,13 +139,13 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
     RMW_CONNEXT_LOG_DEBUG_A(
         "creating new publisher: topic=%s",
         topic_name)
-    
+
     if (0 == strlen(topic_name))
     {
         RMW_CONNEXT_LOG_ERROR("empty topic_name provided")
         return nullptr;
     }
-    
+
     if (!qos_policies->avoid_ros_namespace_conventions)
     {
         int validation_result = RMW_TOPIC_VALID;
@@ -165,7 +165,7 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
             return nullptr;
         }
     }
-    
+
     rmw_context_impl_t *ctx = node->context->impl;
 
     rmw_publisher_t *const rmw_pub =
@@ -182,7 +182,7 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
             publisher_options
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
             );
-    
+
     if (nullptr == rmw_pub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create RMW publisher")
@@ -233,9 +233,9 @@ extern "C" rmw_ret_t rmw_compare_gids_equal(
         gid2->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CHECK_ARGUMENT_FOR_NULL(result, RMW_RET_INVALID_ARGUMENT);
-    
+
     *result = memcmp(gid1->data, gid2->data, sizeof(gid1->data)) == 0;
 
     return RMW_RET_OK;
@@ -251,7 +251,7 @@ extern "C" rmw_ret_t rmw_publisher_count_matched_subscriptions(
         publisher->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CHECK_ARGUMENT_FOR_NULL(subscription_count, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Publisher *const pub_impl =
@@ -288,12 +288,12 @@ extern "C" rmw_ret_t rmw_publisher_get_actual_qos(
         publisher->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Publisher *const pub_impl =
         reinterpret_cast<RMW_Connext_Publisher*>(publisher->data);
-    
+
     return pub_impl->qos(qos);
 }
 
@@ -335,7 +335,7 @@ extern "C" rmw_ret_t rmw_destroy_publisher(
         publisher->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     rmw_context_impl_t *ctx = node->context->impl;
 
     if (RMW_RET_OK !=

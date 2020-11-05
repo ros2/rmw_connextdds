@@ -121,7 +121,7 @@ public:
     rmw_ret_t serialize(
         const void *const ros_msg,
         rcutils_uint8_array_t *const to_buffer);
-    
+
     rmw_ret_t deserialize(
         void *const ros_msg,
         const rcutils_uint8_array_t *const from_buffer,
@@ -138,7 +138,7 @@ public:
         const void *const intro_members = nullptr,
         const bool intro_members_cpp = false,
         std::string *const type_name = nullptr);
-    
+
     static rmw_ret_t unregister_type_support(
         rmw_context_impl_t *const ctx,
         DDS_DomainParticipant *const participant,
@@ -152,7 +152,7 @@ public:
         const rosidl_message_type_support_t *const type_supports,
         bool &cpp_version);
 #endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
-    
+
     static void type_info(
         const rosidl_message_type_support_t *const type_support,
         uint32_t &serialized_size_max,
@@ -176,7 +176,7 @@ public:
         const rosidl_service_type_support_t *const type_supports,
         bool &cpp_version);
 #endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
-    
+
     static
     const rosidl_message_type_support_t *
     get_request_type_support(
@@ -284,4 +284,4 @@ public:
 };
 
 
-#endif // RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
+#endif  // RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_

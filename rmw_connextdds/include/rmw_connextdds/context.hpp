@@ -50,7 +50,7 @@ struct rmw_context_impl_t
     rmw_dds_common::Context common;
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
     rmw_context_t *base;
-    
+
     DDS_DomainParticipantFactory *factory;
 
     void *api;
@@ -149,4 +149,4 @@ rmw_connextdds_initialize_participant_factory_qos(
     rmw_context_impl_t *const ctx,
     DDS_DomainParticipantFactory *const factory);
 
-#endif // RMW_CONNEXTDDS__CONTEXT_HPP_
+#endif  // RMW_CONNEXTDDS__CONTEXT_HPP_

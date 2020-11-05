@@ -67,7 +67,7 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
         this->_serialized_size_max,
         this->_unbounded,
         this->_empty);
-    
+
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
     if (!this->unbounded() && this->type_requestreply())
     {
@@ -105,7 +105,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
         eprosima::fastcdr::Cdr::DDS_CDR);
     cdr_stream.setDDSCdrPlFlag(
         eprosima::fastcdr::Cdr::DDSCdrPlFlag::DDS_CDR_WITHOUT_PL);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("[type support] %s serialize: "
         "type.unbounded=%d, "
         "type.empty=%d, "
@@ -204,7 +204,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
     auto callbacks =
         static_cast<const message_type_support_callbacks_t *>(
             this->_type_support_fastrtps->data);
-    
+
     eprosima::fastcdr::FastBuffer cdr_buffer(
         reinterpret_cast<char *>(from_buffer->buffer),
         from_buffer->buffer_length);
@@ -212,7 +212,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
         cdr_buffer,
         eprosima::fastcdr::Cdr::DEFAULT_ENDIAN,
         eprosima::fastcdr::Cdr::DDS_CDR);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("[type support] %s deserialize: "
         "sample=%p, "
         "type.unbounded=%d, "
@@ -227,7 +227,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
         this->_serialized_size_max,
         from_buffer->buffer_length,
         from_buffer->buffer_capacity)
-    
+
     void *payload = ros_msg;
 
     try
@@ -295,7 +295,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
     size_out =
         cdr_stream.getCurrentPosition() -
             reinterpret_cast<char *>(from_buffer->buffer);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("[type support] %s deserialized: "
         "consumed=%lu",
         this->_type_name.c_str(),
@@ -317,11 +317,11 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
         serialized_size +=
             RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
     }
-    
+
     auto callbacks =
         static_cast<const message_type_support_callbacks_t *>(
             this->_type_support_fastrtps->data);
-    
+
 
     if (!this->_unbounded)
     {
@@ -520,7 +520,7 @@ RMW_Connext_ServiceTypeSupportWrapper::get_request_type_name(
     auto svc_callbacks =
         static_cast<const service_type_support_callbacks_t *>(
             svc_type_support_fastrtps->data);
-    
+
     return rmw_connextdds_create_type_name_request(svc_callbacks);
 }
 
@@ -539,6 +539,6 @@ RMW_Connext_ServiceTypeSupportWrapper::get_response_type_name(
     auto svc_callbacks =
         static_cast<const service_type_support_callbacks_t *>(
             svc_type_support_fastrtps->data);
-    
+
     return rmw_connextdds_create_type_name_response(svc_callbacks);
 }

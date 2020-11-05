@@ -113,7 +113,7 @@ extern "C" rmw_ret_t rmw_take_event(
         return RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(event_info, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(taken, RMW_RET_INVALID_ARGUMENT);
-    
+
     *taken = false;
 
     if (RMW_Connext_Event::reader_event(event_handle))
@@ -134,7 +134,7 @@ extern "C" rmw_ret_t rmw_take_event(
             return RMW_RET_ERROR;
         }
     }
-    
+
     *taken = true;
     return RMW_RET_OK;
 }

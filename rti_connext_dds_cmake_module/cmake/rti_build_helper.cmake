@@ -23,7 +23,7 @@ function(rti_load_rmw_source basedir)
     if(NOT EXISTS "${RMW_CONNEXT_DIR}")
         message(FATAL_ERROR "Invalid base directory for RMW common source: ${RMW_CONNEXT_DIR}")
     endif()
-    
+
     set(qsources)
     foreach(src_f ${sources})
         list(APPEND qsources "${RMW_CONNEXT_DIR}/${src_f}")
@@ -163,12 +163,7 @@ function(rti_build_connextmicro)
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
-    
-    # set_target_properties(rti_me${rti_lib_sfx}
-    #     PROPERTIES
-    #         INTERFACE_INCLUDE_DIRECTORIES
-    #             "${RTIMEHOME}/include;${RTIMEHOME}/src/reda/sequence")
-    
+
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
     set(RTIMEHOME_FOUND false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
@@ -189,7 +184,7 @@ function(rti_find_connextmicro_lib basedir rtime_lib)
         NO_CMAKE_ENVIRONMENT_PATH
         NO_SYSTEM_ENVIRONMENT_PATH
         NO_CMAKE_SYSTEM_PATH)
-    
+
     if("${lib${rtime_lib}}" MATCHES NOTFOUND)
         message(STATUS "Library ${rtime_lib} not found in ${basedir}. RTI Connext DDS Micro will not be available")
         set(${rtime_lib}_FOUND false PARENT_SCOPE)
@@ -370,7 +365,7 @@ macro(rti_build_rmw_connext)
     if(NOT CMAKE_CXX_STANDARD)
         set(CMAKE_CXX_STANDARD 14)
     endif()
-    
+
     set(RMW_CONNEXT_DDS_API     "RMW_CONNEXT_DDS_API_${connext_api}"
         CACHE STRING "DDS implementation to use")
 

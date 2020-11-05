@@ -152,6 +152,7 @@ _CONNEXTDDSMICRO_BIN="${_CONNEXTDDSMICRO_DIR_EXPORT}/bin"
 _connextdds_prepend_unique_value PATH "${_CONNEXTDDSMICRO_BIN}"
 _connextdds_prepend_unique_value PATH "${_CONNEXTDDSMICRO_LIB}"
 _connextdds_prepend_unique_value ${_PATH_VAR} "${_CONNEXTDDSMICRO_BIN}"
+_connextdds_prepend_unique_value ${_PATH_VAR} "${_CONNEXTDDSMICRO_LIB}"
 
 export RTIMEHOME="${_CONNEXTDDSMICRO_DIR_EXPORT}" \
        RTIME_TARGET_NAME="${_CONNEXTDDSMICRO_ARCH}" \

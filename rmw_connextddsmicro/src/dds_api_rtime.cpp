@@ -39,9 +39,7 @@ struct rmw_connextdds_api_micro
       rt_dpde(false),
       rt_sec(false),
       udp_property(nullptr)
-    {
-
-    }
+    { }
 };
 
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro";
@@ -349,7 +347,7 @@ rmw_connextdds_finalize_participant_factory(
     rmw_context_impl_t *const ctx)
 {
     rmw_connextdds_api_micro *const ctx_api =
-        (rmw_connextdds_api_micro*)ctx->api;
+        reinterpret_cast<rmw_connextdds_api_micro*>(ctx->api);
 
     RT_Registry_T *registry =
             DDS_DomainParticipantFactory_get_registry(ctx->factory);
@@ -1014,7 +1012,7 @@ RMW_Connext_DataReaderListener_before_sample_commit_drop_local(
     UNUSED_ARG(sample);
 
     RMW_Connext_StdSubscriberStatusCondition *const self =
-        (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
 
     *dropped = memcmp(
                 self->drop_handle().octet,

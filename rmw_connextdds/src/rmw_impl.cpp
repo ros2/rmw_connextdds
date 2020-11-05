@@ -2365,6 +2365,27 @@ RMW_Connext_WaitSet::attach(
     return RMW_RET_OK;
 }
 
+static inline bool
+rmw_connextdds_trigger_condition_if_active(
+    DDS_Condition *const condition,
+    DDS_ConditionSeq *const active_conditions,
+    const size_t active_conditions_len,
+    size_t & already_triggered_len)
+{
+    for (size_t i = 0;
+            i < active_conditions_len &&
+            already_triggered_len < active_conditions_len;
+                i++)
+    {
+        if (*DDS_ConditionSeq_get_reference(active_conditions, i) == condition)
+        {
+            already_triggered_len += 1;
+            return true;
+        }
+    }
+    return false;
+}
+
 rmw_ret_t
 RMW_Connext_WaitSet::wait(
     rmw_subscriptions_t * subs,
@@ -2431,38 +2452,16 @@ RMW_Connext_WaitSet::wait(
 
     RMW_CONNEXT_ASSERT(timedout || active_len > 0)
 
-#define trigger_if_active(cond_, on_active_, on_inactive_) \
-{\
-    active = false;\
-    for (size_t i_ = 0;\
-            i_ < active_len &&\
-            !active &&\
-            triggered_len < active_len;\
-                i_++)\
-    {\
-        DDS_Condition *active_cond_ =\
-            *DDS_ConditionSeq_get_reference(&this->active_conditions, i_);\
-        if (active_cond_ == (cond_))\
-        {\
-            active = true;\
-            on_active_\
-            triggered_len += 1;\
-        }\
-    }\
-    if (!active)\
-    {\
-        on_inactive_\
-    }\
-}
-
     for (size_t i = 0; nullptr != gcs && i < gcs->guard_condition_count; i++)
     {
         DDS_GuardCondition *const gcond =
             reinterpret_cast<DDS_GuardCondition*>(gcs->guard_conditions[i]);
 
-        trigger_if_active(DDS_GuardCondition_as_condition(gcond),
-        /* on active */
-        {
+        if (rmw_connextdds_trigger_condition_if_active(
+                DDS_GuardCondition_as_condition(gcond),
+                &this->active_conditions,
+                active_len,
+                triggered_len)) {
             RMW_CONNEXT_LOG_DEBUG_A("[wait] active guard condition: "
                 "waitset=%p, "
                 "condition=%p",
@@ -2476,11 +2475,9 @@ RMW_Connext_WaitSet::wait(
                 RMW_CONNEXT_LOG_ERROR("failed to reset guard condition")
                 goto done;
             }
-        },
-        /* on inactive */
-        {
+        } else  {
             gcs->guard_conditions[i] = nullptr;
-        });
+        }
     }
 
     for (size_t i = 0; nullptr != subs && i < subs->subscriber_count; i++)
@@ -2488,9 +2485,11 @@ RMW_Connext_WaitSet::wait(
         RMW_Connext_Subscriber *const sub =
             reinterpret_cast<RMW_Connext_Subscriber*>(subs->subscribers[i]);
 
-        trigger_if_active(sub->condition(),
-        /* on active */
-        {
+        if (rmw_connextdds_trigger_condition_if_active(
+                sub->condition(),
+                &this->active_conditions,
+                active_len,
+                triggered_len)) {
             if (!sub->has_status(DDS_DATA_AVAILABLE_STATUS)) {
                 /* active because of other event */
                 subs->subscribers[i] = nullptr;
@@ -2503,11 +2502,9 @@ RMW_Connext_WaitSet::wait(
                     reinterpret_cast<void*>(sub->condition()),
                     reinterpret_cast<void*>(sub))
             }
-        },
-        /* on inactive */
-        {
+        } else {
             subs->subscribers[i] = nullptr;
-        });
+        }
     }
 
     for (size_t i = 0; nullptr != evs && i < evs->event_count; i++)
@@ -2515,9 +2512,11 @@ RMW_Connext_WaitSet::wait(
         rmw_event_t *const event =
             reinterpret_cast<rmw_event_t *>(evs->events[i]);
 
-        trigger_if_active(RMW_Connext_Event::condition(event),
-        /* on active */
-        {
+        if (rmw_connextdds_trigger_condition_if_active(
+                RMW_Connext_Event::condition(event),
+                &this->active_conditions,
+                active_len,
+                triggered_len)) {
             if (!RMW_Connext_Event::active(event)) {
                 /* active because of other event */
                 evs->events[i] = nullptr;
@@ -2530,11 +2529,9 @@ RMW_Connext_WaitSet::wait(
                     reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
                     reinterpret_cast<void*>(event))
             }
-        },
-        /* on inactive */
-        {
+        } else {
             evs->events[i] = nullptr;
-        });
+        }
     }
 
     for (size_t i = 0; nullptr != cls && i < cls->client_count; i++)
@@ -2542,9 +2539,11 @@ RMW_Connext_WaitSet::wait(
         RMW_Connext_Client *const client =
             reinterpret_cast<RMW_Connext_Client*>(cls->clients[i]);
 
-        trigger_if_active(client->subscriber()->condition(),
-        /* on active */
-        {
+        if (rmw_connextdds_trigger_condition_if_active(
+                client->subscriber()->condition(),
+                &this->active_conditions,
+                active_len,
+                triggered_len)) {
             RMW_CONNEXT_LOG_DEBUG_A("[wait] active client: "
                 "waitset=%p, "
                 "condition=%p, "
@@ -2552,11 +2551,9 @@ RMW_Connext_WaitSet::wait(
                 reinterpret_cast<void*>(this->waitset),
                 reinterpret_cast<void*>(client->subscriber()->condition()),
                 reinterpret_cast<void*>(client))
-        },
-        /* on inactive */
-        {
+        } else {
             cls->clients[i] = nullptr;
-        });
+        }
     }
 
     for (size_t i = 0; nullptr != srvs && i < srvs->service_count; i++)
@@ -2564,9 +2561,11 @@ RMW_Connext_WaitSet::wait(
         RMW_Connext_Service *const service =
             reinterpret_cast<RMW_Connext_Service*>(srvs->services[i]);
 
-        trigger_if_active(service->subscriber()->condition(),
-        /* on active */
-        {
+        if (rmw_connextdds_trigger_condition_if_active(
+                service->subscriber()->condition(),
+                &this->active_conditions,
+                active_len,
+                triggered_len)) {
             RMW_CONNEXT_LOG_DEBUG_A("[wait] active service: "
                 "waitset=%p, "
                 "condition=%p, "
@@ -2574,11 +2573,9 @@ RMW_Connext_WaitSet::wait(
                 reinterpret_cast<void*>(this->waitset),
                 reinterpret_cast<void*>(service->subscriber()->condition()),
                 reinterpret_cast<void*>(service))
-        },
-        /* on inactive */
-        {
+        } else {
             srvs->services[i] = nullptr;
-        });
+        }
     }
 
     if (triggered_len != active_len)

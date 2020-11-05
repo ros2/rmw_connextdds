@@ -110,7 +110,9 @@ if(WIN32)
     # TODO implement support for Windows
     # ament_environment_hooks(env_hook/rti_connext_dds.bat.in)
 else()
-    ament_environment_hooks(env_hook/rti_connext_dds.sh.in)
+    ament_environment_hooks(
+        env_hook/rti_connext_dds.sh.in
+        env_hook/rti_connext_dds_micro.sh.in)
 endif()
 
 if(BUILD_TESTING)

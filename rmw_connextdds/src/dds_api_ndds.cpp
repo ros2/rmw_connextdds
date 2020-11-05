@@ -419,8 +419,8 @@ rmw_connextdds_write_message(
 #if !RMW_CONNEXT_EMULATE_REQUESTREPLY
     if (pub->message_type_support()->type_requestreply())
     {
-        RMW_Connext_RequestReplyMessage *const rr_msg = 
-            reinterpret_cast<RMW_Connext_RequestReplyMessage*>(message->user_data);
+        const RMW_Connext_RequestReplyMessage *const rr_msg = 
+            reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(message->user_data);
         DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
 
         if (!rr_msg->request)

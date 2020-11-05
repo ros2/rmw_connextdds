@@ -159,6 +159,7 @@ _CONNEXTDDS_BIN="${_CONNEXTDDS_DIR_EXPORT}/bin"
 _connextdds_prepend_unique_value PATH "${_CONNEXTDDS_BIN}"
 _connextdds_prepend_unique_value PATH "${_CONNEXTDDS_LIB}"
 _connextdds_prepend_unique_value ${_PATH_VAR} "${_CONNEXTDDS_BIN}"
+_connextdds_prepend_unique_value ${_PATH_VAR} "${_CONNEXTDDS_LIB}"
 
 export CONNEXTDDS_DIR="${_CONNEXTDDS_DIR_EXPORT}" \
        CONNEXTDDS_ARCH="${_CONNEXTDDS_ARCH}" \

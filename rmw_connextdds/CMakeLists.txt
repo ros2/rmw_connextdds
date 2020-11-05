@@ -81,7 +81,8 @@ else()
         src/rmw_typecode.cpp
         src/dds_api_ndds.cpp
         include/rmw_connextdds/type_support_impl.hpp
-        include/rmw_connextdds/typecode.hpp)
+        include/rmw_connextdds/typecode.hpp
+        include/rmw_connextdds/dds_api_ndds.hpp)
 
     rti_build_rmw_connext()
 endif()

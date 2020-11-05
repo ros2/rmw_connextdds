@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__TYPECODE_HPP_
-#define RMW_CONNEXT__TYPECODE_HPP_
+#ifndef RMW_CONNEXTDDS__TYPECODE_HPP_
+#define RMW_CONNEXTDDS__TYPECODE_HPP_
 
 #include "rmw_connextdds/type_support.hpp"
 
@@ -38,4 +38,4 @@ void
 rmw_connextdds_release_typecode_cache(
     RMW_Connext_TypeCodePtrSeq *const tc_cache);
 
-#endif /* RMW_CONNEXT__TYPECODE_HPP_ */
+#endif // RMW_CONNEXTDDS__TYPECODE_HPP_

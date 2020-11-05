@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__RESOURCE_LIMITS_HPP_
-#define RMW_CONNEXT__RESOURCE_LIMITS_HPP_
+#ifndef RMW_CONNEXTDDS__RESOURCE_LIMITS_HPP_
+#define RMW_CONNEXTDDS__RESOURCE_LIMITS_HPP_
 
 #ifndef RMW_CONNEXT_LIMIT_DEFAULT_MAX
 #define RMW_CONNEXT_LIMIT_DEFAULT_MAX                   32
@@ -59,4 +59,4 @@
 #define RMW_CONNEXT_LIMIT_KEEP_ALL_SAMPLES              1000
 #endif /* RMW_CONNEXT_LIMIT_SAMPLES_MAX */
 
-#endif /* RMW_CONNEXT__RESOURCE_LIMITS_HPP_ */
+#endif // RMW_CONNEXTDDS__RESOURCE_LIMITS_HPP_

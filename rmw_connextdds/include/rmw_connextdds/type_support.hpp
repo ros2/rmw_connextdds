@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__TYPE_SUPPORT_HPP_
-#define RMW_CONNEXT__TYPE_SUPPORT_HPP_
+#ifndef RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
+#define RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 
 #include "rmw_connextdds/context.hpp"
 
@@ -166,7 +166,7 @@ public:
     const rosidl_service_type_support_t *
     get_type_support_fastrtps(
         const rosidl_service_type_support_t *const type_supports);
-    
+
 #if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     static
     const rosidl_service_type_support_t *
@@ -282,4 +282,4 @@ public:
 };
 
 
-#endif /* RMW_CONNEXT__TYPE_SUPPORT_HPP_ */
+#endif // RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_

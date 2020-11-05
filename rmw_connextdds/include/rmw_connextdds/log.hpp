@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#ifndef RMW_CONNEXT__LOG_HPP_
-#define RMW_CONNEXT__LOG_HPP_
+#ifndef RMW_CONNEXTDDS__LOG_HPP_
+#define RMW_CONNEXTDDS__LOG_HPP_
 
 #include "rmw_connextdds/static_config.hpp"
 
@@ -188,4 +188,4 @@
 
 #endif /* RMW_CONNEXT_ASSERT_ENABLE */
 
-#endif /* RMW_CONNEXT__LOG_HPP_ */
+#endif // RMW_CONNEXTDDS__LOG_HPP_

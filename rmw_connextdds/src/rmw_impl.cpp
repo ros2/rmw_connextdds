@@ -2588,7 +2588,7 @@ RMW_Connext_WaitSet::wait(
     for (size_t i = 0; nullptr != cls && i < cls->client_count; i++)
     {
         RMW_Connext_Client *const client =
-            reinterpret_cast<RMW_Connext_Client*<(cls->clients[i]);
+            reinterpret_cast<RMW_Connext_Client*>(cls->clients[i]);
         
         trigger_if_active(client->subscriber()->condition(),
         /* on active */
@@ -3141,7 +3141,7 @@ RMW_Connext_Client::send_request(
     rr_msg.sn = -1;
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
     rr_msg.gid = *this->request_pub->gid();
-    rr_msg.payload = reinterpret_cast<void*>(ros_request);
+    rr_msg.payload = const_cast<void*>(ros_request);
 
     RMW_CONNEXT_LOG_DEBUG_A("[%s] send REQUEST: "
             "gid=%08X.%08X.%08X.%08X, "
@@ -3374,7 +3374,7 @@ RMW_Connext_Service::send_response(
     rr_msg.sn = request_id->sequence_number;
     memcpy(rr_msg.gid.data, request_id->writer_guid, 16);
     rr_msg.gid.implementation_identifier = RMW_CONNEXTDDS_ID;
-    rr_msg.payload = reinterpret_cast<void*>(ros_response);
+    rr_msg.payload = const_cast<void*>(ros_response);
 
     RMW_CONNEXT_LOG_DEBUG_A("[%s] send RESPONSE: "
         "gid=%08X.%08X.%08X.%08X, "
@@ -3648,7 +3648,7 @@ RMW_Connext_DataWriterListener_offered_deadline_missed(
     const struct DDS_OfferedDeadlineMissedStatus *status)
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
-        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
+        reinterpret_cast<RMW_Connext_StdPublisherStatusCondition*>(listener_data);
     
     UNUSED_ARG(writer);
     
@@ -3662,7 +3662,7 @@ RMW_Connext_DataWriterListener_offered_incompatible_qos(
     const struct DDS_OfferedIncompatibleQosStatus *status)
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
-        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
+        reinterpret_cast<RMW_Connext_StdPublisherStatusCondition*>(listener_data);
     
     UNUSED_ARG(writer);
 
@@ -3676,7 +3676,7 @@ RMW_Connext_DataWriterListener_liveliness_lost(
     const struct DDS_LivelinessLostStatus *status)
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
-        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
+        reinterpret_cast<RMW_Connext_StdPublisherStatusCondition*>(listener_data);
     
     UNUSED_ARG(writer);
 
@@ -4201,7 +4201,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
     {
         rmw_requested_deadline_missed_status_t * status =
-            reinterpret_cast<rmw_requested_deadline_missed_status_t >(event_info);
+            reinterpret_cast<rmw_requested_deadline_missed_status_t*>(event_info);
         
         status->total_count = this->status_deadline.total_count;
         status->total_count_change =
@@ -4230,7 +4230,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
     case RMW_EVENT_MESSAGE_LOST:
     {
         rmw_message_lost_status_t *const status =
-            reinterpret_cast<void*><rmw_message_lost_status_t*>(event_info);
+            reinterpret_cast<rmw_message_lost_status_t*>(event_info);
 
         status->total_count = this->status_sample_lost.total_count;
         status->total_count_change =
@@ -4434,7 +4434,7 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
     case RMW_EVENT_OFFERED_DEADLINE_MISSED:
     {
         rmw_offered_deadline_missed_status_t * status =
-            reinterpret_cast<void*><rmw_offered_deadline_missed_status_t *>(event_info);
+            reinterpret_cast<rmw_offered_deadline_missed_status_t *>(event_info);
         
         status->total_count = this->status_deadline.total_count;
         status->total_count_change =

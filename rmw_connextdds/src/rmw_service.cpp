@@ -45,7 +45,7 @@ extern "C" rmw_ret_t rmw_take_response(
     RMW_CHECK_ARGUMENT_FOR_NULL(taken, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Client *const client_impl =
-        (RMW_Connext_Client *)client->data;
+        reinterpret_cast<RMW_Connext_Client *>(client->data);
 
 #if RMW_CONNEXT_HAVE_SERVICE_INFO
     return client_impl->take_response(request_header, ros_response, taken);
@@ -84,7 +84,7 @@ extern "C" rmw_ret_t rmw_take_request(
     RMW_CHECK_ARGUMENT_FOR_NULL(taken, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Service *const svc_impl =
-        (RMW_Connext_Service *)service->data;
+        reinterpret_cast<RMW_Connext_Service *>(service->data);
 
 #if RMW_CONNEXT_HAVE_SERVICE_INFO
     return svc_impl->take_request(request_header, ros_request, taken);
@@ -117,7 +117,7 @@ extern "C" rmw_ret_t rmw_send_response(
     RMW_CHECK_ARGUMENT_FOR_NULL(ros_response, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Service *const svc_impl =
-        (RMW_Connext_Service *)service->data;
+        reinterpret_cast<RMW_Connext_Service *>(service->data);
 
     return svc_impl->send_response(request_id, ros_response);
 }
@@ -137,7 +137,7 @@ extern "C" rmw_ret_t rmw_send_request(
     RMW_CHECK_ARGUMENT_FOR_NULL(sequence_id, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Client *const client_impl =
-        (RMW_Connext_Client *)client->data;
+        reinterpret_cast<RMW_Connext_Client *>(client->data);
 
     return client_impl->send_request(ros_request, sequence_id);
 }
@@ -238,7 +238,8 @@ extern "C" rmw_ret_t rmw_destroy_client(
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
     
-    RMW_Connext_Client *const client_impl = (RMW_Connext_Client*)client->data;
+    RMW_Connext_Client *const client_impl =
+        reinterpret_cast<RMW_Connext_Client*>(client->data);
 
     if (RMW_RET_OK !=
             rmw_connextdds_graph_on_client_deleted(
@@ -358,7 +359,8 @@ extern "C" rmw_ret_t rmw_destroy_service(
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
     
-    RMW_Connext_Service *const svc_impl = (RMW_Connext_Service *)service->data;
+    RMW_Connext_Service *const svc_impl =
+        reinterpret_cast<RMW_Connext_Service *>(service->data);
 
     if (RMW_RET_OK !=
             rmw_connextdds_graph_on_service_deleted(

@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <string>
+
 #include "rmw_connextdds/rmw_impl.hpp"
 
 #if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
@@ -197,7 +199,7 @@ extern "C" rmw_ret_t rmw_service_server_is_available(
     RMW_CHECK_ARGUMENT_FOR_NULL(is_available, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Client *const client_impl =
-        (RMW_Connext_Client*)client->data;
+        reinterpret_cast<RMW_Connext_Client*>(client->data);
     
     *is_available = false;
     bool available = false;

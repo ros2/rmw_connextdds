@@ -58,8 +58,8 @@ extern "C" rmw_ret_t rmw_publisher_event_init(
         "publisher=%p, "
         "event=%p, "
         "event.type=%s",
-        (void*)publisher->data,
-        (void*)rmw_event,
+        reinterpret_cast<void*>(publisher->data),
+        reinterpret_cast<void*>(rmw_event),
         dds_event_to_str(ros_event_to_dds(rmw_event->event_type, nullptr)))
 
     return RMW_RET_OK;
@@ -92,8 +92,8 @@ extern "C" rmw_ret_t rmw_subscription_event_init(
         "subscriber=%p, "
         "event=%p, "
         "event.type=%s",
-        (void*)subscription->data,
-        (void*)rmw_event,
+        reinterpret_cast<void*>(subscription->data),
+        reinterpret_cast<void*>(rmw_event),
         dds_event_to_str(ros_event_to_dds(rmw_event->event_type, nullptr)))
 
 

@@ -129,9 +129,7 @@ public:
 
     RMW_Connext_StdWaitSet()
     : waiting(false)
-    {
-
-    }
+    { }
 
     rmw_ret_t
     wait(
@@ -183,9 +181,7 @@ public:
     : mutex_internal(),
       waitset_mutex(nullptr),
       waitset_condition(nullptr)
-    {
-
-    }
+    { }
 
     void
     attach(
@@ -216,7 +212,7 @@ class RMW_Connext_StdGuardCondition : public RMW_Connext_StdCondition
 {
 public:
 
-    RMW_Connext_StdGuardCondition(const bool internal = false)
+    explicit RMW_Connext_StdGuardCondition(const bool internal = false)
     : trigger_value(false),
       internal(internal),
       gcond(nullptr)
@@ -295,9 +291,7 @@ protected:
 };
 
 class RMW_Connext_StdStatusCondition : public RMW_Connext_StdCondition
-{
-
-};
+{ };
 
 void
 RMW_Connext_DataWriterListener_offered_deadline_missed(
@@ -551,13 +545,11 @@ class RMW_Connext_Node
     rmw_context_impl_t *ctx;
 #if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
     rmw_guard_condition_t *gcond;
-    RMW_Connext_Node(rmw_context_impl_t *const ctx);
+    explicit RMW_Connext_Node(rmw_context_impl_t *const ctx);
 #else
-    RMW_Connext_Node(rmw_context_impl_t *const ctx)
+    explicit RMW_Connext_Node(rmw_context_impl_t *const ctx)
     : ctx(ctx)
-    {
-
-    }
+    { }
 #endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 public:
@@ -1111,9 +1103,7 @@ class RMW_Connext_Client
     : request_pub(nullptr),
       reply_sub(nullptr),
       next_request_id(1)
-    {
-        
-    }
+    { }
 
 public:
     static
@@ -1264,14 +1254,14 @@ public:
     RMW_Connext_Publisher*
     publisher(const rmw_event_t *const event)
     {
-        return (RMW_Connext_Publisher*)event->data;
+        return reinterpret_cast<RMW_Connext_Publisher*>(event->data);
     }
 
     static
     RMW_Connext_Subscriber*
     subscriber(const rmw_event_t *const event)
     {
-        return (RMW_Connext_Subscriber*)event->data;
+        return reinterpret_cast<RMW_Connext_Subscriber*>(event->data);
     }
 };
 

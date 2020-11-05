@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <string>
+
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/typecode.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
@@ -89,9 +91,7 @@ struct RMW_Connext_NddsTypePluginI
       type_code(this, tc, tc_cache),
       pool_samples(pool_samples),
       attached_count(1)
-    {
-        
-    }
+    { }
     
     ~RMW_Connext_NddsTypePluginI()
     {
@@ -102,8 +102,8 @@ struct RMW_Connext_NddsTypePluginI
     rcutils_uint8_array_t*
     allocate_sample()
     {
-        return (rcutils_uint8_array_t*)
-                    REDAFastBufferPool_getBuffer(this->pool_samples);
+        return reinterpret_cast<rcutils_uint8_array_t*>(
+                    REDAFastBufferPool_getBuffer(this->pool_samples));
     }
 
     void
@@ -125,9 +125,7 @@ struct RMW_Connext_NddsParticipantData
         RMW_Connext_NddsTypePluginI *const type_plugin)
     : pres_data(pres_data),
       type_plugin(type_plugin)
-    {
-        
-    }
+    { }
     
     ~RMW_Connext_NddsParticipantData()
     {
@@ -162,7 +160,7 @@ RMW_Connext_Uint8ArrayPtr_copy(
     rcutils_uint8_array_t **dst,
     const rcutils_uint8_array_t **src)
 {
-    *dst = (rcutils_uint8_array_t*)*src;
+    *dst = reinterpret_cast<rcutils_uint8_array_t*>(*src);
     return RTI_TRUE;
 }
 
@@ -242,7 +240,7 @@ RTIBool
 RMW_Connext_TypePlugin_create_data(void ** sample, void * user_data)
 {
     RMW_Connext_MessageTypeSupport *const type_support =
-        (RMW_Connext_MessageTypeSupport*)user_data;
+        reinterpret_cast<RMW_Connext_MessageTypeSupport*>(user_data);
     
     rcutils_uint8_array_t *data_buffer =
         new (std::nothrow) rcutils_uint8_array_t();
@@ -280,16 +278,15 @@ void
 RMW_Connext_TypePlugin_destroy_data(void ** sample, void * user_data)
 {
     RMW_Connext_MessageTypeSupport *const type_support =
-        (RMW_Connext_MessageTypeSupport*)user_data;
+        reinterpret_cast<RMW_Connext_MessageTypeSupport*>(user_data);
     
     UNUSED_ARG(type_support);
 
-    rcutils_uint8_array_t *data_buffer = (rcutils_uint8_array_t *)*sample;
+    rcutils_uint8_array_t *data_buffer =
+        reinterpret_cast<rcutils_uint8_array_t *>(*sample);
 
     if (RCUTILS_RET_OK != rcutils_uint8_array_fini(data_buffer))
-    {
-        
-    }
+    { }
 
     delete data_buffer;
 }
@@ -312,11 +309,11 @@ RMW_Connext_TypePlugin_on_participant_attached(
     UNUSED_ARG(container_plugin_context);
     
     RMW_Connext_NddsTypeCode *const tc =
-        (struct RMW_Connext_NddsTypeCode*)type_code;
+        reinterpret_cast<struct RMW_Connext_NddsTypeCode*>(type_code);
     
     struct PRESTypePluginDefaultParticipantData * const pres_data =
-        (PRESTypePluginDefaultParticipantData*)
-            PRESTypePluginDefaultParticipantData_new(participant_info);
+        reinterpret_cast<PRESTypePluginDefaultParticipantData*>(
+            PRESTypePluginDefaultParticipantData_new(participant_info));
     if (nullptr == pres_data)
     {
         return nullptr;
@@ -341,7 +338,7 @@ RMW_Connext_TypePlugin_on_participant_detached(
     PRESTypePluginParticipantData participant_data)
 {
     RMW_Connext_NddsParticipantData *const pdata =
-        (RMW_Connext_NddsParticipantData*)participant_data;
+        reinterpret_cast<RMW_Connext_NddsParticipantData*>(participant_data);
     
     delete pdata;
 }
@@ -358,21 +355,21 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
     UNUSED_ARG(containerPluginContext);
     
     RMW_Connext_NddsParticipantData *const pdata =
-        (RMW_Connext_NddsParticipantData*)participant_data;
+        reinterpret_cast<RMW_Connext_NddsParticipantData*>(participant_data);
     
-    struct PRESTypePluginDefaultEndpointData * const epd =
-        (struct PRESTypePluginDefaultEndpointData*)
-        PRESTypePluginDefaultEndpointData_newWithNotification(
-            pdata->pres_data,
-            endpoint_info,
-            (REDAFastBufferPoolBufferInitializeFunction)
-                RMW_Connext_TypePlugin_create_data,
-            pdata->type_plugin->wrapper,
-            (REDAFastBufferPoolBufferFinalizeFunction)
-                RMW_Connext_TypePlugin_destroy_data,
-            pdata->type_plugin->wrapper,
-            NULL, NULL,
-            NULL, NULL);
+    PRESTypePluginDefaultEndpointData * const epd =
+        reinterpret_cast<PRESTypePluginDefaultEndpointData*>(
+            PRESTypePluginDefaultEndpointData_newWithNotification(
+                pdata->pres_data,
+                endpoint_info,
+                (REDAFastBufferPoolBufferInitializeFunction)
+                    RMW_Connext_TypePlugin_create_data,
+                pdata->type_plugin->wrapper,
+                (REDAFastBufferPoolBufferFinalizeFunction)
+                    RMW_Connext_TypePlugin_destroy_data,
+                pdata->type_plugin->wrapper,
+                NULL, NULL,
+                NULL, NULL));
 
     if (epd == NULL)
     {
@@ -426,7 +423,7 @@ RMW_Connext_TypePlugin_return_sample(
     void *sample,
     void *handle)
 {
-    /* TODO finalize optional members ? */
+    /* TODO(asorbini): finalize optional members ? */
 
     PRESTypePluginDefaultEndpointData_returnSample(
         endpoint_data, sample, handle);
@@ -442,8 +439,8 @@ RMW_Connext_TypePlugin_copy_sample(
     UNUSED_ARG(endpoint_data);
 
     const rcutils_uint8_array_t *src_buffer =
-        (const rcutils_uint8_array_t *)src;
-    rcutils_uint8_array_t *dst_buffer = (rcutils_uint8_array_t *)dst;
+        reinterpret_cast<const rcutils_uint8_array_t *>(src);
+    rcutils_uint8_array_t *dst_buffer = reinterpret_cast<rcutils_uint8_array_t *>(dst);
 
     if (RCUTILS_RET_OK != rcutils_uint8_array_copy(dst_buffer, src_buffer))
     {
@@ -471,10 +468,10 @@ RMW_Connext_TypePlugin_serialize(
     UNUSED_ARG(endpoint_plugin_qos);
     UNUSED_ARG(encapsulation_id);
 
-    struct PRESTypePluginDefaultEndpointData *const epd =
-        (struct PRESTypePluginDefaultEndpointData*)endpoint_data;
+    PRESTypePluginDefaultEndpointData *const epd =
+        reinterpret_cast<PRESTypePluginDefaultEndpointData*>(endpoint_data);
     RMW_Connext_MessageTypeSupport *const type_support =
-        (RMW_Connext_MessageTypeSupport*)epd->userData;
+        reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
 
     
     if (!serialize_encapsulation)
@@ -490,11 +487,12 @@ RMW_Connext_TypePlugin_serialize(
     }
 
     RMW_Connext_Message *const msg =
-        (RMW_Connext_Message *)sample;
+        reinterpret_cast<RMW_Connext_Message *>(sample);
 
     rcutils_uint8_array_t data_buffer;
     data_buffer.allocator = rcutils_get_default_allocator();
-    data_buffer.buffer = (uint8_t*)RTICdrStream_getCurrentPosition(stream);
+    data_buffer.buffer =
+        reinterpret_cast<uint8_t*>(RTICdrStream_getCurrentPosition(stream));
     data_buffer.buffer_length = RTICdrStream_getRemainder(stream);
     data_buffer.buffer_capacity = data_buffer.buffer_length;
 
@@ -511,7 +509,7 @@ RMW_Connext_TypePlugin_serialize(
     else
     {
         rcutils_uint8_array_t *const user_buffer =
-                (rcutils_uint8_array_t *)msg->user_data;
+            reinterpret_cast<rcutils_uint8_array_t *>(msg->user_data);
         if (RCUTILS_RET_OK !=
                 rcutils_uint8_array_copy(&data_buffer, user_buffer))
         {
@@ -520,7 +518,7 @@ RMW_Connext_TypePlugin_serialize(
     }
 
     RTICdrStream_setCurrentPosition(stream,
-        (char*)data_buffer.buffer + data_buffer.buffer_length);
+        reinterpret_cast<char*>(data_buffer.buffer) + data_buffer.buffer_length);
 
     return RTI_TRUE;
 }
@@ -550,14 +548,14 @@ RMW_Connext_TypePlugin_deserialize(
         return RTI_FALSE;
     }
 
-    struct PRESTypePluginDefaultEndpointData *const epd =
-        (struct PRESTypePluginDefaultEndpointData*)endpoint_data;
+    PRESTypePluginDefaultEndpointData *const epd =
+        reinterpret_cast<PRESTypePluginDefaultEndpointData*>(endpoint_data);
     RMW_Connext_MessageTypeSupport *const type_support =
-        (RMW_Connext_MessageTypeSupport*)epd->userData;
+        reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
     UNUSED_ARG(type_support);
     
     rcutils_uint8_array_t *const data_buffer =
-        (rcutils_uint8_array_t *) *sample;
+        reinterpret_cast<rcutils_uint8_array_t *>(*sample);
     const size_t deserialize_size = RTICdrStream_getRemainder(stream);
     void *const src_ptr = RTICdrStream_getCurrentPosition(stream);
 
@@ -591,10 +589,10 @@ RMW_Connext_TypePlugin_get_serialized_sample_max_size(
 
     UNUSED_ARG(encapsulation_id);
 
-    struct PRESTypePluginDefaultEndpointData *const epd =
-        (struct PRESTypePluginDefaultEndpointData*)endpoint_data;
+    PRESTypePluginDefaultEndpointData *const epd =
+        reinterpret_cast<PRESTypePluginDefaultEndpointData*>(endpoint_data);
     RMW_Connext_MessageTypeSupport *const type_support =
-         (RMW_Connext_MessageTypeSupport*)epd->userData;
+        reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
 
     // For unbounded types this function will only return the maximum size of
     // the "bounded" part of the message.
@@ -605,8 +603,6 @@ RMW_Connext_TypePlugin_get_serialized_sample_max_size(
         current_alignment -=
             RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
     }
-
-    /* TODO what happens if the type is unbounded? */
 
     return  current_alignment - initial_alignment;
 }
@@ -648,17 +644,17 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
         return 0;
     }
 
-    struct PRESTypePluginDefaultEndpointData *const epd =
-        (struct PRESTypePluginDefaultEndpointData*)endpoint_data;
+    PRESTypePluginDefaultEndpointData *const epd =
+        reinterpret_cast<PRESTypePluginDefaultEndpointData*>(endpoint_data);
     RMW_Connext_MessageTypeSupport *const type_support =
-        (RMW_Connext_MessageTypeSupport*)epd->userData;
+        reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
     
-    RMW_Connext_Message *const msg = (RMW_Connext_Message*)sample;
+    RMW_Connext_Message *const msg = reinterpret_cast<RMW_Connext_Message*>(sample);
     
     if (msg->serialized)
     {
         rcutils_uint8_array_t *const serialized_msg = 
-            (rcutils_uint8_array_t *)msg->user_data;
+            reinterpret_cast<rcutils_uint8_array_t *>(msg->user_data);
         current_alignment += serialized_msg->buffer_length;
     }
     else
@@ -738,7 +734,7 @@ RMW_Connext_TypePlugin_initialize(
             RMW_Connext_TypePlugin_return_sample;
     plugin->finalizeOptionalMembersFnc =
         (PRESTypePluginFinalizeOptionalMembersFunction)
-            NULL /* TODO implement? */;
+            NULL /* TODO(asorbini): implement? */;
     
     plugin->getWriterLoanedSampleFnc = NULL; 
     plugin->returnWriterLoanedSampleFnc = NULL;

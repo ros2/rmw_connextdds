@@ -62,7 +62,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
     RMW_CONNEXT_LOG_DEBUG("[discovery thread] starting up...")
     
     RMW_Connext_Subscriber *const sub_partinfo =
-        (RMW_Connext_Subscriber*)ctx->common.sub->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(ctx->common.sub->data);
 
     DDS_ConditionSeq active_conditions = DDS_SEQUENCE_INITIALIZER;
     DDS_ReturnCode_t rc = DDS_RETCODE_ERROR;
@@ -73,7 +73,8 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
          attached_partinfo = false;
     
     RMW_Connext_StdGuardCondition *const gcond_exit =
-        (RMW_Connext_StdGuardCondition*)ctx->common.listener_thread_gc->data;   
+        reinterpret_cast<RMW_Connext_StdGuardCondition*>(
+            ctx->common.listener_thread_gc->data);   
     DDS_Condition *cond_exit =
         DDS_GuardCondition_as_condition(gcond_exit->guard_condition());
 

@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include <string.h>
+#include <string>
 
 #include "rmw_connextdds/type_support.hpp"
 
@@ -127,7 +128,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
         if (this->type_requestreply())
         {
             RMW_Connext_RequestReplyMessage *const rr_msg = 
-                (RMW_Connext_RequestReplyMessage*)ros_msg;
+                reinterpret_cast<RMW_Connext_RequestReplyMessage*>(ros_msg);
             payload = rr_msg->payload;
 
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
@@ -184,7 +185,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
     }
 
     to_buffer->buffer_length =
-        ((uint8_t*)cdr_stream.getCurrentPosition()) - to_buffer->buffer;
+        reinterpret_cast<uint8_t*>(cdr_stream.getCurrentPosition()) - to_buffer->buffer;
 
     RMW_CONNEXT_LOG_DEBUG_A("[type support] %s serialized: "
         "buffer.length=%lu",
@@ -236,9 +237,9 @@ RMW_Connext_MessageTypeSupport::deserialize(
         if (this->type_requestreply())
         {
             RMW_Connext_RequestReplyMessage *const rr_msg = 
-                (RMW_Connext_RequestReplyMessage*)ros_msg;
+                reinterpret_cast<RMW_Connext_RequestReplyMessage*>(ros_msg);
             
-            payload = (void*) rr_msg->payload;
+            payload = reinterpret_cast<void*>(rr_msg->payload);
             
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
             for (size_t i = 0; i < RMW_GID_STORAGE_SIZE; i++)
@@ -332,7 +333,7 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
         if (this->type_requestreply())
         {
             RMW_Connext_RequestReplyMessage * rr_msg =
-                (RMW_Connext_RequestReplyMessage*)ros_msg;
+                reinterpret_cast<RMW_Connext_RequestReplyMessage*>(ros_msg);
             payload = rr_msg->payload;
         }
         serialized_size += callbacks->get_serialized_size(payload);

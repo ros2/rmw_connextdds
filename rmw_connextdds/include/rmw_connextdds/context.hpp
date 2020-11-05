@@ -81,7 +81,7 @@ struct rmw_context_impl_t
        (protected by initialization_mutex) */
     uint32_t client_service_id{0};
 
-    rmw_context_impl_t(rmw_context_t *const base)
+    explicit rmw_context_impl_t(rmw_context_t *const base)
     :
 #if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
       common(),
@@ -142,7 +142,6 @@ struct rmw_context_impl_t
 private:
     rmw_ret_t
     clean_up();
-
 };
 
 rmw_ret_t

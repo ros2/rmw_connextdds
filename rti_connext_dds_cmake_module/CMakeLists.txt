@@ -69,7 +69,7 @@ else()
         src/rtime_ext.c
         include/rtiros/rtime_ext.h
         include/rtiros/visibility_control.h)
-        
+
     target_include_directories(${RTIME_EXT}
         PRIVATE "$<BUILD_INTERFACE:${RTIMEHOME}/include>"
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/domain>"

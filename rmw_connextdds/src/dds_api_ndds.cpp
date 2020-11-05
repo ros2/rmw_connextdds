@@ -419,7 +419,7 @@ rmw_connextdds_write_message(
 #if !RMW_CONNEXT_EMULATE_REQUESTREPLY
     if (pub->message_type_support()->type_requestreply())
     {
-        const RMW_Connext_RequestReplyMessage *const rr_msg = 
+        const RMW_Connext_RequestReplyMessage *const rr_msg =
             reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(message->user_data);
         DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
 
@@ -428,7 +428,7 @@ rmw_connextdds_write_message(
             /* If this is a reply, propagate the request's sample identity
                via the related_sample_identity field */
             rmw_ret_t rc = RMW_RET_ERROR;
-            
+
             rmw_connextdds_sn_ros_to_dds(
                 rr_msg->sn,
                 write_params.related_sample_identity.sequence_number);
@@ -463,10 +463,10 @@ rmw_connextdds_write_message(
             // Read assigned sn from write_params
             rmw_connextdds_sn_dds_to_ros(
                 write_params.identity.sequence_number, sn);
-            
+
             *sn_out = sn;
         }
-        
+
         return RMW_RET_OK;
     }
 #else
@@ -492,7 +492,7 @@ rmw_connextdds_take_samples(
     DDS_Long data_len = 0;
     void **data_buffer = nullptr;
 
-    DDS_ReturnCode_t rc = 
+    DDS_ReturnCode_t rc =
         DDS_DataReader_read_or_take_instance_untypedI(
             sub->reader(),
             &is_loan,
@@ -573,7 +573,7 @@ rmw_connextdds_filter_sample(
     if (sub->ignore_local())
     {
         DDS_InstanceHandle_t reader_ih = sub->instance_handle();
-        
+
         *accepted =  (0 != memcmp(
                             reader_ih.keyHash.value,
                             info->original_publication_virtual_guid.value,
@@ -764,14 +764,14 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t *const ctx)
             DDS_ParticipantBuiltinTopicDataSeq_get_length(&data_seq);
         for (size_t i = 0; i < data_len; i++)
         {
-            DDS_ParticipantBuiltinTopicData *const data = 
+            DDS_ParticipantBuiltinTopicData *const data =
                 DDS_ParticipantBuiltinTopicDataSeq_get_reference(&data_seq, i);
             DDS_SampleInfo *const info =
                 DDS_SampleInfoSeq_get_reference(&info_seq, i);
-            
+
             if (!info->valid_data)
             {
-                /* TODO(asorbini): Check for instance_state != ALIVE to remove 
+                /* TODO(asorbini): Check for instance_state != ALIVE to remove
                    the remote participant from the graph_cache by calling:
                    graph_cache.remove_participant(gid) */
                 RMW_CONNEXT_LOG_DEBUG(
@@ -828,14 +828,14 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t *const ctx)
             DDS_PublicationBuiltinTopicDataSeq_get_length(&data_seq);
         for (size_t i = 0; i < data_len; i++)
         {
-            DDS_PublicationBuiltinTopicData *const data = 
+            DDS_PublicationBuiltinTopicData *const data =
                 DDS_PublicationBuiltinTopicDataSeq_get_reference(&data_seq, i);
             DDS_SampleInfo *const info =
                 DDS_SampleInfoSeq_get_reference(&info_seq, i);
-            
+
             if (!info->valid_data)
             {
-                /* TODO(asorbini): Check for instance_state != ALIVE to remove 
+                /* TODO(asorbini): Check for instance_state != ALIVE to remove
                    the remove endpoint from the graph_cache by calling:
                    graph_cache.remove_entity(gid, is_reader = false) */
                 RMW_CONNEXT_LOG_DEBUG(
@@ -904,11 +904,11 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t *const ctx)
             DDS_SubscriptionBuiltinTopicDataSeq_get_length(&data_seq);
         for (size_t i = 0; i < data_len; i++)
         {
-            DDS_SubscriptionBuiltinTopicData *const data = 
+            DDS_SubscriptionBuiltinTopicData *const data =
                 DDS_SubscriptionBuiltinTopicDataSeq_get_reference(&data_seq, i);
             DDS_SampleInfo *const info =
                 DDS_SampleInfoSeq_get_reference(&info_seq, i);
-            
+
             if (!info->valid_data)
             {
                 /* TODO(asorbini): Check for instance_state != ALIVE to remove

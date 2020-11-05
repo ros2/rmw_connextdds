@@ -184,7 +184,7 @@ public:
         const void **const svc_members_out,
         bool &svc_members_cpp)
     {
-        const rosidl_service_type_support_t *const svc_type_support_fastrtps =  
+        const rosidl_service_type_support_t *const svc_type_support_fastrtps =
             RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
                 type_supports);
         if (nullptr == svc_type_support_fastrtps)
@@ -196,7 +196,7 @@ public:
                 svc_type_support_fastrtps->data);
 
 #if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
-        const rosidl_service_type_support_t *const svc_type_support_intro =  
+        const rosidl_service_type_support_t *const svc_type_support_intro =
             RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
                 type_supports, svc_members_cpp);
         if (nullptr == svc_type_support_intro)
@@ -208,14 +208,14 @@ public:
         {
             const rosidl_typesupport_introspection_c__ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_c__ServiceMembers *)svc_type_support_intro->data;
-            
+
             *svc_members_out = svc_members->request_members_;
         }
         else
         {
             const rosidl_typesupport_introspection_cpp::ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_cpp::ServiceMembers *)svc_type_support_intro->data;
-            
+
             *svc_members_out = svc_members->request_members_;
         }
 #else
@@ -233,7 +233,7 @@ public:
         const void **const svc_members_out,
         bool &svc_members_cpp)
     {
-        const rosidl_service_type_support_t *const svc_type_support_fastrtps =  
+        const rosidl_service_type_support_t *const svc_type_support_fastrtps =
             RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
                 type_supports);
         if (svc_type_support_fastrtps == NULL)
@@ -246,7 +246,7 @@ public:
                 svc_type_support_fastrtps->data);
 
 #if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
-        const rosidl_service_type_support_t *const svc_type_support_intro =  
+        const rosidl_service_type_support_t *const svc_type_support_intro =
             RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
                 type_supports, svc_members_cpp);
         if (nullptr == svc_type_support_intro)
@@ -258,14 +258,14 @@ public:
         {
             const rosidl_typesupport_introspection_c__ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_c__ServiceMembers *)svc_type_support_intro->data;
-            
+
             *svc_members_out = svc_members->response_members_;
         }
         else
         {
             const rosidl_typesupport_introspection_cpp::ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_cpp::ServiceMembers *)svc_type_support_intro->data;
-            
+
             *svc_members_out = svc_members->response_members_;
         }
 #else

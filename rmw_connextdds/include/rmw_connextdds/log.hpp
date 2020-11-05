@@ -164,7 +164,7 @@
 
 #define RMW_CONNEXT_LOG_INFO(msg_)
 
-#define RMW_CONNEXT_LOG_INFO_A(fmt_, ...) 
+#define RMW_CONNEXT_LOG_INFO_A(fmt_, ...)
 
 #define RMW_CONNEXT_LOG_TRACE(msg_)
 

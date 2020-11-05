@@ -248,7 +248,7 @@ rmw_connextdds_initialize_participant_factory(
         return RMW_RET_ERROR;
     }
 
-    *DDS_StringSeq_get_reference(&ctx_api->udp_property->allow_interface, 0) = 
+    *DDS_StringSeq_get_reference(&ctx_api->udp_property->allow_interface, 0) =
             udp_intf;
 
     RMW_CONNEXT_LOG_DEBUG_A("UDP interface: %s", udp_intf)
@@ -465,7 +465,7 @@ rmw_connextdds_initialize_participant_qos_impl(
     {
         return RMW_RET_ERROR;
     }
-    char **seq_ref = 
+    char **seq_ref =
         REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 0);
     *seq_ref = REDA_String_dup(NETIO_DEFAULT_UDP_NAME);
     if (nullptr == *seq_ref)
@@ -474,7 +474,7 @@ rmw_connextdds_initialize_participant_qos_impl(
     }
 
 #if RMW_CONNEXT_TRANSPORT_SHMEM
-    seq_ref = 
+    seq_ref =
         REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 1);
     *seq_ref = REDA_String_dup(NETIO_DEFAULT_SHMEM_NAME);
     if (nullptr == *seq_ref)
@@ -494,7 +494,7 @@ rmw_connextdds_initialize_participant_qos_impl(
         return RMW_RET_ERROR;
     }
 
-    seq_ref = 
+    seq_ref =
         REDA_StringSeq_get_reference(
             &dp_qos->user_traffic.enabled_transports, 0);
 
@@ -508,7 +508,7 @@ rmw_connextdds_initialize_participant_qos_impl(
     }
 
 #if RMW_CONNEXT_TRANSPORT_SHMEM
-    seq_ref = 
+    seq_ref =
         REDA_StringSeq_get_reference(
             &dp_qos->user_traffic.enabled_transports, 1);
     std::ostringstream shmem_ss;
@@ -629,7 +629,7 @@ rmw_connextdds_get_qos_policies(
 
     if (nullptr != reader_resource_limits)
     {
-        reader_resource_limits->max_remote_writers = 
+        reader_resource_limits->max_remote_writers =
             RMW_CONNEXT_LIMIT_WRITERS_LOCAL_MAX +
             RMW_CONNEXT_LIMIT_WRITERS_REMOTE_MAX;
         reader_resource_limits->max_remote_writers_per_instance =
@@ -873,7 +873,7 @@ rmw_ret_t
 rmw_connextdds_take_samples(
     RMW_Connext_Subscriber *const sub)
 {
-    DDS_ReturnCode_t rc = 
+    DDS_ReturnCode_t rc =
         DDS_DataReader_take(
             sub->reader(),
             sub->data_seq(),

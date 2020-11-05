@@ -90,14 +90,14 @@
 
 /******************************************************************************
  * Request/Reply support.
- * If this option is enabled, the RMW will implement RPC requests between 
+ * If this option is enabled, the RMW will implement RPC requests between
  * Clients and Servers using a custom protocol that serializes a "request header"
  * (containing GUID and SN) before the message payload, instead of using the
  * standard DDS RPC protocol. This allows the RMW to interoperate with DDS
  * implementations which don't support propagation and correlation of
  * "sample identity".
  * This option is enabled by default only for RTI Connext DDS Micro, and it must
- * be enable at build time not interoperable with the Pro version. 
+ * be enable at build time not interoperable with the Pro version.
  ******************************************************************************/
 #ifndef RMW_CONNEXT_EMULATE_REQUESTREPLY
 #define RMW_CONNEXT_EMULATE_REQUESTREPLY \

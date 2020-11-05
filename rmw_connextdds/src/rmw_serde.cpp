@@ -49,7 +49,7 @@ extern "C" rmw_ret_t rmw_serialize(
                     RMW_CONNEXT_MESSAGE_USERDATA, type_supports, nullptr);
 
         const uint32_t ser_size = type_support.serialized_size_max(ros_message);
-        rmw_ret_t ret = 
+        rmw_ret_t ret =
             rmw_serialized_message_resize(serialized_message, ser_size);
         if (RMW_RET_OK != ret)
         {

@@ -85,7 +85,7 @@ if [ -n "${RTIMEHOME}" -a -d "${RTIMEHOME}" ]; then
     _CONNEXTDDSMICRO_DIR_ENV_SRC=RTIMEHOME
 fi
 
-# If Connext Micro installation used at build-time is still available, use that 
+# If Connext Micro installation used at build-time is still available, use that
 # one, otherwise inspect environment to see if another one is available.
 if [ -d "${_CONNEXTDDSMICRO_DIR_BUILD}" ]; then
     # Warn about unused environment variable.

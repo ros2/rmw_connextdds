@@ -248,7 +248,7 @@ extern "C" rmw_ret_t rmw_count_subscribers(
     RMW_CHECK_ARGUMENT_FOR_NULL(count, RMW_RET_INVALID_ARGUMENT);
 
     auto common_context = &node->context->impl->common;
-    const std::string mangled_topic_name = 
+    const std::string mangled_topic_name =
         rmw_connextdds_create_topic_name(
             ROS_TOPIC_PREFIX, topic_name, "", false);
     return common_context->graph_cache.get_reader_count(

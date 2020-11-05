@@ -70,7 +70,7 @@ struct RMW_Connext_NddsTypeCode
         {
             RMW_Connext_TypeCodePtrSeq_initialize(&this->tc_cache);
         }
-    }    
+    }
 };
 
 struct RMW_Connext_NddsTypePluginI
@@ -170,7 +170,7 @@ RMW_Connext_Uint8ArrayPtr_copy(
 #include "dds_c/generic/dds_c_sequence_TSeq.gen"
 
 static
-unsigned int 
+unsigned int
 RMW_Connext_TypePlugin_get_serialized_sample_max_size(
     PRESTypePluginEndpointData endpoint_data,
     RTIBool include_encapsulation,
@@ -190,7 +190,7 @@ RTIBool
 RMW_Connext_TypePlugin_get_buffer(
     PRESTypePluginEndpointData endpointData,
     struct REDABuffer *buffer,
-    RTIEncapsulationId encapsulationId, 
+    RTIEncapsulationId encapsulationId,
     const void * user_data)
 {
     return PRESTypePluginDefaultEndpointData_getBuffer(
@@ -272,7 +272,7 @@ RMW_Connext_TypePlugin_create_data(void ** sample, void * user_data)
 }
 
 static
-void 
+void
 RMW_Connext_TypePlugin_destroy_data(void ** sample, void * user_data)
 {
     RMW_Connext_MessageTypeSupport *const type_support =
@@ -293,7 +293,7 @@ Callback functions:
 * ---------------------------------------------------------------------------- */
 
 static
-PRESTypePluginParticipantData 
+PRESTypePluginParticipantData
 RMW_Connext_TypePlugin_on_participant_attached(
     void *registration_data,
     const struct PRESTypePluginParticipantInfo *participant_info,
@@ -330,7 +330,7 @@ RMW_Connext_TypePlugin_on_participant_attached(
 }
 
 static
-void 
+void
 RMW_Connext_TypePlugin_on_participant_detached(
     PRESTypePluginParticipantData participant_data)
 {
@@ -345,7 +345,7 @@ PRESTypePluginEndpointData
 RMW_Connext_TypePlugin_on_endpoint_attached(
     PRESTypePluginParticipantData participant_data,
     const struct PRESTypePluginEndpointInfo *endpoint_info,
-    RTIBool top_level_registration, 
+    RTIBool top_level_registration,
     void *containerPluginContext)
 {
     UNUSED_ARG(top_level_registration);
@@ -405,15 +405,15 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
 }
 
 static
-void 
+void
 RMW_Connext_TypePlugin_on_endpoint_detached(
     PRESTypePluginEndpointData endpoint_data)
-{  
+{
     PRESTypePluginDefaultEndpointData_delete(endpoint_data);
 }
 
 static
-void    
+void
 RMW_Connext_TypePlugin_return_sample(
     PRESTypePluginEndpointData endpoint_data,
     void *sample,
@@ -426,7 +426,7 @@ RMW_Connext_TypePlugin_return_sample(
 }
 
 static
-RTIBool 
+RTIBool
 RMW_Connext_TypePlugin_copy_sample(
     PRESTypePluginEndpointData endpoint_data,
     void *dst,
@@ -451,14 +451,14 @@ RMW_Connext_TypePlugin_copy_sample(
 * ------------------------------------------------------------------------- */
 
 static
-RTIBool 
+RTIBool
 RMW_Connext_TypePlugin_serialize(
     PRESTypePluginEndpointData endpoint_data,
-    const void *sample, 
-    struct RTICdrStream *stream,    
+    const void *sample,
+    struct RTICdrStream *stream,
     RTIBool serialize_encapsulation,
     RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_sample, 
+    RTIBool serialize_sample,
     void *endpoint_plugin_qos)
 {
     UNUSED_ARG(endpoint_plugin_qos);
@@ -520,14 +520,14 @@ RMW_Connext_TypePlugin_serialize(
 }
 
 static
-RTIBool 
+RTIBool
 RMW_Connext_TypePlugin_deserialize(
     PRESTypePluginEndpointData endpoint_data,
     void **sample,
     RTIBool * drop_sample,
-    struct RTICdrStream *stream,   
+    struct RTICdrStream *stream,
     RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
+    RTIBool deserialize_sample,
     void *endpoint_plugin_qos)
 {
     UNUSED_ARG(drop_sample);
@@ -574,7 +574,7 @@ RMW_Connext_TypePlugin_deserialize(
 }
 
 static
-unsigned int 
+unsigned int
 RMW_Connext_TypePlugin_get_serialized_sample_max_size(
     PRESTypePluginEndpointData endpoint_data,
     RTIBool include_encapsulation,
@@ -604,7 +604,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_max_size(
 }
 
 static
-unsigned int 
+unsigned int
 RMW_Connext_TypePlugin_get_serialized_sample_min_size(
     PRESTypePluginEndpointData endpoint_data,
     RTIBool include_encapsulation,
@@ -625,7 +625,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     RTIBool include_encapsulation,
     RTIEncapsulationId encapsulation_id,
     unsigned int current_alignment,
-    const void * sample) 
+    const void * sample)
 {
     UNUSED_ARG(encapsulation_id);
 
@@ -650,7 +650,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
 
     if (msg->serialized)
     {
-        const rcutils_uint8_array_t *const serialized_msg = 
+        const rcutils_uint8_array_t *const serialized_msg =
             reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
         current_alignment += serialized_msg->buffer_length;
     }
@@ -674,7 +674,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
 Key Management functions:
 * -------------------------------------------------------------------------------------- */
 static
-PRESTypePluginKeyKind 
+PRESTypePluginKeyKind
 RMW_Connext_TypePlugin_get_key_kind(void)
 {
     return PRES_TYPEPLUGIN_NO_KEY;
@@ -688,9 +688,9 @@ void
 RMW_Connext_TypePlugin_initialize(
     struct PRESTypePlugin *const plugin,
     struct RTICdrTypeCode *const type_code,
-    const char *const type_name) 
-{ 
-    const struct PRESTypePluginVersion PLUGIN_VERSION = 
+    const char *const type_name)
+{
+    const struct PRESTypePluginVersion PLUGIN_VERSION =
         PRES_TYPE_PLUGIN_VERSION_2_0;
 
     plugin->version = PLUGIN_VERSION;
@@ -733,7 +733,7 @@ RMW_Connext_TypePlugin_initialize(
         (PRESTypePluginFinalizeOptionalMembersFunction)
             NULL /* TODO(asorbini): implement? */;
 
-    plugin->getWriterLoanedSampleFnc = NULL; 
+    plugin->getWriterLoanedSampleFnc = NULL;
     plugin->returnWriterLoanedSampleFnc = NULL;
     plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
     plugin->validateWriterLoanedSampleFnc = NULL;
@@ -752,10 +752,10 @@ RMW_Connext_TypePlugin_initialize(
     plugin->getSerializedSampleMinSizeFnc =
         (PRESTypePluginGetSerializedSampleMinSizeFunction)
             RMW_Connext_TypePlugin_get_serialized_sample_min_size;
-    plugin->getBuffer = 
+    plugin->getBuffer =
         (PRESTypePluginGetBufferFunction)
             RMW_Connext_TypePlugin_get_buffer;
-    plugin->returnBuffer = 
+    plugin->returnBuffer =
         (PRESTypePluginReturnBufferFunction)
             RMW_Connext_TypePlugin_return_buffer;
     plugin->getSerializedSampleSizeFnc =
@@ -768,8 +768,8 @@ RMW_Connext_TypePlugin_initialize(
     plugin->getKeyKindFnc =
         (PRESTypePluginGetKeyKindFunction)
             RMW_Connext_TypePlugin_get_key_kind;
-    plugin->serializeKeyFnc = NULL ;    
-    plugin->deserializeKeyFnc = NULL;  
+    plugin->serializeKeyFnc = NULL ;
+    plugin->deserializeKeyFnc = NULL;
     plugin->getKeyFnc = NULL;
     plugin->returnKeyFnc = NULL;
     plugin->instanceToKeyFnc = NULL;
@@ -777,7 +777,7 @@ RMW_Connext_TypePlugin_initialize(
     plugin->getSerializedKeyMaxSizeFnc = NULL;
     plugin->instanceToKeyHashFnc = NULL;
     plugin->serializedSampleToKeyHashFnc = NULL;
-    plugin->serializedKeyToKeyHashFnc = NULL;    
+    plugin->serializedKeyToKeyHashFnc = NULL;
 }
 
 /******************************************************************************
@@ -807,7 +807,7 @@ rmw_connextdds_register_type_support(
         return nullptr;
     }
 
-    auto scope_exit_support_delete = 
+    auto scope_exit_support_delete =
         rcpputils::make_scope_exit(
             [type_support]()
             {
@@ -825,20 +825,20 @@ rmw_connextdds_register_type_support(
 
     if (nullptr == tc)
     {
-        struct REDAFastBufferPoolProperty 
+        struct REDAFastBufferPoolProperty
             pool_prop = REDA_FAST_BUFFER_POOL_PROPERTY_DEFAULT;
-        
+
         struct REDAFastBufferPool *const pool_samples =
             REDAFastBufferPool_new(
                 sizeof(rcutils_uint8_array_t),
                 RTIOsapiAlignment_getDefaultAlignment(),
                 &pool_prop);
-        
+
         if (nullptr == pool_samples)
         {
             return nullptr;
         }
-        auto scope_exit_pool_samples_delete = 
+        auto scope_exit_pool_samples_delete =
             rcpputils::make_scope_exit(
                 [pool_samples]()
                 {
@@ -849,13 +849,13 @@ rmw_connextdds_register_type_support(
         struct RMW_Connext_TypeCodePtrSeq tc_cache = DDS_SEQUENCE_INITIALIZER;
 
         struct RMW_Connext_TypeCodePtrSeq *const tc_cache_ptr = &tc_cache;
-        auto scope_exit_tc_cache_delete = 
+        auto scope_exit_tc_cache_delete =
             rcpputils::make_scope_exit(
                 [tc_cache_ptr]()
                 {
                     rmw_connextdds_release_typecode_cache(tc_cache_ptr);
                 });
-        
+
 #if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
         dds_tc = rmw_connextdds_create_typecode(
                     type_supports,
@@ -874,7 +874,7 @@ rmw_connextdds_register_type_support(
         UNUSED_ARG(intro_members_cpp);
 #endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
-        auto scope_exit_dds_tc_delete = 
+        auto scope_exit_dds_tc_delete =
             rcpputils::make_scope_exit(
                 [dds_tc]()
                 {
@@ -884,7 +884,7 @@ rmw_connextdds_register_type_support(
                     }
                 });
 
-        RMW_Connext_NddsTypePluginI *type_plugin = 
+        RMW_Connext_NddsTypePluginI *type_plugin =
             new (std::nothrow) RMW_Connext_NddsTypePluginI(
                                     type_support,
                                     pool_samples,
@@ -898,19 +898,19 @@ rmw_connextdds_register_type_support(
                 type_support->type_name())
             return nullptr;
         }
-        
+
         scope_exit_tc_cache_delete.cancel();
         scope_exit_dds_tc_delete.cancel();
 
         scope_exit_pool_samples_delete.cancel();
 
-        auto scope_exit_intf_delete = 
+        auto scope_exit_intf_delete =
             rcpputils::make_scope_exit(
                 [type_plugin]()
                 {
                     delete type_plugin;
                 });
-            
+
         RMW_Connext_TypePlugin_initialize(
             &type_plugin->base,
             &type_plugin->type_code.base,

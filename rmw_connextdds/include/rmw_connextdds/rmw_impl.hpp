@@ -262,7 +262,7 @@ public:
                 RMW_CONNEXT_LOG_ERROR("failed to trigger guard condition")
                 return;
             }
-            
+
             return;
         }
 

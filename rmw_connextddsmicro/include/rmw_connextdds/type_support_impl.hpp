@@ -18,7 +18,7 @@
 
 #ifndef RMW_CONNEXT__TYPE_SUPPORT_IMPL_HPP_
 #define RMW_CONNEXT__TYPE_SUPPORT_IMPL_HPP_
-        
+
 typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
 
 #define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER

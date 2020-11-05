@@ -50,10 +50,10 @@ struct RMW_Connext_RtimeTypePluginI
     {
         DDS_TypePluginDefault *const plugin =
             (DDS_TypePluginDefault *)self;
-        
+
         RMW_Connext_RtimeTypePluginI *const intf =
             (RMW_Connext_RtimeTypePluginI*)plugin->_parent._intf;
-        
+
         return intf->_type_support;
     }
 };
@@ -101,7 +101,7 @@ RMW_Connext_MemoryPlugin_create_sample(
 }
 
 static
-RTI_BOOL 
+RTI_BOOL
 RMW_Connext_MemoryPlugin_delete_sample(
     struct DDS_TypePlugin *plugin,
     void *sample)
@@ -123,7 +123,7 @@ RMW_Connext_MemoryPlugin_delete_sample(
 }
 
 static
-RTI_BOOL 
+RTI_BOOL
 RMW_Connext_MemoryPlugin_copy_sample(
     struct DDS_TypePlugin *plugin,
     void *dst,
@@ -144,10 +144,10 @@ RMW_Connext_MemoryPlugin_copy_sample(
 }
 
 static
-RTI_BOOL 
+RTI_BOOL
 RMW_Connext_EncapsulationPlugin_serialize(
-    struct DDS_TypePlugin *plugin, 
-    struct CDR_Stream_t *stream, 
+    struct DDS_TypePlugin *plugin,
+    struct CDR_Stream_t *stream,
     const void *void_sample,
     DDS_InstanceHandle_t *destination)
 {
@@ -189,7 +189,7 @@ RMW_Connext_EncapsulationPlugin_serialize(
         serialized_size = user_buffer->buffer_length;
 
         if (!type_support->unbounded() &&
-            serialized_size > 
+            serialized_size >
                 type_support->type_serialized_size_max())
         {
             return RTI_FALSE;
@@ -257,7 +257,7 @@ RMW_Connext_EncapsulationPlugin_serialize(
 }
 
 static
-RTI_BOOL 
+RTI_BOOL
 RMW_Connext_EncapsulationPlugin_deserialize(
     struct DDS_TypePlugin *plugin,
     void *void_sample,
@@ -271,7 +271,7 @@ RMW_Connext_EncapsulationPlugin_deserialize(
 
     rcutils_uint8_array_t *const data_buffer =
         (rcutils_uint8_array_t *) void_sample;
-    const size_t deserialize_size = 
+    const size_t deserialize_size =
         stream->length - CDR_Stream_get_current_position_offset(stream) +
         RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
 
@@ -393,7 +393,7 @@ RMW_Connext_MemoryPlugin_delete(
 }
 
 static
-RTI_UINT32 
+RTI_UINT32
 RMW_Connext_EncapsulationPlugin_get_serialized_sample_size(
     struct DDS_TypePlugin *plugin,
     struct DDS_TypeEncapsulationPlugin *ep,
@@ -491,7 +491,7 @@ RMW_Connext_EncapsulationPlugin_create(
             (struct DDS_DataWriterQos*)qos;
         size_t serialized_size = 0;
 
-        /* If the type is not unbounded, then we can just allocate a pool of 
+        /* If the type is not unbounded, then we can just allocate a pool of
            buffers of size serialized_size_max. Otherwise, we allocate a pool
            of rcutils_uint8_array_t which will be dynamically allocated by
            the serialized function as needed. */
@@ -523,7 +523,7 @@ RMW_Connext_EncapsulationPlugin_create(
                         tp,
                         RMW_Connext_EncapsulationPlugin_finalize_buffer,
                         tp);
-        
+
         if (nullptr == plugin->pool)
         {
             return nullptr;
@@ -551,7 +551,7 @@ RMW_Connext_EncapsulationPlugin_delete(
 
 static
 NDDSCDREncapsulation RMW_Connext_fv_EncapsulationKind[] =
-{ 
+{
     {
         DDS_ENCAPSULATION_ID_CDR_LE,
         DDS_ENCAPSULATION_ID_CDR_BE,
@@ -702,7 +702,7 @@ struct DDS_TypePluginI RMW_Connext_fv_TypePluginI =
     NULL,                       /* DDS_TypeCode_t* */
     NDDS_TYPEPLUGIN_NO_KEY,     /* NDDS_TypePluginKeyKind */
     NDDS_TYPEPLUGIN_EH_LOCATION_SAMPLE,
-    NULL,   
+    NULL,
     RTI_MEMORY_TYPE_HEAP,
     NULL, /* instance to keyhash */
     RMW_Connext_MemoryPlugin_copy_sample,
@@ -746,7 +746,7 @@ RMW_Connext_get_endpoint_type_name(
     case DDS_TYPEPLUGIN_MODE_WRITER:
     {
         DDS_DataWriter *const writer = (DDS_DataWriter*)endpoint;
-        topic_d = 
+        topic_d =
             DDS_Topic_as_topicdescription(DDS_DataWriter_get_topic(writer));
         break;
     }
@@ -768,7 +768,7 @@ RMW_Connext_TypePlugin_create(
     DDS_TypePluginEndpointQos *qos,
     struct DDS_TypePluginProperty *const property)
 {
-    const char *const type_name = 
+    const char *const type_name =
         RMW_Connext_get_endpoint_type_name(endpoint_mode, endpoint);
     if (nullptr == type_name)
     {
@@ -878,7 +878,7 @@ rmw_connextdds_delete_type_if_unused(
     {
         DDS_TypePluginI *const reg_intf =
             DDS_DomainParticipant_unregister_type(participant, type_name);
-        
+
         if (nullptr == reg_intf)
         {
             RMW_CONNEXT_LOG_ERROR("failed to unregister type")
@@ -920,7 +920,7 @@ rmw_connextdds_register_type_support(
         return nullptr;
     }
 
-    RMW_Connext_RtimeTypePluginI *type_plugin_intf = 
+    RMW_Connext_RtimeTypePluginI *type_plugin_intf =
         new (std::nothrow) RMW_Connext_RtimeTypePluginI(type_support);
 
     if (nullptr == type_plugin_intf)
@@ -929,7 +929,7 @@ rmw_connextdds_register_type_support(
         return nullptr;
     }
 
-    auto scope_exit_intf_delete = 
+    auto scope_exit_intf_delete =
         rcpputils::make_scope_exit(
             [type_plugin_intf]()
             {
@@ -976,9 +976,9 @@ rmw_connextdds_unregister_type_support(
 
     if (nullptr != reg_intf)
     {
-        RMW_Connext_RtimeTypePluginI *type_plugin_intf = 
+        RMW_Connext_RtimeTypePluginI *type_plugin_intf =
             (RMW_Connext_RtimeTypePluginI*)reg_intf;
-        
+
         delete type_plugin_intf;
     }
 

@@ -127,7 +127,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
 
         if (this->type_requestreply())
         {
-            const RMW_Connext_RequestReplyMessage *const rr_msg = 
+            const RMW_Connext_RequestReplyMessage *const rr_msg =
                 reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(ros_msg);
             payload = rr_msg->payload;
 
@@ -236,11 +236,11 @@ RMW_Connext_MessageTypeSupport::deserialize(
 
         if (this->type_requestreply())
         {
-            RMW_Connext_RequestReplyMessage *const rr_msg = 
+            RMW_Connext_RequestReplyMessage *const rr_msg =
                 reinterpret_cast<RMW_Connext_RequestReplyMessage*>(ros_msg);
-            
+
             payload = reinterpret_cast<void*>(rr_msg->payload);
-            
+
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
             for (size_t i = 0; i < RMW_GID_STORAGE_SIZE; i++)
             {
@@ -436,7 +436,7 @@ void RMW_Connext_MessageTypeSupport::type_info(
     auto callbacks =
         static_cast<const message_type_support_callbacks_t *>(type_support->data);
 
-    /* The fastrtps type support sets full_bounded to false if unbounded, 
+    /* The fastrtps type support sets full_bounded to false if unbounded,
        but assumes full_bounded == true by default */
     bool full_bounded = true;
 
@@ -509,7 +509,7 @@ std::string
 RMW_Connext_ServiceTypeSupportWrapper::get_request_type_name(
     const rosidl_service_type_support_t *const type_supports)
 {
-    const rosidl_service_type_support_t *const svc_type_support_fastrtps =  
+    const rosidl_service_type_support_t *const svc_type_support_fastrtps =
         RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
             type_supports);
     if (nullptr == svc_type_support_fastrtps)
@@ -528,7 +528,7 @@ std::string
 RMW_Connext_ServiceTypeSupportWrapper::get_response_type_name(
     const rosidl_service_type_support_t *const type_supports)
 {
-    const rosidl_service_type_support_t *const svc_type_support_fastrtps =  
+    const rosidl_service_type_support_t *const svc_type_support_fastrtps =
         RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
             type_supports);
     if (nullptr == svc_type_support_fastrtps)

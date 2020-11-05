@@ -39,7 +39,7 @@ rmw_connextdds_initialize_participant_factory_qos(
     DDS_DomainParticipantFactoryQos qos =
         DDS_DomainParticipantFactoryQos_INITIALIZER;
 
-    if (DDS_RETCODE_OK != 
+    if (DDS_RETCODE_OK !=
             DDS_DomainParticipantFactory_get_qos(factory, &qos))
     {
         RMW_CONNEXT_LOG_ERROR("failed to get participant factory qos")
@@ -48,7 +48,7 @@ rmw_connextdds_initialize_participant_factory_qos(
 
     qos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
 
-    if (DDS_RETCODE_OK != 
+    if (DDS_RETCODE_OK !=
             DDS_DomainParticipantFactory_set_qos(factory, &qos))
     {
         RMW_CONNEXT_LOG_ERROR("failed to get participant factory qos")
@@ -115,7 +115,7 @@ rmw_connextdds_initialize_participant_qos(
         }
         *DDS_StringSeq_get_reference(&dp_qos.discovery.initial_peers, 0) =
             peer;
-        
+
         RMW_CONNEXT_LOG_DEBUG_A("initial peer: %s", peer)
     }
 
@@ -675,7 +675,7 @@ extern "C" rmw_ret_t rmw_init(
         return ret;
     }
 
-    auto scope_exit_context_finalize = 
+    auto scope_exit_context_finalize =
         rcpputils::make_scope_exit(
             [context]()
             {

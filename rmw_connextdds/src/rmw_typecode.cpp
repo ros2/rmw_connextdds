@@ -150,7 +150,7 @@ RMW_Connext_TypeCodePtrSeq_assert_from_ros(
     if (nullptr != type_name)
     {
         tc = RMW_Connext_TypeCodePtrSeq_lookup_by_name(self, type_name);
-        
+
         if (nullptr != tc)
         {
             return tc;
@@ -312,7 +312,7 @@ rmw_connextdds_convert_type_member(
     {
         DDS_TCKind dds_type_id =
             rmw_connextdds_type_id_ros_to_dds(member->type_id_);
-        
+
         el_tc =
             /* TODO(asorbini): refactor out this cast */
             const_cast<DDS_TypeCode*>(
@@ -328,7 +328,7 @@ rmw_connextdds_convert_type_member(
                     (member->string_upper_bound_ > 0)?
                         member->string_upper_bound_ : length_unbound,
                     &ex);
-        
+
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
                     tc_cache,
                     nullptr /* members */,
@@ -349,7 +349,7 @@ rmw_connextdds_convert_type_member(
                     (member->string_upper_bound_ > 0)?
                         member->string_upper_bound_ : length_unbound,
                     &ex);
-        
+
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
                     tc_cache,
                     nullptr /* members */,
@@ -389,7 +389,7 @@ rmw_connextdds_convert_type_member(
                 reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(
                     type_support_intro->data), true /* mangle_names */);
         }
-        
+
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
                     tc_cache, member->members_, type_name.c_str());
         break;
@@ -442,7 +442,7 @@ rmw_connextdds_convert_type_member(
             DDS_TypeCode *const tc_seq =
                 DDS_TypeCodeFactory_create_sequence_tc(
                     tc_factory, length_unbound, el_tc, &ex);
-            
+
             tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
                         tc_cache,
                         nullptr /* members */,
@@ -482,7 +482,7 @@ rmw_connextdds_convert_type_members(
         DDS_StructMember *const tc_member =
             DDS_StructMemberSeq_get_reference(tc_members, i);
         const auto * member = members->members_ + i;
-        
+
         /* Check that member has a non-empty name */
         size_t member_name_len = strlen(member->name_);
         if (nullptr == member->name_ || member_name_len == 0 ||
@@ -530,7 +530,7 @@ rmw_connextdds_create_typecode(
     {
         tc_cache_ptr = tc_cache_new_ptr;
     }
-    auto scope_exit_tc_cache_delete = 
+    auto scope_exit_tc_cache_delete =
         rcpputils::make_scope_exit(
             [tc_cache_new_ptr]()
             {
@@ -544,7 +544,7 @@ rmw_connextdds_create_typecode(
         intro_ts =
             RMW_Connext_MessageTypeSupport::get_type_support_intro(
                 type_supports, cpp_version);
-        
+
         if (nullptr == intro_ts)
         {
             RMW_CONNEXT_LOG_ERROR_A("introspection type support not found for %s",
@@ -569,11 +569,11 @@ rmw_connextdds_create_typecode(
 
     struct DDS_StructMemberSeq tc_members = DDS_SEQUENCE_INITIALIZER;
     struct DDS_StructMemberSeq *const tc_members_ptr = &tc_members;
-    auto scope_exit_tc_members_delete = 
+    auto scope_exit_tc_members_delete =
         rcpputils::make_scope_exit(
             [tc_members_ptr]()
             {
-                const size_t seq_len = 
+                const size_t seq_len =
                     DDS_StructMemberSeq_get_length(tc_members_ptr);
                 for (size_t i = 0; i < seq_len; i++)
                 {
@@ -582,7 +582,7 @@ rmw_connextdds_create_typecode(
                     DDS_String_free(tc_member->name);
                     tc_member->name = nullptr;
                 }
-                
+
                 DDS_StructMemberSeq_finalize(tc_members_ptr);
             });
 
@@ -592,7 +592,7 @@ rmw_connextdds_create_typecode(
         const rosidl_typesupport_introspection_cpp::MessageMembers *const members =
             reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers*>(
                 intro_members);
-        
+
         if (RMW_RET_OK !=
                 rmw_connextdds_convert_type_members(
                     tc_factory, members, &tc_members, tc_cache_ptr))
@@ -606,7 +606,7 @@ rmw_connextdds_create_typecode(
     {
         const rosidl_typesupport_introspection_c__MessageMembers *const members =
             reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(intro_members);
-        
+
         if (RMW_RET_OK !=
                 rmw_connextdds_convert_type_members(
                     tc_factory, members, &tc_members, tc_cache_ptr))

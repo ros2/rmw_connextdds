@@ -74,7 +74,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
 
     RMW_Connext_StdGuardCondition *const gcond_exit =
         reinterpret_cast<RMW_Connext_StdGuardCondition*>(
-            ctx->common.listener_thread_gc->data);   
+            ctx->common.listener_thread_gc->data);
     DDS_Condition *cond_exit =
         DDS_GuardCondition_as_condition(gcond_exit->guard_condition());
 
@@ -168,7 +168,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
         RMW_CONNEXT_LOG_TRACE("[discovery thread] waiting...")
         rc = DDS_WaitSet_wait(
                 waitset, &active_conditions, &DDS_DURATION_INFINITE);
-        
+
         if (DDS_RETCODE_OK != rc)
         {
             RMW_CONNEXT_LOG_ERROR("wait failed for discovery thread")
@@ -176,7 +176,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
         }
 
         active_len = DDS_ConditionSeq_get_length(&active_conditions);
-        
+
         RMW_CONNEXT_LOG_TRACE_A(
             "[discovery thread] active=%u", active_len)
 
@@ -318,7 +318,7 @@ rmw_connextdds_discovery_thread_start(rmw_context_impl_t * ctx)
     {
         common_ctx->listener_thread =
             std::thread(rmw_connextdds_discovery_thread, ctx);
-        
+
         RMW_CONNEXT_LOG_DEBUG("discovery thread started")
 
         return RMW_RET_OK;
@@ -359,7 +359,7 @@ rmw_connextdds_discovery_thread_stop(rmw_context_impl_t * ctx)
     {
         rmw_ret_t rmw_ret =
             rmw_trigger_guard_condition(common_ctx->listener_thread_gc);
-        
+
         if (RMW_RET_OK != rmw_ret)
         {
             return rmw_ret;

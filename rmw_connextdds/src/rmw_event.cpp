@@ -116,17 +116,14 @@ extern "C" rmw_ret_t rmw_take_event(
 
     *taken = false;
 
-    if (RMW_Connext_Event::reader_event(event_handle))
-    {
+    if (RMW_Connext_Event::reader_event(event_handle)) {
         if (!RMW_Connext_Event::subscriber(
                 event_handle)->get_status(event_handle->event_type, event_info))
         {
             RMW_CONNEXT_LOG_ERROR("failed to get reader status")
             return RMW_RET_ERROR;
         }
-    }
-    else
-    {
+    } else {
         if (!RMW_Connext_Event::publisher(
                 event_handle)->get_status(event_handle->event_type, event_info))
         {

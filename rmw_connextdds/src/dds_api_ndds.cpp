@@ -211,13 +211,10 @@ rmw_connextdds_get_qos_policies(
     if (type_support->unbounded())
     {
         const char *property_name = nullptr;
-        if (writer_qos)
-        {
+        if (writer_qos) {
             property_name =
                 "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size";
-        }
-        else
-        {
+        } else {
             property_name =
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size";
         }
@@ -423,8 +420,7 @@ rmw_connextdds_write_message(
             reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(message->user_data);
         DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
 
-        if (!rr_msg->request)
-        {
+        if (!rr_msg->request) {
             /* If this is a reply, propagate the request's sample identity
                via the related_sample_identity field */
             rmw_ret_t rc = RMW_RET_ERROR;
@@ -440,9 +436,7 @@ rmw_connextdds_write_message(
             {
                 return rc;
             }
-        }
-        else
-        {
+        } else {
             // enable WriteParams::replace_auto to retrieve SN of published message
             write_params.replace_auto = DDS_BOOLEAN_TRUE;
         }
@@ -570,17 +564,14 @@ rmw_connextdds_filter_sample(
     UNUSED_ARG(sample);
     UNUSED_ARG(info);
 
-    if (sub->ignore_local())
-    {
+    if (sub->ignore_local()) {
         DDS_InstanceHandle_t reader_ih = sub->instance_handle();
 
         *accepted =  (0 != memcmp(
                             reader_ih.keyHash.value,
                             info->original_publication_virtual_guid.value,
                             12));
-    }
-    else
-    {
+    } else {
         *accepted = true;
     }
 

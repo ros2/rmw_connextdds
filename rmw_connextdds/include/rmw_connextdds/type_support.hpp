@@ -204,15 +204,12 @@ public:
             return nullptr;
         }
 
-        if (svc_members_cpp)
-        {
+        if (svc_members_cpp) {
             const rosidl_typesupport_introspection_c__ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_c__ServiceMembers *)svc_type_support_intro->data;
 
             *svc_members_out = svc_members->request_members_;
-        }
-        else
-        {
+        } else {
             const rosidl_typesupport_introspection_cpp::ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_cpp::ServiceMembers *)svc_type_support_intro->data;
 
@@ -254,15 +251,12 @@ public:
             return nullptr;
         }
 
-        if (svc_members_cpp)
-        {
+        if (svc_members_cpp) {
             const rosidl_typesupport_introspection_c__ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_c__ServiceMembers *)svc_type_support_intro->data;
 
             *svc_members_out = svc_members->response_members_;
-        }
-        else
-        {
+        } else {
             const rosidl_typesupport_introspection_cpp::ServiceMembers *const svc_members =
                 (const rosidl_typesupport_introspection_cpp::ServiceMembers *)svc_type_support_intro->data;
 

@@ -428,10 +428,8 @@ rmw_context_impl_t::assert_topic(
     DDS_TopicDescription *const topic_existing =
         DDS_DomainParticipant_lookup_topicdescription(participant, topic_name);
 
-    if (nullptr != topic_existing)
-    {
-        if (internal)
-        {
+    if (nullptr != topic_existing) {
+        if (internal) {
             /* topics for "internal" endpoints are created while the participant
                is still disabled, so find_topic() cannot be called.
                Instead, we cast the topicdescription to a topic. The deletion
@@ -439,9 +437,7 @@ rmw_context_impl_t::assert_topic(
                its topic, so not to try to delete it */
             *topic = DDS_Topic_narrow(topic_existing);
             created = false;
-        }
-        else
-        {
+        } else {
             *topic =
                 DDS_DomainParticipant_find_topic(
                     participant,
@@ -456,9 +452,7 @@ rmw_context_impl_t::assert_topic(
         }
         RMW_CONNEXT_LOG_DEBUG_A("found topic: name=%s, type=%s\n",
             topic_name, type_name);
-    }
-    else
-    {
+    } else {
         *topic = DDS_DomainParticipant_create_topic(
                     participant,
                     topic_name,

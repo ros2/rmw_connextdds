@@ -16,10 +16,10 @@
  *
  ******************************************************************************/
 
+#include <string.h>
+
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
-
-#include <string.h>
 
 /******************************************************************************
  * Connext Micro TypePlugin
@@ -49,10 +49,10 @@ struct RMW_Connext_RtimeTypePluginI
     type_support(void *const self)
     {
         DDS_TypePluginDefault *const plugin =
-            (DDS_TypePluginDefault *)self;
+            reinterpret_cast<DDS_TypePluginDefault *>(self);
 
         RMW_Connext_RtimeTypePluginI *const intf =
-            (RMW_Connext_RtimeTypePluginI*)plugin->_parent._intf;
+            reinterpret_cast<RMW_Connext_RtimeTypePluginI*>(plugin->_parent._intf);
 
         return intf->_type_support;
     }
@@ -107,7 +107,8 @@ RMW_Connext_MemoryPlugin_delete_sample(
     void *sample)
 {
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
-    rcutils_uint8_array_t *data_buffer = (rcutils_uint8_array_t *)sample;
+    rcutils_uint8_array_t *data_buffer =
+        reinterpret_cast<rcutils_uint8_array_t *>(sample);
 
     UNUSED_ARG(type_support);
 
@@ -130,7 +131,7 @@ RMW_Connext_MemoryPlugin_copy_sample(
     const void *src)
 {
     const rcutils_uint8_array_t *src_buffer =
-        (const rcutils_uint8_array_t *)src;
+        reinterpret_cast<const rcutils_uint8_array_t *>(src);
     rcutils_uint8_array_t *dst_buffer = (rcutils_uint8_array_t *)dst;
 
     UNUSED_ARG(plugin);
@@ -152,22 +153,22 @@ RMW_Connext_EncapsulationPlugin_serialize(
     DDS_InstanceHandle_t *destination)
 {
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
-    RMW_Connext_Message *const msg =
-        (RMW_Connext_Message *)void_sample;
+    const RMW_Connext_Message *const msg =
+        reinterpret_cast<const RMW_Connext_Message *>(void_sample);
     UNUSED_ARG(destination);
 
     DDS_TypePluginBuffer *const tbuf =
-        (DDS_TypePluginBuffer *)stream->real_buff;
+        reinterpret_cast<DDS_TypePluginBuffer *>(stream->real_buff);
 
     rcutils_uint8_array_t data_buffer;
 
     /* the following pointers are cached here for convenience,
        but they are only accessed when appropriate */
     rcutils_uint8_array_t *const user_buffer =
-            (rcutils_uint8_array_t *)msg->user_data;
+            reinterpret_cast<rcutils_uint8_array_t *>(msg->user_data);
     rcutils_uint8_array_t *const msg_buffer_unbound =
-                (rcutils_uint8_array_t *)&tbuf[1];
-    uint8_t *const msg_buffer_bound = (uint8_t *)&tbuf[1];
+            reinterpret_cast<rcutils_uint8_array_t *>(&tbuf[1]);
+    uint8_t *const msg_buffer_bound = reinterpret_cast<uint8_t *>(&tbuf[1]);
 
     size_t serialized_size = 0;
 
@@ -236,12 +237,13 @@ RMW_Connext_EncapsulationPlugin_serialize(
         }
     }
 
-    tbuf->data_pbuf.buffer = (char*)data_buffer.buffer;
+    tbuf->data_pbuf.buffer = reinterpret_cast<char*>(data_buffer.buffer);
     tbuf->data_pbuf.max_length = data_buffer.buffer_capacity;
 
-    if (!CDR_Stream_set_buffer(stream,
-                               (char*)data_buffer.buffer,
-                               data_buffer.buffer_capacity))
+    if (!CDR_Stream_set_buffer(
+            stream,
+            reinterpret_cast<char*>(data_buffer.buffer),
+            data_buffer.buffer_capacity))
     {
         return RTI_FALSE;
     }
@@ -270,7 +272,7 @@ RMW_Connext_EncapsulationPlugin_deserialize(
     UNUSED_ARG(type_support);
 
     rcutils_uint8_array_t *const data_buffer =
-        (rcutils_uint8_array_t *) void_sample;
+        reinterpret_cast<rcutils_uint8_array_t *>(void_sample);
     const size_t deserialize_size =
         stream->length - CDR_Stream_get_current_position_offset(stream) +
         RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
@@ -417,7 +419,7 @@ RMW_Connext_EncapsulationPlugin_initialize_buffer(
     void *initialize_param, void *buffer)
 {
     struct DDS_TypePluginDefault *plugin =
-        (struct DDS_TypePluginDefault *)initialize_param;
+        reinterpret_cast<struct DDS_TypePluginDefault *>(initialize_param);
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(initialize_param);
     DDS_TypePluginBuffer *const tbuf = (DDS_TypePluginBuffer *)buffer;
 
@@ -426,7 +428,7 @@ RMW_Connext_EncapsulationPlugin_initialize_buffer(
     if (type_support->unbounded())
     {
         rcutils_uint8_array_t *const data_buffer =
-            (rcutils_uint8_array_t *)&tbuf[1];
+            reinterpret_cast<rcutils_uint8_array_t *>(&tbuf[1]);
         const rcutils_allocator_t allocator = rcutils_get_default_allocator();
 
         if (RCUTILS_RET_OK !=
@@ -445,7 +447,7 @@ RMW_Connext_EncapsulationPlugin_finalize_buffer(
     void *finalize_param, void *buffer)
 {
     struct DDS_TypePluginDefault *plugin =
-        (struct DDS_TypePluginDefault *)finalize_param;
+        reinterpret_cast<struct DDS_TypePluginDefault *>(finalize_param);
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(finalize_param);
     DDS_TypePluginBuffer *const tbuf = (DDS_TypePluginBuffer *)buffer;
 
@@ -454,7 +456,7 @@ RMW_Connext_EncapsulationPlugin_finalize_buffer(
     if (type_support->unbounded())
     {
         rcutils_uint8_array_t *const data_buffer =
-            (rcutils_uint8_array_t *)&tbuf[1];
+            reinterpret_cast<rcutils_uint8_array_t *>(&tbuf[1]);
 
         if (RCUTILS_RET_OK != rcutils_uint8_array_fini(data_buffer))
         {
@@ -576,7 +578,7 @@ RMW_Connext_EncapsulationPlugin_get_buffer(struct DDS_TypePlugin *tp)
     tbuf->wp = &plugin->cdr_plugin._parent;
     tbuf->data = nullptr;
     tbuf->data_pbuf._next = nullptr;
-    tbuf->data_pbuf.buffer = (char*)tbuf;
+    tbuf->data_pbuf.buffer = reinterpret_cast<char*>(tbuf);
     tbuf->data_pbuf.head_pos = 0;
     tbuf->data_pbuf.tail_pos = 0;
     tbuf->data_pbuf.max_length = sizeof(struct DDS_TypePluginBuffer) +
@@ -739,13 +741,15 @@ RMW_Connext_get_endpoint_type_name(
     {
     case DDS_TYPEPLUGIN_MODE_READER:
     {
-        DDS_DataReader *const reader = (DDS_DataReader*)endpoint;
+        DDS_DataReader *const reader =
+            reinterpret_cast<DDS_DataReader*>(endpoint);
         topic_d = DDS_DataReader_get_topicdescription(reader);
         break;
     }
     case DDS_TYPEPLUGIN_MODE_WRITER:
     {
-        DDS_DataWriter *const writer = (DDS_DataWriter*)endpoint;
+        DDS_DataWriter *const writer =
+            reinterpret_cast<DDS_DataWriter*>(endpoint);
         topic_d =
             DDS_Topic_as_topicdescription(DDS_DataWriter_get_topic(writer));
         break;
@@ -783,18 +787,18 @@ RMW_Connext_TypePlugin_create(
     }
 
     RMW_Connext_RtimeTypePluginI *type_plugin_intf =
-        (RMW_Connext_RtimeTypePluginI*)type_plugin_intfI;
+        reinterpret_cast<RMW_Connext_RtimeTypePluginI*>(type_plugin_intfI);
 
     struct DDS_TypePluginDefault* base_tp =
-        (struct DDS_TypePluginDefault*)
-        DDS_TypePluginDefault_create(
-                &type_plugin_intf->base,
-                participant,
-                dp_qos,
-                endpoint_mode,
-                endpoint,
-                qos,
-                property);
+        reinterpret_cast<struct DDS_TypePluginDefault*>(
+            DDS_TypePluginDefault_create(
+                    &type_plugin_intf->base,
+                    participant,
+                    dp_qos,
+                    endpoint_mode,
+                    endpoint,
+                    qos,
+                    property));
 
     if (nullptr == base_tp)
     {
@@ -954,7 +958,7 @@ rmw_connextdds_register_type_support(
         scope_exit_intf_delete.cancel();
     }
 
-    return ((RMW_Connext_RtimeTypePluginI*)reg_intf)->_type_support;
+    return reinterpret_cast<RMW_Connext_RtimeTypePluginI*>(reg_intf)->_type_support;
 }
 
 rmw_ret_t
@@ -977,7 +981,7 @@ rmw_connextdds_unregister_type_support(
     if (nullptr != reg_intf)
     {
         RMW_Connext_RtimeTypePluginI *type_plugin_intf =
-            (RMW_Connext_RtimeTypePluginI*)reg_intf;
+            reinterpret_cast<RMW_Connext_RtimeTypePluginI*>(reg_intf);
 
         delete type_plugin_intf;
     }

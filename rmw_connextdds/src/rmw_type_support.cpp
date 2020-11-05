@@ -127,8 +127,8 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
 
         if (this->type_requestreply())
         {
-            RMW_Connext_RequestReplyMessage *const rr_msg = 
-                reinterpret_cast<RMW_Connext_RequestReplyMessage*>(ros_msg);
+            const RMW_Connext_RequestReplyMessage *const rr_msg = 
+                reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(ros_msg);
             payload = rr_msg->payload;
 
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
@@ -332,8 +332,8 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
         const void *payload = ros_msg;
         if (this->type_requestreply())
         {
-            RMW_Connext_RequestReplyMessage * rr_msg =
-                reinterpret_cast<RMW_Connext_RequestReplyMessage*>(ros_msg);
+            const RMW_Connext_RequestReplyMessage * rr_msg =
+                reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(ros_msg);
             payload = rr_msg->payload;
         }
         serialized_size += callbacks->get_serialized_size(payload);

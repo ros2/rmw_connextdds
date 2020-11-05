@@ -69,7 +69,6 @@ install(
 rti_find_connextpro()
 
 if(NOT RTIConnextDDS_FOUND)
-    ament_package()
     # Skip package if Connext DDS Professional was not found
     message(WARNING
         "RTI Connext DDS Professional not found, skipping ${PROJECT_NAME}")

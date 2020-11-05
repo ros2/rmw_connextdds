@@ -373,7 +373,7 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
     {
         const size_t serialized_sample_max_size =
             RMW_Connext_TypePlugin_get_serialized_sample_max_size(
-                epd, RTI_FALSE,RTI_CDR_ENCAPSULATION_ID_CDR_BE, 0);
+                epd, RTI_FALSE, RTI_CDR_ENCAPSULATION_ID_CDR_BE, 0);
 
         PRESTypePluginDefaultEndpointData_setMaxSizeSerializedSample(
             epd, serialized_sample_max_size);

@@ -37,7 +37,8 @@ set(connext_libs        ${RTIME_TARGETS})
 set(connext_src
     src/rmw_type_support_rtime.cpp
     src/dds_api_rtime.cpp
-    include/rmw_connextdds/type_support_impl.hpp)
+    include/rmw_connextdds/type_support_impl.hpp
+    include/rmw_connextdds/dds_api_rtime.hpp)
 
 rti_build_rmw_connext()
 

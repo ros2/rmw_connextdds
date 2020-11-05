@@ -23,17 +23,9 @@
 
 
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-#include "rti_me_c.h"
-#include "disc_dpde/disc_dpde_discovery_plugin.h"
-#include "wh_sm/wh_sm_history.h"
-#include "rh_sm/rh_sm_history.h"
-#include "netio/netio_udp.h"
-#include "netio_shmem/netio_shmem.h"
-// #include "sec_core/sec_core_c.h"
-#include "rtiros/rtime_ext.h"
-#include "REDASequence.h"
+#include "rmw_connextdds/dds_api_rtime.hpp"
 #elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-#include "ndds/ndds_c.h"
+#include "rmw_connextdds/dds_api_ndds.hpp"
 #else
 #error "invalid DDS API selected"
 #endif /* RMW_CONNEXT_DDS_API */

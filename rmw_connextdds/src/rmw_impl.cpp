@@ -2491,13 +2491,10 @@ RMW_Connext_WaitSet::wait(
         trigger_if_active(sub->condition(),
         /* on active */
         {
-            if (!sub->has_status(DDS_DATA_AVAILABLE_STATUS))
-            {
+            if (!sub->has_status(DDS_DATA_AVAILABLE_STATUS)) {
                 /* active because of other event */
                 subs->subscribers[i] = nullptr;
-            }
-            else
-            {
+            } else {
                 RMW_CONNEXT_LOG_DEBUG_A("[wait] active subscriber: "
                     "waitset=%p, "
                     "condition=%p, "
@@ -3776,8 +3773,7 @@ RMW_Connext_StdWaitSet::attach(
         {
             rmw_event_t *const event =
                 reinterpret_cast<rmw_event_t*>(evs->events[i]);
-            if (RMW_Connext_Event::reader_event(event))
-            {
+            if (RMW_Connext_Event::reader_event(event)) {
                 auto sub = RMW_Connext_Event::subscriber(event);
                 if (sub->has_status(event->event_type))
                 {
@@ -3785,9 +3781,7 @@ RMW_Connext_StdWaitSet::attach(
                     return;
                 }
                 sub->attach(&this->condition_mutex, &this->condition);
-            }
-            else
-            {
+            } else {
                 auto pub = RMW_Connext_Event::publisher(event);
                 if (pub->has_status(event->event_type))
                 {
@@ -3849,12 +3843,9 @@ RMW_Connext_StdWaitSet::detach(
             RMW_Connext_Client *const client =
                 reinterpret_cast<RMW_Connext_Client*>(cls->clients[i]);
             client->subscriber()->detach();
-            if (!client->subscriber()->has_data())
-            {
+            if (!client->subscriber()->has_data()) {
                 cls->clients[i] = nullptr;
-            }
-            else
-            {
+            } else {
                 RMW_CONNEXT_LOG_DEBUG_A("[wait] active client: "
                     "client=%p", (void*)client)
                 active_conditions += 1;

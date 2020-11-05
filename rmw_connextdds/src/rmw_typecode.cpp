@@ -593,7 +593,8 @@ rmw_connextdds_create_typecode(
         }
     } else {
         const rosidl_typesupport_introspection_c__MessageMembers *const members =
-            reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(intro_members);
+            reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(
+                intro_members);
 
         if (RMW_RET_OK !=
                 rmw_connextdds_convert_type_members(

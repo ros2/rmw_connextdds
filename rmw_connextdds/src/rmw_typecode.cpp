@@ -46,7 +46,7 @@ RMW_Connext_TypeCodePtr_copy(
     DDS_TypeCode **dst,
     const DDS_TypeCode **src)
 {
-    *dst = reinterpret_cast<DDS_TypeCode*>(*src);
+    *dst = const_cast<DDS_TypeCode*>(*src);
     return RTI_TRUE;
 }
 

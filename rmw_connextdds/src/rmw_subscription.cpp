@@ -78,13 +78,13 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
     RMW_CONNEXT_LOG_DEBUG_A(
         "creating new subscription: topic=%s",
         topic_name)
-    
+
     if (0 == strlen(topic_name))
     {
         RMW_CONNEXT_LOG_ERROR("empty topic_name provided")
         return nullptr;
     }
-    
+
     if (!qos_policies->avoid_ros_namespace_conventions)
     {
         int validation_result = RMW_TOPIC_VALID;
@@ -104,7 +104,7 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
             return nullptr;
         }
     }
-    
+
     rmw_context_impl_t *ctx = node->context->impl;
 
     rmw_subscription_t *const rmw_sub =
@@ -122,7 +122,7 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
             ignore_local_publications
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
             );
-    
+
     if (nullptr == rmw_sub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create RMW subscription")
@@ -145,7 +145,7 @@ extern "C" rmw_ret_t rmw_subscription_count_matched_publishers(
         subscription->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CHECK_ARGUMENT_FOR_NULL(publisher_count, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Subscriber *const sub_impl =
@@ -166,12 +166,12 @@ extern "C" rmw_ret_t rmw_subscription_get_actual_qos(
         subscription->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Subscriber *const sub_impl =
         reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
-    
+
     return sub_impl->qos(qos);
 }
 
@@ -194,7 +194,7 @@ extern "C" rmw_ret_t rmw_destroy_subscription(
 
     RMW_Connext_Subscriber *const sub_impl =
         reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
-    
+
     rmw_context_impl_t *ctx = node->context->impl;
 
     if (RMW_RET_OK !=
@@ -227,9 +227,9 @@ extern "C" rmw_ret_t rmw_take(
 
     RMW_Connext_Subscriber *const sub_impl =
         reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
-    
+
     rmw_ret_t rc = sub_impl->take_message(ros_message, nullptr, taken);
-    
+
     return rc;
 }
 
@@ -256,7 +256,7 @@ extern "C" rmw_ret_t rmw_take_with_info(
         reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
 
     rmw_ret_t rc = sub_impl->take_message(ros_message, message_info, taken);
-    
+
     return rc;
 }
 
@@ -288,7 +288,7 @@ extern "C" rmw_ret_t rmw_take_sequence(
 
     rmw_ret_t rc = sub_impl->take(
                     message_sequence, message_info_sequence, count, taken);;
-    
+
     return rc;
 }
 

@@ -50,7 +50,7 @@ extern "C" rmw_ret_t rmw_get_node_names(
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
     RMW_CHECK_ARGUMENT_FOR_NULL(node_names, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(node_namespaces, RMW_RET_INVALID_ARGUMENT);
-    
+
     if (RMW_RET_OK != rmw_check_zero_rmw_string_array(node_names) ||
         RMW_RET_OK != rmw_check_zero_rmw_string_array(node_namespaces))
     {
@@ -78,7 +78,7 @@ extern "C" rmw_ret_t rmw_get_node_names(
             node_namespaces->data[i],
             node_names->data[i])
     }
-    
+
     return rc;
 }
 
@@ -97,7 +97,7 @@ extern "C" rmw_ret_t rmw_get_node_names_with_enclaves(
     RMW_CHECK_ARGUMENT_FOR_NULL(node_names, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(node_namespaces, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(enclaves, RMW_RET_INVALID_ARGUMENT);
-    
+
     if (RMW_RET_OK != rmw_check_zero_rmw_string_array(node_names) ||
         RMW_RET_OK != rmw_check_zero_rmw_string_array(node_namespaces))
     {
@@ -106,7 +106,7 @@ extern "C" rmw_ret_t rmw_get_node_names_with_enclaves(
 
     auto common_ctx = &node->context->impl->common;
     rcutils_allocator_t allocator = rcutils_get_default_allocator();
-    
+
     rmw_ret_t rc = common_ctx->graph_cache.get_node_names(
         node_names,
         node_namespaces,
@@ -126,7 +126,7 @@ extern "C" rmw_ret_t rmw_get_node_names_with_enclaves(
             node_namespaces->data[i],
             node_names->data[i])
     }
-    
+
     return rc;
 }
 
@@ -144,7 +144,7 @@ extern "C" rmw_ret_t rmw_get_topic_names_and_types(
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
     RMW_CHECK_ARGUMENT_FOR_NULL(allocator, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(tptyp, RMW_RET_INVALID_ARGUMENT);
-    
+
     if (RMW_RET_OK != rmw_names_and_types_check_zero(tptyp))
     {
         return RMW_RET_ERROR;
@@ -200,7 +200,7 @@ extern "C" rmw_ret_t rmw_service_server_is_available(
 
     RMW_Connext_Client *const client_impl =
         reinterpret_cast<RMW_Connext_Client*>(client->data);
-    
+
     *is_available = false;
     bool available = false;
     rmw_ret_t rc = client_impl->is_service_available(available);
@@ -370,7 +370,7 @@ extern "C" rmw_ret_t rmw_get_subscriber_names_and_types_by_node(
     RMW_CONNEXT_LOG_DEBUG_A("rmw_get_subscriber_names_and_types_by_node: "
         "node=%s::%s, demangle=%d",
         node_namespace, node_name, !no_demangle)
-    
+
     return get_topic_names_and_types_by_node(
                 node,
                 allocator,
@@ -394,7 +394,7 @@ extern "C" rmw_ret_t rmw_get_publisher_names_and_types_by_node(
     RMW_CONNEXT_LOG_DEBUG_A("rmw_get_publisher_names_and_types_by_node: "
         "node=%s::%s, demangle=%d",
         node_namespace, node_name, !no_demangle)
-    
+
     return get_topic_names_and_types_by_node(
                 node,
                 allocator,
@@ -461,7 +461,7 @@ extern "C" rmw_ret_t rmw_get_publishers_info_by_topic(
     RMW_CHECK_ARGUMENT_FOR_NULL(allocator, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
     RMW_CHECK_ARGUMENT_FOR_NULL(publishers_info, RMW_RET_INVALID_ARGUMENT);
-    
+
     auto common_context = &node->context->impl->common;
     std::string mangled_topic_name = topic_name;
     DemangleFunction demangle_type = _identity_demangle;

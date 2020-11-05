@@ -37,7 +37,7 @@ endif()
 if(@RTIConnextDDS_FOUND@)
     set(CONNEXTDDS_DIR          @CONNEXTDDS_DIR@
         CACHE INTERNAL "Installation directory for RTI Connext DDS Professional")
-    
+
     set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
         CACHE INTERNAL "Architecture target for RTI Connext DDS Professional")
 endif()

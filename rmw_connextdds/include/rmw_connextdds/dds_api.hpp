@@ -212,4 +212,4 @@ rmw_connextdds_builtinkey_to_guid(
     const DDS_BuiltinTopicKey_t *const self,
     DDS_GUID_t *const dst);
 
-#endif // RMW_CONNEXTDDS__DDS_API_HPP_
+#endif  // RMW_CONNEXTDDS__DDS_API_HPP_

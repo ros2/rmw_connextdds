@@ -84,7 +84,7 @@ RMW_Connext_TypeCodePtrSeq_lookup_by_name(
             return tc;
         }
     }
-    
+
     return nullptr;
 }
 
@@ -125,7 +125,7 @@ RMW_Connext_TypeCodePtrSeq_append(
     {
         return RTI_FALSE;
     }
-    
+
     *RMW_Connext_TypeCodePtrSeq_get_reference(self, slot_i) = tc;
 
     return RTI_TRUE;
@@ -205,7 +205,6 @@ RMW_Connext_TypeCodePtrSeq_finalize_elements(
         }
         rmw_connextdds_delete_typecode(*tc);
         *tc = nullptr;
-
     }
 }
 
@@ -280,7 +279,6 @@ rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
         return DDS_TK_NULL;
     }
     }
-
 }
 #endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
@@ -410,7 +408,7 @@ rmw_connextdds_convert_type_member(
             member->name_)
         return nullptr;
     }
-    
+
     DDS_TypeCode *tc = el_tc;
 
     if (member->is_array_)
@@ -568,7 +566,7 @@ rmw_connextdds_create_typecode(
         RMW_CONNEXT_LOG_ERROR("failed to get DDS_TypeCodeFactory")
         return nullptr;
     }
-    
+
     struct DDS_StructMemberSeq tc_members = DDS_SEQUENCE_INITIALIZER;
     struct DDS_StructMemberSeq *const tc_members_ptr = &tc_members;
     auto scope_exit_tc_members_delete = 

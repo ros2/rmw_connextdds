@@ -115,4 +115,4 @@ rmw_connextdds_graph_add_entity(
     const DDS_LivelinessQosPolicy *const liveliness,
     const bool is_reader);
 
-#endif // RMW_CONNEXTDDS__GRAPH_CACHE_HPP_
+#endif  // RMW_CONNEXTDDS__GRAPH_CACHE_HPP_

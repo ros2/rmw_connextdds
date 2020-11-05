@@ -38,7 +38,7 @@ struct RMW_Connext_RtimeTypePluginI
         this->base = RMW_Connext_fv_TypePluginI;
         this->_type_support = type_support;
     }
-    
+
     ~RMW_Connext_RtimeTypePluginI()
     {
         delete this->_type_support;
@@ -160,7 +160,7 @@ RMW_Connext_EncapsulationPlugin_serialize(
         (DDS_TypePluginBuffer *)stream->real_buff;
 
     rcutils_uint8_array_t data_buffer;
-    
+
     /* the following pointers are cached here for convenience,
        but they are only accessed when appropriate */
     rcutils_uint8_array_t *const user_buffer =
@@ -252,7 +252,7 @@ RMW_Connext_EncapsulationPlugin_serialize(
     {
         return RTI_FALSE;
     }
-    
+
     return RTI_TRUE;
 }
 
@@ -274,7 +274,7 @@ RMW_Connext_EncapsulationPlugin_deserialize(
     const size_t deserialize_size = 
         stream->length - CDR_Stream_get_current_position_offset(stream) +
         RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
-    
+
     if (data_buffer->buffer_capacity < deserialize_size)
     {
         if (RCUTILS_RET_OK !=
@@ -292,7 +292,7 @@ RMW_Connext_EncapsulationPlugin_deserialize(
         data_buffer->buffer,
         src_ptr,
         deserialize_size);
-    
+
     data_buffer->buffer_length = deserialize_size;
 
     return RTI_TRUE;
@@ -309,7 +309,7 @@ RMW_Connext_MemoryPlugin_initialize_sample(
     void *sample = NULL;
     struct DDS_TypePluginSampleHolder *sh =
         (struct DDS_TypePluginSampleHolder*)buffer;
-    
+
     if (!RMW_Connext_MemoryPlugin_create_sample(
             &plugin->_parent, &sample))
     {
@@ -401,7 +401,7 @@ RMW_Connext_EncapsulationPlugin_get_serialized_sample_size(
 {
     UNUSED_ARG(ep);
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
-    
+
     RTI_UINT32 tot_alignment = current_alignment;
 
     // For unbounded types this call will only report the size of the
@@ -482,7 +482,7 @@ RMW_Connext_EncapsulationPlugin_create(
     UNUSED_ARG(participant);
     UNUSED_ARG(dp_qos);
     UNUSED_ARG(endpoint);
-    
+
     if (endpoint_mode == DDS_TYPEPLUGIN_MODE_WRITER)
     {
         struct REDA_BufferPoolProperty bufp =
@@ -567,7 +567,7 @@ RMW_Connext_EncapsulationPlugin_get_buffer(struct DDS_TypePlugin *tp)
 
     struct DDS_TypePluginBuffer *tbuf =
         (struct DDS_TypePluginBuffer*)REDA_BufferPool_get_buffer(plugin->pool);
-    
+
     if (tbuf == NULL)
     {
         return nullptr;
@@ -795,7 +795,7 @@ RMW_Connext_TypePlugin_create(
                 endpoint,
                 qos,
                 property);
-    
+
     if (nullptr == base_tp)
     {
         return nullptr;
@@ -849,7 +849,7 @@ rmw_connextdds_assert_type(
         *reg_intf = existing_type;
         RMW_CONNEXT_LOG_DEBUG_A("already registered type: name=%s", type_name)
     }
-    
+
 
     return RMW_RET_OK;
 }
@@ -914,12 +914,12 @@ rmw_connextdds_register_type_support(
         new (std::nothrow)
             RMW_Connext_MessageTypeSupport(
                 message_type, type_supports, type_name);
-    
+
     if (nullptr == type_support)
     {
         return nullptr;
     }
-    
+
     RMW_Connext_RtimeTypePluginI *type_plugin_intf = 
         new (std::nothrow) RMW_Connext_RtimeTypePluginI(type_support);
 
@@ -948,7 +948,7 @@ rmw_connextdds_register_type_support(
     {
         return nullptr;
     }
-    
+
     if (registered)
     {
         scope_exit_intf_delete.cancel();
@@ -964,7 +964,7 @@ rmw_connextdds_unregister_type_support(
     const char *const type_name)
 {
     UNUSED_ARG(ctx);
-    
+
     DDS_TypePluginI *reg_intf = nullptr;
 
     if (RMW_RET_OK !=

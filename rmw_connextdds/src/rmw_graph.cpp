@@ -37,11 +37,11 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
         discovery */
     rmw_publisher_options_t publisher_options =
         rmw_get_default_publisher_options();
-    
+
     const rosidl_message_type_support_t *const type_supports_partinfo =
         rosidl_typesupport_cpp::get_message_type_support_handle<
             rmw_dds_common::msg::ParticipantEntitiesInfo>();
-    
+
     const char *const topic_name_partinfo = "ros_discovery_info";
 
     RMW_CONNEXT_LOG_DEBUG("creating discovery writer")
@@ -57,7 +57,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
             &pubsub_qos,
             &publisher_options,
             true /* internal */);
-    
+
     if (nullptr == ctx->common.pub)
     {
         RMW_CONNEXT_LOG_ERROR(
@@ -68,7 +68,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
     rmw_subscription_options_t subscription_options =
         rmw_get_default_subscription_options();
     subscription_options.ignore_local_publications = true;
-    
+
     pubsub_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_ALL;
 
     RMW_CONNEXT_LOG_DEBUG("creating discovery subscriber")
@@ -117,7 +117,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
 
     ctx->common.graph_cache.add_participant(
         ctx->common.gid, ctx->base->options.enclave);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_dcps_participant_get_reader(
                 ctx, &ctx->dr_participants))
@@ -138,7 +138,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
     {
         return RMW_RET_ERROR;
     }
-    
+
     return RMW_RET_OK;
 }
 
@@ -180,9 +180,9 @@ rmw_connextdds_graph_finalize(rmw_context_impl_t *const ctx)
         RMW_CONNEXT_LOG_ERROR("failed to stop discovery thread")
         return RMW_RET_ERROR;
     }
-    
+
     ctx->common.graph_cache.clear_on_change_callback();
-    
+
     if (nullptr != ctx->common.graph_guard_condition)
     {
         if (RMW_RET_OK !=
@@ -206,7 +206,7 @@ rmw_connextdds_graph_finalize(rmw_context_impl_t *const ctx)
         }
         ctx->common.sub = nullptr;
     }
-    
+
     if (nullptr != ctx->common.pub)
     {
         if (RMW_RET_OK !=
@@ -262,7 +262,7 @@ rmw_connextdds_graph_on_node_created(
     rmw_dds_common::msg::ParticipantEntitiesInfo msg =
         ctx->common.graph_cache.add_node(
             ctx->common.gid, node->name, node->namespace_);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_publish_update(
                 ctx, reinterpret_cast<void*>(&msg)))
@@ -286,7 +286,7 @@ rmw_connextdds_graph_on_node_deleted(
     rmw_dds_common::msg::ParticipantEntitiesInfo msg =
         ctx->common.graph_cache.remove_node(
             ctx->common.gid, node->name, node->namespace_);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_publish_update(
                 ctx, reinterpret_cast<void*>(&msg)))
@@ -447,7 +447,7 @@ rmw_connextdds_graph_on_service_created(
             ctx->common.gid,
             node->name,
             node->namespace_);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_publish_update(
                 ctx, reinterpret_cast<void*>(&msg)))
@@ -515,7 +515,7 @@ rmw_connextdds_graph_on_client_created(
             ctx->common.gid,
             node->name,
             node->namespace_);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_publish_update(
                 ctx, reinterpret_cast<void*>(&msg)))
@@ -553,7 +553,7 @@ rmw_connextdds_graph_on_client_deleted(
             ctx->common.gid,
             node->name,
             node->namespace_);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_publish_update(
                 ctx, reinterpret_cast<void*>(&msg)))
@@ -604,7 +604,7 @@ rmw_connextdds_graph_add_participant(
             "[discovery thread] ignored own participant data")
         return RMW_RET_OK;
     }
-    
+
     std::string enclave;
     /* TODO(asorbini): retrieve enclave from USER_DATA */
 
@@ -696,7 +696,7 @@ rmw_ret_t
 rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
 {
     UNUSED_ARG(ctx);
-    
+
     return RMW_RET_OK;
 }
 

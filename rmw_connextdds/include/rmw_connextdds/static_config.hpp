@@ -202,4 +202,4 @@
 
 #include "resource_limits.hpp"
 
-#endif // RMW_CONNEXTDDS__STATIC_CONFIG_HPP_
+#endif  // RMW_CONNEXTDDS__STATIC_CONFIG_HPP_

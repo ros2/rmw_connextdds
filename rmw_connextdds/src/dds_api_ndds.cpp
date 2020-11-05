@@ -148,14 +148,14 @@ rmw_connextdds_initialize_participant_qos_impl(
     char *const user_data_ptr =
         reinterpret_cast<char*>(
             DDS_OctetSeq_get_contiguous_buffer(&dp_qos->user_data.value));
-    
+
     const int user_data_rc =
         std::snprintf(
             user_data_ptr,
             user_data_len,
             user_data_fmt,
             ctx->base->options.enclave);
-    
+
     if (user_data_rc < 0 || user_data_rc != user_data_len - 1)
     {
         RMW_CONNEXT_LOG_ERROR("failed to set user_data")
@@ -521,13 +521,13 @@ rmw_connextdds_take_samples(
         return RMW_RET_ERROR;
     }
     RMW_CONNEXT_ASSERT(data_len > 0)
-    
+
     (void)RMW_Connext_Uint8ArrayPtrSeq_loan_contiguous
             (sub->data_seq(),
             reinterpret_cast<rcutils_uint8_array_t**>(data_buffer),
             data_len,
             data_len);
-    
+
     return RMW_RET_OK;
 }
 
@@ -539,7 +539,7 @@ rmw_connextdds_return_samples(
         RMW_Connext_Uint8ArrayPtrSeq_get_contiguous_buffer(sub->data_seq()));
     const size_t data_len =
         RMW_Connext_Uint8ArrayPtrSeq_get_length(sub->data_seq());
-    
+
     if (!RMW_Connext_Uint8ArrayPtrSeq_unloan(sub->data_seq()))
     {
         RMW_CONNEXT_LOG_ERROR("failed to unloan sample sequence")
@@ -602,7 +602,7 @@ rmw_connextdds_dcps_participant_get_reader(
 
     DDS_DataReader *const reader =
         DDS_Subscriber_lookup_datareader(sub, DDS_PARTICIPANT_TOPIC_NAME);
-    
+
     if (nullptr == reader)
     {
         return RMW_RET_ERROR;
@@ -627,7 +627,7 @@ rmw_connextdds_dcps_publication_get_reader(
 
     DDS_DataReader *const reader =
         DDS_Subscriber_lookup_datareader(sub, DDS_PUBLICATION_TOPIC_NAME);
-    
+
     if (nullptr == reader)
     {
         return RMW_RET_ERROR;
@@ -651,7 +651,7 @@ rmw_connextdds_dcps_subscription_get_reader(
 
     DDS_DataReader *const reader =
         DDS_Subscriber_lookup_datareader(sub, DDS_SUBSCRIPTION_TOPIC_NAME);
-    
+
     if (nullptr == reader)
     {
         return RMW_RET_ERROR;
@@ -794,7 +794,6 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t *const ctx)
             RMW_CONNEXT_LOG_ERROR("failed to return loan to dds reader")
             return RMW_RET_ERROR;
         }
-        
     } while (DDS_RETCODE_OK == rc);
 
     return RMW_RET_OK;
@@ -870,7 +869,6 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t *const ctx)
             RMW_CONNEXT_LOG_ERROR("failed to return loan to dds reader")
             return RMW_RET_ERROR;
         }
-        
     } while (DDS_RETCODE_OK == rc);
 
     return RMW_RET_OK;
@@ -947,7 +945,6 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t *const ctx)
             RMW_CONNEXT_LOG_ERROR("failed to return loan to dds reader")
             return RMW_RET_ERROR;
         }
-        
     } while (DDS_RETCODE_OK == rc);
 
     return RMW_RET_OK;
@@ -959,7 +956,7 @@ rmw_connextdds_ih_to_gid(const DDS_InstanceHandle_t &ih, rmw_gid_t &gid)
     static_assert(
         RMW_GID_STORAGE_SIZE >= MIG_RTPS_KEY_HASH_MAX_LENGTH,
         "rmw_gid_t type too small for an RTI Connext DDS Micro GUID");
-    
+
     memset(&gid, 0, sizeof(gid));
     gid.implementation_identifier = RMW_CONNEXTDDS_ID;
     memcpy(gid.data, ih.keyHash.value, MIG_RTPS_KEY_HASH_MAX_LENGTH);

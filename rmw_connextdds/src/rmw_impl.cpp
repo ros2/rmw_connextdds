@@ -189,7 +189,7 @@ rmw_connextdds_get_readerwriter_qos(
         "depth=%d",
         history->kind,
         history->depth);
-    
+
     reliability->max_blocking_time = DDS_DURATION_INFINITE;
 
     switch (qos_policies->reliability)
@@ -330,7 +330,7 @@ rmw_connextdds_readerwriter_qos_to_ros(
         }
         qos_policies->depth = (uint32_t) history->depth;
     }
-    
+
     switch (reliability->kind)
     {
     case DDS_RELIABLE_RELIABILITY_QOS:
@@ -437,7 +437,7 @@ RMW_Connext_Node::create(
 {
     RMW_Connext_Node *node_impl =
         new (std::nothrow) RMW_Connext_Node(ctx);
-    
+
     if (nullptr == node_impl)
     {
         RMW_CONNEXT_LOG_ERROR("failed to allocate node implementation")
@@ -601,7 +601,7 @@ RMW_Connext_Publisher::create(
                 }
             }
         });
-    
+
     DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
 
     DDS_DataWriterQos *const dw_qos_ptr = &dw_qos;
@@ -632,7 +632,7 @@ RMW_Connext_Publisher::create(
             type_support,
             topic,
             &dw_qos);
-    
+
     if (nullptr == dds_writer)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create DDS writer")
@@ -654,7 +654,7 @@ RMW_Connext_Publisher::create(
     RMW_Connext_Publisher *rmw_pub_impl =
         new (std::nothrow) RMW_Connext_Publisher(
                             ctx, dds_writer, type_support, topic_created);
-    
+
     if (nullptr == rmw_pub_impl)
     {
         RMW_CONNEXT_LOG_ERROR("failed to allocate RMW publisher")
@@ -686,7 +686,7 @@ RMW_Connext_Publisher::finalize()
 
     RMW_CONNEXT_LOG_DEBUG_A("finalizing publisher: pub=%p, type=%s",
         (void*)this, this->type_support->type_name())
-    
+
     if (DDS_RETCODE_OK !=
             DDS_Publisher_delete_datawriter(
                 this->dds_publisher(), this->dds_writer))
@@ -731,7 +731,7 @@ RMW_Connext_Publisher::requestreply_header_to_dds(
 {
     struct DDS_GUID_t src_guid = DDS_GUID_INITIALIZER;
     struct DDS_SequenceNumber_t src_sn = DDS_SEQUENCE_NUMBER_UNKNOWN;
-    
+
     rmw_ret_t rc = RMW_RET_ERROR;
     rc = rmw_connextdds_gid_to_guid(rr_msg->gid, src_guid);
     if (RMW_RET_OK != rc)
@@ -740,7 +740,7 @@ RMW_Connext_Publisher::requestreply_header_to_dds(
     }
 
     rmw_connextdds_sn_ros_to_dds(rr_msg->sn, src_sn);
-    
+
     if (rr_msg->request)
     {
         sample_identity->writer_guid = src_guid;
@@ -765,7 +765,7 @@ RMW_Connext_Publisher::write(
     RMW_Connext_Message user_msg;
     user_msg.user_data = ros_message;
     user_msg.serialized = serialized;
-    
+
     return rmw_connextdds_write_message(this, &user_msg, sn_out);
 }
 
@@ -776,7 +776,7 @@ RMW_Connext_Publisher::has_status(const DDS_StatusMask status_mask)
     const DDS_StatusMask changes =
         DDS_Entity_get_status_changes(
             DDS_DataWriter_as_entity(this->dds_writer));
-    
+
     return changes & status_mask;
 }
 
@@ -787,10 +787,10 @@ RMW_Connext_Publisher::enable_status(const DDS_StatusMask status_mask)
     DDS_StatusCondition *const status_cond =
         DDS_Entity_get_statuscondition(
             DDS_DataWriter_as_entity(this->dds_writer));
-    
+
     DDS_StatusMask enabled_statuses =
         DDS_StatusCondition_get_enabled_statuses(status_cond);
-    
+
     enabled_statuses |= status_mask;
 
     if (DDS_RETCODE_OK !=
@@ -810,10 +810,10 @@ RMW_Connext_Publisher::disable_status(const DDS_StatusMask status_mask)
     DDS_StatusCondition *const status_cond =
         DDS_Entity_get_statuscondition(
             DDS_DataWriter_as_entity(this->dds_writer));
-    
+
     DDS_StatusMask enabled_statuses =
         DDS_StatusCondition_get_enabled_statuses(status_cond);
-    
+
     enabled_statuses &= ~status_mask;
 
     if (DDS_RETCODE_OK !=
@@ -833,7 +833,7 @@ RMW_Connext_Publisher::subscriptions_count()
 {
     DDS_PublicationMatchedStatus status =
         DDS_PublicationMatchedStatus_INITIALIZER;
-    
+
     if (DDS_RETCODE_OK !=
             DDS_DataWriter_get_publication_matched_status(
                 this->dds_writer, &status))
@@ -864,7 +864,7 @@ rmw_ret_t
 RMW_Connext_Publisher::qos(rmw_qos_profile_t *const qos)
 {
     DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
-    
+
     if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(this->dds_writer, &dw_qos))
     {
         RMW_CONNEXT_LOG_ERROR("failed to get DDS writer's qos")
@@ -903,7 +903,7 @@ rmw_connextdds_create_publisher(
             publisher_options,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
             internal);
-    
+
     if (nullptr == rmw_pub_impl)
     {
         RMW_CONNEXT_LOG_ERROR(
@@ -922,7 +922,7 @@ rmw_connextdds_create_publisher(
                 }
                 delete rmw_pub_impl;
             });
-    
+
     rmw_publisher_t * rmw_publisher = rmw_publisher_allocate();
     if (nullptr == rmw_publisher)
     {
@@ -942,7 +942,7 @@ rmw_connextdds_create_publisher(
         });
 
     size_t topic_name_len = strlen(topic_name);
-    
+
     rmw_publisher->implementation_identifier = RMW_CONNEXTDDS_ID;
     rmw_publisher->data = rmw_pub_impl;
     rmw_publisher->topic_name =
@@ -995,7 +995,7 @@ rmw_connextdds_destroy_publisher(
 
     RMW_Connext_Publisher *const rmw_pub_impl =
         static_cast<RMW_Connext_Publisher *>(rmw_publisher->data);
-    
+
     if (nullptr == rmw_pub_impl)
     {
         return RMW_RET_ERROR;
@@ -1151,7 +1151,7 @@ RMW_Connext_Subscriber::create(
             type_support->type_name())
         return nullptr;
     }
-    
+
     auto scope_exit_topic_delete = rcpputils::make_scope_exit(
         [topic_created, dp, topic]()
         {
@@ -1165,7 +1165,7 @@ RMW_Connext_Subscriber::create(
                 }
             }
         });
-    
+
     DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
 
     DDS_DataReaderQos *const dr_qos_ptr = &dr_qos;
@@ -1196,7 +1196,7 @@ RMW_Connext_Subscriber::create(
             type_support,
             topic,
             &dr_qos);
-    
+
     if (nullptr == dds_reader)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create DDS reader")
@@ -1214,11 +1214,11 @@ RMW_Connext_Subscriber::create(
                         "failed to delete DDS DataWriter")
                 }
             });
-    
+
     DDS_StatusCondition *const status_cond =
         DDS_Entity_get_statuscondition(
             DDS_DataReader_as_entity(dds_reader));
-    
+
     if (DDS_RETCODE_OK !=
             DDS_StatusCondition_set_enabled_statuses(
                 status_cond, DDS_DATA_AVAILABLE_STATUS))
@@ -1240,7 +1240,7 @@ RMW_Connext_Subscriber::create(
                                 ignore_local_publications,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
                                 topic_created);
-    
+
     if (nullptr == rmw_sub_impl)
     {
         RMW_CONNEXT_LOG_ERROR("failed to allocate RMW subscriber")
@@ -1256,7 +1256,7 @@ RMW_Connext_Subscriber::create(
             return nullptr;
         }
     }
-    
+
     scope_exit_type_unregister.cancel();
     scope_exit_topic_delete.cancel();
     scope_exit_dds_reader_delete.cancel();
@@ -1319,7 +1319,7 @@ RMW_Connext_Subscriber::publications_count()
 {
     DDS_SubscriptionMatchedStatus status =
         DDS_SubscriptionMatchedStatus_INITIALIZER;
-    
+
     if (DDS_RETCODE_OK !=
             DDS_DataReader_get_subscription_matched_status(
                 this->dds_reader, &status))
@@ -1337,7 +1337,7 @@ rmw_ret_t
 RMW_Connext_Subscriber::qos(rmw_qos_profile_t *const qos)
 {
     DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
-    
+
     if (DDS_RETCODE_OK != DDS_DataReader_get_qos(this->dds_reader, &dr_qos))
     {
         RMW_CONNEXT_LOG_ERROR("failed to get DDS reader's qos")
@@ -1419,7 +1419,7 @@ RMW_Connext_Subscriber::has_status(const DDS_StatusMask status_mask)
     const DDS_StatusMask changes =
         DDS_Entity_get_status_changes(
             DDS_DataReader_as_entity(this->dds_reader));
-    
+
     return changes & status_mask;
 }
 
@@ -1430,10 +1430,10 @@ RMW_Connext_Subscriber::enable_status(const DDS_StatusMask status_mask)
     DDS_StatusCondition *const status_cond =
         DDS_Entity_get_statuscondition(
             DDS_DataReader_as_entity(this->dds_reader));
-    
+
     DDS_StatusMask enabled_statuses =
         DDS_StatusCondition_get_enabled_statuses(status_cond);
-    
+
     enabled_statuses |= status_mask;
 
     if (DDS_RETCODE_OK !=
@@ -1453,10 +1453,10 @@ RMW_Connext_Subscriber::disable_status(const DDS_StatusMask status_mask)
     DDS_StatusCondition *const status_cond =
         DDS_Entity_get_statuscondition(
             DDS_DataReader_as_entity(this->dds_reader));
-    
+
     DDS_StatusMask enabled_statuses =
         DDS_StatusCondition_get_enabled_statuses(status_cond);
-    
+
     enabled_statuses &= ~status_mask;
 
     if (DDS_RETCODE_OK !=
@@ -1484,7 +1484,7 @@ RMW_Connext_Subscriber::loan_messages()
     }
 
     this->loan_len = DDS_UntypedSampleSeq_get_length(&this->loan_data);
-    
+
     return RMW_RET_OK;
 }
 
@@ -1533,7 +1533,7 @@ RMW_Connext_Subscriber::take_next(
     const bool serialized)
 {
     rmw_ret_t rc = RMW_RET_OK;
-    
+
     *taken = 0;
 
     std::lock_guard<std::mutex> lock(this->loan_mutex);
@@ -1674,7 +1674,7 @@ rmw_connextdds_create_subscriber(
             ignore_local_publications,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
             internal);
-    
+
     if (nullptr == rmw_sub_impl)
     {
         RMW_CONNEXT_LOG_ERROR(
@@ -1693,7 +1693,7 @@ rmw_connextdds_create_subscriber(
                 }
                 delete rmw_sub_impl;
             });
-    
+
     rmw_subscription_t * rmw_subscriber = rmw_subscription_allocate();
     if (nullptr == rmw_subscriber)
     {
@@ -1701,7 +1701,7 @@ rmw_connextdds_create_subscriber(
             "failed to allocate RMW subscriber")
         return nullptr;
     }
-    
+
     auto scope_exit_rmw_reader_delete = rcpputils::make_scope_exit(
         [rmw_subscriber]() {
             if (nullptr != rmw_subscriber->topic_name)
@@ -1712,7 +1712,7 @@ rmw_connextdds_create_subscriber(
         });
 
     size_t topic_name_len = strlen(topic_name);
-    
+
     rmw_subscriber->implementation_identifier = RMW_CONNEXTDDS_ID;
     rmw_subscriber->data = rmw_sub_impl;
     rmw_subscriber->topic_name =
@@ -1764,7 +1764,7 @@ rmw_connextdds_destroy_subscriber(
 
     RMW_Connext_Subscriber *const rmw_sub_impl =
         static_cast<RMW_Connext_Subscriber *>(rmw_subscriber->data);
-    
+
     if (nullptr == rmw_sub_impl)
     {
         return RMW_RET_ERROR;
@@ -1836,11 +1836,11 @@ rmw_connextdds_destroy_guard_condition(
 {
     RMW_Connext_StdGuardCondition *const gcond =
         reinterpret_cast<RMW_Connext_StdGuardCondition*>(gcond_handle->data);
-    
+
     delete gcond;
 
     rmw_guard_condition_free(gcond_handle);
-    
+
     return RMW_RET_OK;
 }
 
@@ -1850,9 +1850,9 @@ rmw_connextdds_trigger_guard_condition(
 {
     RMW_Connext_StdGuardCondition *const gcond =
         reinterpret_cast<RMW_Connext_StdGuardCondition*>(gcond_handle->data);
-    
+
     gcond->trigger();
-    
+
     return RMW_RET_OK;
 }
 
@@ -1861,7 +1861,7 @@ RMW_Connext_WaitSet::create()
 {
     RMW_Connext_WaitSet *const ws_impl =
         new (std::nothrow) RMW_Connext_WaitSet();
-    
+
     ws_impl->waitset = DDS_WaitSet_new();
     ws_impl->waiting = false;
 
@@ -1870,7 +1870,7 @@ RMW_Connext_WaitSet::create()
         RMW_CONNEXT_LOG_ERROR("failed to allocate DDS waitset")
         return nullptr;
     }
-    
+
     return ws_impl;
 }
 
@@ -2496,7 +2496,7 @@ RMW_Connext_WaitSet::wait(
         on_inactive_\
     }\
 }
-    
+
     for (size_t i = 0; nullptr != gcs && i < gcs->guard_condition_count; i++)
     {
         DDS_GuardCondition *const gcond =
@@ -2656,7 +2656,7 @@ rmw_wait_set_t *
 rmw_connextdds_create_waitset(const size_t max_conditions)
 {
     UNUSED_ARG(max_conditions);
-    
+
     rmw_wait_set_t *const rmw_ws = rmw_wait_set_allocate();
     if (nullptr == rmw_ws)
     {
@@ -2668,7 +2668,7 @@ rmw_connextdds_create_waitset(const size_t max_conditions)
         {
             rmw_wait_set_free(rmw_ws);
         });
-    
+
     RMW_Connext_StdWaitSet *const ws_impl =
         new (std::nothrow) RMW_Connext_StdWaitSet();
 
@@ -2695,7 +2695,7 @@ rmw_connextdds_destroy_waitset(rmw_wait_set_t *const rmw_ws)
     delete ws_impl;
 
     rmw_wait_set_free(rmw_ws);
-    
+
     return RMW_RET_OK;
 }
 
@@ -2718,7 +2718,7 @@ rmw_connextdds_waitset_wait(
 
     RMW_Connext_StdWaitSet *const ws_impl =
         reinterpret_cast<RMW_Connext_StdWaitSet*>(rmw_ws->data);
-    
+
     return ws_impl->wait(subs, gcs, srvs, cls, evs, wait_timeout);
 }
 
@@ -2733,11 +2733,11 @@ rmw_connextdds_gid_to_guid(const rmw_gid_t &gid, struct DDS_GUID_t &guid)
         gid.implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     static_assert(
         RMW_GID_STORAGE_SIZE >= sizeof(guid.value),
         "rmw_gid_t type too small for an DDS GUID");
-    
+
     memcpy(guid.value, gid.data, sizeof(guid.value));
 
     return RMW_RET_OK;
@@ -2944,7 +2944,7 @@ RMW_Connext_Client::create(
 {
     RMW_Connext_Client *client_impl =
         new (std::nothrow) RMW_Connext_Client();
-    
+
     if (nullptr == client_impl)
     {
         RMW_CONNEXT_LOG_ERROR("failed to allocate client implementation")
@@ -2971,7 +2971,7 @@ RMW_Connext_Client::create(
                 type_supports,
                 &svc_members_res,
                 svc_members_res_cpp);
-    
+
     std::string reply_topic =
         rmw_connextdds_create_topic_name(
             ROS_SERVICE_RESPONSE_PREFIX,
@@ -2984,7 +2984,7 @@ RMW_Connext_Client::create(
             svc_name,
             "Request",
             qos_policies);
-    
+
     std::string
         request_type =
             RMW_Connext_ServiceTypeSupportWrapper::get_request_type_name(
@@ -2998,7 +2998,7 @@ RMW_Connext_Client::create(
     rmw_subscription_options_t sub_options =
         rmw_get_default_subscription_options();
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
-    
+
 
     RMW_CONNEXT_LOG_DEBUG_A("creating request publisher: "
         "service=%s, "
@@ -3022,7 +3022,7 @@ RMW_Connext_Client::create(
             svc_members_req,
             svc_members_req_cpp,
             &request_type);
-    
+
     if (nullptr == client_impl->request_pub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create client requester")
@@ -3053,7 +3053,7 @@ RMW_Connext_Client::create(
             svc_members_res,
             svc_members_res_cpp,
             &reply_type);
-    
+
     if (nullptr == client_impl->reply_sub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create client replier")
@@ -3091,7 +3091,7 @@ RMW_Connext_Client::take_response(
 
     rmw_ret_t rc =
         this->reply_sub->take_message(&rr_msg, &message_info, &taken_msg);
-    
+
     if (RMW_RET_OK != rc)
     {
         return rc;
@@ -3152,7 +3152,7 @@ RMW_Connext_Client::send_request(
             reinterpret_cast<uint32_t*>(rr_msg.gid.data)[2],
             reinterpret_cast<uint32_t*>(rr_msg.gid.data)[3],
             rr_msg.sn)
-    
+
     return this->request_pub->write(&rr_msg, false /* serialized */, sequence_id);
 }
 
@@ -3191,7 +3191,7 @@ RMW_Connext_Service::create(
 {
     RMW_Connext_Service *svc_impl =
         new (std::nothrow) RMW_Connext_Service();
-    
+
     if (nullptr == svc_impl)
     {
         RMW_CONNEXT_LOG_ERROR("failed to allocate service implementation")
@@ -3203,7 +3203,7 @@ RMW_Connext_Service::create(
         {
             delete svc_impl;
         });
-    
+
     bool svc_members_req_cpp = false,
          svc_members_res_cpp = false;
     const void *svc_members_req = nullptr,
@@ -3219,7 +3219,7 @@ RMW_Connext_Service::create(
                 type_supports,
                 &svc_members_res,
                 svc_members_res_cpp);
-    
+
     std::string reply_topic =
         rmw_connextdds_create_topic_name(
             ROS_SERVICE_RESPONSE_PREFIX,
@@ -3232,7 +3232,7 @@ RMW_Connext_Service::create(
             svc_name,
             "Request",
             qos_policies);
-    
+
     std::string
         request_type =
             RMW_Connext_ServiceTypeSupportWrapper::get_request_type_name(
@@ -3269,13 +3269,13 @@ RMW_Connext_Service::create(
             svc_members_res,
             svc_members_res_cpp,
             &reply_type);
-    
+
     if (nullptr == svc_impl->reply_pub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create service replier")
         return nullptr;
     }
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("creating request subscriber: "
         "service=%s, "
         "topic=%s",
@@ -3300,13 +3300,13 @@ RMW_Connext_Service::create(
             svc_members_req,
             svc_members_req_cpp,
             &request_type);
-    
+
     if (nullptr == svc_impl->request_sub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create service requester")
         return nullptr;
     }
-    
+
     scope_exit_svc_impl_delete.cancel();
     return svc_impl;
 }
@@ -3329,7 +3329,7 @@ RMW_Connext_Service::take_request(
     rmw_ret_t rc =
         this->request_sub->take_message(
             &rr_msg, &message_info, &taken_msg);
-    
+
     if (RMW_RET_OK != rc)
     {
         return rc;
@@ -3579,7 +3579,7 @@ RMW_Connext_DataReaderListener_requested_deadline_missed(
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(reader);
 
     self->on_requested_deadline_missed(status);
@@ -3593,7 +3593,7 @@ RMW_Connext_DataReaderListener_requested_incompatible_qos(
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(reader);
 
     self->on_requested_incompatible_qos(status);
@@ -3607,7 +3607,7 @@ RMW_Connext_DataReaderListener_liveliness_changed(
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(reader);
 
     self->on_liveliness_changed(status);
@@ -3621,7 +3621,7 @@ RMW_Connext_DataReaderListener_sample_lost(
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(reader);
 
     self->on_sample_lost(status);
@@ -3634,7 +3634,7 @@ RMW_Connext_DataReaderListener_on_data_available(
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(reader);
     RMW_CONNEXT_LOG_DEBUG_A("data available: condition=%p, reader=%p\n",
         (void*)self, (void*)reader);
@@ -3649,9 +3649,9 @@ RMW_Connext_DataWriterListener_offered_deadline_missed(
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdPublisherStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(writer);
-    
+
     self->on_offered_deadline_missed(status);
 }
 
@@ -3663,7 +3663,7 @@ RMW_Connext_DataWriterListener_offered_incompatible_qos(
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdPublisherStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(writer);
 
     self->on_offered_incompatible_qos(status);
@@ -3677,7 +3677,7 @@ RMW_Connext_DataWriterListener_liveliness_lost(
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
         reinterpret_cast<RMW_Connext_StdPublisherStatusCondition*>(listener_data);
-    
+
     UNUSED_ARG(writer);
 
     self->on_liveliness_lost(status);
@@ -3895,7 +3895,8 @@ RMW_Connext_StdWaitSet::detach(
             else
             {
                 RMW_CONNEXT_LOG_DEBUG_A(
-                    "[wait] active subscriber: sub=%p\n",(void*)sub);
+                    "[wait] active subscriber: sub=%p\n",
+                    reinterpret_cast<void*>(sub))
                 active_conditions += 1;
             }
         }
@@ -4120,7 +4121,7 @@ RMW_Connext_StdSubscriberStatusCondition::install(
 
     rmw_connextdds_configure_subscriber_condition_listener(
         sub, this, &listener, &listener_mask);
-    
+
     if (DDS_RETCODE_OK !=
             DDS_DataReader_set_listener(
                 sub->reader(), &listener, listener_mask))
@@ -4355,7 +4356,7 @@ RMW_Connext_StdPublisherStatusCondition::install(
         DDS_OFFERED_DEADLINE_MISSED_STATUS |
         DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
         DDS_LIVELINESS_LOST_STATUS;
-    
+
     if (DDS_RETCODE_OK !=
             DDS_DataWriter_set_listener(
                 pub->writer(), &listener, listener_mask))
@@ -4380,7 +4381,7 @@ RMW_Connext_StdPublisherStatusCondition::RMW_Connext_StdPublisherStatusCondition
         DDS_OfferedIncompatibleQosStatus_INITIALIZER;
     const DDS_LivelinessLostStatus def_status_liveliness = 
         DDS_LivelinessLostStatus_INITIALIZER;
-    
+
     this->status_deadline = def_status_deadline;
     this->status_liveliness = def_status_liveliness;
     this->status_qos = def_status_qos;

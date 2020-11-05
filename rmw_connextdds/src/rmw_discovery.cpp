@@ -36,7 +36,7 @@ rmw_connextdds_attach_reader_to_waitset(
         DDS_Entity_get_statuscondition(
             DDS_DataReader_as_entity(reader));
     DDS_Condition *const cond = DDS_StatusCondition_as_condition(status_cond);
-    
+
     if (DDS_RETCODE_OK !=
             DDS_StatusCondition_set_enabled_statuses(
                 status_cond, DDS_DATA_AVAILABLE_STATUS))
@@ -60,7 +60,7 @@ void
 rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
 {
     RMW_CONNEXT_LOG_DEBUG("[discovery thread] starting up...")
-    
+
     RMW_Connext_Subscriber *const sub_partinfo =
         reinterpret_cast<RMW_Connext_Subscriber*>(ctx->common.sub->data);
 
@@ -71,7 +71,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
 
     bool attached_exit = false,
          attached_partinfo = false;
-    
+
     RMW_Connext_StdGuardCondition *const gcond_exit =
         reinterpret_cast<RMW_Connext_StdGuardCondition*>(
             ctx->common.listener_thread_gc->data);   
@@ -87,7 +87,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
     DDS_Condition *cond_dcps_part = nullptr,
                   *cond_dcps_pub = nullptr,
                   *cond_dcps_sub = nullptr;
-    
+
     size_t attached_conditions = 0;
 
     DDS_WaitSet *waitset = DDS_WaitSet_new();
@@ -154,7 +154,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
     }
     attached_partinfo = true;
     attached_conditions += 1;
-    
+
     if (!DDS_ConditionSeq_set_maximum(&active_conditions, attached_conditions))
     {
         RMW_CONNEXT_LOG_ERROR("failed to set condition seq maximum")

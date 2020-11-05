@@ -51,7 +51,7 @@ extern "C" rmw_ret_t rmw_destroy_guard_condition(
         guard_condition_handle->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("destroying guard condition: %p",
         (void*)guard_condition_handle->data)
     return rmw_connextdds_destroy_guard_condition(guard_condition_handle);
@@ -67,10 +67,10 @@ extern "C" rmw_ret_t rmw_trigger_guard_condition(
         guard_condition_handle->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("triggering guard condition: %p",
         (void*)guard_condition_handle)
-    
+
     return rmw_connextdds_trigger_guard_condition(guard_condition_handle);
 }
 
@@ -88,7 +88,7 @@ extern "C" rmw_wait_set_t * rmw_create_wait_set(
         context->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return nullptr);
-    
+
     rmw_wait_set_t *const ret = rmw_connextdds_create_waitset(max_conditions);
     RMW_CONNEXT_LOG_DEBUG_A("new waitset: %p", (void*)ret)
     return ret;
@@ -102,7 +102,7 @@ extern "C" rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * rmw_ws)
         rmw_ws->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("destroying waitset: %p", (void*)rmw_ws)
 
     return rmw_connextdds_destroy_waitset(rmw_ws);

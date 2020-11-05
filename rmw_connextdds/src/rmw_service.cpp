@@ -174,7 +174,7 @@ extern "C" rmw_client_t * rmw_create_client(
             type_supports,
             service_name,
             qos_policies);
-    
+
     if (nullptr == client_impl)
     {
         RMW_CONNEXT_LOG_ERROR(
@@ -209,7 +209,7 @@ extern "C" rmw_client_t * rmw_create_client(
         const_cast<char *>(rmw_client->service_name),
         service_name,
         svc_name_len);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_on_client_created(ctx, node, client_impl))
     {
@@ -237,7 +237,7 @@ extern "C" rmw_ret_t rmw_destroy_client(
         client->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_Connext_Client *const client_impl =
         reinterpret_cast<RMW_Connext_Client*>(client->data);
 
@@ -259,7 +259,7 @@ extern "C" rmw_ret_t rmw_destroy_client(
 
     rmw_free(const_cast<char *>(client->service_name));
     rmw_client_free(client);
-    
+
     return RMW_RET_OK;
 }
 
@@ -295,7 +295,7 @@ extern "C" rmw_service_t * rmw_create_service(
             type_supports,
             service_name,
             qos_policies);
-    
+
     if (nullptr == svc_impl)
     {
         RMW_CONNEXT_LOG_ERROR(
@@ -330,7 +330,7 @@ extern "C" rmw_service_t * rmw_create_service(
         const_cast<char *>(rmw_service->service_name),
         service_name,
         svc_name_len);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_on_service_created(ctx, node, svc_impl))
     {
@@ -358,7 +358,7 @@ extern "C" rmw_ret_t rmw_destroy_service(
         service->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_Connext_Service *const svc_impl =
         reinterpret_cast<RMW_Connext_Service *>(service->data);
 
@@ -380,6 +380,6 @@ extern "C" rmw_ret_t rmw_destroy_service(
 
     rmw_free(const_cast<char *>(service->service_name));
     rmw_service_free(service);
-    
+
     return RMW_RET_OK;
 }

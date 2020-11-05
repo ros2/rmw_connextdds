@@ -88,7 +88,7 @@ rmw_connextdds_initialize_participant_factory(
 {
     DDS_DomainParticipantFactory *factory = NULL;
     RT_Registry_T *registry = NULL;
-    
+
     struct OSAPI_LogProperty log_prop;
 
     const char *const whsm_name = DDSHST_WRITER_DEFAULT_HISTORY_NAME,
@@ -201,7 +201,7 @@ rmw_connextdds_initialize_participant_factory(
     }
 
     ctx_api->udp_property =  new (std::nothrow) UDP_InterfaceFactoryProperty();
-    
+
     if (nullptr == ctx_api->udp_property)
     {
         RMW_CONNEXT_LOG_ERROR("failed to allocate UDP Transport property")
@@ -225,7 +225,7 @@ rmw_connextdds_initialize_participant_factory(
     const char *env_udp_intf = nullptr;
     const char *lookup_rc =
         rcutils_get_env(RMW_CONNEXT_ENV_UDP_INTERFACE, &env_udp_intf);
-    
+
     if (nullptr != lookup_rc || nullptr == env_udp_intf)
     {
         RMW_CONNEXT_LOG_ERROR_A("failed to lookup from environment: "
@@ -250,7 +250,7 @@ rmw_connextdds_initialize_participant_factory(
 
     *DDS_StringSeq_get_reference(&ctx_api->udp_property->allow_interface, 0) = 
             udp_intf;
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("UDP interface: %s", udp_intf)
 
     if (!RT_Registry_register(registry,
@@ -425,7 +425,7 @@ rmw_connextdds_finalize_participant_factory(
         }
         ctx_api->rt_rhsm = false;
     }
-    
+
     if (nullptr != ctx_api->udp_property)
     {
         UDP_InterfaceFactoryProperty_finalize(ctx_api->udp_property);
@@ -444,9 +444,9 @@ rmw_connextdds_initialize_participant_qos_impl(
     DDS_DomainParticipantQos *const dp_qos)
 {
     UNUSED_ARG(ctx);
-    
+
     /* TODO(asorbini:) Store enclave's name in USER_DATA field */
-    
+
     /*  TODO(asorbini) Configure DDS Security options */
 
     size_t max_transports = 1;
@@ -497,10 +497,10 @@ rmw_connextdds_initialize_participant_qos_impl(
     seq_ref = 
         REDA_StringSeq_get_reference(
             &dp_qos->user_traffic.enabled_transports, 0);
-    
+
     std::ostringstream udp_ss;
     udp_ss << NETIO_DEFAULT_UDP_NAME << "://";
-    
+
     *seq_ref = REDA_String_dup(udp_ss.str().c_str());
     if (nullptr == *seq_ref)
     {
@@ -513,7 +513,7 @@ rmw_connextdds_initialize_participant_qos_impl(
             &dp_qos->user_traffic.enabled_transports, 1);
     std::ostringstream shmem_ss;
     shmem_ss << NETIO_DEFAULT_SHMEM_NAME << "://";
-    
+
     *seq_ref = REDA_String_dup(shmem_ss.str().c_str());
     if (nullptr == *seq_ref)
     {
@@ -524,39 +524,39 @@ rmw_connextdds_initialize_participant_qos_impl(
     /* Increate Participant resource limits */
     dp_qos->resource_limits.local_type_allocation =
         RMW_CONNEXT_LIMIT_TYPES_LOCAL_MAX;
-    
+
     dp_qos->resource_limits.local_topic_allocation =
         RMW_CONNEXT_LIMIT_TOPICS_LOCAL_MAX;
-    
+
     dp_qos->resource_limits.local_reader_allocation =
         RMW_CONNEXT_LIMIT_READERS_LOCAL_MAX;
-    
+
     dp_qos->resource_limits.local_writer_allocation =
         RMW_CONNEXT_LIMIT_WRITERS_LOCAL_MAX;
 
     dp_qos->resource_limits.remote_participant_allocation =
         RMW_CONNEXT_LIMIT_PARTICIPANTS_REMOTE_MAX;
-    
+
     dp_qos->resource_limits.remote_writer_allocation =
         RMW_CONNEXT_LIMIT_WRITERS_REMOTE_MAX;
-    
+
     dp_qos->resource_limits.remote_reader_allocation =
         RMW_CONNEXT_LIMIT_READERS_REMOTE_MAX;
-    
+
     dp_qos->resource_limits.local_publisher_allocation = 1;
 
     dp_qos->resource_limits.local_subscriber_allocation = 1;
-    
+
     dp_qos->resource_limits.matching_reader_writer_pair_allocation =
         dp_qos->resource_limits.local_reader_allocation *
         dp_qos->resource_limits.remote_writer_allocation *
         dp_qos->resource_limits.remote_participant_allocation;
-    
+
     dp_qos->resource_limits.matching_writer_reader_pair_allocation =
         dp_qos->resource_limits.local_writer_allocation *
         dp_qos->resource_limits.remote_reader_allocation *
         dp_qos->resource_limits.remote_participant_allocation;
-    
+
     if (!RT_ComponentFactoryId_set_name(
             &dp_qos->discovery.discovery.name, "dpde"))
     {
@@ -626,7 +626,7 @@ rmw_connextdds_get_qos_policies(
         resource_limits->max_samples_per_instance,
         resource_limits->max_samples,
         resource_limits->max_instances);
-    
+
     if (nullptr != reader_resource_limits)
     {
         reader_resource_limits->max_remote_writers = 
@@ -810,7 +810,7 @@ rmw_connextdds_create_datawriter(
     DDS_DataWriter *const writer =
             DDS_Publisher_create_datawriter(
                 pub, topic, dw_qos, NULL, DDS_STATUS_MASK_NONE);
-    
+
     return writer;
 }
 
@@ -858,7 +858,7 @@ rmw_connextdds_write_message(
     int64_t *const sn_out)
 {
     UNUSED_ARG(sn_out);
-    
+
     if (DDS_RETCODE_OK !=
             DDS_DataWriter_write(pub->writer(), message, &DDS_HANDLE_NIL))
     {
@@ -992,7 +992,7 @@ rmw_connextdds_ih_to_gid(
     static_assert(
         RMW_GID_STORAGE_SIZE >= sizeof(guid),
         "rmw_gid_t type too small for an RTI Connext DDS Micro GUID");
-    
+
     memset(&gid, 0, sizeof(gid));
     gid.implementation_identifier = RMW_CONNEXTDDS_ID;
     gid.data[0] = guid.prefix.host_id;
@@ -1015,7 +1015,7 @@ RMW_Connext_DataReaderListener_before_sample_commit_drop_local(
 
     RMW_Connext_StdSubscriberStatusCondition *const self =
         (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
-    
+
     *dropped = memcmp(
                 self->drop_handle().octet,
                 sample_info->publication_handle.octet,

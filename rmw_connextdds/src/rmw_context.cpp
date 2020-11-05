@@ -35,10 +35,10 @@ rmw_connextdds_initialize_participant_factory_qos(
     DDS_DomainParticipantFactory *const factory)
 {
     UNUSED_ARG(ctx);
-    
+
     DDS_DomainParticipantFactoryQos qos =
         DDS_DomainParticipantFactoryQos_INITIALIZER;
-    
+
     if (DDS_RETCODE_OK != 
             DDS_DomainParticipantFactory_get_qos(factory, &qos))
     {
@@ -83,7 +83,7 @@ rmw_connextdds_initialize_participant_qos(
     const char *initial_peer = nullptr;
     const char *lookup_rc =
         rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEER, &initial_peer);
-    
+
     if (nullptr != lookup_rc || nullptr == initial_peer)
     {
         RMW_CONNEXT_LOG_ERROR_A("failed to lookup from environment: "
@@ -231,7 +231,7 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
                         &pub_qos,
                         NULL,
                         DDS_STATUS_MASK_NONE);
-    
+
     if (nullptr == this->dds_pub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create DDS publisher")
@@ -267,7 +267,7 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
                         &sub_qos,
                         NULL,
                         DDS_STATUS_MASK_NONE);
-    
+
     if (nullptr == this->dds_sub)
     {
         RMW_CONNEXT_LOG_ERROR("failed to create DDS subscriber")
@@ -315,7 +315,7 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
         this->clean_up();
         return RMW_RET_ERROR;
     }
-    
+
     RMW_CONNEXT_LOG_DEBUG("RMW context initialized")
 
     return RMW_RET_OK;
@@ -698,7 +698,7 @@ extern "C" rmw_ret_t rmw_init(
     }
 
     context->impl->domain_id = actual_domain_id;
-    
+
 #if RMW_CONNEXT_HAVE_OPTIONS
     scope_exit_context_finalize.cancel();
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
@@ -718,7 +718,7 @@ extern "C" rmw_ret_t rmw_shutdown(rmw_context_t * context)
         context->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     context->impl->is_shutdown = true;
     return RMW_RET_OK;
 }
@@ -735,7 +735,7 @@ extern "C" rmw_ret_t rmw_context_fini(rmw_context_t * context)
         context->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     if (!context->impl->is_shutdown)
     {
         RMW_CONNEXT_LOG_ERROR("context has not been shutdown")

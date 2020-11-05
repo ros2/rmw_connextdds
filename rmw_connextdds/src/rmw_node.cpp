@@ -62,7 +62,7 @@ extern "C" rmw_node_t * rmw_create_node(
         context->impl,
         "expected initialized context",
         return nullptr);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("creating new node: name=%s, ns=%s", name, ns)
 
     rmw_context_impl_t *ctx = context->impl;
@@ -179,7 +179,7 @@ extern "C" rmw_node_t * rmw_create_node(
             }
             rmw_node_free(rmw_node);
         });
-    
+
     const size_t name_len = strlen(name) + 1;
     rmw_node->name =
         static_cast<const char *>(
@@ -230,13 +230,13 @@ extern "C" rmw_ret_t rmw_destroy_node(rmw_node_t * rmw_node)
         rmw_node->implementation_identifier,
         RMW_CONNEXTDDS_ID,
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-    
+
     RMW_CONNEXT_LOG_DEBUG_A("destroying node: %p", (void*)rmw_node)
-    
+
     rmw_context_impl_t *ctx = rmw_node->context->impl;
     RMW_Connext_Node *const node_impl =
         reinterpret_cast<RMW_Connext_Node *>(rmw_node->data);
-    
+
     if (RMW_RET_OK !=
             rmw_connextdds_graph_on_node_deleted(ctx, rmw_node))
     {
@@ -270,7 +270,7 @@ rmw_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
 
     RMW_Connext_Node *const node_impl =
         reinterpret_cast<RMW_Connext_Node *>(rmw_node->data);
-    
+
     return node_impl->graph_guard_condition();
 }
 

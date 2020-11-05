@@ -126,7 +126,6 @@ class RMW_Connext_Subscriber;
 class RMW_Connext_StdWaitSet
 {
 public:
-
     RMW_Connext_StdWaitSet()
     : waiting(false)
     { }
@@ -141,7 +140,6 @@ public:
         const rmw_time_t *const wait_timeout);
 
 protected:
-
     void
     attach(
         rmw_subscriptions_t *const subs,
@@ -150,7 +148,7 @@ protected:
         rmw_clients_t *const cls,
         rmw_events_t *const evs,
         bool &already_active);
-    
+
     void
     detach(
         rmw_subscriptions_t *const subs,
@@ -211,7 +209,6 @@ protected:
 class RMW_Connext_StdGuardCondition : public RMW_Connext_StdCondition
 {
 public:
-
     explicit RMW_Connext_StdGuardCondition(const bool internal = false)
     : trigger_value(false),
       internal(internal),
@@ -314,7 +311,6 @@ RMW_Connext_DataWriterListener_liveliness_lost(
 class RMW_Connext_StdPublisherStatusCondition : public RMW_Connext_StdStatusCondition
 {
 public:
-
     RMW_Connext_StdPublisherStatusCondition();
 
     bool
@@ -329,21 +325,21 @@ public:
         void *listener_data,
         DDS_DataWriter *writer,
         const struct DDS_OfferedDeadlineMissedStatus *status);
-    
+
     friend
     void
     RMW_Connext_DataWriterListener_offered_incompatible_qos(
         void *listener_data,
         DDS_DataWriter *writer,
         const struct DDS_OfferedIncompatibleQosStatus *status);
-    
+
     friend
     void
     RMW_Connext_DataWriterListener_liveliness_lost(
         void *listener_data,
         DDS_DataWriter *writer,
         const struct DDS_LivelinessLostStatus *status);
-    
+
     rmw_ret_t
     install(RMW_Connext_Publisher *const pub);
 
@@ -379,7 +375,7 @@ protected:
         RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
     DDS_LivelinessLostStatus status_liveliness
         RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
-    
+
     RMW_Connext_Publisher *pub;
 };
 
@@ -415,7 +411,6 @@ RMW_Connext_DataReaderListener_on_data_available(
 class RMW_Connext_StdSubscriberStatusCondition : public RMW_Connext_StdStatusCondition
 {
 public:
-
     RMW_Connext_StdSubscriberStatusCondition();
 
     bool
@@ -437,7 +432,7 @@ public:
         void *listener_data,
         DDS_DataReader *reader,
         const struct DDS_RequestedIncompatibleQosStatus *status);
-    
+
     friend
     void
     RMW_Connext_DataReaderListener_liveliness_changed(
@@ -451,13 +446,13 @@ public:
         void *listener_data,
         DDS_DataReader *reader,
         const struct DDS_SampleLostStatus *status);
-    
+
     friend
     void
     RMW_Connext_DataReaderListener_on_data_available(
         void *listener_data,
         DDS_DataReader *reader);
-    
+
     rmw_ret_t
     install(RMW_Connext_Subscriber *const sub);
 
@@ -479,7 +474,7 @@ public:
             this->waitset_condition->notify_one();
         }
     }
-    
+
     void
     on_requested_deadline_missed(
         const DDS_RequestedDeadlineMissedStatus *const status);
@@ -553,7 +548,6 @@ class RMW_Connext_Node
 #endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 public:
-    
     static
     RMW_Connext_Node*
     create(rmw_context_impl_t *const ctx);
@@ -579,9 +573,7 @@ public:
 
 class RMW_Connext_Publisher
 {
-
 public:
-
     static
     RMW_Connext_Publisher*
     create(
@@ -599,7 +591,7 @@ public:
         const void *const intro_members = nullptr,
         const bool intro_members_cpp = false,
         std::string *const type_name = nullptr);
-    
+
     rmw_ret_t
     finalize();
 
@@ -672,13 +664,13 @@ public:
     rmw_ret_t
     offered_incompatible_qos_status(
         rmw_offered_qos_incompatible_event_status_t *const status);
-    
+
     bool
     has_status(const DDS_StatusMask status_mask);
 
     rmw_ret_t
     enable_status(const DDS_StatusMask status_mask);
-    
+
     rmw_ret_t
     disable_status(const DDS_StatusMask status_mask);
 
@@ -727,7 +719,7 @@ private:
         DDS_DataWriter *const dds_writer,
         RMW_Connext_MessageTypeSupport *const type_support,
         const bool created_topic);
-    
+
     DDS_Topic* dds_topic()
     {
         return DDS_DataWriter_get_topic(this->dds_writer);
@@ -744,7 +736,6 @@ private:
 
         return DDS_Publisher_get_participant(pub);
     }
-
 };
 
 
@@ -774,7 +765,6 @@ rmw_connextdds_destroy_publisher(
 class RMW_Connext_Subscriber
 {
 public:
-
     static
     RMW_Connext_Subscriber*
     create(
@@ -794,7 +784,7 @@ public:
         const void *const intro_members = nullptr,
         const bool intro_members_cpp = false,
         std::string *const type_name = nullptr);
-    
+
     rmw_ret_t
     finalize();
 
@@ -950,7 +940,7 @@ public:
         const size_t max_samples,
         size_t *const taken);
 #endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
-    
+
     rmw_ret_t
     take_serialized(
         rmw_serialized_message_t *const serialized_message,
@@ -1049,7 +1039,7 @@ private:
         RMW_Connext_MessageTypeSupport *const type_support,
         const bool ignore_local,
         const bool created_topic);
-    
+
     DDS_Subscriber* dds_subscriber()
     {
         return DDS_DataReader_get_subscriber(this->dds_reader);
@@ -1116,7 +1106,7 @@ public:
         const rosidl_service_type_support_t *const type_supports,
         const char *const svc_name,
         const rmw_qos_profile_t *const qos_policies);
-    
+
     rmw_ret_t
     finalize();
 
@@ -1128,12 +1118,12 @@ public:
         rmw_service_info_t *const request_header,
         void *const ros_response,
         bool *const taken);
-    
+
     rmw_ret_t
     send_request(
         const void *const ros_request,
         int64_t *const sequence_id);
-    
+
     RMW_Connext_Publisher*
     publisher() const
     {
@@ -1163,7 +1153,7 @@ public:
         const rosidl_service_type_support_t *const type_supports,
         const char *const svc_name,
         const rmw_qos_profile_t *const qos_policies);
-    
+
     rmw_ret_t
     finalize();
 
@@ -1172,12 +1162,12 @@ public:
         rmw_service_info_t *const request_header,
         void *const ros_request,
         bool *const taken);
-    
+
     rmw_ret_t
     send_response(
         rmw_request_id_t *const request_id,
         const void *const ros_response);
-    
+
     RMW_Connext_Publisher*
     publisher() const
     {
@@ -1209,7 +1199,6 @@ dds_event_to_str(const DDS_StatusKind event);
 class RMW_Connext_Event
 {
 public:
-    
     static
     rmw_ret_t
     enable(rmw_event_t *const event);
@@ -1292,7 +1281,7 @@ class RMW_Connext_WaitSet
     std::vector<rmw_event_t *> attached_events;
     std::vector<RMW_Connext_Subscriber *> attached_event_subscribers;
     std::vector<RMW_Connext_Publisher *> attached_event_publishers;
-    
+
     struct DDS_ConditionSeq active_conditions;
 
     template<typename T>
@@ -1301,7 +1290,7 @@ class RMW_Connext_WaitSet
         const std::vector<T *> &attached_els,
         const size_t new_els_count,
         void **const new_els);
-    
+
     rmw_ret_t
     attach(
         rmw_subscriptions_t * subs,
@@ -1309,12 +1298,11 @@ class RMW_Connext_WaitSet
         rmw_services_t * srvs,
         rmw_clients_t * cls,
         rmw_events_t * evs);
-    
+
     rmw_ret_t
     detach();
 
 public:
-
     static
     RMW_Connext_WaitSet*
     create();
@@ -1481,4 +1469,4 @@ rmw_connextdds_readerwriter_qos_to_ros(
     const DDS_LivelinessQosPolicy *const liveliness,
     rmw_qos_profile_t *const qos_policies);
 
-#endif // RMW_CONNEXTDDS__RMW_IMPL_HPP_
+#endif  // RMW_CONNEXTDDS__RMW_IMPL_HPP_

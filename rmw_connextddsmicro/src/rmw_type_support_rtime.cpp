@@ -51,8 +51,8 @@ struct RMW_Connext_RtimeTypePluginI
         DDS_TypePluginDefault *const plugin =
             reinterpret_cast<DDS_TypePluginDefault *>(self);
 
-        RMW_Connext_RtimeTypePluginI *const intf =
-            reinterpret_cast<RMW_Connext_RtimeTypePluginI*>(plugin->_parent._intf);
+        const RMW_Connext_RtimeTypePluginI *const intf =
+            reinterpret_cast<const RMW_Connext_RtimeTypePluginI*>(plugin->_parent._intf);
 
         return intf->_type_support;
     }
@@ -164,8 +164,8 @@ RMW_Connext_EncapsulationPlugin_serialize(
 
     /* the following pointers are cached here for convenience,
        but they are only accessed when appropriate */
-    rcutils_uint8_array_t *const user_buffer =
-            reinterpret_cast<rcutils_uint8_array_t *>(msg->user_data);
+    const rcutils_uint8_array_t *const user_buffer =
+            reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
     rcutils_uint8_array_t *const msg_buffer_unbound =
             reinterpret_cast<rcutils_uint8_array_t *>(&tbuf[1]);
     uint8_t *const msg_buffer_bound = reinterpret_cast<uint8_t *>(&tbuf[1]);

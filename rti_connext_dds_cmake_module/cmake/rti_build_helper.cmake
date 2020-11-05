@@ -154,6 +154,7 @@ function(rti_build_connextmicro)
 
     set(RTIME_CMAKE_ROOT            ${CMAKE_CURRENT_BINARY_DIR}/rtime/${RTIME_TARGET_NAME})
     set(RTIME_BUILD_ROOT            ${CMAKE_CURRENT_BINARY_DIR}/rtime/build)
+    set(RTIME_CMAKE_INSTALL         true)
 
     add_subdirectory(${RTIMEHOME} rtime)
 
@@ -167,15 +168,9 @@ function(rti_build_connextmicro)
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
     
-    # set_target_properties(rti_me${rti_lib_sfx}
-    #     PROPERTIES
-    #         INTERFACE_INCLUDE_DIRECTORIES
-    #             "${RTIMEHOME}/include;${RTIMEHOME}/src/reda/sequence")
-    
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
-    set(RTIMEHOME_FOUND false PARENT_SCOPE)
-    set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
-    set(RTIME_TARGETS "" PARENT_SCOPE)
+    set(RTIMEHOME_FOUND true PARENT_SCOPE)
+    set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
 endfunction()
 
 ################################################################################

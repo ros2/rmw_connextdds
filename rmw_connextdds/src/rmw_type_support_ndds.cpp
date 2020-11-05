@@ -160,7 +160,7 @@ RMW_Connext_Uint8ArrayPtr_copy(
     rcutils_uint8_array_t **dst,
     const rcutils_uint8_array_t **src)
 {
-    *dst = reinterpret_cast<rcutils_uint8_array_t*>(*src);
+    *dst = const_cast<rcutils_uint8_array_t*>(*src);
     return RTI_TRUE;
 }
 
@@ -486,8 +486,8 @@ RMW_Connext_TypePlugin_serialize(
         return RTI_FALSE;
     }
 
-    RMW_Connext_Message *const msg =
-        reinterpret_cast<RMW_Connext_Message *>(sample);
+    const RMW_Connext_Message *const msg =
+        reinterpret_cast<const RMW_Connext_Message *>(sample);
 
     rcutils_uint8_array_t data_buffer;
     data_buffer.allocator = rcutils_get_default_allocator();
@@ -508,8 +508,8 @@ RMW_Connext_TypePlugin_serialize(
     }
     else
     {
-        rcutils_uint8_array_t *const user_buffer =
-            reinterpret_cast<rcutils_uint8_array_t *>(msg->user_data);
+        const rcutils_uint8_array_t *const user_buffer =
+            reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
         if (RCUTILS_RET_OK !=
                 rcutils_uint8_array_copy(&data_buffer, user_buffer))
         {
@@ -649,12 +649,13 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     RMW_Connext_MessageTypeSupport *const type_support =
         reinterpret_cast<RMW_Connext_MessageTypeSupport*>(epd->userData);
     
-    RMW_Connext_Message *const msg = reinterpret_cast<RMW_Connext_Message*>(sample);
+    const RMW_Connext_Message *const msg =
+        reinterpret_cast<const RMW_Connext_Message*>(sample);
     
     if (msg->serialized)
     {
-        rcutils_uint8_array_t *const serialized_msg = 
-            reinterpret_cast<rcutils_uint8_array_t *>(msg->user_data);
+        const rcutils_uint8_array_t *const serialized_msg = 
+            reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
         current_alignment += serialized_msg->buffer_length;
     }
     else

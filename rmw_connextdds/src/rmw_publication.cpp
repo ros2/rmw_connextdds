@@ -208,7 +208,7 @@ extern "C" rmw_ret_t rmw_get_gid_for_publisher(
     RMW_CHECK_ARGUMENT_FOR_NULL(gid, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Publisher *const pub_impl =
-        (RMW_Connext_Publisher*)publisher->data;
+        reinterpret_cast<RMW_Connext_Publisher*>(publisher->data);
 
     *gid = *pub_impl->gid();
 
@@ -255,7 +255,7 @@ extern "C" rmw_ret_t rmw_publisher_count_matched_subscriptions(
     RMW_CHECK_ARGUMENT_FOR_NULL(subscription_count, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Publisher *const pub_impl =
-        (RMW_Connext_Publisher*)publisher->data;
+        reinterpret_cast<RMW_Connext_Publisher*>(publisher->data);
 
     *subscription_count = pub_impl->subscriptions_count();
 
@@ -273,7 +273,7 @@ extern "C" rmw_ret_t rmw_publisher_assert_liveliness(
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
     RMW_Connext_Publisher *const pub_impl =
-        (RMW_Connext_Publisher*)publisher->data;
+        reinterpret_cast<RMW_Connext_Publisher*>(publisher->data);
 
     return pub_impl->assert_liveliness();
 }
@@ -292,7 +292,7 @@ extern "C" rmw_ret_t rmw_publisher_get_actual_qos(
     RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Publisher *const pub_impl =
-        (RMW_Connext_Publisher*)publisher->data;
+        reinterpret_cast<RMW_Connext_Publisher*>(publisher->data);
     
     return pub_impl->qos(qos);
 }
@@ -340,7 +340,7 @@ extern "C" rmw_ret_t rmw_destroy_publisher(
 
     if (RMW_RET_OK !=
             rmw_connextdds_graph_on_publisher_deleted(
-                ctx, node, (RMW_Connext_Publisher*)publisher->data))
+                ctx, node, reinterpret_cast<RMW_Connext_Publisher*>(publisher->data)))
     {
         RMW_CONNEXT_LOG_ERROR("failed to update graph for publisher")
         return RMW_RET_ERROR;

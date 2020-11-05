@@ -149,7 +149,7 @@ extern "C" rmw_ret_t rmw_subscription_count_matched_publishers(
     RMW_CHECK_ARGUMENT_FOR_NULL(publisher_count, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
 
     *publisher_count = sub_impl->publications_count();
 
@@ -170,7 +170,7 @@ extern "C" rmw_ret_t rmw_subscription_get_actual_qos(
     RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
     
     return sub_impl->qos(qos);
 }
@@ -193,7 +193,7 @@ extern "C" rmw_ret_t rmw_destroy_subscription(
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
     
     rmw_context_impl_t *ctx = node->context->impl;
 
@@ -226,7 +226,7 @@ extern "C" rmw_ret_t rmw_take(
     UNUSED_ARG(allocation);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
     
     rmw_ret_t rc = sub_impl->take_message(ros_message, nullptr, taken);
     
@@ -253,7 +253,7 @@ extern "C" rmw_ret_t rmw_take_with_info(
     UNUSED_ARG(allocation);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
 
     rmw_ret_t rc = sub_impl->take_message(ros_message, message_info, taken);
     
@@ -284,7 +284,7 @@ extern "C" rmw_ret_t rmw_take_sequence(
     UNUSED_ARG(allocation);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
 
     rmw_ret_t rc = sub_impl->take(
                     message_sequence, message_info_sequence, count, taken);;
@@ -312,7 +312,7 @@ extern "C" rmw_ret_t rmw_take_serialized_message(
     UNUSED_ARG(allocation);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
 
     return sub_impl->take_serialized(serialized_message, nullptr, taken);
 }
@@ -337,7 +337,7 @@ extern "C" rmw_ret_t rmw_take_serialized_message_with_info(
     UNUSED_ARG(allocation);
 
     RMW_Connext_Subscriber *const sub_impl =
-        (RMW_Connext_Subscriber*)subscription->data;
+        reinterpret_cast<RMW_Connext_Subscriber*>(subscription->data);
 
     return sub_impl->take_serialized(serialized_message, message_info, taken);
 }

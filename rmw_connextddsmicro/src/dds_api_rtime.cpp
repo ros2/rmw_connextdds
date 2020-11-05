@@ -445,9 +445,9 @@ rmw_connextdds_initialize_participant_qos_impl(
 {
     UNUSED_ARG(ctx);
     
-    /* TODO Store enclave's name in USER_DATA field */
+    /* TODO(asorbini:) Store enclave's name in USER_DATA field */
     
-    /*  TODO Configure DDS Security options */
+    /*  TODO(asorbini) Configure DDS Security options */
 
     size_t max_transports = 1;
 #if RMW_CONNEXT_TRANSPORT_SHMEM

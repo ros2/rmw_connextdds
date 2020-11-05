@@ -107,7 +107,7 @@ endif()
 
 
 if(WIN32)
-    # TODO implement support for Windows
+    # TODO(asorbini): implement support for Windows
     # ament_environment_hooks(env_hook/rti_connext_dds.bat.in)
 else()
     ament_environment_hooks(

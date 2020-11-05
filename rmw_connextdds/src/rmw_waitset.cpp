@@ -125,7 +125,7 @@ extern "C" rmw_ret_t rmw_wait(
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
     RMW_Connext_StdWaitSet *const ws_impl =
-        (RMW_Connext_StdWaitSet*)wait_set->data;
+        reinterpret_cast<RMW_Connext_StdWaitSet*>(wait_set->data);
 
     return ws_impl->wait(subs, gcs, srvs, cls, evs, wait_timeout);
 }

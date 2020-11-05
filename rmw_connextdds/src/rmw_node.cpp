@@ -235,7 +235,7 @@ extern "C" rmw_ret_t rmw_destroy_node(rmw_node_t * rmw_node)
     
     rmw_context_impl_t *ctx = rmw_node->context->impl;
     RMW_Connext_Node *const node_impl =
-        (RMW_Connext_Node *)rmw_node->data;
+        reinterpret_cast<RMW_Connext_Node *>(rmw_node->data);
     
     if (RMW_RET_OK !=
             rmw_connextdds_graph_on_node_deleted(ctx, rmw_node))
@@ -269,7 +269,7 @@ rmw_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
         return nullptr);
 
     RMW_Connext_Node *const node_impl =
-        (RMW_Connext_Node *)rmw_node->data;
+        reinterpret_cast<RMW_Connext_Node *>(rmw_node->data);
     
     return node_impl->graph_guard_condition();
 }

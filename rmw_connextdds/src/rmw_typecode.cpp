@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <string>
+
 #include "rmw_connextdds/typecode.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
 
@@ -44,7 +46,7 @@ RMW_Connext_TypeCodePtr_copy(
     DDS_TypeCode **dst,
     const DDS_TypeCode **src)
 {
-    *dst = (DDS_TypeCode*)*src;
+    *dst = reinterpret_cast<DDS_TypeCode*>*src;
     return RTI_TRUE;
 }
 
@@ -314,9 +316,9 @@ rmw_connextdds_convert_type_member(
             rmw_connextdds_type_id_ros_to_dds(member->type_id_);
         
         el_tc =
-            /* TODO refactor out this cast */
-            (DDS_TypeCode*)
-                DDS_TypeCodeFactory_get_primitive_tc(tc_factory, dds_type_id);
+            /* TODO(asorbini): refactor out this cast */
+            reinterpret_cast<DDS_TypeCode*>(
+                DDS_TypeCodeFactory_get_primitive_tc(tc_factory, dds_type_id));
         break;
     }
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_STRING:
@@ -380,8 +382,8 @@ rmw_connextdds_convert_type_member(
         if (cpp_version)
         {
             type_name = rmw_connextdds_create_type_name(
-                (rosidl_typesupport_introspection_cpp::MessageMembers*)
-                    type_support_intro->data, true /* mangle_names */);
+                reinterpret_cast<rosidl_typesupport_introspection_cpp::MessageMembers*>(
+                    type_support_intro->data), true /* mangle_names */);
         }
         else
         {
@@ -590,8 +592,8 @@ rmw_connextdds_create_typecode(
     if (cpp_version)
     {
         rosidl_typesupport_introspection_cpp::MessageMembers *const members =
-            (rosidl_typesupport_introspection_cpp::MessageMembers*)
-                intro_members;
+            reinterpret_cast<rosidl_typesupport_introspection_cpp::MessageMembers*>(
+                intro_members);
         
         if (RMW_RET_OK !=
                 rmw_connextdds_convert_type_members(
@@ -605,7 +607,7 @@ rmw_connextdds_create_typecode(
     else
     {
         rosidl_typesupport_introspection_c__MessageMembers *const members =
-            (rosidl_typesupport_introspection_c__MessageMembers*)intro_members;
+            reinterpret_cast<rosidl_typesupport_introspection_c__MessageMembers*>(intro_members);
         
         if (RMW_RET_OK !=
                 rmw_connextdds_convert_type_members(

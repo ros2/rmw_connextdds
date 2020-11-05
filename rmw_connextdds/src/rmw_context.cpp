@@ -16,12 +16,12 @@
  *
  ******************************************************************************/
 
+#include <functional>
+#include <memory>
+
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
-
-#include <functional>
-#include <memory>
 
 /******************************************************************************
  * Context Implementation
@@ -198,7 +198,7 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
 
     /* Create readers for DDS built-in topics for monitoring discovery */
 
-    /* TODO Micro doesn't provide access to Discovery endpoints */
+    /* TODO(asorbini): Micro doesn't provide access to Discovery endpoints */
 
     /* Create DDS publisher/subscriber objects that will be used for all DDS writers/readers
         to be created for RMW publishers/subscriptions. */

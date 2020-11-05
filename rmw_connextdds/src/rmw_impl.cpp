@@ -19,6 +19,8 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
 #include "rmw_connextdds/graph_cache.hpp"
 
@@ -278,7 +280,7 @@ rmw_connextdds_get_readerwriter_qos(
     }
 
     // Make sure that resource limits are consistent with history qos
-    // TODO do not overwrite if using non-default QoS
+    // TODO(asorbini): do not overwrite if using non-default QoS
     if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
         history->depth > 1 &&
         resource_limits->max_samples_per_instance == DDS_LENGTH_UNLIMITED)
@@ -292,7 +294,7 @@ rmw_connextdds_get_readerwriter_qos(
         }
     }
 
-    // TODO enable ASYNC publish_mode for both Pro and Micro
+    // TODO(asorbini): enable ASYNC publish_mode for both Pro and Micro
     UNUSED_ARG(publish_mode);
 
     return RMW_RET_OK;
@@ -934,7 +936,7 @@ rmw_connextdds_create_publisher(
         [rmw_publisher]() {
             if (nullptr != rmw_publisher->topic_name)
             {
-                rmw_free((char*)rmw_publisher->topic_name);
+                rmw_free(const_cast<char*>(rmw_publisher->topic_name));
             }
             rmw_publisher_free(rmw_publisher);
         });
@@ -1554,9 +1556,9 @@ RMW_Connext_Subscriber::take_next(
                 this->loan_next++)
         {
             rcutils_uint8_array_t *data_buffer =
-                (rcutils_uint8_array_t *)
+                reinterpret_cast<rcutils_uint8_array_t *>(
                     DDS_UntypedSampleSeq_get_reference(
-                        &this->loan_data, this->loan_next);
+                        &this->loan_data, this->loan_next));
             DDS_SampleInfo *info =
                     DDS_SampleInfoSeq_get_reference(
                         &this->loan_info, this->loan_next);
@@ -1581,7 +1583,7 @@ RMW_Connext_Subscriber::take_next(
                 {
                     if (RCUTILS_RET_OK !=
                             rcutils_uint8_array_copy(
-                                (rcutils_uint8_array_t*)ros_message,
+                                reinterpret_cast<rcutils_uint8_array_t*>(ros_message),
                                 data_buffer))
                     {
                         RMW_CONNEXT_LOG_ERROR("failed to copy uint8 array")
@@ -1594,7 +1596,7 @@ RMW_Connext_Subscriber::take_next(
                     if (this->type_support->type_requestreply())
                     {
                         RMW_Connext_RequestReplyMessage *const rr_msg = 
-                            (RMW_Connext_RequestReplyMessage*)ros_message;
+                            reinterpret_cast<RMW_Connext_RequestReplyMessage*>(ros_message);
                         
                         DDS_SampleIdentity_t identity,
                                              related_sample_identity;
@@ -1704,7 +1706,7 @@ rmw_connextdds_create_subscriber(
         [rmw_subscriber]() {
             if (nullptr != rmw_subscriber->topic_name)
             {
-                rmw_free((char*)rmw_subscriber->topic_name);
+                rmw_free(const_cast<char*>(rmw_subscriber->topic_name));
             }
             rmw_subscription_free(rmw_subscriber);
         });
@@ -1833,7 +1835,7 @@ rmw_connextdds_destroy_guard_condition(
     rmw_guard_condition_t *const gcond_handle)
 {
     RMW_Connext_StdGuardCondition *const gcond =
-        (RMW_Connext_StdGuardCondition*)gcond_handle->data;
+        reinterpret_cast<RMW_Connext_StdGuardCondition*>(gcond_handle->data);
     
     delete gcond;
 
@@ -1847,7 +1849,7 @@ rmw_connextdds_trigger_guard_condition(
     const rmw_guard_condition_t *const gcond_handle)
 {
     RMW_Connext_StdGuardCondition *const gcond =
-        (RMW_Connext_StdGuardCondition*)gcond_handle->data;
+        reinterpret_cast<RMW_Connext_StdGuardCondition*>(gcond_handle->data);
     
     gcond->trigger();
     
@@ -1936,9 +1938,9 @@ RMW_Connext_WaitSet::detach()
             "waitset=%p, "
             "condition=%p, "
             "sub=%p",
-            (void*)this->waitset,
-            (void*)cond,
-            (void*)subscriber)
+            reinterpret_cast<void*>(this->waitset),
+            reinterpret_cast<void*>(cond),
+            reinterpret_cast<void*>(subscriber))
     }
     for (auto && condition : this->attached_conditions)
     {
@@ -1955,8 +1957,8 @@ RMW_Connext_WaitSet::detach()
         RMW_CONNEXT_LOG_DEBUG_A("[wait] detached guard condition: "
             "waitset=%p, "
             "condition=%p",
-            (void*)this->waitset,
-            (void*)cond)
+            reinterpret_cast<void*>(this->waitset),
+            reinterpret_cast<void*>(cond))
     }
     for (auto && subscriber : this->attached_event_subscribers)
     {
@@ -1974,9 +1976,9 @@ RMW_Connext_WaitSet::detach()
             "waitset=%p, "
             "condition=%p, "
             "sub=%p",
-            (void*)this->waitset,
-            (void*)subscriber->condition(),
-            (void*)subscriber)
+            reinterpret_cast<void*>(this->waitset),
+            reinterpret_cast<void*>(subscriber->condition()),
+            reinterpret_cast<void*>(subscriber))
     }
     for (auto && publisher : this->attached_event_publishers)
     {
@@ -1994,9 +1996,9 @@ RMW_Connext_WaitSet::detach()
             "waitset=%p, "
             "condition=%p, "
             "pub=%p",
-            (void*)this->waitset,
-            (void*)publisher->condition(),
-            (void*)publisher)
+            reinterpret_cast<void*>(this->waitset),
+            reinterpret_cast<void*>(publisher->condition()),
+            reinterpret_cast<void*>(publisher))
     }
     for (auto && event : this->attached_events)
     {
@@ -2011,9 +2013,9 @@ RMW_Connext_WaitSet::detach()
             "waitset=%p, "
             "condition=%p, "
             "event=%p",
-            (void*)this->waitset,
-            (void*)RMW_Connext_Event::condition(event),
-            (void*)event)
+            reinterpret_cast<void*>(this->waitset),
+            reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
+            reinterpret_cast<void*>(event))
     }
     for (auto && service : this->attached_services)
     {
@@ -2031,9 +2033,9 @@ RMW_Connext_WaitSet::detach()
             "waitset=%p, "
             "condition=%p, "
             "service=%p",
-            (void*)this->waitset,
-            (void*)cond,
-            (void*)service)
+            reinterpret_cast<void*>(this->waitset),
+            reinterpret_cast<void*>(cond),
+            reinterpret_cast<void*>(service))
     }
     for (auto && client : this->attached_clients)
     {
@@ -2051,9 +2053,9 @@ RMW_Connext_WaitSet::detach()
             "waitset=%p, "
             "condition=%p, "
             "client=%p",
-            (void*)this->waitset,
-            (void*)cond,
-            (void*)client)
+            reinterpret_cast<void*>(this->waitset),
+            reinterpret_cast<void*>(cond),
+            reinterpret_cast<void*>(client))
     }
 
     this->attached_subscribers.resize(0);
@@ -2106,9 +2108,6 @@ RMW_Connext_WaitSet::attach(
                 refresh_attach_evs ||
                 refresh_attach_srvs ||
                 refresh_attach_cls;
-
-    /* TODO make a scope exit guard which detaches all attached elements
-       upon error */
 
     if (refresh_attach)
     {
@@ -2167,9 +2166,9 @@ RMW_Connext_WaitSet::attach(
                     "waitset=%p, "
                     "condition=%p, "
                     "sub=%p",
-                    (void*)this->waitset,
-                    (void*)cond,
-                    (void*)el)
+                    reinterpret_cast<void*>(this->waitset),
+                    reinterpret_cast<void*>(cond),
+                    reinterpret_cast<void*>(el))
             }
         }
         if (nullptr != gcs && gcs->guard_condition_count > 0)
@@ -2205,7 +2204,8 @@ RMW_Connext_WaitSet::attach(
 
             for (size_t i = 0; i < evs->event_count; i++)
             {
-                rmw_event_t *const event = (rmw_event_t *) evs->events[i];
+                rmw_event_t *const event =
+                    reinterpret_cast<rmw_event_t *>(evs->events[i]);
                 
                 if (RMW_RET_OK != RMW_Connext_Event::enable(event))
                 {
@@ -2260,10 +2260,10 @@ RMW_Connext_WaitSet::attach(
                             "condition=%p, "
                             "event=%p, "
                             "sub=%p",
-                            (void*)this->waitset,
-                            (void*)RMW_Connext_Event::condition(event),
-                            (void*)event,
-                            (void*)RMW_Connext_Event::subscriber(event))
+                            reinterpret_cast<void*>(this->waitset),
+                            reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
+                            reinterpret_cast<void*>(event),
+                            reinterpret_cast<void*>(RMW_Connext_Event::subscriber(event)))
                     }
                     else
                     {
@@ -2277,10 +2277,10 @@ RMW_Connext_WaitSet::attach(
                             "condition=%p, "
                             "event=%p, "
                             "pub=%p",
-                            (void*)this->waitset,
-                            (void*)RMW_Connext_Event::condition(event),
-                            (void*)event,
-                            (void*)RMW_Connext_Event::publisher(event))
+                            reinterpret_cast<void*>(this->waitset),
+                            reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
+                            reinterpret_cast<void*>(event),
+                            reinterpret_cast<void*>(RMW_Connext_Event::publisher(event)))
                     }
                     
                     attached_count += 1;
@@ -2295,10 +2295,10 @@ RMW_Connext_WaitSet::attach(
                             "condition=%p, "
                             "event=%p, "
                             "sub=%p",
-                            (void*)this->waitset,
-                            (void*)RMW_Connext_Event::condition(event),
-                            (void*)event,
-                            (void*)RMW_Connext_Event::subscriber(event))
+                            reinterpret_cast<void*>(this->waitset),
+                            reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
+                            reinterpret_cast<void*>(event),
+                            reinterpret_cast<void*>(RMW_Connext_Event::subscriber(event)))
                     }
                     else
                     {
@@ -2308,10 +2308,10 @@ RMW_Connext_WaitSet::attach(
                             "condition=%p, "
                             "event=%p, "
                             "pub=%p",
-                            (void*)this->waitset,
-                            (void*)RMW_Connext_Event::condition(event),
-                            (void*)event,
-                            (void*)RMW_Connext_Event::publisher(event))
+                            reinterpret_cast<void*>(this->waitset),
+                            reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
+                            reinterpret_cast<void*>(event),
+                            reinterpret_cast<void*>(RMW_Connext_Event::publisher(event)))
                     }
                 }
                 
@@ -2320,9 +2320,9 @@ RMW_Connext_WaitSet::attach(
                     "waitset=%p, "
                     "condition=%p, "
                     "event=%p",
-                    (void*)this->waitset,
-                    (void*)RMW_Connext_Event::condition(event),
-                    (void*)event)
+                    reinterpret_cast<void*>(this->waitset),
+                    reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
+                    reinterpret_cast<void*>(event))
             }
         }
 
@@ -2351,9 +2351,9 @@ RMW_Connext_WaitSet::attach(
                     "waitset=%p, "
                     "condition=%p, "
                     "service=%p",
-                    (void*)this->waitset,
-                    (void*)cond,
-                    (void*)el)
+                    reinterpret_cast<void*>(this->waitset),
+                    reinterpret_cast<void*>(cond),
+                    reinterpret_cast<void*>(el))
             }
         }
 
@@ -2382,9 +2382,9 @@ RMW_Connext_WaitSet::attach(
                     "waitset=%p, "
                     "condition=%p, "
                     "client=%p",
-                    (void*)this->waitset,
-                    (void*)cond,
-                    (void*)el)
+                    reinterpret_cast<void*>(this->waitset),
+                    reinterpret_cast<void*>(cond),
+                    reinterpret_cast<void*>(el))
             }
         }
 
@@ -2446,7 +2446,7 @@ RMW_Connext_WaitSet::wait(
     }
 
     RMW_CONNEXT_LOG_DEBUG_A("[wait] BEGIN: waitset=%p, timeout=[%ds, %uns]",
-        (void*)this->waitset, wait_duration.sec, wait_duration.nanosec)
+        reinterpret_cast<void*>(this->waitset), wait_duration.sec, wait_duration.nanosec)
 
     wait_rc = DDS_WaitSet_wait(
             this->waitset, &this->active_conditions, &wait_duration);
@@ -2456,11 +2456,11 @@ RMW_Connext_WaitSet::wait(
         if (DDS_RETCODE_TIMEOUT != wait_rc)
         {
             RMW_CONNEXT_LOG_ERROR_A("[wait] failed! waitset=%p",
-                (void*)this->waitset)
+                reinterpret_cast<void*>(this->waitset))
             goto done;
         }
         RMW_CONNEXT_LOG_DEBUG_A("[wait] timed out: waitset=%p",
-            (void*)this->waitset)
+            reinterpret_cast<void*>(this->waitset))
         timedout = true;
     }
     else
@@ -2468,7 +2468,7 @@ RMW_Connext_WaitSet::wait(
         active_len = DDS_ConditionSeq_get_length(&this->active_conditions);
         
         RMW_CONNEXT_LOG_DEBUG_A("[wait] waitset=%p, active=%lu",
-            (void*)this->waitset, active_len)
+            reinterpret_cast<void*>(this->waitset), active_len)
     }
 
     RMW_CONNEXT_ASSERT(timedout || active_len > 0)
@@ -2500,7 +2500,7 @@ RMW_Connext_WaitSet::wait(
     for (size_t i = 0; nullptr != gcs && i < gcs->guard_condition_count; i++)
     {
         DDS_GuardCondition *const gcond =
-            (DDS_GuardCondition*) gcs->guard_conditions[i];
+            reinterpret_cast<DDS_GuardCondition*>(gcs->guard_conditions[i]);
         
         trigger_if_active(DDS_GuardCondition_as_condition(gcond),
         /* on active */
@@ -2508,8 +2508,8 @@ RMW_Connext_WaitSet::wait(
             RMW_CONNEXT_LOG_DEBUG_A("[wait] active guard condition: "
                 "waitset=%p, "
                 "condition=%p",
-                (void*)this->waitset,
-                (void*)gcond)
+                reinterpret_cast<void*>(this->waitset),
+                reinterpret_cast<void*>(gcond))
             
             if (DDS_RETCODE_OK !=
                     DDS_GuardCondition_set_trigger_value(
@@ -2528,7 +2528,7 @@ RMW_Connext_WaitSet::wait(
     for (size_t i = 0; nullptr != subs && i < subs->subscriber_count; i++)
     {
         RMW_Connext_Subscriber *const sub =
-            (RMW_Connext_Subscriber*) subs->subscribers[i];
+            reinterpret_cast<RMW_Connext_Subscriber*>(subs->subscribers[i]);
         
         trigger_if_active(sub->condition(),
         /* on active */
@@ -2544,9 +2544,9 @@ RMW_Connext_WaitSet::wait(
                     "waitset=%p, "
                     "condition=%p, "
                     "sub=%p",
-                    (void*)this->waitset,
-                    (void*)sub->condition(),
-                    (void*)sub)
+                    reinterpret_cast<void*>(this->waitset),
+                    reinterpret_cast<void*>(sub->condition()),
+                    reinterpret_cast<void*>(sub))
             }
         },
         /* on inactive */
@@ -2557,7 +2557,8 @@ RMW_Connext_WaitSet::wait(
 
     for (size_t i = 0; nullptr != evs && i < evs->event_count; i++)
     {
-        rmw_event_t *const event = (rmw_event_t *) evs->events[i];
+        rmw_event_t *const event =
+            reinterpret_cast<rmw_event_t *>(evs->events[i]);
         
         trigger_if_active(RMW_Connext_Event::condition(event),
         /* on active */
@@ -2573,9 +2574,9 @@ RMW_Connext_WaitSet::wait(
                     "waitset=%p, "
                     "condition=%p, "
                     "event=%p",
-                    (void*)this->waitset,
-                    (void*)RMW_Connext_Event::condition(event),
-                    (void*)event)
+                    reinterpret_cast<void*>(this->waitset),
+                    reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
+                    reinterpret_cast<void*>(event))
             }
         },
         /* on inactive */
@@ -2587,7 +2588,7 @@ RMW_Connext_WaitSet::wait(
     for (size_t i = 0; nullptr != cls && i < cls->client_count; i++)
     {
         RMW_Connext_Client *const client =
-            (RMW_Connext_Client*) cls->clients[i];
+            reinterpret_cast<RMW_Connext_Client*<(cls->clients[i]);
         
         trigger_if_active(client->subscriber()->condition(),
         /* on active */
@@ -2596,9 +2597,9 @@ RMW_Connext_WaitSet::wait(
                 "waitset=%p, "
                 "condition=%p, "
                 "client=%p",
-                (void*)this->waitset,
-                (void*)client->subscriber()->condition(),
-                (void*)client)
+                reinterpret_cast<void*>(this->waitset),
+                reinterpret_cast<void*>(client->subscriber()->condition()),
+                reinterpret_cast<void*>(client))
         },
         /* on inactive */
         {
@@ -2609,7 +2610,7 @@ RMW_Connext_WaitSet::wait(
     for (size_t i = 0; nullptr != srvs && i < srvs->service_count; i++)
     {
         RMW_Connext_Service *const service =
-            (RMW_Connext_Service*) srvs->services[i];
+            reinterpret_cast<RMW_Connext_Service*>(srvs->services[i]);
         
         trigger_if_active(service->subscriber()->condition(),
         /* on active */
@@ -2618,9 +2619,9 @@ RMW_Connext_WaitSet::wait(
                 "waitset=%p, "
                 "condition=%p, "
                 "service=%p",
-                (void*)this->waitset,
-                (void*)service->subscriber()->condition(),
-                (void*)service)
+                reinterpret_cast<void*>(this->waitset),
+                reinterpret_cast<void*>(service->subscriber()->condition()),
+                reinterpret_cast<void*>(service))
         },
         /* on inactive */
         {
@@ -2634,7 +2635,7 @@ RMW_Connext_WaitSet::wait(
             "waitset=%p, "
             "triggered=%lu, "
             "active=%lu",
-            (void*)this->waitset,
+            reinterpret_cast<void*>(this->waitset),
             triggered_len,
             active_len)
         goto done;
@@ -2689,7 +2690,7 @@ rmw_ret_t
 rmw_connextdds_destroy_waitset(rmw_wait_set_t *const rmw_ws)
 {
     RMW_Connext_StdWaitSet *const ws_impl =
-        (RMW_Connext_StdWaitSet*)rmw_ws->data;
+        reinterpret_cast<RMW_Connext_StdWaitSet*>(rmw_ws->data);
 
     delete ws_impl;
 
@@ -2716,7 +2717,7 @@ rmw_connextdds_waitset_wait(
         return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
     RMW_Connext_StdWaitSet *const ws_impl =
-        (RMW_Connext_StdWaitSet*)rmw_ws->data;
+        reinterpret_cast<RMW_Connext_StdWaitSet*>(rmw_ws->data);
     
     return ws_impl->wait(subs, gcs, srvs, cls, evs, wait_timeout);
 }
@@ -3066,7 +3067,7 @@ RMW_Connext_Client::create(
 rmw_ret_t
 RMW_Connext_Client::is_service_available(bool &available)
 {
-    /* TODO check that we actually have at least one service matched by both
+    /* TODO(asorbini): check that we actually have at least one service matched by both
        request writer and response reader */
     available = (this->request_pub->subscriptions_count() > 0 &&
                     this->reply_sub->publications_count() > 0);
@@ -3114,10 +3115,10 @@ RMW_Connext_Client::take_response(
             "gid=%08X.%08X.%08X.%08X, "
             "sn=%lu",
             this->reply_sub->message_type_support()->type_name(),
-            ((uint32_t*)rr_msg.gid.data)[0],
-            ((uint32_t*)rr_msg.gid.data)[1],
-            ((uint32_t*)rr_msg.gid.data)[2],
-            ((uint32_t*)rr_msg.gid.data)[3],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[0],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[1],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[2],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[3],
             rr_msg.sn)
     }
 
@@ -3140,16 +3141,16 @@ RMW_Connext_Client::send_request(
     rr_msg.sn = -1;
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
     rr_msg.gid = *this->request_pub->gid();
-    rr_msg.payload = (void*)ros_request;
+    rr_msg.payload = reinterpret_cast<void*>(ros_request);
 
     RMW_CONNEXT_LOG_DEBUG_A("[%s] send REQUEST: "
             "gid=%08X.%08X.%08X.%08X, "
             "sn=%lu",
             this->request_pub->message_type_support()->type_name(),
-            ((uint32_t*)rr_msg.gid.data)[0],
-            ((uint32_t*)rr_msg.gid.data)[1],
-            ((uint32_t*)rr_msg.gid.data)[2],
-            ((uint32_t*)rr_msg.gid.data)[3],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[0],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[1],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[2],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[3],
             rr_msg.sn)
     
     return this->request_pub->write(&rr_msg, false /* serialized */, sequence_id);
@@ -3353,10 +3354,10 @@ RMW_Connext_Service::take_request(
             "gid=%08X.%08X.%08X.%08X, "
             "sn=%lu",
             this->request_sub->message_type_support()->type_name(),
-            ((uint32_t*)rr_msg.gid.data)[0],
-            ((uint32_t*)rr_msg.gid.data)[1],
-            ((uint32_t*)rr_msg.gid.data)[2],
-            ((uint32_t*)rr_msg.gid.data)[3],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[0],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[1],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[2],
+            reinterpret_cast<uint32_t*>(rr_msg.gid.data)[3],
             rr_msg.sn)
     }
 
@@ -3373,16 +3374,16 @@ RMW_Connext_Service::send_response(
     rr_msg.sn = request_id->sequence_number;
     memcpy(rr_msg.gid.data, request_id->writer_guid, 16);
     rr_msg.gid.implementation_identifier = RMW_CONNEXTDDS_ID;
-    rr_msg.payload = (void*)ros_response;
+    rr_msg.payload = reinterpret_cast<void*>(ros_response);
 
     RMW_CONNEXT_LOG_DEBUG_A("[%s] send RESPONSE: "
         "gid=%08X.%08X.%08X.%08X, "
         "sn=%lu",
         this->reply_pub->message_type_support()->type_name(),
-        ((uint32_t*)rr_msg.gid.data)[0],
-        ((uint32_t*)rr_msg.gid.data)[1],
-        ((uint32_t*)rr_msg.gid.data)[2],
-        ((uint32_t*)rr_msg.gid.data)[3],
+        reinterpret_cast<uint32_t*>(rr_msg.gid.data)[0],
+        reinterpret_cast<uint32_t*>(rr_msg.gid.data)[1],
+        reinterpret_cast<uint32_t*>(rr_msg.gid.data)[2],
+        reinterpret_cast<uint32_t*>(rr_msg.gid.data)[3],
         rr_msg.sn)
 
     return this->reply_pub->write(&rr_msg, false /* serialized */);
@@ -3577,7 +3578,7 @@ RMW_Connext_DataReaderListener_requested_deadline_missed(
     const struct DDS_RequestedDeadlineMissedStatus *status)
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
-        (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(reader);
 
@@ -3591,7 +3592,7 @@ RMW_Connext_DataReaderListener_requested_incompatible_qos(
     const struct DDS_RequestedIncompatibleQosStatus *status)
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
-        (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(reader);
 
@@ -3605,7 +3606,7 @@ RMW_Connext_DataReaderListener_liveliness_changed(
     const struct DDS_LivelinessChangedStatus *status)
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
-        (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(reader);
 
@@ -3619,7 +3620,7 @@ RMW_Connext_DataReaderListener_sample_lost(
     const struct DDS_SampleLostStatus *status)
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
-        (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(reader);
 
@@ -3632,7 +3633,7 @@ RMW_Connext_DataReaderListener_on_data_available(
     DDS_DataReader *reader)
 {
     RMW_Connext_StdSubscriberStatusCondition *const self =
-        (RMW_Connext_StdSubscriberStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(reader);
     RMW_CONNEXT_LOG_DEBUG_A("data available: condition=%p, reader=%p\n",
@@ -3647,7 +3648,7 @@ RMW_Connext_DataWriterListener_offered_deadline_missed(
     const struct DDS_OfferedDeadlineMissedStatus *status)
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
-        (RMW_Connext_StdPublisherStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(writer);
     
@@ -3661,7 +3662,7 @@ RMW_Connext_DataWriterListener_offered_incompatible_qos(
     const struct DDS_OfferedIncompatibleQosStatus *status)
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
-        (RMW_Connext_StdPublisherStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(writer);
 
@@ -3675,7 +3676,7 @@ RMW_Connext_DataWriterListener_liveliness_lost(
     const struct DDS_LivelinessLostStatus *status)
 {
     RMW_Connext_StdPublisherStatusCondition *const self =
-        (RMW_Connext_StdPublisherStatusCondition*)listener_data;
+        reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition*>(listener_data);
     
     UNUSED_ARG(writer);
 
@@ -3696,7 +3697,7 @@ RMW_Connext_StdWaitSet::on_condition_active(
         for (size_t i = 0; i < subs->subscriber_count; ++i)
         {
             RMW_Connext_Subscriber *const sub =
-                (RMW_Connext_Subscriber*)subs->subscribers[i];
+                reinterpret_cast<RMW_Connext_Subscriber*>(subs->subscribers[i]);
             if (sub->has_data())
             {
                 return true;
@@ -3709,7 +3710,7 @@ RMW_Connext_StdWaitSet::on_condition_active(
         for (size_t i = 0; i < cls->client_count; ++i)
         {
             RMW_Connext_Client *const client =
-                (RMW_Connext_Client*)cls->clients[i];
+                reinterpret_cast<RMW_Connext_Client*>(cls->clients[i]);
             if (client->subscriber()->has_data())
             {
                 return true;
@@ -3722,7 +3723,7 @@ RMW_Connext_StdWaitSet::on_condition_active(
         for (size_t i = 0; i < srvs->service_count; ++i)
         {
             RMW_Connext_Service *const svc =
-                (RMW_Connext_Service*)srvs->services[i];
+                reinterpret_cast<RMW_Connext_Service*>(srvs->services[i]);
             if (svc->subscriber()->has_data())
             {
                 return true;
@@ -3734,7 +3735,8 @@ RMW_Connext_StdWaitSet::on_condition_active(
     {
         for (size_t i = 0; i < evs->event_count; ++i)
         {
-            rmw_event_t *const event = (rmw_event_t*)evs->events[i];
+            rmw_event_t *const event =
+                reinterpret_cast<rmw_event_t*>(evs->events[i]);
             if (RMW_Connext_Event::reader_event(event))
             {
                 auto sub = RMW_Connext_Event::subscriber(event);
@@ -3759,7 +3761,7 @@ RMW_Connext_StdWaitSet::on_condition_active(
         for (size_t i = 0; i < gcs->guard_condition_count; ++i)
         {
             RMW_Connext_StdGuardCondition *const gcond =
-                (RMW_Connext_StdGuardCondition*)gcs->guard_conditions[i];
+                reinterpret_cast<RMW_Connext_StdGuardCondition*>(gcs->guard_conditions[i]);
             if (gcond->has_triggered())
             {
                 return true;
@@ -3785,7 +3787,7 @@ RMW_Connext_StdWaitSet::attach(
         for (size_t i = 0; i < subs->subscriber_count; ++i)
         {
             RMW_Connext_Subscriber *const sub =
-                (RMW_Connext_Subscriber*)subs->subscribers[i];
+                reinterpret_cast<RMW_Connext_Subscriber*>(subs->subscribers[i]);
             if (sub->has_data())
             {
                 wait_active = true;
@@ -3800,7 +3802,7 @@ RMW_Connext_StdWaitSet::attach(
         for (size_t i = 0; i < cls->client_count; ++i)
         {
             RMW_Connext_Client *const client =
-                (RMW_Connext_Client*)cls->clients[i];
+                reinterpret_cast<RMW_Connext_Client*>(cls->clients[i]);
             if (client->subscriber()->has_data())
             {
                 wait_active = true;
@@ -3815,7 +3817,7 @@ RMW_Connext_StdWaitSet::attach(
         for (size_t i = 0; i < srvs->service_count; ++i)
         {
             RMW_Connext_Service *const svc =
-                (RMW_Connext_Service*)srvs->services[i];
+                reinterpret_cast<RMW_Connext_Service*>(srvs->services[i]);
             if (svc->subscriber()->has_data())
             {
                 wait_active = true;
@@ -3829,7 +3831,8 @@ RMW_Connext_StdWaitSet::attach(
     {
         for (size_t i = 0; i < evs->event_count; ++i)
         {
-            rmw_event_t *const event = (rmw_event_t*)evs->events[i];
+            rmw_event_t *const event =
+                reinterpret_cast<rmw_event_t*>(evs->events[i]);
             if (RMW_Connext_Event::reader_event(event))
             {
                 auto sub = RMW_Connext_Event::subscriber(event);
@@ -3858,7 +3861,7 @@ RMW_Connext_StdWaitSet::attach(
         for (size_t i = 0; i < gcs->guard_condition_count; ++i)
         {
             RMW_Connext_StdGuardCondition *const gcond =
-                (RMW_Connext_StdGuardCondition*)gcs->guard_conditions[i];
+                reinterpret_cast<RMW_Connext_StdGuardCondition*>(gcs->guard_conditions[i]);
             if (gcond->has_triggered())
             {
                 wait_active = true;
@@ -3883,7 +3886,7 @@ RMW_Connext_StdWaitSet::detach(
         for (size_t i = 0; i < subs->subscriber_count; ++i)
         {
             RMW_Connext_Subscriber *const sub =
-                (RMW_Connext_Subscriber*)subs->subscribers[i];
+                reinterpret_cast<RMW_Connext_Subscriber*>(subs->subscribers[i]);
             sub->detach();
             if (!sub->has_data())
             {
@@ -3903,7 +3906,7 @@ RMW_Connext_StdWaitSet::detach(
         for (size_t i = 0; i < cls->client_count; ++i)
         {
             RMW_Connext_Client *const client =
-                (RMW_Connext_Client*)cls->clients[i];
+                reinterpret_cast<RMW_Connext_Client*>(cls->clients[i]);
             client->subscriber()->detach();
             if (!client->subscriber()->has_data())
             {
@@ -3923,7 +3926,7 @@ RMW_Connext_StdWaitSet::detach(
         for (size_t i = 0; i < srvs->service_count; ++i)
         {
             RMW_Connext_Service *const svc =
-                (RMW_Connext_Service*)srvs->services[i];
+                reinterpret_cast<RMW_Connext_Service*>(srvs->services[i]);
             svc->subscriber()->detach();
             if (!svc->subscriber()->has_data())
             {
@@ -3942,7 +3945,8 @@ RMW_Connext_StdWaitSet::detach(
     {
         for (size_t i = 0; i < evs->event_count; ++i)
         {
-            rmw_event_t *const event = (rmw_event_t*)evs->events[i];
+            rmw_event_t *const event =
+                reinterpret_cast<rmw_event_t*>(evs->events[i]);
             if (RMW_Connext_Event::reader_event(event))
             {
                 auto sub = RMW_Connext_Event::subscriber(event);
@@ -3981,7 +3985,7 @@ RMW_Connext_StdWaitSet::detach(
         for (size_t i = 0; i < gcs->guard_condition_count; ++i)
         {
             RMW_Connext_StdGuardCondition *const gcond =
-                (RMW_Connext_StdGuardCondition*)gcs->guard_conditions[i];
+                reinterpret_cast<RMW_Connext_StdGuardCondition*>(gcs->guard_conditions[i]);
             gcond->detach();
             if (!gcond->trigger_check())
             {
@@ -4043,7 +4047,7 @@ RMW_Connext_StdWaitSet::wait(
             "srvs=%lu, "
             "cls=%lu, "
             "evs=%lu\n",
-            (void*)this,
+            reinterpret_cast<void*>(this),
             (nullptr != subs)? subs->subscriber_count : 0,
             (nullptr != gcs)? gcs->guard_condition_count : 0,
             (nullptr != srvs)? srvs->service_count : 0,
@@ -4138,9 +4142,7 @@ RMW_Connext_StdSubscriberStatusCondition::RMW_Connext_StdSubscriberStatusConditi
       triggered_data(false),
       listener_drop_handle(DDS_HANDLE_NIL),
       sub(nullptr)
-{
-
-}
+{ }
 
 bool
 RMW_Connext_StdSubscriberStatusCondition::has_status(
@@ -4165,7 +4167,7 @@ RMW_Connext_StdSubscriberStatusCondition::has_status(
         return this->triggered_sample_lost;
     }
     default:
-        /* TODO assert unreachable */
+        RMW_CONNEXT_ASSERT(0)
         return false;
     }
 }
@@ -4181,7 +4183,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
     case RMW_EVENT_LIVELINESS_CHANGED:
     {
         rmw_liveliness_changed_status_t *status =
-            (rmw_liveliness_changed_status_t*)event_info;
+            reinterpret_cast<rmw_liveliness_changed_status_t*>(event_info);
         
         status->alive_count = this->status_liveliness.alive_count;
         status->alive_count_change =
@@ -4199,7 +4201,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
     {
         rmw_requested_deadline_missed_status_t * status =
-            (rmw_requested_deadline_missed_status_t *)event_info;
+            reinterpret_cast<rmw_requested_deadline_missed_status_t >(event_info);
         
         status->total_count = this->status_deadline.total_count;
         status->total_count_change =
@@ -4212,7 +4214,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
     {
         rmw_requested_qos_incompatible_event_status_t *const status =
-            (rmw_requested_qos_incompatible_event_status_t*)event_info;
+            reinterpret_cast<rmw_requested_qos_incompatible_event_status_t*>(event_info);
         
         status->total_count = this->status_qos.total_count;
         status->total_count_change =
@@ -4228,7 +4230,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
     case RMW_EVENT_MESSAGE_LOST:
     {
         rmw_message_lost_status_t *const status =
-            (rmw_message_lost_status_t*)event_info;
+            reinterpret_cast<void*><rmw_message_lost_status_t*>(event_info);
 
         status->total_count = this->status_sample_lost.total_count;
         status->total_count_change =
@@ -4239,7 +4241,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
         break;
     }
     default:
-        /* TODO assert unreachable */
+        RMW_CONNEXT_ASSERT(0)
         return false;
     }
 
@@ -4403,7 +4405,7 @@ RMW_Connext_StdPublisherStatusCondition::has_status(
         return this->triggered_qos;
     }
     default:
-        /* TODO assert unreachable */
+        RMW_CONNEXT_ASSERT(0)
         return false;
     }
 }
@@ -4419,7 +4421,7 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
     case RMW_EVENT_LIVELINESS_LOST:
     {
         rmw_liveliness_lost_status_t *status =
-            (rmw_liveliness_lost_status_t*)event_info;
+            reinterpret_cast<rmw_liveliness_lost_status_t*>(event_info);
         
         status->total_count = this->status_liveliness.total_count;
         status->total_count_change =
@@ -4432,7 +4434,7 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
     case RMW_EVENT_OFFERED_DEADLINE_MISSED:
     {
         rmw_offered_deadline_missed_status_t * status =
-            (rmw_offered_deadline_missed_status_t *)event_info;
+            reinterpret_cast<void*><rmw_offered_deadline_missed_status_t *>(event_info);
         
         status->total_count = this->status_deadline.total_count;
         status->total_count_change =
@@ -4445,7 +4447,7 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
     case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
     {
         rmw_offered_qos_incompatible_event_status_t *const status =
-            (rmw_offered_qos_incompatible_event_status_t*)event_info;
+            reinterpret_cast<rmw_offered_qos_incompatible_event_status_t*>(event_info);
         
         status->total_count = this->status_qos.total_count;
         status->total_count_change =
@@ -4459,7 +4461,7 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
         break;
     }
     default:
-        /* TODO assert unreachable */
+        RMW_CONNEXT_ASSERT(0)
         return false;
     }
 

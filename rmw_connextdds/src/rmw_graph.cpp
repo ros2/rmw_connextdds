@@ -145,13 +145,13 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t *const ctx)
 rmw_ret_t
 rmw_connextdds_graph_enable(rmw_context_impl_t *const ctx)
 {
-    auto pub = (RMW_Connext_Publisher*)ctx->common.pub->data;
+    auto pub = reinterpret_cast<RMW_Connext_Publisher*>(ctx->common.pub->data);
     if (RMW_RET_OK != pub->enable())
     {
         return RMW_RET_ERROR;
     }
 
-    auto sub = (RMW_Connext_Subscriber*)ctx->common.sub->data;
+    auto sub = reinterpret_cast<RMW_Connext_Subscriber*>(ctx->common.sub->data);
     if (RMW_RET_OK != sub->enable())
     {
         return RMW_RET_ERROR;
@@ -255,16 +255,17 @@ rmw_connextdds_graph_on_node_created(
         "dp_gid=%08X.%08X.%08X.%08X",
         node->namespace_,
         node->name,
-        ((uint32_t*)ctx->common.gid.data)[0],
-        ((uint32_t*)ctx->common.gid.data)[1],
-        ((uint32_t*)ctx->common.gid.data)[2],
-        ((uint32_t*)ctx->common.gid.data)[3])
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[0],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[1],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[2],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[3])
     rmw_dds_common::msg::ParticipantEntitiesInfo msg =
         ctx->common.graph_cache.add_node(
             ctx->common.gid, node->name, node->namespace_);
     
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         static_cast<void>(
             ctx->common.graph_cache.remove_node(
@@ -287,7 +288,8 @@ rmw_connextdds_graph_on_node_deleted(
             ctx->common.gid, node->name, node->namespace_);
     
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         return RMW_RET_ERROR;
     }
@@ -310,14 +312,14 @@ rmw_connextdds_graph_on_publisher_created(
         "gid=%08X.%08X.%08X.%08X",
         node->namespace_,
         node->name,
-        ((uint32_t*)ctx->common.gid.data)[0],
-        ((uint32_t*)ctx->common.gid.data)[1],
-        ((uint32_t*)ctx->common.gid.data)[2],
-        ((uint32_t*)ctx->common.gid.data)[3],
-        ((uint32_t*)gid.data)[0],
-        ((uint32_t*)gid.data)[1],
-        ((uint32_t*)gid.data)[2],
-        ((uint32_t*)gid.data)[3])
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[0],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[1],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[2],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[3],
+        reinterpret_cast<uint32_t*>(gid.data)[0],
+        reinterpret_cast<uint32_t*>(gid.data)[1],
+        reinterpret_cast<uint32_t*>(gid.data)[2],
+        reinterpret_cast<uint32_t*>(gid.data)[3])
     rmw_dds_common::msg::ParticipantEntitiesInfo msg =
         ctx->common.graph_cache.associate_writer(
             gid,
@@ -325,7 +327,8 @@ rmw_connextdds_graph_on_publisher_created(
             node->name,
             node->namespace_);
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         static_cast<void>(ctx->common.graph_cache.dissociate_writer(
             gid,
@@ -351,7 +354,8 @@ rmw_connextdds_graph_on_publisher_deleted(
                 node->name,
                 node->namespace_);
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         return RMW_RET_ERROR;
     }
@@ -372,14 +376,14 @@ rmw_connextdds_graph_on_subscriber_created(
         "gid=%08X.%08X.%08X.%08X",
         node->namespace_,
         node->name,
-        ((uint32_t*)ctx->common.gid.data)[0],
-        ((uint32_t*)ctx->common.gid.data)[1],
-        ((uint32_t*)ctx->common.gid.data)[2],
-        ((uint32_t*)ctx->common.gid.data)[3],
-        ((uint32_t*)gid.data)[0],
-        ((uint32_t*)gid.data)[1],
-        ((uint32_t*)gid.data)[2],
-        ((uint32_t*)gid.data)[3])
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[0],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[1],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[2],
+        reinterpret_cast<uint32_t*>(ctx->common.gid.data)[3],
+        reinterpret_cast<uint32_t*>(gid.data)[0],
+        reinterpret_cast<uint32_t*>(gid.data)[1],
+        reinterpret_cast<uint32_t*>(gid.data)[2],
+        reinterpret_cast<uint32_t*>(gid.data)[3])
     rmw_dds_common::msg::ParticipantEntitiesInfo msg =
         ctx->common.graph_cache.associate_reader(
             gid,
@@ -387,7 +391,8 @@ rmw_connextdds_graph_on_subscriber_created(
             node->name,
             node->namespace_);
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         static_cast<void>(ctx->common.graph_cache.dissociate_reader(
             gid,
@@ -413,7 +418,8 @@ rmw_connextdds_graph_on_subscriber_deleted(
             node->name,
             node->namespace_);
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         return RMW_RET_ERROR;
     }
@@ -443,7 +449,8 @@ rmw_connextdds_graph_on_service_created(
             node->namespace_);
     
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         (void)ctx->common.graph_cache.dissociate_writer(
                 pub_gid,
@@ -480,7 +487,8 @@ rmw_connextdds_graph_on_service_deleted(
             node->namespace_);
 
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         return RMW_RET_ERROR;
     }
@@ -509,7 +517,8 @@ rmw_connextdds_graph_on_client_created(
             node->namespace_);
     
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         (void)ctx->common.graph_cache.dissociate_writer(
                 pub_gid,
@@ -546,7 +555,8 @@ rmw_connextdds_graph_on_client_deleted(
             node->namespace_);
     
     if (RMW_RET_OK !=
-            rmw_connextdds_graph_publish_update(ctx, (void*)&msg))
+            rmw_connextdds_graph_publish_update(
+                ctx, reinterpret_cast<void*>(&msg)))
     {
         return RMW_RET_ERROR;
     }
@@ -596,15 +606,15 @@ rmw_connextdds_graph_add_participant(
     }
     
     std::string enclave;
-    /* TODO retrieve enclave from USER_DATA */
+    /* TODO(asorbini): retrieve enclave from USER_DATA */
 
     RMW_CONNEXT_LOG_DEBUG_A(
         "[discovery thread] assert participant: "
         "gid=0x%08X.0x%08X.0x%08X.0x%08X",
-        ((uint32_t*)dp_guid.value)[0],
-        ((uint32_t*)dp_guid.value)[1],
-        ((uint32_t*)dp_guid.value)[2],
-        ((uint32_t*)dp_guid.value)[3])
+        reinterpret_cast<uint32_t*>(dp_guid.value)[0],
+        reinterpret_cast<uint32_t*>(dp_guid.value)[1],
+        reinterpret_cast<uint32_t*>(dp_guid.value)[2],
+        reinterpret_cast<uint32_t*>(dp_guid.value)[3])
 
     std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
     ctx->common.graph_cache.add_participant(gid, enclave);
@@ -658,14 +668,14 @@ rmw_connextdds_graph_add_entity(
         "topic=%s, "
         "type=%s, "
         "reader=%d",
-        ((uint32_t*)dp_guid->value)[0],
-        ((uint32_t*)dp_guid->value)[1],
-        ((uint32_t*)dp_guid->value)[2],
-        ((uint32_t*)dp_guid->value)[3],
-        ((uint32_t*)endp_guid->value)[0],
-        ((uint32_t*)endp_guid->value)[1],
-        ((uint32_t*)endp_guid->value)[2],
-        ((uint32_t*)endp_guid->value)[3],
+        reinterpret_cast<uint32_t*>(dp_guid->value)[0],
+        reinterpret_cast<uint32_t*>(dp_guid->value)[1],
+        reinterpret_cast<uint32_t*>(dp_guid->value)[2],
+        reinterpret_cast<uint32_t*>(dp_guid->value)[3],
+        reinterpret_cast<uint32_t*>(endp_guid->value)[0],
+        reinterpret_cast<uint32_t*>(endp_guid->value)[1],
+        reinterpret_cast<uint32_t*>(endp_guid->value)[2],
+        reinterpret_cast<uint32_t*>(endp_guid->value)[3],
         topic_name,
         type_name,
         is_reader)

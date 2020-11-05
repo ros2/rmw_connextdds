@@ -145,8 +145,9 @@ rmw_connextdds_initialize_participant_qos_impl(
         return RMW_RET_ERROR;
     }
 
-    char *const user_data_ptr = (char*)
-        DDS_OctetSeq_get_contiguous_buffer(&dp_qos->user_data.value);
+    char *const user_data_ptr =
+        reinterpret_cast<char*>(
+            DDS_OctetSeq_get_contiguous_buffer(&dp_qos->user_data.value));
     
     const int user_data_rc =
         std::snprintf(
@@ -419,7 +420,7 @@ rmw_connextdds_write_message(
     if (pub->message_type_support()->type_requestreply())
     {
         RMW_Connext_RequestReplyMessage *const rr_msg = 
-            (RMW_Connext_RequestReplyMessage*)message->user_data;
+            reinterpret_cast<RMW_Connext_RequestReplyMessage*>(message->user_data);
         DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
 
         if (!rr_msg->request)
@@ -523,7 +524,7 @@ rmw_connextdds_take_samples(
     
     (void)RMW_Connext_Uint8ArrayPtrSeq_loan_contiguous
             (sub->data_seq(),
-            (rcutils_uint8_array_t**)data_buffer,
+            reinterpret_cast<rcutils_uint8_array_t**>(data_buffer),
             data_len,
             data_len);
     
@@ -534,8 +535,8 @@ rmw_ret_t
 rmw_connextdds_return_samples(
     RMW_Connext_Subscriber *const sub)
 {
-    void **data_buffer = (void**)
-        RMW_Connext_Uint8ArrayPtrSeq_get_contiguous_buffer(sub->data_seq());
+    void **data_buffer = reinterpret_cast<void**>(
+        RMW_Connext_Uint8ArrayPtrSeq_get_contiguous_buffer(sub->data_seq()));
     const size_t data_len =
         RMW_Connext_Uint8ArrayPtrSeq_get_length(sub->data_seq());
     
@@ -770,8 +771,8 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t *const ctx)
             
             if (!info->valid_data)
             {
-                /* TODO Check for instance_state != ALIVE to remove the remote
-                   participant from the graph_cache by calling:
+                /* TODO(asorbini): Check for instance_state != ALIVE to remove 
+                   the remote participant from the graph_cache by calling:
                    graph_cache.remove_participant(gid) */
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] ignored participant invalid data")
@@ -835,8 +836,8 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t *const ctx)
             
             if (!info->valid_data)
             {
-                /* TODO Check for instance_state != ALIVE to remove the remove
-                   endpoint from the graph_cache by calling:
+                /* TODO(asorbini): Check for instance_state != ALIVE to remove 
+                   the remove endpoint from the graph_cache by calling:
                    graph_cache.remove_entity(gid, is_reader = false) */
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] ignored publication invalid data")
@@ -912,8 +913,8 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t *const ctx)
             
             if (!info->valid_data)
             {
-                /* TODO Check for instance_state != ALIVE to remove the remove
-                   endpoint from the graph_cache by calling:
+                /* TODO(asorbini): Check for instance_state != ALIVE to remove
+                   the remove endpoint from the graph_cache by calling:
                    graph_cache.remove_entity(gid, is_reader = true) */
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] ignored subscription invalid data")

@@ -69,8 +69,7 @@ rcutils_uint8_array_copy(
     rcutils_uint8_array_t *const dst,
     const rcutils_uint8_array_t *const src)
 {
-    if (src->buffer_length > 0)
-    {
+    if (src->buffer_length > 0) {
         if (src->buffer_length > dst->buffer_capacity)
         {
             rcutils_ret_t rc =
@@ -84,9 +83,7 @@ rcutils_uint8_array_copy(
 
         dst->buffer_length = src->buffer_length;
         memcpy(dst->buffer, src->buffer, src->buffer_length);
-    }
-    else
-    {
+    } else {
         dst->buffer_length = 0;
     }
 
@@ -154,13 +151,10 @@ rmw_connextdds_get_readerwriter_qos(
     }
     case RMW_QOS_POLICY_HISTORY_KEEP_LAST:
     {
-        if (qos_policies->depth == RMW_QOS_POLICY_DEPTH_SYSTEM_DEFAULT)
-        {
+        if (qos_policies->depth == RMW_QOS_POLICY_DEPTH_SYSTEM_DEFAULT) {
             history->depth = 1;
             history->kind = DDS_KEEP_LAST_HISTORY_QOS;
-        }
-        else
-        {
+        } else {
             if (qos_policies->depth < 1 || qos_policies->depth > INT32_MAX)
             {
                 RMW_CONNEXT_LOG_ERROR("unsupported history depth")
@@ -556,13 +550,9 @@ RMW_Connext_Publisher::create(
     std::string prefix_req(ROS_SERVICE_REQUESTER_PREFIX_STR "/");
     std::string str_topic(topic_name);
 
-    if (str_topic.find(prefix_rep) == 0 ||
-        str_topic.find(prefix_req) == 0)
-    {
+    if (str_topic.find(prefix_rep) == 0 || str_topic.find(prefix_req) == 0) {
         fqtopic_name = str_topic;
-    }
-    else
-    {
+    } else {
         fqtopic_name =
             rmw_connextdds_create_topic_name(
                 ROS_TOPIC_PREFIX, topic_name, "", qos_policies);
@@ -741,13 +731,10 @@ RMW_Connext_Publisher::requestreply_header_to_dds(
 
     rmw_connextdds_sn_ros_to_dds(rr_msg->sn, src_sn);
 
-    if (rr_msg->request)
-    {
+    if (rr_msg->request) {
         sample_identity->writer_guid = src_guid;
         sample_identity->sequence_number = src_sn;
-    }
-    else
-    {
+    } else {
         related_sample_identity->writer_guid = src_guid;
         related_sample_identity->sequence_number = src_sn;
     }
@@ -1120,13 +1107,9 @@ RMW_Connext_Subscriber::create(
     std::string prefix_req(ROS_SERVICE_REQUESTER_PREFIX_STR "/");
     std::string str_topic(topic_name);
 
-    if (str_topic.find(prefix_rep) == 0 ||
-        str_topic.find(prefix_req) == 0)
-    {
+    if (str_topic.find(prefix_rep) == 0 || str_topic.find(prefix_req) == 0) {
         fqtopic_name = str_topic;
-    }
-    else
-    {
+    } else {
         fqtopic_name =
             rmw_connextdds_create_topic_name(
                 ROS_TOPIC_PREFIX, topic_name, "", qos_policies);
@@ -1509,13 +1492,10 @@ RMW_Connext_Subscriber::requestreply_header_from_dds(
     const struct DDS_GUID_t *src_guid = nullptr;
     const struct DDS_SequenceNumber_t *src_sn = nullptr;
 
-    if (rr_msg->request)
-    {
+    if (rr_msg->request) {
         src_guid = &sample_identity->writer_guid;
         src_sn = &sample_identity->sequence_number;
-    }
-    else
-    {
+    } else {
         src_guid = &related_sample_identity->writer_guid;
         src_sn = &related_sample_identity->sequence_number;
     }
@@ -1579,8 +1559,7 @@ RMW_Connext_Subscriber::take_next(
 
                 void *ros_message = ros_messages[*taken];
 
-                if (serialized)
-                {
+                if (serialized) {
                     if (RCUTILS_RET_OK !=
                             rcutils_uint8_array_copy(
                                 reinterpret_cast<rcutils_uint8_array_t*>(ros_message),
@@ -1589,9 +1568,7 @@ RMW_Connext_Subscriber::take_next(
                         RMW_CONNEXT_LOG_ERROR("failed to copy uint8 array")
                         return RMW_RET_ERROR;
                     }
-                }
-                else
-                {
+                } else {
 #if !RMW_CONNEXT_EMULATE_REQUESTREPLY
                     if (this->type_support->type_requestreply())
                     {
@@ -1902,13 +1879,9 @@ RMW_Connext_WaitSet::require_attach(
     if (nullptr == new_els || 0 == new_els_count)
     {
         return attached_els.size() > 0;
-    }
-    else if (new_els_count != attached_els.size())
-    {
+    } else if (new_els_count != attached_els.size()) {
         return true;
-    }
-    else
-    {
+    } else {
         const void *const attached_data =
             static_cast<const void *>(attached_els.data());
         void *const new_els_data = static_cast<void *>(new_els);
@@ -2215,8 +2188,7 @@ RMW_Connext_WaitSet::attach(
 
                 bool attach = false;
 
-                if (RMW_Connext_Event::reader_event(event))
-                {
+                if (RMW_Connext_Event::reader_event(event)) {
                     attach = std::find(
                                 this->attached_subscribers.begin(),
                                 this->attached_subscribers.end(),
@@ -2227,9 +2199,7 @@ RMW_Connext_WaitSet::attach(
                                 this->attached_event_subscribers.end(),
                                 RMW_Connext_Event::subscriber(event)) ==
                                     this->attached_event_subscribers.end();
-                }
-                else
-                {
+                } else {
                     attach = std::find(
                                 this->attached_event_publishers.begin(),
                                 this->attached_event_publishers.end(),
@@ -2237,8 +2207,7 @@ RMW_Connext_WaitSet::attach(
                                     this->attached_event_publishers.end();
                 }
 
-                if (attach)
-                {
+                if (attach) {
                     if (DDS_RETCODE_OK !=
                             DDS_WaitSet_attach_condition(
                                 this->waitset,
@@ -2248,8 +2217,7 @@ RMW_Connext_WaitSet::attach(
                             "failed to attach event condition")
                         return RMW_RET_ERROR;
                     }
-                    if (RMW_Connext_Event::reader_event(event))
-                    {
+                    if (RMW_Connext_Event::reader_event(event)) {
                         this->attached_event_subscribers.reserve(1);
                         this->attached_event_subscribers.push_back(
                             RMW_Connext_Event::subscriber(event));
@@ -2264,9 +2232,7 @@ RMW_Connext_WaitSet::attach(
                             reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
                             reinterpret_cast<void*>(event),
                             reinterpret_cast<void*>(RMW_Connext_Event::subscriber(event)))
-                    }
-                    else
-                    {
+                    }  else {
                         this->attached_event_publishers.reserve(1);
                         this->attached_event_publishers.push_back(
                             RMW_Connext_Event::publisher(event));
@@ -2284,11 +2250,8 @@ RMW_Connext_WaitSet::attach(
                     }
 
                     attached_count += 1;
-                }
-                else
-                {
-                    if (RMW_Connext_Event::reader_event(event))
-                    {
+                } else {
+                    if (RMW_Connext_Event::reader_event(event)) {
                         RMW_CONNEXT_LOG_DEBUG_A(
                             "[wait] subscriber for event already attached: "
                             "waitset=%p, "
@@ -2299,9 +2262,7 @@ RMW_Connext_WaitSet::attach(
                             reinterpret_cast<void*>(RMW_Connext_Event::condition(event)),
                             reinterpret_cast<void*>(event),
                             reinterpret_cast<void*>(RMW_Connext_Event::subscriber(event)))
-                    }
-                    else
-                    {
+                    } else {
                         RMW_CONNEXT_LOG_DEBUG_A(
                             "[wait] publisher for event already attached: "
                             "waitset=%p, "
@@ -2451,8 +2412,7 @@ RMW_Connext_WaitSet::wait(
     wait_rc = DDS_WaitSet_wait(
             this->waitset, &this->active_conditions, &wait_duration);
 
-    if (DDS_RETCODE_OK != wait_rc)
-    {
+    if (DDS_RETCODE_OK != wait_rc) {
         if (DDS_RETCODE_TIMEOUT != wait_rc)
         {
             RMW_CONNEXT_LOG_ERROR_A("[wait] failed! waitset=%p",
@@ -2462,9 +2422,7 @@ RMW_Connext_WaitSet::wait(
         RMW_CONNEXT_LOG_DEBUG_A("[wait] timed out: waitset=%p",
             reinterpret_cast<void*>(this->waitset))
         timedout = true;
-    }
-    else
-    {
+    } else {
         active_len = DDS_ConditionSeq_get_length(&this->active_conditions);
 
         RMW_CONNEXT_LOG_DEBUG_A("[wait] waitset=%p, active=%lu",
@@ -2563,13 +2521,10 @@ RMW_Connext_WaitSet::wait(
         trigger_if_active(RMW_Connext_Event::condition(event),
         /* on active */
         {
-            if (!RMW_Connext_Event::active(event))
-            {
+            if (!RMW_Connext_Event::active(event)) {
                 /* active because of other event */
                 evs->events[i] = nullptr;
-            }
-            else
-            {
+            } else {
                 RMW_CONNEXT_LOG_DEBUG_A("[wait] active event: "
                     "waitset=%p, "
                     "condition=%p, "
@@ -3525,13 +3480,10 @@ ros_event_for_reader(const rmw_event_type_t ros)
 rmw_ret_t
 RMW_Connext_Event::enable(rmw_event_t *const event)
 {
-    if (RMW_Connext_Event::reader_event(event))
-    {
+    if (RMW_Connext_Event::reader_event(event)) {
         return RMW_Connext_Event::subscriber(event)->enable_status(
                     ros_event_to_dds(event->event_type, nullptr));
-    }
-    else
-    {
+    } else {
         return RMW_Connext_Event::publisher(event)->enable_status(
                     ros_event_to_dds(event->event_type, nullptr));
     }
@@ -3540,13 +3492,10 @@ RMW_Connext_Event::enable(rmw_event_t *const event)
 rmw_ret_t
 RMW_Connext_Event::disable(rmw_event_t *const event)
 {
-    if (RMW_Connext_Event::reader_event(event))
-    {
+    if (RMW_Connext_Event::reader_event(event)) {
         return RMW_Connext_Event::subscriber(event)->disable_status(
                     ros_event_to_dds(event->event_type, nullptr));
-    }
-    else
-    {
+    } else {
         return RMW_Connext_Event::publisher(event)->disable_status(
                     ros_event_to_dds(event->event_type, nullptr));
     }
@@ -3555,13 +3504,10 @@ RMW_Connext_Event::disable(rmw_event_t *const event)
 bool
 RMW_Connext_Event::active(rmw_event_t *const event)
 {
-    if (RMW_Connext_Event::reader_event(event))
-    {
+    if (RMW_Connext_Event::reader_event(event)) {
         return RMW_Connext_Event::subscriber(event)->has_status(
                     ros_event_to_dds(event->event_type, nullptr));
-    }
-    else
-    {
+    } else {
         return RMW_Connext_Event::publisher(event)->has_status(
                     ros_event_to_dds(event->event_type, nullptr));
     }
@@ -3737,16 +3683,13 @@ RMW_Connext_StdWaitSet::on_condition_active(
         {
             rmw_event_t *const event =
                 reinterpret_cast<rmw_event_t*>(evs->events[i]);
-            if (RMW_Connext_Event::reader_event(event))
-            {
+            if (RMW_Connext_Event::reader_event(event)) {
                 auto sub = RMW_Connext_Event::subscriber(event);
                 if (sub->has_status(event->event_type))
                 {
                     return true;
                 }
-            }
-            else
-            {
+            } else {
                 auto pub = RMW_Connext_Event::publisher(event);
                 if (pub->has_status(event->event_type))
                 {
@@ -3888,12 +3831,9 @@ RMW_Connext_StdWaitSet::detach(
             RMW_Connext_Subscriber *const sub =
                 reinterpret_cast<RMW_Connext_Subscriber*>(subs->subscribers[i]);
             sub->detach();
-            if (!sub->has_data())
-            {
+            if (!sub->has_data()) {
                 subs->subscribers[i] = nullptr;
-            }
-            else
-            {
+            } else {
                 RMW_CONNEXT_LOG_DEBUG_A(
                     "[wait] active subscriber: sub=%p\n",
                     reinterpret_cast<void*>(sub))
@@ -3929,12 +3869,9 @@ RMW_Connext_StdWaitSet::detach(
             RMW_Connext_Service *const svc =
                 reinterpret_cast<RMW_Connext_Service*>(srvs->services[i]);
             svc->subscriber()->detach();
-            if (!svc->subscriber()->has_data())
-            {
+            if (!svc->subscriber()->has_data()) {
                 srvs->services[i] = nullptr;
-            }
-            else
-            {
+            } else {
                 RMW_CONNEXT_LOG_DEBUG_A("[wait] active service: "
                     "svc=%p", (void*)svc)
                 active_conditions += 1;
@@ -3955,24 +3892,18 @@ RMW_Connext_StdWaitSet::detach(
                 if (!sub->has_status(event->event_type))
                 {
                     evs->events[i] = nullptr;
-                }
-                else
-                {
+                } else {
                     RMW_CONNEXT_LOG_DEBUG_A("[wait] active subscriber event: "
                         "event=%p", (void*)event)
                     active_conditions += 1;
                 }
-            }
-            else
-            {
+            } else {
                 auto pub = RMW_Connext_Event::publisher(event);
                 pub->detach();
                 if (!pub->has_status(event->event_type))
                 {
                     evs->events[i] = nullptr;
-                }
-                else
-                {
+                } else {
                     RMW_CONNEXT_LOG_DEBUG_A("[wait] active publisher event: "
                         "event=%p", (void*)event)
                     active_conditions += 1;
@@ -3991,9 +3922,7 @@ RMW_Connext_StdWaitSet::detach(
             if (!gcond->trigger_check())
             {
                 gcs->guard_conditions[i] = nullptr;
-            }
-            else
-            {
+            } else {
                 RMW_CONNEXT_LOG_DEBUG_A("[wait] active guard condition: "
                     "condition=%p", (void*)gcond)
                 active_conditions += 1;
@@ -4063,19 +3992,14 @@ RMW_Connext_StdWaitSet::wait(
                 return self->on_condition_active(subs, gcs, srvs, cls, evs);
             };
 
-        if (nullptr == wait_timeout)
-        {
+        if (nullptr == wait_timeout) {
             this->condition.wait(lock, on_condition_active);
-        }
-        else if (wait_timeout->sec > 0 || wait_timeout->nsec > 0)
-        {
+        } else if (wait_timeout->sec > 0 || wait_timeout->nsec > 0) {
             auto n = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         std::chrono::seconds(wait_timeout->sec));
             n += std::chrono::nanoseconds(wait_timeout->nsec);
             timedout = !this->condition.wait_for(lock, n, on_condition_active);
-        }
-        else
-        {
+        } else {
             timedout = true;
         }
     }

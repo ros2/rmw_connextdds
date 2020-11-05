@@ -157,12 +157,9 @@ RMW_Connext_TypeCodePtrSeq_assert_from_ros(
         }
     }
 
-    if (nullptr != dds_tc)
-    {
+    if (nullptr != dds_tc) {
         tc = dds_tc;
-    }
-    else
-    {
+    } else {
         tc = rmw_connextdds_create_typecode(
                 type_supports,
                 type_name,
@@ -377,14 +374,11 @@ rmw_connextdds_convert_type_member(
 
         std::string type_name;
 
-        if (cpp_version)
-        {
+        if (cpp_version) {
             type_name = rmw_connextdds_create_type_name(
                 reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers*>(
                     type_support_intro->data), true /* mangle_names */);
-        }
-        else
-        {
+        } else {
             type_name = rmw_connextdds_create_type_name(
                 reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(
                     type_support_intro->data), true /* mangle_names */);
@@ -411,8 +405,7 @@ rmw_connextdds_convert_type_member(
 
     DDS_TypeCode *tc = el_tc;
 
-    if (member->is_array_)
-    {
+    if (member->is_array_) {
         DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
         if (member->array_size_ > 0)
         {
@@ -436,9 +429,7 @@ rmw_connextdds_convert_type_member(
             {
                 return nullptr;
             }
-        }
-        else
-        {
+        } else {
             DDS_TypeCode *const tc_seq =
                 DDS_TypeCodeFactory_create_sequence_tc(
                     tc_factory, length_unbound, el_tc, &ex);
@@ -587,8 +578,7 @@ rmw_connextdds_create_typecode(
             });
 
 #if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
-    if (cpp_version)
-    {
+    if (cpp_version) {
         const rosidl_typesupport_introspection_cpp::MessageMembers *const members =
             reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers*>(
                 intro_members);
@@ -601,9 +591,7 @@ rmw_connextdds_create_typecode(
                 type_name)
             return nullptr;
         }
-    }
-    else
-    {
+    } else {
         const rosidl_typesupport_introspection_c__MessageMembers *const members =
             reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(intro_members);
 

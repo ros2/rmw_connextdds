@@ -144,8 +144,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY  */
         }
 
-        if (!this->_empty)
-        {
+        if (!this->_empty) {
             try
             {
                 if (!callbacks->cdr_serialize(payload, cdr_stream))
@@ -165,9 +164,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
                 RMW_CONNEXT_LOG_ERROR("Failed to deserialize data")
                 return RMW_RET_ERROR;
             }
-        }
-        else
-        {
+        } else {
             /* Serialize a dummy byte */
             cdr_stream << (uint8_t)0;
         }
@@ -250,8 +247,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
         }
 
-        if (!this->_empty)
-        {
+        if (!this->_empty) {
             try
             {
                 if (!callbacks->cdr_deserialize(cdr_stream, payload))
@@ -271,9 +267,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
                 RMW_CONNEXT_LOG_ERROR("Failed to deserialize data")
                 return RMW_RET_ERROR;
             }
-        }
-        else
-        {
+        } else {
             /* Consume dummy byte */
             uint8_t dummy = 0;
             cdr_stream >> dummy;
@@ -323,12 +317,9 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
             this->_type_support_fastrtps->data);
 
 
-    if (!this->_unbounded)
-    {
+    if (!this->_unbounded) {
         serialized_size += this->_serialized_size_max;
-    }
-    else
-    {
+    } else {
         const void *payload = ros_msg;
         if (this->type_requestreply())
         {
@@ -372,8 +363,7 @@ RMW_Connext_MessageTypeSupport::get_type_support_intro(
     const rosidl_message_type_support_t * type_support =
         get_message_typesupport_handle(
             type_supports, rosidl_typesupport_introspection_c__identifier);
-    if (nullptr == type_support)
-    {
+    if (nullptr == type_support) {
         type_support =
             get_message_typesupport_handle(
                 type_supports,
@@ -382,9 +372,7 @@ RMW_Connext_MessageTypeSupport::get_type_support_intro(
         {
             cpp_version = true;
         }
-    }
-    else
-    {
+    } else {
         cpp_version = false;
     }
     return type_support;

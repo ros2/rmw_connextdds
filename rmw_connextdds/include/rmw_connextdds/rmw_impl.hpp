@@ -268,15 +268,12 @@ public:
 
         std::lock_guard<std::mutex> lock(this->mutex_internal);
 
-        if (this->waitset_mutex != nullptr)
-        {
+        if (this->waitset_mutex != nullptr) {
             std::unique_lock<std::mutex> clock(*this->waitset_mutex);
             this->trigger_value = true;
             clock.unlock();
             this->waitset_condition->notify_one();
-        }
-        else
-        {
+        } else {
             this->trigger_value = true;
         }
     }
@@ -1215,12 +1212,9 @@ public:
     DDS_Condition*
     condition(const rmw_event_t *const event)
     {
-        if (RMW_Connext_Event::reader_event(event))
-        {
+        if (RMW_Connext_Event::reader_event(event)) {
             return RMW_Connext_Event::subscriber(event)->condition();
-        }
-        else
-        {
+        } else {
             return RMW_Connext_Event::publisher(event)->condition();
         }
     }

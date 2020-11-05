@@ -62,12 +62,9 @@ struct RMW_Connext_NddsTypeCode
         {
             this->base = this->dds_tc->_data;
         }
-        if (nullptr != tc_cache)
-        {
+        if (nullptr != tc_cache) {
             this->tc_cache = *tc_cache;
-        }
-        else
-        {
+        } else {
             RMW_Connext_TypeCodePtrSeq_initialize(&this->tc_cache);
         }
     }
@@ -250,12 +247,9 @@ RMW_Connext_TypePlugin_create_data(void ** sample, void * user_data)
     const rcutils_allocator_t allocator = rcutils_get_default_allocator();
     size_t buffer_size = 0;
 
-    if (type_support->unbounded())
-    {
+    if (type_support->unbounded()) {
         buffer_size = 0;
-    }
-    else
-    {
+    } else {
         buffer_size = type_support->type_serialized_size_max();
     }
 
@@ -492,8 +486,7 @@ RMW_Connext_TypePlugin_serialize(
     data_buffer.buffer_length = RTICdrStream_getRemainder(stream);
     data_buffer.buffer_capacity = data_buffer.buffer_length;
 
-    if (!msg->serialized)
-    {
+    if (!msg->serialized) {
         rmw_ret_t rc = type_support->serialize(msg->user_data, &data_buffer);
         if (RMW_RET_OK != rc)
         {
@@ -501,9 +494,7 @@ RMW_Connext_TypePlugin_serialize(
         }
         RMW_CONNEXT_LOG_DEBUG_A("serialized: msg=%p, size=%lu",
             msg->user_data, data_buffer.buffer_length)
-    }
-    else
-    {
+    } else {
         const rcutils_uint8_array_t *const user_buffer =
             reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
         if (RCUTILS_RET_OK !=
@@ -631,7 +622,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
 
     unsigned int initial_alignment = current_alignment;
 
-    if (sample==NULL)
+    if (sample == NULL)
     {
         return 0;
     }
@@ -648,14 +639,11 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     const RMW_Connext_Message *const msg =
         reinterpret_cast<const RMW_Connext_Message*>(sample);
 
-    if (msg->serialized)
-    {
+    if (msg->serialized) {
         const rcutils_uint8_array_t *const serialized_msg =
             reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
         current_alignment += serialized_msg->buffer_length;
-    }
-    else
-    {
+    } else {
         current_alignment +=
             type_support->serialized_size_max(
                 msg->user_data, include_encapsulation);
@@ -823,8 +811,7 @@ rmw_connextdds_register_type_support(
         DDS_DomainParticipant_get_typecode(
             participant, type_support->type_name());
 
-    if (nullptr == tc)
-    {
+    if (nullptr == tc) {
         struct REDAFastBufferPoolProperty
             pool_prop = REDA_FAST_BUFFER_POOL_PROPERTY_DEFAULT;
 
@@ -936,9 +923,7 @@ rmw_connextdds_register_type_support(
 
         type_support_res = type_support;
         scope_exit_support_delete.cancel();
-    }
-    else
-    {
+    } else {
         tc->type_plugin->attached_count += 1;
         type_support_res = tc->type_plugin->wrapper;
     }

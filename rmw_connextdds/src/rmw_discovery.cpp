@@ -184,38 +184,27 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
         {
             cond_active =
                 *DDS_ConditionSeq_get_reference(&active_conditions, i);
-            if (cond_exit == cond_active)
-            {
+            if (cond_exit == cond_active) {
                 /* nothing to do */
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] exit condition active")
-            }
-            else if (cond_partinfo == cond_active)
-            {
+            } else if (cond_partinfo == cond_active) {
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] participant-info active")
                 rmw_connextdds_graph_on_participant_info(ctx);
-            }
-            else if (nullptr != cond_dcps_part && cond_dcps_part == cond_active)
-            {
+            } else if (nullptr != cond_dcps_part && cond_dcps_part == cond_active) {
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] dcps-participants active")
                 rmw_connextdds_dcps_participant_on_data(ctx);
-            }
-            else if (nullptr != cond_dcps_pub && cond_dcps_pub == cond_active)
-            {
+            } else if (nullptr != cond_dcps_pub && cond_dcps_pub == cond_active) {
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] dcps-publications active")
                 rmw_connextdds_dcps_publication_on_data(ctx);
-            }
-            else if (nullptr != cond_dcps_sub && cond_dcps_sub == cond_active)
-            {
+            } else if (nullptr != cond_dcps_sub && cond_dcps_sub == cond_active) {
                 RMW_CONNEXT_LOG_DEBUG(
                     "[discovery thread] dcps-subscriptions active")
                 rmw_connextdds_dcps_subscription_on_data(ctx);
-            }
-            else
-            {
+            } else {
                 RMW_CONNEXT_LOG_ERROR("unexpected active condition")
                 goto cleanup;
             }

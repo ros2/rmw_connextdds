@@ -572,7 +572,8 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
 rmw_ret_t
 rmw_connextdds_graph_add_participant(
   rmw_context_impl_t * const ctx,
-  const DDS_ParticipantBuiltinTopicData * const data)
+  const DDS_ParticipantBuiltinTopicData * const data,
+  const char *const enclave)
 {
   DDS_GUID_t dp_guid;
   rmw_gid_t gid;
@@ -586,8 +587,12 @@ rmw_connextdds_graph_add_participant(
     return RMW_RET_OK;
   }
 
-  std::string enclave;
-  /* TODO(asorbini): retrieve enclave from USER_DATA */
+  std::string enclave_str;
+
+  if (nullptr != enclave)
+  {
+      enclave_str = enclave;
+  }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[discovery thread] assert participant: "
@@ -598,7 +603,7 @@ rmw_connextdds_graph_add_participant(
     reinterpret_cast<const uint32_t *>(dp_guid.value)[3])
 
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-  ctx->common.graph_cache.add_participant(gid, enclave);
+  ctx->common.graph_cache.add_participant(gid, enclave_str);
 
   return RMW_RET_OK;
 }
@@ -668,6 +673,32 @@ rmw_connextdds_graph_add_entity(
     dp_gid,
     qos_profile,
     is_reader);
+}
+
+
+rmw_ret_t
+rmw_connextdds_graph_remove_participant(
+  rmw_context_impl_t * const ctx,
+  const DDS_InstanceHandle_t * const instance)
+{
+  rmw_gid_t dp_gid;
+  rmw_connextdds_ih_to_gid(*instance, dp_gid);
+  std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+  ctx->common.graph_cache.remove_participant(dp_gid);
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_graph_remove_entity(
+  rmw_context_impl_t * const ctx,
+  const DDS_InstanceHandle_t * const instance,
+  const bool is_reader)
+{
+  rmw_gid_t endp_gid;
+  rmw_connextdds_ih_to_gid(*instance, endp_gid);
+  std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
+  ctx->common.graph_cache.remove_entity(endp_gid, is_reader);
+  return RMW_RET_OK;
 }
 
 #else

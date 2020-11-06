@@ -96,7 +96,13 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx);
 rmw_ret_t
 rmw_connextdds_graph_add_participant(
   rmw_context_impl_t * const ctx,
-  const DDS_ParticipantBuiltinTopicData * const data);
+  const DDS_ParticipantBuiltinTopicData * const data,
+  const char *const enclave = nullptr);
+
+rmw_ret_t
+rmw_connextdds_graph_remove_participant(
+  rmw_context_impl_t * const ctx,
+  const DDS_InstanceHandle_t * const instance);
 
 void
 rmw_connextdds_graph_add_entity(
@@ -110,5 +116,12 @@ rmw_connextdds_graph_add_entity(
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
   const bool is_reader);
+
+rmw_ret_t
+rmw_connextdds_graph_remove_entity(
+  rmw_context_impl_t * const ctx,
+  const DDS_InstanceHandle_t * const instance,
+  const bool is_reader);
+
 
 #endif  // RMW_CONNEXTDDS__GRAPH_CACHE_HPP_

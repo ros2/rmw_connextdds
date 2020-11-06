@@ -736,8 +736,18 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
         /* TODO(asorbini): Check for instance_state != ALIVE to remove
            the remote participant from the graph_cache by calling:
            graph_cache.remove_participant(gid) */
-        RMW_CONNEXT_LOG_DEBUG(
-          "[discovery thread] ignored participant invalid data")
+        if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
+            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          if (RMW_RET_OK !=
+            rmw_connextdds_graph_remove_participant(ctx, &info->instance_handle)) {
+            // TODO(asorbini) log without lock
+            continue;
+          }
+        } else {
+          RMW_CONNEXT_LOG_DEBUG(
+            "[discovery thread] ignored participant invalid data")
+        }
+
         continue;
       }
 
@@ -792,11 +802,17 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         DDS_SampleInfoSeq_get_reference(&info_seq, i);
 
       if (!info->valid_data) {
-        /* TODO(asorbini): Check for instance_state != ALIVE to remove
-           the remove endpoint from the graph_cache by calling:
-           graph_cache.remove_entity(gid, is_reader = false) */
-        RMW_CONNEXT_LOG_DEBUG(
-          "[discovery thread] ignored publication invalid data")
+        if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
+            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          if (RMW_RET_OK !=
+            rmw_connextdds_graph_remove_entity(
+                ctx, &info->instance_handle, false /* is_reader */)) {
+            // TODO(asorbini) log without lock
+            continue;
+          }
+        } else {
+          RMW_CONNEXT_LOG_DEBUG("[discovery thread] ignored publication invalid data")
+        }
         continue;
       }
 
@@ -864,11 +880,17 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         DDS_SampleInfoSeq_get_reference(&info_seq, i);
 
       if (!info->valid_data) {
-        /* TODO(asorbini): Check for instance_state != ALIVE to remove
-           the remove endpoint from the graph_cache by calling:
-           graph_cache.remove_entity(gid, is_reader = true) */
-        RMW_CONNEXT_LOG_DEBUG(
-          "[discovery thread] ignored subscription invalid data")
+        if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
+            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          if (RMW_RET_OK !=
+            rmw_connextdds_graph_remove_entity(
+                ctx, &info->instance_handle, true /* is_reader */)) {
+            // TODO(asorbini) log without lock
+            continue;
+          }
+        } else {
+          RMW_CONNEXT_LOG_DEBUG("[discovery thread] ignored subscription invalid data")
+        }
         continue;
       }
 

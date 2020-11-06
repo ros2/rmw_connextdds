@@ -1318,6 +1318,12 @@ RMW_Connext_Subscriber::take(
   const size_t max_samples,
   size_t * const taken)
 {
+  if (max_samples == 0 ||
+      message_sequence->capacity < max_samples ||
+      message_info_sequence->capacity != message_sequence->capacity)
+  {
+      return RMW_RET_INVALID_ARGUMENT;
+  }
   return this->take_next(
     message_sequence->data,
     message_info_sequence->data,

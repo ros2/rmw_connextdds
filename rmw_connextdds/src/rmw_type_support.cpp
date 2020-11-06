@@ -37,8 +37,7 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
   _type_name(),
   _message_type(message_type)
 {
-  if (this->_type_support_fastrtps == nullptr)
-  {
+  if (this->_type_support_fastrtps == nullptr) {
     throw std::runtime_error("FastRTPS type support not found");
   }
   auto callbacks = this->callbacks_fastrtps();

@@ -240,7 +240,7 @@ extern "C" rmw_ret_t rmw_count_publishers(
   }
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
-        rmw_full_topic_name_validation_result_string(validation_result);
+      rmw_full_topic_name_validation_result_string(validation_result);
     RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
@@ -275,7 +275,7 @@ extern "C" rmw_ret_t rmw_count_subscribers(
   }
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
-        rmw_full_topic_name_validation_result_string(validation_result);
+      rmw_full_topic_name_validation_result_string(validation_result);
     RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
@@ -526,7 +526,7 @@ extern "C" rmw_ret_t rmw_get_publishers_info_by_topic(
   }
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
-        rmw_full_topic_name_validation_result_string(validation_result);
+      rmw_full_topic_name_validation_result_string(validation_result);
     RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
@@ -579,7 +579,7 @@ extern "C" rmw_ret_t rmw_get_subscriptions_info_by_topic(
   }
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
-        rmw_full_topic_name_validation_result_string(validation_result);
+      rmw_full_topic_name_validation_result_string(validation_result);
     RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }

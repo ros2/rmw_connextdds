@@ -905,6 +905,8 @@ rmw_connextdds_filter_sample(
   return RMW_RET_OK;
 }
 
+#if RMW_CONNEXT_RTIME_BUILTIN_LISTENER
+
 static void
 rmw_connextdds_builtin_listener_on_requested_deadline_missed(
   void *listener_data,
@@ -1319,12 +1321,14 @@ rmw_connextdds_builtin_listener_initialize_subscription(
         rmw_connextdds_builtin_listener_on_data_available_subscription;
 }
 
+#endif /* RMW_CONNEXT_RTIME_BUILTIN_LISTENER */
 
 rmw_ret_t
 rmw_connextdds_dcps_participant_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
+#if RMW_CONNEXT_RTIME_BUILTIN_LISTENER
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
 
@@ -1356,7 +1360,10 @@ rmw_connextdds_dcps_participant_get_reader(
   {
     return RMW_RET_ERROR;
   }
-
+#else
+  UNUSED_ARG(ctx);
+  UNUSED_ARG(reader_out);
+#endif /* RMW_CONNEXT_RTIME_BUILTIN_LISTENER */
   return RMW_RET_OK;
 }
 
@@ -1365,6 +1372,7 @@ rmw_connextdds_dcps_publication_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
+#if RMW_CONNEXT_RTIME_BUILTIN_LISTENER
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
 
@@ -1396,7 +1404,10 @@ rmw_connextdds_dcps_publication_get_reader(
   {
     return RMW_RET_ERROR;
   }
-
+#else
+  UNUSED_ARG(ctx);
+  UNUSED_ARG(reader_out);
+#endif /* RMW_CONNEXT_RTIME_BUILTIN_LISTENER */
   return RMW_RET_OK;
 }
 
@@ -1405,6 +1416,7 @@ rmw_connextdds_dcps_subscription_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
+#if RMW_CONNEXT_RTIME_BUILTIN_LISTENER
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
 
@@ -1436,7 +1448,10 @@ rmw_connextdds_dcps_subscription_get_reader(
   {
     return RMW_RET_ERROR;
   }
-
+#else
+  UNUSED_ARG(ctx);
+  UNUSED_ARG(reader_out);
+#endif /* RMW_CONNEXT_RTIME_BUILTIN_LISTENER */
   return RMW_RET_OK;
 }
 

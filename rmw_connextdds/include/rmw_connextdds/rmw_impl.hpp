@@ -359,11 +359,11 @@ protected:
   bool triggered_qos;
 
   DDS_OfferedDeadlineMissedStatus status_deadline
-  RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
+    RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
   DDS_OfferedIncompatibleQosStatus status_qos
-  RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
+    RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
   DDS_LivelinessLostStatus status_liveliness
-  RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
+    RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
 
   RMW_Connext_Publisher * pub;
 };
@@ -509,13 +509,13 @@ protected:
   DDS_InstanceHandle_t listener_drop_handle;
 
   DDS_RequestedDeadlineMissedStatus status_deadline
-  RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
+    RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
   DDS_RequestedIncompatibleQosStatus status_qos
-  RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
+    RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
   DDS_LivelinessChangedStatus status_liveliness
-  RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
+    RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
   DDS_SampleLostStatus status_sample_lost
-  RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
+    RCPPUTILS_TSA_GUARDED_BY(mutex_internal);
 
   RMW_Connext_Subscriber * sub;
 };

@@ -607,7 +607,7 @@ RMW_Connext_EncapsulationPlugin_return_sample(
 {
     struct DDS_TypePluginDefault *plugin =
         reinterpret_cast<struct DDS_TypePluginDefault*>(tp);
-    REDA_BufferPool_return_buffer(plugin->pool,sample);
+    REDA_BufferPool_return_buffer(plugin->pool, sample);
 }
 
 static

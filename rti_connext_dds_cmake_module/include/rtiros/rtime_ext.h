@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif  // __cplusplus
 
 RTIROS_PUBLIC
 DDS_ReturnCode_t
@@ -37,6 +37,6 @@ DDS_DomainParticipant_is_type_in_use(
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif  // __cplusplus
 
-#endif /* RTIROS__RTIME_EXT_H_ */
+#endif // RTIROS__RTIME_EXT_H_

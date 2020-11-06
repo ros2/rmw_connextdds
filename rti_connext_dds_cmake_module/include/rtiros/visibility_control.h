@@ -19,7 +19,7 @@
  * library cannot have, but the consuming code must have inorder to link.
  */
 
-#ifndef RTI__VISIBILITY_CONTROL_H_
+#ifndef RTIROS__VISIBILITY_CONTROL_H_
 #define RTIROS__VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:

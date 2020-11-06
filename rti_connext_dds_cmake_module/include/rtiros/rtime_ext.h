@@ -39,4 +39,4 @@ DDS_DomainParticipant_is_type_in_use(
 }
 #endif  // __cplusplus
 
-#endif // RTIROS__RTIME_EXT_H_
+#endif  // RTIROS__RTIME_EXT_H_

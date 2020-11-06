@@ -1319,10 +1319,10 @@ RMW_Connext_Subscriber::take(
   size_t * const taken)
 {
   if (max_samples == 0 ||
-      message_sequence->capacity < max_samples ||
-      message_info_sequence->capacity != message_sequence->capacity)
+    message_sequence->capacity < max_samples ||
+    message_info_sequence->capacity != message_sequence->capacity)
   {
-      return RMW_RET_INVALID_ARGUMENT;
+    return RMW_RET_INVALID_ARGUMENT;
   }
   return this->take_next(
     message_sequence->data,
@@ -2838,8 +2838,7 @@ RMW_Connext_Client::create(
     &svc_members_res,
     svc_members_res_cpp);
 
-  if (nullptr == type_support_req || nullptr == type_support_res)
-  {
+  if (nullptr == type_support_req || nullptr == type_support_res) {
     RMW_CONNEXT_LOG_ERROR("failed to lookup type supports for client")
     return nullptr;
   }
@@ -3089,8 +3088,7 @@ RMW_Connext_Service::create(
     &svc_members_res,
     svc_members_res_cpp);
 
-  if (nullptr == type_support_req || nullptr == type_support_res)
-  {
+  if (nullptr == type_support_req || nullptr == type_support_res) {
     RMW_CONNEXT_LOG_ERROR("failed to lookup type supports for service")
     return nullptr;
   }

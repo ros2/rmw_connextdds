@@ -163,7 +163,7 @@ extern "C" rmw_client_t * rmw_create_client(
   if (!qos_policies->avoid_ros_namespace_conventions) {
     int validation_result = RMW_TOPIC_VALID;
     rmw_ret_t ret =
-        rmw_validate_full_topic_name(service_name, &validation_result, nullptr);
+      rmw_validate_full_topic_name(service_name, &validation_result, nullptr);
     if (RMW_RET_OK != ret) {
       return nullptr;
     }
@@ -301,7 +301,7 @@ extern "C" rmw_service_t * rmw_create_service(
   if (!qos_policies->avoid_ros_namespace_conventions) {
     int validation_result = RMW_TOPIC_VALID;
     rmw_ret_t ret =
-        rmw_validate_full_topic_name(service_name, &validation_result, nullptr);
+      rmw_validate_full_topic_name(service_name, &validation_result, nullptr);
     if (RMW_RET_OK != ret) {
       return nullptr;
     }

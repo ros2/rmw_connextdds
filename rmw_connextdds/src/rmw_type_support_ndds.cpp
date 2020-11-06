@@ -772,8 +772,8 @@ rmw_connextdds_register_type_support(
   RMW_Connext_MessageTypeSupport * type_support = nullptr;
   try {
     type_support = new RMW_Connext_MessageTypeSupport(
-                            message_type, type_supports, type_name);
-  } catch(const std::exception& e) {
+      message_type, type_supports, type_name);
+  } catch (const std::exception & e) {
     RMW_CONNEXT_LOG_ERROR_A("failed to create type support: %s", e.what())
   }
 

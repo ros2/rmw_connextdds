@@ -1,4 +1,4 @@
-/* (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
+/* Copyright 2020 Real-Time Innovations, Inc. (RTI)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,16 @@ extern "C" {
 RTIROS_PUBLIC
 DDS_ReturnCode_t
 DDS_DomainParticipant_lookup_type_pluginI(
-    DDS_DomainParticipant *const self,
-    const char *const type_name,
-    struct DDS_TypePluginI **const plugin_out);
+  DDS_DomainParticipant * const self,
+  const char * const type_name,
+  struct DDS_TypePluginI ** const plugin_out);
 
 RTIROS_PUBLIC
 DDS_ReturnCode_t
 DDS_DomainParticipant_is_type_in_use(
-    DDS_DomainParticipant *const self,
-    const char *const type_name,
-    DDS_Boolean *const in_use_out);
+  DDS_DomainParticipant * const self,
+  const char * const type_name,
+  DDS_Boolean * const in_use_out);
 
 #ifdef __cplusplus
 }

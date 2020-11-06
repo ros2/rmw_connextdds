@@ -1,4 +1,4 @@
-/* (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
+/* Copyright 2020 Real-Time Innovations, Inc. (RTI)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,122 +54,114 @@
 
 DDS_ReturnCode_t
 DDS_DomainParticipant_lookup_type_pluginI(
-    DDS_DomainParticipant *const participant,
-    const char *const type_name,
-    struct DDS_TypePluginI **const plugin_out)
+  DDS_DomainParticipant * const participant,
+  const char * const type_name,
+  struct DDS_TypePluginI ** const plugin_out)
 {
-    struct DDS_DomainParticipantImpl *self =
-            (struct DDS_DomainParticipantImpl *)participant;
-    DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
-    DB_ReturnCode_T dbrc = DB_RETCODE_ERROR;
-    RTI_SIZE_T type_name_len = 0;
-    struct DDS_TypeImpl *a_type = NULL;
+  struct DDS_DomainParticipantImpl * self =
+    (struct DDS_DomainParticipantImpl *)participant;
+  DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
+  DB_ReturnCode_T dbrc = DB_RETCODE_ERROR;
+  RTI_SIZE_T type_name_len = 0;
+  struct DDS_TypeImpl * a_type = NULL;
 
-    OSAPI_PRECONDITION_ALWAYS(
-        (self == NULL) || (type_name == NULL) || (plugin_out == NULL),
-        return DDS_RETCODE_BAD_PARAMETER,
-        OSAPI_Log_entry_add_pointer("self", self, RTI_FALSE);
-        OSAPI_Log_entry_add_pointer("type_name", type_name, RTI_FALSE);
-        OSAPI_Log_entry_add_pointer("plugin_out", plugin_out, RTI_TRUE);)
+  OSAPI_PRECONDITION_ALWAYS(
+    (self == NULL) || (type_name == NULL) || (plugin_out == NULL),
+    return DDS_RETCODE_BAD_PARAMETER,
+    OSAPI_Log_entry_add_pointer("self", self, RTI_FALSE);
+    OSAPI_Log_entry_add_pointer("type_name", type_name, RTI_FALSE);
+    OSAPI_Log_entry_add_pointer("plugin_out", plugin_out, RTI_TRUE);)
 
-    type_name_len = DDS_String_length(type_name);
+  type_name_len = DDS_String_length(type_name);
 
-    OSAPI_PRECONDITION_ALWAYS(
-        type_name_len > RTPS_PATHNAME_LEN_MAX,
-        return DDS_RETCODE_BAD_PARAMETER,
-        OSAPI_Log_entry_add_uint("len(type_name)", type_name_len, RTI_TRUE);)
+  OSAPI_PRECONDITION_ALWAYS(
+    type_name_len > RTPS_PATHNAME_LEN_MAX,
+    return DDS_RETCODE_BAD_PARAMETER,
+    OSAPI_Log_entry_add_uint("len(type_name)", type_name_len, RTI_TRUE);)
 
-    *plugin_out = NULL;
+  * plugin_out = NULL;
 
-    if (DB_RETCODE_OK != DB_Database_lock(self->database))
-    {
-        return DDS_RETCODE_ERROR;
-    }
+  if (DB_RETCODE_OK != DB_Database_lock(self->database)) {
+    return DDS_RETCODE_ERROR;
+  }
 
-    dbrc = DB_Table_select_match(
-                self->type_table,
-                DB_TABLE_DEFAULT_INDEX,
-                (DB_Record_T*)&a_type,
-                (DB_Key_T)type_name);
+  dbrc = DB_Table_select_match(
+    self->type_table,
+    DB_TABLE_DEFAULT_INDEX,
+    (DB_Record_T *)&a_type,
+    (DB_Key_T)type_name);
 
-    if (dbrc == DB_RETCODE_OK)
-    {
-        *plugin_out = a_type->plugin;
-    }
-    else if (dbrc != DB_RETCODE_NO_DATA)
-    {
-        goto done;
-    }
+  if (dbrc == DB_RETCODE_OK) {
+    *plugin_out = a_type->plugin;
+  } else if (dbrc != DB_RETCODE_NO_DATA) {
+    goto done;
+  }
 
-    retcode = DDS_RETCODE_OK;
+  retcode = DDS_RETCODE_OK;
 
 done:
-    if (DB_RETCODE_OK != DB_Database_unlock(self->database))
-    {
-        retcode = DDS_RETCODE_ERROR;
-    }
+  if (DB_RETCODE_OK != DB_Database_unlock(self->database)) {
+    retcode = DDS_RETCODE_ERROR;
+  }
 
-    return retcode;
+  return retcode;
 }
 
 
 DDS_ReturnCode_t
 DDS_DomainParticipant_is_type_in_use(
-    DDS_DomainParticipant *const participant,
-    const char *const type_name,
-    DDS_Boolean *const in_use_out)
+  DDS_DomainParticipant * const participant,
+  const char * const type_name,
+  DDS_Boolean * const in_use_out)
 {
-    struct DDS_DomainParticipantImpl *self =
-            (struct DDS_DomainParticipantImpl *)participant;
-    DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
-    DB_ReturnCode_T dbrc = DB_RETCODE_ERROR;
-    RTI_SIZE_T type_name_len = 0;
-    struct DDS_TypeImpl *a_type = NULL;
+  struct DDS_DomainParticipantImpl * self =
+    (struct DDS_DomainParticipantImpl *)participant;
+  DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
+  DB_ReturnCode_T dbrc = DB_RETCODE_ERROR;
+  RTI_SIZE_T type_name_len = 0;
+  struct DDS_TypeImpl * a_type = NULL;
 
-    OSAPI_PRECONDITION_ALWAYS(
-        (self == NULL) || (type_name == NULL) || (in_use_out == NULL),
-        return DDS_RETCODE_BAD_PARAMETER,
-        OSAPI_Log_entry_add_pointer("self", self, RTI_FALSE);
-        OSAPI_Log_entry_add_pointer("type_name", type_name, RTI_FALSE);
-        OSAPI_Log_entry_add_pointer("in_use_out", in_use_out, RTI_TRUE);)
+  OSAPI_PRECONDITION_ALWAYS(
+    (self == NULL) || (type_name == NULL) || (in_use_out == NULL),
+    return DDS_RETCODE_BAD_PARAMETER,
+    OSAPI_Log_entry_add_pointer("self", self, RTI_FALSE);
+    OSAPI_Log_entry_add_pointer("type_name", type_name, RTI_FALSE);
+    OSAPI_Log_entry_add_pointer("in_use_out", in_use_out, RTI_TRUE);)
 
-    type_name_len = DDS_String_length(type_name);
+  type_name_len = DDS_String_length(type_name);
 
-    OSAPI_PRECONDITION_ALWAYS(
-        type_name_len > RTPS_PATHNAME_LEN_MAX,
-        return DDS_RETCODE_BAD_PARAMETER,
-        OSAPI_Log_entry_add_uint("len(type_name)", type_name_len, RTI_TRUE);)
+  OSAPI_PRECONDITION_ALWAYS(
+    type_name_len > RTPS_PATHNAME_LEN_MAX,
+    return DDS_RETCODE_BAD_PARAMETER,
+    OSAPI_Log_entry_add_uint("len(type_name)", type_name_len, RTI_TRUE);)
 
-    *in_use_out = DDS_BOOLEAN_FALSE;
+  * in_use_out = DDS_BOOLEAN_FALSE;
 
-    if (DB_RETCODE_OK != DB_Database_lock(self->database))
-    {
-        return DDS_RETCODE_ERROR;
-    }
+  if (DB_RETCODE_OK != DB_Database_lock(self->database)) {
+    return DDS_RETCODE_ERROR;
+  }
 
-    dbrc = DB_Table_select_match(
-                self->type_table,
-                DB_TABLE_DEFAULT_INDEX,
-                (DB_Record_T*)&a_type,
-                (DB_Key_T)type_name);
+  dbrc = DB_Table_select_match(
+    self->type_table,
+    DB_TABLE_DEFAULT_INDEX,
+    (DB_Record_T *)&a_type,
+    (DB_Key_T)type_name);
 
-    /* This function expects to be called for a registered type,
-       if no type was found, consider it an error */
-    if (dbrc != DB_RETCODE_OK)
-    {
-        goto done;
-    }
+  /* This function expects to be called for a registered type,
+     if no type was found, consider it an error */
+  if (dbrc != DB_RETCODE_OK) {
+    goto done;
+  }
 
-    *in_use_out = (a_type->topic_count > 0)?
-                    DDS_BOOLEAN_TRUE : DDS_BOOLEAN_FALSE;
+  *in_use_out = (a_type->topic_count > 0) ?
+    DDS_BOOLEAN_TRUE : DDS_BOOLEAN_FALSE;
 
-    retcode = DDS_RETCODE_OK;
+  retcode = DDS_RETCODE_OK;
 
 done:
-    if (DB_RETCODE_OK != DB_Database_unlock(self->database))
-    {
-        retcode = DDS_RETCODE_ERROR;
-    }
+  if (DB_RETCODE_OK != DB_Database_unlock(self->database)) {
+    retcode = DDS_RETCODE_ERROR;
+  }
 
-    return retcode;
+  return retcode;
 }

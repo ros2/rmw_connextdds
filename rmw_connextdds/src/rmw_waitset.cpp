@@ -19,109 +19,111 @@
  ******************************************************************************/
 
 extern "C" rmw_guard_condition_t * rmw_create_guard_condition(
-    rmw_context_t * context)
+  rmw_context_t * context)
 {
-    RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
-    RMW_CHECK_FOR_NULL_WITH_MSG(
-        context->impl,
-        "expected initialized context",
-        return nullptr);
-    RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-        context,
-        context->implementation_identifier,
-        RMW_CONNEXTDDS_ID,
-        return nullptr);
-    rmw_guard_condition_t *const ret =
-        rmw_connextdds_create_guard_condition();
-    RMW_CONNEXT_LOG_DEBUG_A("new guard condition: %p", (void*)ret->data)
-    return ret;
+  RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
+  RMW_CHECK_FOR_NULL_WITH_MSG(
+    context->impl,
+    "expected initialized context",
+    return nullptr);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    context,
+    context->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return nullptr);
+  rmw_guard_condition_t * const ret =
+    rmw_connextdds_create_guard_condition();
+  RMW_CONNEXT_LOG_DEBUG_A("new guard condition: %p", (void *)ret->data)
+  return ret;
 }
 
 extern "C" rmw_ret_t rmw_destroy_guard_condition(
-    rmw_guard_condition_t * guard_condition_handle)
+  rmw_guard_condition_t * guard_condition_handle)
 {
-    RMW_CHECK_ARGUMENT_FOR_NULL(
-        guard_condition_handle, RMW_RET_INVALID_ARGUMENT);
-    RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-        guard_condition_handle,
-        guard_condition_handle->implementation_identifier,
-        RMW_CONNEXTDDS_ID,
-        return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(
+    guard_condition_handle, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    guard_condition_handle,
+    guard_condition_handle->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-    RMW_CONNEXT_LOG_DEBUG_A("destroying guard condition: %p",
-        (void*)guard_condition_handle->data)
-    return rmw_connextdds_destroy_guard_condition(guard_condition_handle);
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "destroying guard condition: %p",
+    (void *)guard_condition_handle->data)
+  return rmw_connextdds_destroy_guard_condition(guard_condition_handle);
 }
 
 extern "C" rmw_ret_t rmw_trigger_guard_condition(
   const rmw_guard_condition_t * guard_condition_handle)
 {
-    RMW_CHECK_ARGUMENT_FOR_NULL(
-        guard_condition_handle, RMW_RET_INVALID_ARGUMENT);
-    RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-        guard_condition_handle,
-        guard_condition_handle->implementation_identifier,
-        RMW_CONNEXTDDS_ID,
-        return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(
+    guard_condition_handle, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    guard_condition_handle,
+    guard_condition_handle->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-    RMW_CONNEXT_LOG_DEBUG_A("triggering guard condition: %p",
-        (void*)guard_condition_handle)
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "triggering guard condition: %p",
+    (void *)guard_condition_handle)
 
-    return rmw_connextdds_trigger_guard_condition(guard_condition_handle);
+  return rmw_connextdds_trigger_guard_condition(guard_condition_handle);
 }
 
 extern "C" rmw_wait_set_t * rmw_create_wait_set(
-    rmw_context_t * context,
-    size_t max_conditions)
+  rmw_context_t * context,
+  size_t max_conditions)
 {
-    RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
-    RMW_CHECK_FOR_NULL_WITH_MSG(
-        context->impl,
-        "expected initialized context",
-        return nullptr);
-    RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-        context,
-        context->implementation_identifier,
-        RMW_CONNEXTDDS_ID,
-        return nullptr);
+  RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
+  RMW_CHECK_FOR_NULL_WITH_MSG(
+    context->impl,
+    "expected initialized context",
+    return nullptr);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    context,
+    context->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return nullptr);
 
-    rmw_wait_set_t *const ret = rmw_connextdds_create_waitset(max_conditions);
-    RMW_CONNEXT_LOG_DEBUG_A("new waitset: %p", (void*)ret)
-    return ret;
+  rmw_wait_set_t * const ret = rmw_connextdds_create_waitset(max_conditions);
+  RMW_CONNEXT_LOG_DEBUG_A("new waitset: %p", (void *)ret)
+  return ret;
 }
 
 extern "C" rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * rmw_ws)
 {
-    RMW_CHECK_ARGUMENT_FOR_NULL(rmw_ws, RMW_RET_INVALID_ARGUMENT);
-    RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-        rmw_ws,
-        rmw_ws->implementation_identifier,
-        RMW_CONNEXTDDS_ID,
-        return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(rmw_ws, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    rmw_ws,
+    rmw_ws->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-    RMW_CONNEXT_LOG_DEBUG_A("destroying waitset: %p", (void*)rmw_ws)
+  RMW_CONNEXT_LOG_DEBUG_A("destroying waitset: %p", (void *)rmw_ws)
 
-    return rmw_connextdds_destroy_waitset(rmw_ws);
+  return rmw_connextdds_destroy_waitset(rmw_ws);
 }
 
 extern "C" rmw_ret_t rmw_wait(
-    rmw_subscriptions_t * subs,
-    rmw_guard_conditions_t * gcs,
-    rmw_services_t * srvs,
-    rmw_clients_t * cls,
-    rmw_events_t * evs,
-    rmw_wait_set_t * wait_set,
-    const rmw_time_t * wait_timeout)
+  rmw_subscriptions_t * subs,
+  rmw_guard_conditions_t * gcs,
+  rmw_services_t * srvs,
+  rmw_clients_t * cls,
+  rmw_events_t * evs,
+  rmw_wait_set_t * wait_set,
+  const rmw_time_t * wait_timeout)
 {
-    RMW_CHECK_ARGUMENT_FOR_NULL(wait_set, RMW_RET_INVALID_ARGUMENT);
-    RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-        wait_set,
-        wait_set->implementation_identifier,
-        RMW_CONNEXTDDS_ID,
-        return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(wait_set, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    wait_set,
+    wait_set->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-    RMW_Connext_StdWaitSet *const ws_impl =
-        reinterpret_cast<RMW_Connext_StdWaitSet*>(wait_set->data);
+  RMW_Connext_StdWaitSet * const ws_impl =
+    reinterpret_cast<RMW_Connext_StdWaitSet *>(wait_set->data);
 
-    return ws_impl->wait(subs, gcs, srvs, cls, evs, wait_timeout);
+  return ws_impl->wait(subs, gcs, srvs, cls, evs, wait_timeout);
 }

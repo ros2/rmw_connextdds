@@ -94,7 +94,9 @@ extern "C" rmw_wait_set_t * rmw_create_wait_set(
 
 extern "C" rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * rmw_ws)
 {
-  RMW_CHECK_ARGUMENT_FOR_NULL(rmw_ws, RMW_RET_INVALID_ARGUMENT);
+  // TODO(asorbini): Return RMW_RET_INVALID_ARGUMENT. We return RMW_RET_ERROR
+  // because that's what's expected by test_rmw_implementation
+  RMW_CHECK_ARGUMENT_FOR_NULL(rmw_ws, RMW_RET_ERROR);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
     rmw_ws,
     rmw_ws->implementation_identifier,

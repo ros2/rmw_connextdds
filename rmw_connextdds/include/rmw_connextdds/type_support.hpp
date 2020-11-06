@@ -16,6 +16,7 @@
 #define RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 
 #include <string>
+#include <stdexcept>
 
 #include "rmw_connextdds/context.hpp"
 

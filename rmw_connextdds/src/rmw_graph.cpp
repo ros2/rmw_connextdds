@@ -238,10 +238,10 @@ rmw_connextdds_graph_on_node_created(
     "dp_gid=%08X.%08X.%08X.%08X",
     node->namespace_,
     node->name,
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[0],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[1],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[2],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[3])
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[0],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[1],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[2],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[3])
   rmw_dds_common::msg::ParticipantEntitiesInfo msg =
     ctx->common.graph_cache.add_node(
     ctx->common.gid, node->name, node->namespace_);
@@ -296,14 +296,14 @@ rmw_connextdds_graph_on_publisher_created(
     "gid=%08X.%08X.%08X.%08X",
     node->namespace_,
     node->name,
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[0],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[1],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[2],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[3],
-    reinterpret_cast<uint32_t *>(gid.data)[0],
-    reinterpret_cast<uint32_t *>(gid.data)[1],
-    reinterpret_cast<uint32_t *>(gid.data)[2],
-    reinterpret_cast<uint32_t *>(gid.data)[3])
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[0],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[1],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[2],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[3],
+    reinterpret_cast<const uint32_t *>(gid.data)[0],
+    reinterpret_cast<const uint32_t *>(gid.data)[1],
+    reinterpret_cast<const uint32_t *>(gid.data)[2],
+    reinterpret_cast<const uint32_t *>(gid.data)[3])
   rmw_dds_common::msg::ParticipantEntitiesInfo msg =
     ctx->common.graph_cache.associate_writer(
     gid,
@@ -361,14 +361,14 @@ rmw_connextdds_graph_on_subscriber_created(
     "gid=%08X.%08X.%08X.%08X",
     node->namespace_,
     node->name,
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[0],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[1],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[2],
-    reinterpret_cast<uint32_t *>(ctx->common.gid.data)[3],
-    reinterpret_cast<uint32_t *>(gid.data)[0],
-    reinterpret_cast<uint32_t *>(gid.data)[1],
-    reinterpret_cast<uint32_t *>(gid.data)[2],
-    reinterpret_cast<uint32_t *>(gid.data)[3])
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[0],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[1],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[2],
+    reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[3],
+    reinterpret_cast<const uint32_t *>(gid.data)[0],
+    reinterpret_cast<const uint32_t *>(gid.data)[1],
+    reinterpret_cast<const uint32_t *>(gid.data)[2],
+    reinterpret_cast<const uint32_t *>(gid.data)[3])
   rmw_dds_common::msg::ParticipantEntitiesInfo msg =
     ctx->common.graph_cache.associate_reader(
     gid,
@@ -592,10 +592,10 @@ rmw_connextdds_graph_add_participant(
   RMW_CONNEXT_LOG_DEBUG_A(
     "[discovery thread] assert participant: "
     "gid=0x%08X.0x%08X.0x%08X.0x%08X",
-    reinterpret_cast<uint32_t *>(dp_guid.value)[0],
-    reinterpret_cast<uint32_t *>(dp_guid.value)[1],
-    reinterpret_cast<uint32_t *>(dp_guid.value)[2],
-    reinterpret_cast<uint32_t *>(dp_guid.value)[3])
+    reinterpret_cast<const uint32_t *>(dp_guid.value)[0],
+    reinterpret_cast<const uint32_t *>(dp_guid.value)[1],
+    reinterpret_cast<const uint32_t *>(dp_guid.value)[2],
+    reinterpret_cast<const uint32_t *>(dp_guid.value)[3])
 
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
   ctx->common.graph_cache.add_participant(gid, enclave);
@@ -648,14 +648,14 @@ rmw_connextdds_graph_add_entity(
     "topic=%s, "
     "type=%s, "
     "reader=%d",
-    reinterpret_cast<uint32_t *>(dp_guid->value)[0],
-    reinterpret_cast<uint32_t *>(dp_guid->value)[1],
-    reinterpret_cast<uint32_t *>(dp_guid->value)[2],
-    reinterpret_cast<uint32_t *>(dp_guid->value)[3],
-    reinterpret_cast<uint32_t *>(endp_guid->value)[0],
-    reinterpret_cast<uint32_t *>(endp_guid->value)[1],
-    reinterpret_cast<uint32_t *>(endp_guid->value)[2],
-    reinterpret_cast<uint32_t *>(endp_guid->value)[3],
+    reinterpret_cast<const uint32_t *>(dp_guid->value)[0],
+    reinterpret_cast<const uint32_t *>(dp_guid->value)[1],
+    reinterpret_cast<const uint32_t *>(dp_guid->value)[2],
+    reinterpret_cast<const uint32_t *>(dp_guid->value)[3],
+    reinterpret_cast<const uint32_t *>(endp_guid->value)[0],
+    reinterpret_cast<const uint32_t *>(endp_guid->value)[1],
+    reinterpret_cast<const uint32_t *>(endp_guid->value)[2],
+    reinterpret_cast<const uint32_t *>(endp_guid->value)[3],
     topic_name,
     type_name,
     is_reader)

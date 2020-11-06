@@ -31,7 +31,7 @@ endif()
 find_package(rmw_connextdds REQUIRED)
 
 set(connext_deps        rti_connext_dds_cmake_module)
-set(connext_includes    )
+set(connext_includes)
 set(connext_api         MICRO)
 set(connext_libs        ${RTIME_TARGETS})
 set(connext_src

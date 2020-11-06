@@ -955,10 +955,7 @@ rmw_connextdds_ih_to_gid(
 
   memset(&gid, 0, sizeof(gid));
   gid.implementation_identifier = RMW_CONNEXTDDS_ID;
-  gid.data[0] = guid.prefix.host_id;
-  gid.data[1] = guid.prefix.app_id;
-  gid.data[2] = guid.prefix.instance_id;
-  gid.data[3] = guid.object_id;
+  memcpy(&gid.data, &guid, sizeof(guid));
 }
 
 static

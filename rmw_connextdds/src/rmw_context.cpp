@@ -142,6 +142,8 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
 
   RMW_CONNEXT_LOG_DEBUG("initializing RMW context")
 
+  this->localhost_only = localhost_only;
+
   if (RMW_RET_OK != rmw_connextdds_initialize_participant_factory(this)) {
     RMW_CONNEXT_LOG_ERROR(
       "failed to initialize DDS DomainParticipantFactory")

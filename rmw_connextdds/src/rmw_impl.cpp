@@ -2089,8 +2089,8 @@ RMW_Connext_WaitSet::attach(
           "[wait] attached guard condition: "
           "waitset=%p, "
           "condition=%p",
-          (void *)this->waitset,
-          (void *)el)
+          reinterpret_cast<void *>(this->waitset),
+          reinterpret_cast<void *>(el))
       }
     }
     if (nullptr != evs && evs->event_count > 0) {

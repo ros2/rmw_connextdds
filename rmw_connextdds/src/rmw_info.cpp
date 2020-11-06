@@ -183,14 +183,25 @@ extern "C" rmw_ret_t rmw_service_server_is_available(
   const rmw_client_t * client,
   bool * is_available)
 {
-  RMW_CHECK_ARGUMENT_FOR_NULL(node, RMW_RET_INVALID_ARGUMENT);
+  // TODO(asorbini): Return RMW_RET_INVALID_ARGUMENT. We return RMW_RET_ERROR
+  // because that's what's expected by test_rmw_implementation
+  RMW_CHECK_ARGUMENT_FOR_NULL(node, RMW_RET_ERROR);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
     node,
     node->implementation_identifier,
     RMW_CONNEXTDDS_ID,
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-  RMW_CHECK_ARGUMENT_FOR_NULL(client, RMW_RET_INVALID_ARGUMENT);
-  RMW_CHECK_ARGUMENT_FOR_NULL(is_available, RMW_RET_INVALID_ARGUMENT);
+  // TODO(asorbini): Return RMW_RET_INVALID_ARGUMENT. We return RMW_RET_ERROR
+  // because that's what's expected by test_rmw_implementation
+  RMW_CHECK_ARGUMENT_FOR_NULL(client, RMW_RET_ERROR);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    client,
+    client->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  // TODO(asorbini): Return RMW_RET_INVALID_ARGUMENT. We return RMW_RET_ERROR
+  // because that's what's expected by test_rmw_implementation
+  RMW_CHECK_ARGUMENT_FOR_NULL(is_available, RMW_RET_ERROR);
 
   RMW_Connext_Client * const client_impl =
     reinterpret_cast<RMW_Connext_Client *>(client->data);

@@ -2838,6 +2838,12 @@ RMW_Connext_Client::create(
     &svc_members_res,
     svc_members_res_cpp);
 
+  if (nullptr == type_support_req || nullptr == type_support_res)
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to lookup type supports for client")
+    return nullptr;
+  }
+
   std::string reply_topic =
     rmw_connextdds_create_topic_name(
     ROS_SERVICE_RESPONSE_PREFIX,
@@ -3082,6 +3088,12 @@ RMW_Connext_Service::create(
     type_supports,
     &svc_members_res,
     svc_members_res_cpp);
+
+  if (nullptr == type_support_req || nullptr == type_support_res)
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to lookup type supports for service")
+    return nullptr;
+  }
 
   std::string reply_topic =
     rmw_connextdds_create_topic_name(

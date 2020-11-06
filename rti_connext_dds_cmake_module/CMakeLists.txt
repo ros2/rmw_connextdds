@@ -42,25 +42,6 @@ else()
         message(STATUS "RTI Connext DDS Micro: '${RTIMEHOME}'")
     endif()
 
-    # set(RTIME_EXT_SOURCE
-    #     src/rtime_ext.c
-    #     include/rtiros/rtime_ext.h
-    #     include/rtiros/visibility_control.h)
-
-    # $<INSTALL_INTERFACE:include>
-    # $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    # set(RTIME_EXT_INCLUDE_DIRS
-    #     include
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/domain>
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/subscription>
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/publication>
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/infrastructure>
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/topic>
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/type>
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/builtin_ipc>
-    #     $<BUILD_INTERFACE:${RTIMEHOME}/src/reda/sequence>
-    #     )
-
     set(RTIME_EXT           rti_connextdds_micro_ext)
 
     set(BUILD_SHARED_LIBS       ON)

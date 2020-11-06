@@ -165,9 +165,8 @@ function(rti_build_connextmicro)
         rti_me_discdpde${rti_lib_sfx})
 
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
-    set(RTIMEHOME_FOUND false PARENT_SCOPE)
-    set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
-    set(RTIME_TARGETS "" PARENT_SCOPE)
+    set(RTIMEHOME_FOUND true PARENT_SCOPE)
+    set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
 endfunction()
 
 ################################################################################

@@ -555,7 +555,7 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
   bool taken = false;
   rmw_dds_common::msg::ParticipantEntitiesInfo msg;
 
-  do{
+  do {
     if (RMW_RET_OK != rmw_take(ctx->common.sub, &msg, &taken, nullptr)) {
       RMW_CONNEXT_LOG_ERROR("failed to take discovery sample")
       return RMW_RET_ERROR;

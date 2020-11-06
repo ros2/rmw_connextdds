@@ -15,8 +15,8 @@
 #ifndef RMW_CONNEXTDDS__NAMESPACE_PREFIX_HPP_
 #define RMW_CONNEXTDDS__NAMESPACE_PREFIX_HPP_
 
-extern const char *const ROS_TOPIC_PREFIX;
-extern const char *const ROS_SERVICE_REQUESTER_PREFIX;
-extern const char *const ROS_SERVICE_RESPONSE_PREFIX;
+extern const char * const ROS_TOPIC_PREFIX;
+extern const char * const ROS_SERVICE_REQUESTER_PREFIX;
+extern const char * const ROS_SERVICE_RESPONSE_PREFIX;
 
 #endif  // RMW_CONNEXTDDS__NAMESPACE_PREFIX_HPP_

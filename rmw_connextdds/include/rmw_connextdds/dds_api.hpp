@@ -43,9 +43,9 @@ struct RMW_Connext_Message;
 
 enum RMW_Connext_MessageType
 {
-    RMW_CONNEXT_MESSAGE_USERDATA,
-    RMW_CONNEXT_MESSAGE_REQUEST,
-    RMW_CONNEXT_MESSAGE_REPLY
+  RMW_CONNEXT_MESSAGE_USERDATA,
+  RMW_CONNEXT_MESSAGE_REQUEST,
+  RMW_CONNEXT_MESSAGE_REPLY
 };
 
 extern const char * const RMW_CONNEXTDDS_ID;
@@ -56,148 +56,148 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity);
 
 rmw_ret_t
 rmw_connextdds_initialize_participant_factory(
-    rmw_context_impl_t *const ctx);
+  rmw_context_impl_t * const ctx);
 
 rmw_ret_t
 rmw_connextdds_finalize_participant_factory(
-    rmw_context_impl_t *const ctx);
+  rmw_context_impl_t * const ctx);
 
 rmw_ret_t
 rmw_connextdds_initialize_participant_qos_impl(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipantQos *const dp_qos);
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipantQos * const dp_qos);
 
 rmw_ret_t
 rmw_connextdds_get_datawriter_qos(
-    rmw_context_impl_t *const ctx,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_DataWriterQos *const qos,
-    const rmw_qos_profile_t *const qos_policies
+  rmw_context_impl_t * const ctx,
+  RMW_Connext_MessageTypeSupport * const type_support,
+  DDS_DataWriterQos * const qos,
+  const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
-    ,
-    const rmw_publisher_options_t *const pub_options
+  ,
+  const rmw_publisher_options_t * const pub_options
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
-    );
+);
 
 rmw_ret_t
 rmw_connextdds_get_datareader_qos(
-    rmw_context_impl_t *const ctx,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_DataReaderQos *const qos,
-    const rmw_qos_profile_t *const qos_policies
+  rmw_context_impl_t * const ctx,
+  RMW_Connext_MessageTypeSupport * const type_support,
+  DDS_DataReaderQos * const qos,
+  const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
-    ,
-    const rmw_subscription_options_t *const sub_options
+  ,
+  const rmw_subscription_options_t * const sub_options
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
-    );
+);
 
-DDS_DataWriter*
-rmw_connextdds_create_datawriter(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipant *const participant,
-    DDS_Publisher *const pub,
-    const rmw_qos_profile_t *const qos_policies,
+DDS_DataWriter *
+  rmw_connextdds_create_datawriter(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const participant,
+  DDS_Publisher * const pub,
+  const rmw_qos_profile_t * const qos_policies,
 #if RMW_CONNEXT_HAVE_OPTIONS
-    const rmw_publisher_options_t *const publisher_options,
+  const rmw_publisher_options_t * const publisher_options,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
-    const bool internal,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_Topic *const topic,
-    DDS_DataWriterQos *const dw_qos);
+  const bool internal,
+  RMW_Connext_MessageTypeSupport * const type_support,
+  DDS_Topic * const topic,
+  DDS_DataWriterQos * const dw_qos);
 
-DDS_DataReader*
-rmw_connextdds_create_datareader(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipant *const participant,
-    DDS_Subscriber *const sub,
-    const rmw_qos_profile_t *const qos_policies,
+DDS_DataReader *
+  rmw_connextdds_create_datareader(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const participant,
+  DDS_Subscriber * const sub,
+  const rmw_qos_profile_t * const qos_policies,
 #if RMW_CONNEXT_HAVE_OPTIONS
-    const rmw_subscription_options_t *const subscriber_options,
+  const rmw_subscription_options_t * const subscriber_options,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
-    const bool internal,
-    RMW_Connext_MessageTypeSupport *const type_support,
-    DDS_Topic *const topic,
-    DDS_DataReaderQos *const dr_qos);
+  const bool internal,
+  RMW_Connext_MessageTypeSupport * const type_support,
+  DDS_Topic * const topic,
+  DDS_DataReaderQos * const dr_qos);
 
 rmw_ret_t
 rmw_connextdds_write_message(
-    RMW_Connext_Publisher *const pub,
-    RMW_Connext_Message *const message,
-    int64_t *const sn_out);
+  RMW_Connext_Publisher * const pub,
+  RMW_Connext_Message * const message,
+  int64_t * const sn_out);
 
 rmw_ret_t
 rmw_connextdds_take_samples(
-    RMW_Connext_Subscriber *const sub);
+  RMW_Connext_Subscriber * const sub);
 
 rmw_ret_t
 rmw_connextdds_return_samples(
-    RMW_Connext_Subscriber *const sub);
+  RMW_Connext_Subscriber * const sub);
 
 rmw_ret_t
 rmw_connextdds_filter_sample(
-    RMW_Connext_Subscriber *const sub,
-    const void *const sample,
-    const DDS_SampleInfo *const info,
-    bool *const accepted);
+  RMW_Connext_Subscriber * const sub,
+  const void * const sample,
+  const DDS_SampleInfo * const info,
+  bool * const accepted);
 
-RMW_Connext_MessageTypeSupport*
+RMW_Connext_MessageTypeSupport *
 rmw_connextdds_register_type_support(
-    rmw_context_impl_t *const ctx,
-    const rosidl_message_type_support_t *const type_supports,
-    DDS_DomainParticipant *const participant,
-    bool& registered,
-    const RMW_Connext_MessageType message_type,
-    const void *const intro_members,
-    const bool intro_members_cpp,
-    const char *const type_name);
+  rmw_context_impl_t * const ctx,
+  const rosidl_message_type_support_t * const type_supports,
+  DDS_DomainParticipant * const participant,
+  bool & registered,
+  const RMW_Connext_MessageType message_type,
+  const void * const intro_members,
+  const bool intro_members_cpp,
+  const char * const type_name);
 
 rmw_ret_t
 rmw_connextdds_unregister_type_support(
-    rmw_context_impl_t *const ctx,
-    DDS_DomainParticipant *const participant,
-    const char *const type_name);
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const participant,
+  const char * const type_name);
 
 rmw_ret_t
 rmw_connextdds_dcps_participant_get_reader(
-    rmw_context_impl_t *const ctx,
-    DDS_DataReader **const reader_out);
+  rmw_context_impl_t * const ctx,
+  DDS_DataReader ** const reader_out);
 
 rmw_ret_t
 rmw_connextdds_dcps_publication_get_reader(
-    rmw_context_impl_t *const ctx,
-    DDS_DataReader **const reader_out);
+  rmw_context_impl_t * const ctx,
+  DDS_DataReader ** const reader_out);
 
 rmw_ret_t
 rmw_connextdds_dcps_subscription_get_reader(
-    rmw_context_impl_t *const ctx,
-    DDS_DataReader **const reader_out);
+  rmw_context_impl_t * const ctx,
+  DDS_DataReader ** const reader_out);
 
 rmw_ret_t
-rmw_connextdds_enable_builtin_readers(rmw_context_impl_t *const ctx);
+rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * const ctx);
 
 rmw_ret_t
-rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t *const ctx);
+rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx);
 
 rmw_ret_t
-rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t *const ctx);
+rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx);
 
 rmw_ret_t
-rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t *const ctx);
+rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx);
 
 void
 rmw_connextdds_ih_to_gid(
-    const DDS_InstanceHandle_t &ih, rmw_gid_t &gid);
+  const DDS_InstanceHandle_t & ih, rmw_gid_t & gid);
 
 void
 rmw_connextdds_configure_subscriber_condition_listener(
-    RMW_Connext_Subscriber *const sub,
-    RMW_Connext_StdSubscriberStatusCondition *cond,
-    DDS_DataReaderListener *const listener,
-    DDS_StatusMask *const listener_mask);
+  RMW_Connext_Subscriber * const sub,
+  RMW_Connext_StdSubscriberStatusCondition * cond,
+  DDS_DataReaderListener * const listener,
+  DDS_StatusMask * const listener_mask);
 
 void
 rmw_connextdds_builtinkey_to_guid(
-    const DDS_BuiltinTopicKey_t *const self,
-    DDS_GUID_t *const dst);
+  const DDS_BuiltinTopicKey_t * const self,
+  DDS_GUID_t * const dst);
 
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

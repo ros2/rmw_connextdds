@@ -22,48 +22,48 @@
 #if RMW_CONNEXT_LOG_MODE == RMW_CONNEXT_LOG_MODE_ALL
 
 #define RMW_CONNEXT_LOG_ERROR(msg_) \
-    RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (msg_));
+  RCUTILS_LOG_ERROR_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (msg_));
 
 #define RMW_CONNEXT_LOG_ERROR_A(fmt_, ...) \
-    RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (fmt_), \
-            __VA_ARGS__);
+  RCUTILS_LOG_ERROR_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (fmt_), \
+    __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_WARNING(msg_) \
-    RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (msg_));
+  RCUTILS_LOG_WARN_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (msg_));
 
 #define RMW_CONNEXT_LOG_WARNING_A(fmt_, ...) \
-    RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (fmt_), \
-            __VA_ARGS__);
+  RCUTILS_LOG_WARN_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (fmt_), \
+    __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_INFO(msg_) \
-    RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (msg_));
+  RCUTILS_LOG_DEBUG_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (msg_));
 
 #define RMW_CONNEXT_LOG_INFO_A(fmt_, ...) \
-    RCUTILS_LOG_INFO_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (fmt_), \
-            __VA_ARGS__);
+  RCUTILS_LOG_INFO_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (fmt_), \
+    __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_DEBUG(msg_) \
-    RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (msg_));
+  RCUTILS_LOG_DEBUG_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (msg_));
 
 #define RMW_CONNEXT_LOG_DEBUG_A(fmt_, ...) \
-    RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (fmt_), \
-            __VA_ARGS__);
+  RCUTILS_LOG_DEBUG_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (fmt_), \
+    __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_TRACE(msg_)
 
@@ -74,28 +74,28 @@
 #include <stdio.h>
 
 #define RMW_CONNEXT_LOG_ERROR_A(fmt_, ...) \
-    printf("[ERROR][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
+  printf("[ERROR][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_ERROR(msg_) \
-    printf("[ERROR][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
+  printf("[ERROR][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
 
 #define RMW_CONNEXT_LOG_WARNING_A(fmt_, ...) \
-    printf("[WARNING][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
+  printf("[WARNING][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_WARNING(msg_) \
-    printf("[WARNING][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
+  printf("[WARNING][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
 
 #define RMW_CONNEXT_LOG_DEBUG_A(fmt_, ...) \
-    printf("[DEBUG][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
+  printf("[DEBUG][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_DEBUG(msg_) \
-    printf("[DEBUG][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
+  printf("[DEBUG][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
 
 #define RMW_CONNEXT_LOG_INFO_A(fmt_, ...) \
-    printf("[INFO][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
+  printf("[INFO][%s] " fmt_ "\n", RMW_CONNEXTDDS_ID, __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_INFO(msg_) \
-    printf("[INFO][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
+  printf("[INFO][%s] %s\n", RMW_CONNEXTDDS_ID, (msg_));
 
 #define RMW_CONNEXT_LOG_TRACE(msg_)
 
@@ -104,37 +104,37 @@
 #elif RMW_CONNEXT_LOG_MODE == RMW_CONNEXT_LOG_MODE_DEFAULT
 
 #define RMW_CONNEXT_LOG_ERROR(msg_) \
-    RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (msg_));
+  RCUTILS_LOG_ERROR_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (msg_));
 
 #define RMW_CONNEXT_LOG_ERROR_A(fmt_, ...) \
-    RCUTILS_LOG_ERROR_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (fmt_), \
-            __VA_ARGS__);
+  RCUTILS_LOG_ERROR_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (fmt_), \
+    __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_WARNING(msg_) \
-    RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (msg_));
+  RCUTILS_LOG_WARN_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (msg_));
 
 #define RMW_CONNEXT_LOG_WARNING_A(fmt_, ...) \
-    RCUTILS_LOG_WARN_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (fmt_), \
-            __VA_ARGS__);
+  RCUTILS_LOG_WARN_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (fmt_), \
+    __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_INFO(msg_) \
-    RCUTILS_LOG_DEBUG_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (msg_));
+  RCUTILS_LOG_DEBUG_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (msg_));
 
 #define RMW_CONNEXT_LOG_INFO_A(fmt_, ...) \
-    RCUTILS_LOG_INFO_NAMED(\
-            RMW_CONNEXTDDS_ID, \
-            (fmt_), \
-            __VA_ARGS__);
+  RCUTILS_LOG_INFO_NAMED( \
+    RMW_CONNEXTDDS_ID, \
+    (fmt_), \
+    __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_DEBUG(msg_)
 
@@ -169,14 +169,14 @@
 #endif
 
 #define RMW_CONNEXT_LOG_NOT_IMPLEMENTED \
-    RMW_CONNEXT_LOG_ERROR_A("%s: not implemented", __func__)
+  RMW_CONNEXT_LOG_ERROR_A("%s: not implemented", __func__)
 
 
 #if RMW_CONNEXT_ASSERT_ENABLE
 #include <cassert>
 
 #define RMW_CONNEXT_ASSERT(cond) \
-    assert(cond);
+  assert(cond);
 
 #else
 

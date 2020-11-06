@@ -257,8 +257,6 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
   }
 
   RMW_CONNEXT_LOG_DEBUG("[discovery thread] done")
-
-  return;
 }
 
 rmw_ret_t

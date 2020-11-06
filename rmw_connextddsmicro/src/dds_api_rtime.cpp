@@ -96,7 +96,6 @@ rmw_connextdds_initialize_participant_factory(
     [ctx_api, registry, whsm_name, rhsm_name, udp_name, shmem_name, dpde_name]()
     {
       if (ctx_api) {
-
         if (ctx_api->rt_whsm) {
           if (!RT_Registry_unregister(registry, whsm_name, NULL, NULL)) {
             RMW_CONNEXT_LOG_ERROR("failed to unregister whsm")

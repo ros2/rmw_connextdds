@@ -273,6 +273,12 @@ extern "C" rmw_ret_t rmw_take_sequence(
     message_info_sequence, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(taken, RMW_RET_INVALID_ARGUMENT);
 
+  if (count == 0)
+  {
+      // count must be > 0
+      return RMW_RET_INVALID_ARGUMENT;
+  }
+
   UNUSED_ARG(allocation);
 
   RMW_Connext_Subscriber * const sub_impl =

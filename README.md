@@ -14,7 +14,13 @@ For any question or feedback, please contact robotics@rti.com.
 
 ## Quick Start
 
-1. Configure RTI Connext DDS Professional and/or RTI Connext DDS Micro on your
+1. Load ROS into the shell environment, e.g.:
+
+    ```sh
+    source /opt/ros/dashing/setup.bash
+    ```
+
+2. Configure RTI Connext DDS Professional and/or RTI Connext DDS Micro on your
    system (see [Requirements](#requirements)). Make the installation(s)
    available via environment variables, e.g. by using the provided
    `rtisetenv_<architecture>.bash` script:
@@ -22,12 +28,6 @@ For any question or feedback, please contact robotics@rti.com.
    ```sh
     source ~/rti_connext_dds-6.0.1/resource/scripts/rtisetenv_x64Linux4gcc7.3.0.bash
     export CONNEXTDDS_DIR=${NDDSHOME}
-    ```
-
-2. Load ROS into the shell environment, e.g.:
-
-    ```sh
-    source /opt/ros/dashing/setup.bash
     ```
 
 3. Create an overlay directory and clone the repository:

@@ -206,7 +206,7 @@ extern "C" rmw_client_t * rmw_create_client(
 
   rmw_client_t * rmw_client = rmw_client_allocate();
   if (nullptr == rmw_client) {
-    RMW_CONNEXT_LOG_ERROR("failed to create RMW cliet")
+    RMW_CONNEXT_LOG_ERROR("failed to create RMW client")
     return nullptr;
   }
 

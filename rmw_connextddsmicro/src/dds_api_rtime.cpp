@@ -12,10 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <mutex>
+#include <vector>
+
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
+#include "rmw_connextdds/graph_cache.hpp"
 
 #include "rcutils/get_env.h"
+
+struct RMW_Connext_BuiltinListener
+{
+  rmw_context_impl_t *ctx;
+  DDS_DataReaderListener parent_listener;
+
+  RMW_Connext_BuiltinListener(rmw_context_impl_t *const ctx)
+  : ctx(ctx) {}
+};
 
 struct rmw_connextdds_api_micro
 {
@@ -27,15 +40,23 @@ struct rmw_connextdds_api_micro
   bool rt_sec;
   struct UDP_InterfaceFactoryProperty * udp_property;
 
-  rmw_connextdds_api_micro()
+  RMW_Connext_BuiltinListener discovery_dp_listener;
+  RMW_Connext_BuiltinListener discovery_sub_listener;
+  RMW_Connext_BuiltinListener discovery_pub_listener;
+
+  rmw_connextdds_api_micro(rmw_context_impl_t *const ctx)
   : rt_whsm(false),
     rt_rhsm(false),
     rt_udp(false),
     rt_shmem(false),
     rt_dpde(false),
     rt_sec(false),
-    udp_property(nullptr)
+    udp_property(nullptr),
+    discovery_dp_listener(ctx),
+    discovery_sub_listener(ctx),
+    discovery_pub_listener(ctx)
   {}
+
 };
 
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro";
@@ -142,7 +163,7 @@ rmw_connextdds_initialize_participant_factory(
     return RMW_RET_ERROR;
   }
 
-  ctx_api = new (std::nothrow) rmw_connextdds_api_micro();
+  ctx_api = new (std::nothrow) rmw_connextdds_api_micro(ctx);
   if (nullptr == ctx_api) {
     return RMW_RET_ERROR;
   }
@@ -884,13 +905,458 @@ rmw_connextdds_filter_sample(
   return RMW_RET_OK;
 }
 
+static void
+rmw_connextdds_builtin_listener_on_requested_deadline_missed(
+  void *listener_data,
+  DDS_DataReader* reader,
+  const struct DDS_RequestedDeadlineMissedStatus *status)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  
+  if (nullptr != listener->parent_listener.on_requested_deadline_missed) {
+    listener->parent_listener.on_requested_deadline_missed(
+      listener->parent_listener.as_listener.listener_data, reader, status);
+  }
+}
+
+static void
+rmw_connextdds_builtin_listener_on_liveliness_changed(
+  void *listener_data,
+  DDS_DataReader *reader,
+  const struct DDS_LivelinessChangedStatus *status)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+
+  if (nullptr != listener->parent_listener.on_liveliness_changed) {
+    listener->parent_listener.on_liveliness_changed(
+      listener->parent_listener.as_listener.listener_data, reader, status);
+  }
+}
+
+static void
+rmw_connextdds_builtin_listener_on_requested_incompatible_qos(
+  void *listener_data,
+  DDS_DataReader *reader,
+  const struct DDS_RequestedIncompatibleQosStatus *status)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+
+  if (nullptr != listener->parent_listener.on_requested_incompatible_qos) {
+    listener->parent_listener.on_requested_incompatible_qos(
+      listener->parent_listener.as_listener.listener_data, reader, status);
+  }
+}
+
+static void
+rmw_connextdds_builtin_listener_on_sample_rejected(
+  void *listener_data,
+  DDS_DataReader *reader,
+  const struct DDS_SampleRejectedStatus *status)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+
+  if (nullptr != listener->parent_listener.on_sample_rejected) {
+    listener->parent_listener.on_sample_rejected(
+      listener->parent_listener.as_listener.listener_data, reader, status);
+  }
+}
+
+static DDS_Boolean
+rmw_connextdds_builtin_listener_on_before_sample_commit(
+  void *listener_data,
+  DDS_DataReader *reader,
+  const void *const sample,
+  const struct DDS_SampleInfo *const sample_info,
+  DDS_Boolean *dropped)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+
+  if (nullptr != listener->parent_listener.on_before_sample_commit) {
+      return listener->parent_listener.on_before_sample_commit(
+        listener->parent_listener.as_listener.listener_data,
+        reader, sample, sample_info, dropped);
+  }
+
+  return DDS_BOOLEAN_TRUE;
+}
+
+static void
+rmw_connextdds_builtin_listener_on_data_available_participant(
+  void *listener_data,
+  DDS_DataReader *reader)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  struct DDS_ParticipantBuiltinTopicDataSeq data_seq =
+    DDS_ParticipantBuiltinTopicDataSeq_INITIALIZER;
+  struct DDS_SampleInfoSeq info_seq  = DDS_SEQUENCE_INITIALIZER;
+
+  DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
+
+  do {
+    retcode =
+      DDS_DataReader_read(reader,
+        reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq),
+        &info_seq,
+        DDS_LENGTH_UNLIMITED,
+        DDS_ANY_VIEW_STATE,
+        DDS_NOT_READ_SAMPLE_STATE,
+        DDS_ANY_INSTANCE_STATE);
+
+    if (DDS_RETCODE_NO_DATA == retcode) {
+      break;
+    } else if (DDS_RETCODE_OK != retcode) {
+      // TODO(asorbini) log without lock
+      break;
+    }
+
+    const size_t l = DDS_ParticipantBuiltinTopicDataSeq_get_length(&data_seq);
+    for (size_t i = 0; i < l; ++i) {
+      DDS_ParticipantBuiltinTopicData *const data =
+        reinterpret_cast<DDS_ParticipantBuiltinTopicData *>(
+                DDS_UntypedSampleSeq_get_reference(
+                    reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), i));
+      DDS_SampleInfo *const info = DDS_SampleInfoSeq_get_reference(&info_seq,i);
+
+      if (info->valid_data) {
+        if (RMW_RET_OK !=
+          rmw_connextdds_graph_add_participant(listener->ctx, data)) {
+          // TODO(asorbini) log without lock
+          continue;
+        }
+      } else {
+        if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
+            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          if (RMW_RET_OK !=
+            rmw_connextdds_graph_remove_participant(
+              listener->ctx, &info->instance_handle)) {
+            // TODO(asorbini) log without lock
+            continue;
+          }
+        }
+      }
+    }
+
+    retcode = DDS_DataReader_return_loan(reader,
+                reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), &info_seq);
+  } while (retcode == DDS_RETCODE_OK);
+
+  if (nullptr != listener->parent_listener.on_data_available) {
+    listener->parent_listener.on_data_available(
+      listener->parent_listener.as_listener.listener_data, reader);
+  }
+}
+
+
+static void
+rmw_connextdds_builtin_listener_on_data_available_publication(
+  void *listener_data,
+  DDS_DataReader *reader)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  struct DDS_PublicationBuiltinTopicDataSeq data_seq =
+    DDS_PublicationBuiltinTopicDataSeq_INITIALIZER;
+  struct DDS_SampleInfoSeq info_seq  = DDS_SEQUENCE_INITIALIZER;
+  
+  DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
+
+  do {
+    retcode =
+      DDS_DataReader_read(reader,
+        reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq),
+        &info_seq,
+        DDS_LENGTH_UNLIMITED,
+        DDS_ANY_VIEW_STATE,
+        DDS_NOT_READ_SAMPLE_STATE,
+        DDS_ANY_INSTANCE_STATE);
+
+    if (DDS_RETCODE_NO_DATA == retcode) {
+      break;
+    } else if (DDS_RETCODE_OK != retcode) {
+      // TODO(asorbini) log without lock
+      break;
+    }
+
+    const size_t l =
+        DDS_PublicationBuiltinTopicDataSeq_get_length(&data_seq);
+    for (size_t i = 0; i < l; ++i) {
+      DDS_PublicationBuiltinTopicData *const data =
+        reinterpret_cast<DDS_PublicationBuiltinTopicData *>(
+                DDS_UntypedSampleSeq_get_reference(
+                    reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), i));
+      DDS_SampleInfo *const info = DDS_SampleInfoSeq_get_reference(&info_seq,i);
+
+      if (info->valid_data) {
+        DDS_GUID_t endp_guid;
+        DDS_GUID_t dp_guid;
+
+        DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid*>(&data->key));
+        DDS_GUID_from_rtps(
+          &dp_guid, reinterpret_cast<RTPS_Guid*>(&data->participant_key));
+
+        rmw_connextdds_graph_add_entity(
+          listener->ctx,
+          &endp_guid,
+          &dp_guid,
+          data->topic_name,
+          data->type_name,
+          &data->reliability,
+          &data->durability,
+          &data->deadline,
+          &data->liveliness,
+          false /* is_reader */);
+      } else {
+        if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
+            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          if (RMW_RET_OK !=
+            rmw_connextdds_graph_remove_entity(
+              listener->ctx, &info->instance_handle, false /* is_reader */)) {
+            // TODO(asorbini) log without lock
+            continue;
+          }
+        }
+      }
+    }
+
+    retcode = DDS_DataReader_return_loan(reader,
+                reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), &info_seq);
+  } while (retcode == DDS_RETCODE_OK);
+
+  if (nullptr != listener->parent_listener.on_data_available) {
+    listener->parent_listener.on_data_available(
+      listener->parent_listener.as_listener.listener_data, reader);
+  }
+}
+
+
+static void
+rmw_connextdds_builtin_listener_on_data_available_subscription(
+  void *listener_data,
+  DDS_DataReader *reader)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  struct DDS_SubscriptionBuiltinTopicDataSeq data_seq =
+    DDS_SubscriptionBuiltinTopicDataSeq_INITIALIZER;
+  struct DDS_SampleInfoSeq info_seq  = DDS_SEQUENCE_INITIALIZER;
+  
+  DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
+
+  do {
+    retcode =
+      DDS_DataReader_read(reader,
+        reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq),
+        &info_seq,
+        DDS_LENGTH_UNLIMITED,
+        DDS_ANY_VIEW_STATE,
+        DDS_NOT_READ_SAMPLE_STATE,
+        DDS_ANY_INSTANCE_STATE);
+
+    if (DDS_RETCODE_NO_DATA == retcode) {
+      break;
+    } else if (DDS_RETCODE_OK != retcode) {
+      // TODO(asorbini) log without lock
+      break;
+    }
+
+    const size_t l =
+        DDS_SubscriptionBuiltinTopicDataSeq_get_length(&data_seq);
+    for (size_t i = 0; i < l; ++i) {
+      DDS_SubscriptionBuiltinTopicData *const data =
+        reinterpret_cast<DDS_SubscriptionBuiltinTopicData *>(
+                DDS_UntypedSampleSeq_get_reference(
+                    reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), i));
+      DDS_SampleInfo *const info = DDS_SampleInfoSeq_get_reference(&info_seq,i);
+
+      if (info->valid_data) {
+        DDS_GUID_t endp_guid;
+        DDS_GUID_t dp_guid;
+
+        DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid*>(&data->key));
+        DDS_GUID_from_rtps(
+          &dp_guid, reinterpret_cast<RTPS_Guid*>(&data->participant_key));
+
+        rmw_connextdds_graph_add_entity(
+          listener->ctx,
+          &endp_guid,
+          &dp_guid,
+          data->topic_name,
+          data->type_name,
+          &data->reliability,
+          &data->durability,
+          &data->deadline,
+          &data->liveliness,
+          true /* is_reader */);
+      } else {
+        if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
+            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          if (RMW_RET_OK !=
+            rmw_connextdds_graph_remove_entity(
+              listener->ctx, &info->instance_handle, true /* is_reader */)) {
+            // TODO(asorbini) log without lock
+            continue;
+          }
+        }
+      }
+    }
+
+    retcode = DDS_DataReader_return_loan(reader,
+                reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), &info_seq);
+  } while (retcode == DDS_RETCODE_OK);
+
+  if (nullptr != listener->parent_listener.on_data_available) {
+    listener->parent_listener.on_data_available(
+      listener->parent_listener.as_listener.listener_data, reader);
+  }
+}
+
+static void
+rmw_connextdds_builtin_listener_on_subscription_matched(
+  void *listener_data,
+  DDS_DataReader *reader,
+  const struct DDS_SubscriptionMatchedStatus *status)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+
+  if (nullptr != listener->parent_listener.on_subscription_matched) {
+    listener->parent_listener.on_subscription_matched(
+      listener->parent_listener.as_listener.listener_data, reader, status);
+  }
+}
+
+static void
+rmw_connextdds_builtin_listener_on_sample_lost(
+  void *listener_data,
+  DDS_DataReader *reader,
+  const struct DDS_SampleLostStatus *status)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+
+  if (nullptr != listener->parent_listener.on_sample_lost) {
+    listener->parent_listener.on_sample_lost(
+      listener->parent_listener.as_listener.listener_data, reader, status);
+  }
+}
+
+static void
+rmw_connextdds_builtin_listener_on_instance_replaced(
+  void *listener_data,
+  DDS_DataReader *reader,
+  const struct DDS_DataReaderInstanceReplacedStatus *status)
+{
+  RMW_Connext_BuiltinListener *const listener =
+    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+
+  if (nullptr != listener->parent_listener.on_instance_replaced) {
+    listener->parent_listener.on_instance_replaced(
+      listener->parent_listener.as_listener.listener_data, reader, status);
+  }
+}
+
+static void
+rmw_connextdds_builtin_listener_initialize(
+  RMW_Connext_BuiltinListener *const b_listener,
+  struct DDS_DataReaderListener *const listener)
+{
+    struct DDS_DataReaderListener DEFAULT_LISTENER = DDS_DataReaderListener_INITIALIZER;
+
+    *listener = DEFAULT_LISTENER;
+    listener->as_listener.listener_data = b_listener;
+    listener->on_requested_deadline_missed =
+        rmw_connextdds_builtin_listener_on_requested_deadline_missed;
+    listener->on_requested_incompatible_qos =
+        rmw_connextdds_builtin_listener_on_requested_incompatible_qos;
+    listener->on_sample_rejected =
+        rmw_connextdds_builtin_listener_on_sample_rejected;
+    listener->on_liveliness_changed =
+        rmw_connextdds_builtin_listener_on_liveliness_changed;
+    listener->on_subscription_matched =
+        rmw_connextdds_builtin_listener_on_subscription_matched;
+    listener->on_sample_lost =
+        rmw_connextdds_builtin_listener_on_sample_lost;
+    listener->on_instance_replaced = 
+        rmw_connextdds_builtin_listener_on_instance_replaced;
+    listener->on_before_sample_commit =
+        rmw_connextdds_builtin_listener_on_before_sample_commit;
+}
+
+
+static void
+rmw_connextdds_builtin_listener_initialize_participant(
+  RMW_Connext_BuiltinListener *const b_listener,
+  struct DDS_DataReaderListener *const listener)
+{
+    rmw_connextdds_builtin_listener_initialize(b_listener, listener);
+    listener->on_data_available =
+        rmw_connextdds_builtin_listener_on_data_available_participant;
+}
+
+static void
+rmw_connextdds_builtin_listener_initialize_publication(
+  RMW_Connext_BuiltinListener *const b_listener,
+  struct DDS_DataReaderListener *const listener)
+{
+    rmw_connextdds_builtin_listener_initialize(b_listener, listener);
+    listener->on_data_available =
+        rmw_connextdds_builtin_listener_on_data_available_publication;
+}
+
+static void
+rmw_connextdds_builtin_listener_initialize_subscription(
+  RMW_Connext_BuiltinListener *const b_listener,
+  struct DDS_DataReaderListener *const listener)
+{
+    rmw_connextdds_builtin_listener_initialize(b_listener, listener);
+    listener->on_data_available =
+        rmw_connextdds_builtin_listener_on_data_available_subscription;
+}
+
+
 rmw_ret_t
 rmw_connextdds_dcps_participant_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
-  UNUSED_ARG(ctx);
+  rmw_connextdds_api_micro * const ctx_api =
+    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+
+  // return null since we will handle data via listeners
   *reader_out = nullptr;
+
+  DDS_Subscriber *const sub =
+    DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
+  if (nullptr == sub)
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
+    return RMW_RET_ERROR;
+  }
+  DDS_DataReader *const reader =
+    DDS_Subscriber_lookup_datareader(sub, DDS_PARTICIPANT_BUILTIN_TOPIC_NAME);
+  if (nullptr == reader)
+  {
+      return RMW_RET_ERROR;
+  }
+
+  ctx_api->discovery_dp_listener.parent_listener = DDS_DataReader_get_listener(reader);
+
+  DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
+  rmw_connextdds_builtin_listener_initialize_participant(
+    &ctx_api->discovery_dp_listener, &dr_listener);
+
+  if (DDS_RETCODE_OK !=
+    DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
+  {
+    return RMW_RET_ERROR;
+  }
+
   return RMW_RET_OK;
 }
 
@@ -899,8 +1365,38 @@ rmw_connextdds_dcps_publication_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
-  UNUSED_ARG(ctx);
+  rmw_connextdds_api_micro * const ctx_api =
+    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+
+  // return null since we will handle data via listeners
   *reader_out = nullptr;
+
+  DDS_Subscriber *const sub =
+    DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
+  if (nullptr == sub)
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
+    return RMW_RET_ERROR;
+  }
+  DDS_DataReader *const reader =
+    DDS_Subscriber_lookup_datareader(sub, DDS_PUBLICATION_BUILTIN_TOPIC_NAME);
+  if (nullptr == reader)
+  {
+      return RMW_RET_ERROR;
+  }
+
+  ctx_api->discovery_pub_listener.parent_listener = DDS_DataReader_get_listener(reader);
+
+  DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
+  rmw_connextdds_builtin_listener_initialize_publication(
+    &ctx_api->discovery_pub_listener, &dr_listener);
+
+  if (DDS_RETCODE_OK !=
+    DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
+  {
+    return RMW_RET_ERROR;
+  }
+
   return RMW_RET_OK;
 }
 
@@ -909,8 +1405,38 @@ rmw_connextdds_dcps_subscription_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
-  UNUSED_ARG(ctx);
+  rmw_connextdds_api_micro * const ctx_api =
+    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+
+  // return null since we will handle data via listeners
   *reader_out = nullptr;
+
+  DDS_Subscriber *const sub =
+    DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
+  if (nullptr == sub)
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
+    return RMW_RET_ERROR;
+  }
+  DDS_DataReader *const reader =
+    DDS_Subscriber_lookup_datareader(sub, DDS_SUBSCRIPTION_BUILTIN_TOPIC_NAME);
+  if (nullptr == reader)
+  {
+      return RMW_RET_ERROR;
+  }
+
+  ctx_api->discovery_sub_listener.parent_listener = DDS_DataReader_get_listener(reader);
+
+  DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
+  rmw_connextdds_builtin_listener_initialize_subscription(
+    &ctx_api->discovery_sub_listener, &dr_listener);
+
+  if (DDS_RETCODE_OK !=
+    DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
+  {
+    return RMW_RET_ERROR;
+  }
+
   return RMW_RET_OK;
 }
 

@@ -231,7 +231,7 @@ extern "C" rmw_ret_t rmw_count_publishers(
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(count, RMW_RET_INVALID_ARGUMENT);
-  
+
   int validation_result = RMW_TOPIC_VALID;
   rmw_ret_t ret =
     rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);

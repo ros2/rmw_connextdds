@@ -35,7 +35,7 @@ For any question or feedback, please contact robotics@rti.com.
     ```sh
     mkdir -p ~/ros2_connextdds/src/ros2
     cd ~/ros2_connextdds
-    git -b dashing clone https://github.com/rticommunity/rmw_connextdds.git src/ros2/rmw_connextdds
+    git clone-b dashing https://github.com/rticommunity/rmw_connextdds.git src/ros2/rmw_connextdds
     ```
 
 4. Build the RMW:

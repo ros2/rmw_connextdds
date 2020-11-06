@@ -1,6 +1,4 @@
-/******************************************************************************
- *
- * (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
+/* (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- ******************************************************************************/
+ */
 
 #ifndef RTIROS__RTIME_EXT_H_
 #define RTIROS__RTIME_EXT_H_

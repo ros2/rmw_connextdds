@@ -15,6 +15,8 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
+#include "rmw/validate_full_topic_name.h"
+
 /******************************************************************************
  * Clients/Servers functions
  ******************************************************************************/
@@ -153,6 +155,26 @@ extern "C" rmw_client_t * rmw_create_client(
   RMW_CHECK_ARGUMENT_FOR_NULL(service_name, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
 
+  if (strlen(service_name) == 0) {
+    RMW_CONNEXT_LOG_ERROR("invalid service name")
+    return nullptr;
+  }
+
+  if (!qos_policies->avoid_ros_namespace_conventions) {
+    int validation_result = RMW_TOPIC_VALID;
+    rmw_ret_t ret =
+        rmw_validate_full_topic_name(service_name, &validation_result, nullptr);
+    if (RMW_RET_OK != ret) {
+      return nullptr;
+    }
+    if (RMW_TOPIC_VALID != validation_result) {
+      const char * reason =
+        rmw_full_topic_name_validation_result_string(validation_result);
+      RMW_CONNEXT_LOG_ERROR_A("invalid service name: %s", reason)
+      return nullptr;
+    }
+  }
+
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new client: "
     "name=%s",
@@ -270,6 +292,26 @@ extern "C" rmw_service_t * rmw_create_service(
   RMW_CHECK_ARGUMENT_FOR_NULL(type_supports, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(service_name, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
+
+  if (strlen(service_name) == 0) {
+    RMW_CONNEXT_LOG_ERROR("invalid service name")
+    return nullptr;
+  }
+
+  if (!qos_policies->avoid_ros_namespace_conventions) {
+    int validation_result = RMW_TOPIC_VALID;
+    rmw_ret_t ret =
+        rmw_validate_full_topic_name(service_name, &validation_result, nullptr);
+    if (RMW_RET_OK != ret) {
+      return nullptr;
+    }
+    if (RMW_TOPIC_VALID != validation_result) {
+      const char * reason =
+        rmw_full_topic_name_validation_result_string(validation_result);
+      RMW_CONNEXT_LOG_ERROR_A("invalid service name: %s", reason)
+      return nullptr;
+    }
+  }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new service: "

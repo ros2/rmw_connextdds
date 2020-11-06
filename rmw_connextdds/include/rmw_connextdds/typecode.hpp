@@ -17,21 +17,21 @@
 
 #include "rmw_connextdds/type_support.hpp"
 
-DDS_SEQUENCE(RMW_Connext_TypeCodePtrSeq, DDS_TypeCode*);
+DDS_SEQUENCE(RMW_Connext_TypeCodePtrSeq, DDS_TypeCode *);
 
-DDS_TypeCode*
+DDS_TypeCode *
 rmw_connextdds_create_typecode(
-    const rosidl_message_type_support_t *const type_supports,
-    const char *const type_name,
-    const void *const intro_members = nullptr,
-    const bool intro_members_cpp = false,
-    RMW_Connext_TypeCodePtrSeq *const tc_cache = nullptr);
+  const rosidl_message_type_support_t * const type_supports,
+  const char * const type_name,
+  const void * const intro_members = nullptr,
+  const bool intro_members_cpp = false,
+  RMW_Connext_TypeCodePtrSeq * const tc_cache = nullptr);
 
 void
-rmw_connextdds_delete_typecode(DDS_TypeCode *const tc);
+rmw_connextdds_delete_typecode(DDS_TypeCode * const tc);
 
 void
 rmw_connextdds_release_typecode_cache(
-    RMW_Connext_TypeCodePtrSeq *const tc_cache);
+  RMW_Connext_TypeCodePtrSeq * const tc_cache);
 
 #endif  // RMW_CONNEXTDDS__TYPECODE_HPP_

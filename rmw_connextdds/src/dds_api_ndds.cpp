@@ -711,7 +711,7 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
   DDS_ParticipantBuiltinTopicDataDataReader * const reader =
     DDS_ParticipantBuiltinTopicDataDataReader_narrow(ctx->dr_participants);
 
-  do{
+  do {
     rc = DDS_ParticipantBuiltinTopicDataDataReader_take(
       reader,
       &data_seq,
@@ -770,7 +770,7 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
   DDS_PublicationBuiltinTopicDataDataReader * const reader =
     DDS_PublicationBuiltinTopicDataDataReader_narrow(ctx->dr_publications);
 
-  do{
+  do {
     rc = DDS_PublicationBuiltinTopicDataDataReader_take(
       reader,
       &data_seq,
@@ -842,7 +842,7 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
     DDS_SubscriptionBuiltinTopicDataDataReader_narrow(
     ctx->dr_subscriptions);
 
-  do{
+  do {
     rc = DDS_SubscriptionBuiltinTopicDataDataReader_take(
       reader,
       &data_seq,

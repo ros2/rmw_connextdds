@@ -17,16 +17,16 @@
 
 #include "rcutils/types.h"
 
-DDS_SEQUENCE(RMW_Connext_Uint8ArrayPtrSeq, rcutils_uint8_array_t*);
+DDS_SEQUENCE(RMW_Connext_Uint8ArrayPtrSeq, rcutils_uint8_array_t *);
 
 typedef RMW_Connext_Uint8ArrayPtrSeq RMW_Connext_UntypedSampleSeq;
 
 #define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER
 
 #define DDS_UntypedSampleSeq_get_reference(seq_, i_) \
-        *RMW_Connext_Uint8ArrayPtrSeq_get_reference(seq_, i_)
+  *RMW_Connext_Uint8ArrayPtrSeq_get_reference(seq_, i_)
 
 #define DDS_UntypedSampleSeq_get_length(seq_) \
-        RMW_Connext_Uint8ArrayPtrSeq_get_length(seq_)
+  RMW_Connext_Uint8ArrayPtrSeq_get_length(seq_)
 
 #endif  // RMW_CONNEXTDDS__TYPE_SUPPORT_IMPL_HPP_

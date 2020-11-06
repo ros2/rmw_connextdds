@@ -79,12 +79,9 @@ RMW_Connext_MemoryPlugin_create_sample(
     const rcutils_allocator_t allocator = rcutils_get_default_allocator();
     size_t buffer_size = 0;
 
-    if (type_support->unbounded())
-    {
+    if (type_support->unbounded()) {
         buffer_size = 0;
-    }
-    else
-    {
+    } else {
         buffer_size = type_support->type_serialized_size_max();
     }
 
@@ -132,7 +129,8 @@ RMW_Connext_MemoryPlugin_copy_sample(
 {
     const rcutils_uint8_array_t *src_buffer =
         reinterpret_cast<const rcutils_uint8_array_t *>(src);
-    rcutils_uint8_array_t *dst_buffer = (rcutils_uint8_array_t *)dst;
+    rcutils_uint8_array_t *dst_buffer =
+        reinterpret_cast<rcutils_uint8_array_t *>(dst);
 
     UNUSED_ARG(plugin);
 
@@ -174,19 +172,14 @@ RMW_Connext_EncapsulationPlugin_serialize(
 
     if (!msg->serialized)
     {
-        if (type_support->unbounded())
-        {
+        if (type_support->unbounded()) {
             serialized_size =
                 type_support->serialized_size_max(msg->user_data);
-        }
-        else
-        {
+        } else {
             serialized_size =
                 type_support->type_serialized_size_max();
         }
-    }
-    else
-    {
+    } else {
         serialized_size = user_buffer->buffer_length;
 
         if (!type_support->unbounded() &&
@@ -212,9 +205,7 @@ RMW_Connext_EncapsulationPlugin_serialize(
         msg_buffer_unbound->buffer_length = 0;
 
         data_buffer = *msg_buffer_unbound;
-    }
-    else
-    {
+    } else {
         data_buffer.buffer = msg_buffer_bound;
         data_buffer.buffer_capacity = type_support->type_serialized_size_max();
         data_buffer.buffer_length = 0;
@@ -227,9 +218,7 @@ RMW_Connext_EncapsulationPlugin_serialize(
         {
             return RTI_FALSE;
         }
-    }
-    else
-    {
+    } else {
         if (RCUTILS_RET_OK !=
                 rcutils_uint8_array_copy(&data_buffer, user_buffer))
         {
@@ -358,13 +347,10 @@ RMW_Connext_MemoryPlugin_create(
     if (endpoint_mode == DDS_TYPEPLUGIN_MODE_READER)
     {
         dr_qos = (struct DDS_DataReaderQos*)qos;
-        if (tp->property.max_buffers == 0)
-        {
+        if (tp->property.max_buffers == 0) {
             /* max_samples cannot be negative */
             bufp.max_buffers = (RTI_SIZE_T)dr_qos->resource_limits.max_samples;
-        }
-        else
-        {
+        } else {
             bufp.max_buffers = (RTI_SIZE_T)tp->property.max_buffers;
         }
 
@@ -421,7 +407,7 @@ RMW_Connext_EncapsulationPlugin_initialize_buffer(
     struct DDS_TypePluginDefault *plugin =
         reinterpret_cast<struct DDS_TypePluginDefault *>(initialize_param);
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(initialize_param);
-    DDS_TypePluginBuffer *const tbuf = (DDS_TypePluginBuffer *)buffer;
+    DDS_TypePluginBuffer *const tbuf = reinterpret_cast<DDS_TypePluginBuffer *>(buffer);
 
     UNUSED_ARG(plugin);
 
@@ -449,7 +435,7 @@ RMW_Connext_EncapsulationPlugin_finalize_buffer(
     struct DDS_TypePluginDefault *plugin =
         reinterpret_cast<struct DDS_TypePluginDefault *>(finalize_param);
     auto type_support = RMW_Connext_RtimeTypePluginI::type_support(finalize_param);
-    DDS_TypePluginBuffer *const tbuf = (DDS_TypePluginBuffer *)buffer;
+    DDS_TypePluginBuffer *const tbuf = reinterpret_cast<DDS_TypePluginBuffer *>(buffer);
 
     UNUSED_ARG(plugin);
 
@@ -500,21 +486,16 @@ RMW_Connext_EncapsulationPlugin_create(
         if (type_support->unbounded())
         {
             serialized_size = sizeof(rcutils_uint8_array_t);
-        }
-        else
-        {
+        } else {
             serialized_size = type_support->type_serialized_size_max();
         }
 
         bufp.buffer_size = sizeof(struct DDS_TypePluginBuffer) +
                            serialized_size;
 
-        if (tp->property.max_buffers == 0)
-        {
+        if (tp->property.max_buffers == 0) {
             bufp.max_buffers = dw_qos->resource_limits.max_samples;
-        }
-         else
-        {
+        } else {
             bufp.max_buffers = tp->property.max_buffers;
         }
 
@@ -624,7 +605,8 @@ void
 RMW_Connext_EncapsulationPlugin_return_sample(
     struct DDS_TypePlugin *tp, struct DDS_TypePluginSampleHolder *sample)
 {
-    struct DDS_TypePluginDefault *plugin = (struct DDS_TypePluginDefault*)tp;
+    struct DDS_TypePluginDefault *plugin =
+        reinterpret_cast<struct DDS_TypePluginDefault*>(tp);
     REDA_BufferPool_return_buffer(plugin->pool,sample);
 }
 
@@ -834,8 +816,7 @@ rmw_connextdds_assert_type(
         return RMW_RET_ERROR;
     }
 
-    if (nullptr == existing_type)
-    {
+    if (nullptr == existing_type) {
         if (DDS_RETCODE_OK !=
                 DDS_DomainParticipant_register_type(
                     participant, type_name, new_intf))
@@ -847,9 +828,7 @@ rmw_connextdds_assert_type(
         *reg_intf = new_intf;
 
         RMW_CONNEXT_LOG_DEBUG_A("registered type: name=%s", type_name)
-    }
-    else
-    {
+    } else {
         *reg_intf = existing_type;
         RMW_CONNEXT_LOG_DEBUG_A("already registered type: name=%s", type_name)
     }

@@ -95,36 +95,39 @@ rmw_connextdds_initialize_participant_factory(
   auto scope_exit_api_delete = rcpputils::make_scope_exit(
     [ctx_api, registry, whsm_name, rhsm_name, udp_name, shmem_name, dpde_name]()
     {
-      if (ctx_api->rt_whsm) {
-        if (!RT_Registry_unregister(registry, whsm_name, NULL, NULL)) {
-          RMW_CONNEXT_LOG_ERROR("failed to unregister whsm")
+      if (ctx_api) {
+
+        if (ctx_api->rt_whsm) {
+          if (!RT_Registry_unregister(registry, whsm_name, NULL, NULL)) {
+            RMW_CONNEXT_LOG_ERROR("failed to unregister whsm")
+          }
         }
-      }
-      if (ctx_api->rt_rhsm) {
-        if (!RT_Registry_unregister(registry, rhsm_name, NULL, NULL)) {
-          RMW_CONNEXT_LOG_ERROR("failed to unregister rhsm")
+        if (ctx_api->rt_rhsm) {
+          if (!RT_Registry_unregister(registry, rhsm_name, NULL, NULL)) {
+            RMW_CONNEXT_LOG_ERROR("failed to unregister rhsm")
+          }
         }
-      }
-      if (ctx_api->rt_udp) {
-        if (!RT_Registry_unregister(registry, udp_name, NULL, NULL)) {
-          RMW_CONNEXT_LOG_ERROR("failed to unregister udp")
+        if (ctx_api->rt_udp) {
+          if (!RT_Registry_unregister(registry, udp_name, NULL, NULL)) {
+            RMW_CONNEXT_LOG_ERROR("failed to unregister udp")
+          }
         }
-      }
-      if (ctx_api->rt_shmem) {
-        if (!RT_Registry_unregister(registry, shmem_name, NULL, NULL)) {
-          RMW_CONNEXT_LOG_ERROR("failed to unregister shmem")
+        if (ctx_api->rt_shmem) {
+          if (!RT_Registry_unregister(registry, shmem_name, NULL, NULL)) {
+            RMW_CONNEXT_LOG_ERROR("failed to unregister shmem")
+          }
         }
-      }
-      if (ctx_api->rt_dpde) {
-        if (!RT_Registry_unregister(registry, dpde_name, NULL, NULL)) {
-          RMW_CONNEXT_LOG_ERROR("failed to unregister dpde")
+        if (ctx_api->rt_dpde) {
+          if (!RT_Registry_unregister(registry, dpde_name, NULL, NULL)) {
+            RMW_CONNEXT_LOG_ERROR("failed to unregister dpde")
+          }
         }
+        if (nullptr != ctx_api->udp_property) {
+          DDS_StringSeq_finalize(&ctx_api->udp_property->allow_interface);
+          delete ctx_api->udp_property;
+        }
+        delete ctx_api;
       }
-      if (nullptr != ctx_api->udp_property) {
-        DDS_StringSeq_finalize(&ctx_api->udp_property->allow_interface);
-        delete ctx_api->udp_property;
-      }
-      delete ctx_api;
       DDS_DomainParticipantFactory_finalize_instance();
     });
 

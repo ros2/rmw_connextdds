@@ -2318,7 +2318,6 @@ RMW_Connext_WaitSet::wait(
   bool timedout = false;
   size_t active_len = 0;
   size_t triggered_len = 0;
-  bool active = false;
 
   {
     std::lock_guard<std::mutex> lock(this->waiting_lock);
@@ -2975,10 +2974,10 @@ RMW_Connext_Client::take_response(
       "gid=%08X.%08X.%08X.%08X, "
       "sn=%lu",
       this->reply_sub->message_type_support()->type_name(),
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[0],
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[1],
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[2],
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[3],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[0],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[1],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
       rr_msg.sn)
   }
 
@@ -3008,10 +3007,10 @@ RMW_Connext_Client::send_request(
     "gid=%08X.%08X.%08X.%08X, "
     "sn=%lu",
     this->request_pub->message_type_support()->type_name(),
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[0],
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[1],
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[2],
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[3],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[0],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[1],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
 
   return this->request_pub->write(&rr_msg, false /* serialized */, sequence_id);
@@ -3211,10 +3210,10 @@ RMW_Connext_Service::take_request(
       "gid=%08X.%08X.%08X.%08X, "
       "sn=%lu",
       this->request_sub->message_type_support()->type_name(),
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[0],
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[1],
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[2],
-      reinterpret_cast<uint32_t *>(rr_msg.gid.data)[3],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[0],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[1],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
+      reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
       rr_msg.sn)
   }
 
@@ -3238,10 +3237,10 @@ RMW_Connext_Service::send_response(
     "gid=%08X.%08X.%08X.%08X, "
     "sn=%lu",
     this->reply_pub->message_type_support()->type_name(),
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[0],
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[1],
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[2],
-    reinterpret_cast<uint32_t *>(rr_msg.gid.data)[3],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[0],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[1],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
 
   return this->reply_pub->write(&rr_msg, false /* serialized */);

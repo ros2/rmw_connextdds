@@ -270,7 +270,9 @@ RMW_Connext_TypePlugin_destroy_data(void ** sample, void * user_data)
   rcutils_uint8_array_t * data_buffer =
     reinterpret_cast<rcutils_uint8_array_t *>(*sample);
 
-  (void)rcutils_uint8_array_fini(data_buffer);
+  if (RCUTILS_RET_OK != rcutils_uint8_array_fini(data_buffer)) {
+    RMW_CONNEXT_LOG_ERROR("failed to finalize array")
+  }
 
   delete data_buffer;
 }
@@ -766,8 +768,18 @@ rmw_connextdds_register_type_support(
   registered = false;
 
   RMW_Connext_MessageTypeSupport * type_support_res = nullptr;
-  RMW_Connext_MessageTypeSupport * type_support = new (std::nothrow)
-    RMW_Connext_MessageTypeSupport(message_type, type_supports, type_name);
+  
+  RMW_Connext_MessageTypeSupport * type_support = nullptr;
+  try
+  {  
+    type_support = new RMW_Connext_MessageTypeSupport(
+                            message_type, type_supports, type_name);
+  }
+  catch(const std::exception& e)
+  {
+    RMW_CONNEXT_LOG_ERROR_A("failed to create type support: %s", e.what())
+  }
+    
   if (nullptr == type_support) {
     return nullptr;
   }

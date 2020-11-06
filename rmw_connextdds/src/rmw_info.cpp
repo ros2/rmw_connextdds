@@ -25,6 +25,9 @@
 #include "rmw/get_topic_names_and_types.h"
 #include "rmw/get_topic_endpoint_info.h"
 #include "rmw/sanity_checks.h"
+#include "rmw/validate_full_topic_name.h"
+#include "rmw/validate_namespace.h"
+#include "rmw/validate_node_name.h"
 
 #include "rmw_connextdds/demangle.hpp"
 
@@ -50,7 +53,7 @@ extern "C" rmw_ret_t rmw_get_node_names(
   if (RMW_RET_OK != rmw_check_zero_rmw_string_array(node_names) ||
     RMW_RET_OK != rmw_check_zero_rmw_string_array(node_namespaces))
   {
-    return RMW_RET_ERROR;
+    return RMW_RET_INVALID_ARGUMENT;
   }
 
   auto common_ctx = &node->context->impl->common;
@@ -97,7 +100,7 @@ extern "C" rmw_ret_t rmw_get_node_names_with_enclaves(
   if (RMW_RET_OK != rmw_check_zero_rmw_string_array(node_names) ||
     RMW_RET_OK != rmw_check_zero_rmw_string_array(node_namespaces))
   {
-    return RMW_RET_ERROR;
+    return RMW_RET_INVALID_ARGUMENT;
   }
 
   auto common_ctx = &node->context->impl->common;
@@ -142,7 +145,7 @@ extern "C" rmw_ret_t rmw_get_topic_names_and_types(
   RMW_CHECK_ARGUMENT_FOR_NULL(tptyp, RMW_RET_INVALID_ARGUMENT);
 
   if (RMW_RET_OK != rmw_names_and_types_check_zero(tptyp)) {
-    return RMW_RET_ERROR;
+    return RMW_RET_INVALID_ARGUMENT;
   }
 
   DemangleFunction demangle_topic = _demangle_ros_topic_from_topic;
@@ -228,6 +231,19 @@ extern "C" rmw_ret_t rmw_count_publishers(
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(count, RMW_RET_INVALID_ARGUMENT);
+  
+  int validation_result = RMW_TOPIC_VALID;
+  rmw_ret_t ret =
+    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_TOPIC_VALID != validation_result) {
+    const char * reason =
+        rmw_full_topic_name_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
 
   auto common_context = &node->context->impl->common;
   const std::string mangled_topic_name =
@@ -250,6 +266,19 @@ extern "C" rmw_ret_t rmw_count_subscribers(
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(count, RMW_RET_INVALID_ARGUMENT);
+
+  int validation_result = RMW_TOPIC_VALID;
+  rmw_ret_t ret =
+    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_TOPIC_VALID != validation_result) {
+    const char * reason =
+        rmw_full_topic_name_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
 
   auto common_context = &node->context->impl->common;
   const std::string mangled_topic_name =
@@ -290,6 +319,27 @@ static rmw_ret_t get_topic_names_and_types_by_node(
   RMW_CHECK_ARGUMENT_FOR_NULL(node_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(node_namespace, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_names_and_types, RMW_RET_INVALID_ARGUMENT);
+
+  int validation_result = RMW_NODE_NAME_VALID;
+  rmw_ret_t ret = rmw_validate_node_name(node_name, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_NODE_NAME_VALID != validation_result) {
+    const char * reason = rmw_node_name_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A("invalid node name: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  validation_result = RMW_NAMESPACE_VALID;
+  ret = rmw_validate_namespace(node_namespace, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_NAMESPACE_VALID != validation_result) {
+    const char * reason = rmw_namespace_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A("invalid node namespace: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
 
   auto common_context = &node->context->impl->common;
   if (no_demangle) {
@@ -468,6 +518,26 @@ extern "C" rmw_ret_t rmw_get_publishers_info_by_topic(
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(publishers_info, RMW_RET_INVALID_ARGUMENT);
 
+  int validation_result = RMW_TOPIC_VALID;
+  rmw_ret_t ret =
+    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_TOPIC_VALID != validation_result) {
+    const char * reason =
+        rmw_full_topic_name_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+
+  RCUTILS_CHECK_ALLOCATOR_WITH_MSG(
+    allocator, "allocator argument is invalid", return RMW_RET_INVALID_ARGUMENT);
+
+  if (RMW_RET_OK != rmw_topic_endpoint_info_array_check_zero(publishers_info)) {
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+
   auto common_context = &node->context->impl->common;
   std::string mangled_topic_name = topic_name;
   DemangleFunction demangle_type = _identity_demangle;
@@ -500,6 +570,26 @@ extern "C" rmw_ret_t rmw_get_subscriptions_info_by_topic(
   RMW_CHECK_ARGUMENT_FOR_NULL(allocator, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(subscriptions_info, RMW_RET_INVALID_ARGUMENT);
+
+  int validation_result = RMW_TOPIC_VALID;
+  rmw_ret_t ret =
+    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_TOPIC_VALID != validation_result) {
+    const char * reason =
+        rmw_full_topic_name_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+
+  RCUTILS_CHECK_ALLOCATOR_WITH_MSG(
+    allocator, "allocator argument is invalid", return RMW_RET_INVALID_ARGUMENT);
+
+  if (RMW_RET_OK != rmw_topic_endpoint_info_array_check_zero(subscriptions_info)) {
+    return RMW_RET_INVALID_ARGUMENT;
+  }
 
   auto common_context = &node->context->impl->common;
   std::string mangled_topic_name = topic_name;

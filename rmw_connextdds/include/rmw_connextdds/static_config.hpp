@@ -195,6 +195,13 @@
   (RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_DASHING)
 #endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
+/******************************************************************************
+ * In-Development Features
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_RTIME_BUILTIN_LISTENER
+#define RMW_CONNEXT_RTIME_BUILTIN_LISTENER      0
+#endif /* RMW_CONNEXT_RTIME_BUILTIN_LISTENER */
+
 
 #include "resource_limits.hpp"
 

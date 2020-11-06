@@ -46,7 +46,7 @@ function(rti_lib_suffix var)
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 function(rti_init_env)
     if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -68,14 +68,14 @@ endfunction()
 function(_list_first_element list_var match_prefix out_var)
     file(GLOB ${list_var} "${match_prefix}")
     list(LENGTH ${list_var} ${list_var}_len)
-    if (${${list_var}_len} GREATER 0)
+    if(${${list_var}_len} GREATER 0)
         list(GET ${list_var} 0 first_el)
         set(${out_var} "${first_el}" PARENT_SCOPE)
     endif()
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 function(rti_load_rtimehome)
     if(NOT DEFINED RTIMEHOME)
@@ -107,7 +107,7 @@ function(rti_load_rtimehome)
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 
 # macro(get_directories _result _root)
@@ -171,7 +171,7 @@ function(rti_build_connextmicro)
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 function(rti_find_connextmicro_lib basedir rtime_lib)
     find_library(lib${rtime_lib}
@@ -197,7 +197,7 @@ function(rti_find_connextmicro_lib basedir rtime_lib)
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 function(rti_find_connextmicro)
     set(RTIMEHOME_FOUND             false PARENT_SCOPE)
@@ -216,7 +216,7 @@ function(rti_find_connextmicro)
 
     rti_load_rtimehome()
 
-    if (NOT RTIMEHOME_FOUND)
+    if(NOT RTIMEHOME_FOUND)
         message(STATUS "RTIMEHOME not found")
         return()
     endif()
@@ -298,7 +298,7 @@ function(rti_find_connextmicro)
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 function(rti_load_connextddsdir)
     if(NOT DEFINED CONNEXTDDS_DIR)
@@ -331,7 +331,7 @@ function(rti_load_connextddsdir)
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 function(rti_find_connextpro)
     rti_load_connextddsdir()
@@ -354,7 +354,7 @@ function(rti_find_connextpro)
 endfunction()
 
 ################################################################################
-# 
+#
 ################################################################################
 macro(rti_build_rmw_connext)
     # for some reason, if we don't set this explicitly, cmake will only build

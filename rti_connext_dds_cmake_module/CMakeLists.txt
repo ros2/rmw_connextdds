@@ -82,8 +82,9 @@ else()
                 "$<BUILD_INTERFACE:${RTIMEHOME}/src/reda/sequence>")
 
     target_include_directories(${RTIME_EXT}
-        PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-               "$<INSTALL_INTERFACE:include>")
+        PUBLIC
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+            "$<INSTALL_INTERFACE:include>")
 
     target_link_libraries(${RTIME_EXT}  ${RTIME_TARGETS})
 

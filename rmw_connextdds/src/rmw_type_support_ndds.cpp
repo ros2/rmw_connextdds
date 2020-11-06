@@ -1,4 +1,4 @@
-// (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
+// Copyright 2020 Real-Time Innovations, Inc. (RTI)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

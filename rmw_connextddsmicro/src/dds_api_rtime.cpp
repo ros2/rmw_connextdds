@@ -881,12 +881,9 @@ rmw_connextdds_take_samples(
             DDS_ANY_SAMPLE_STATE,
             DDS_ANY_INSTANCE_STATE);
 
-    if (DDS_RETCODE_NO_DATA == rc)
-    {
+    if (DDS_RETCODE_NO_DATA == rc) {
         return RMW_RET_OK;
-    }
-    else if (DDS_RETCODE_OK != rc)
-    {
+    } else if (DDS_RETCODE_OK != rc) {
         RMW_CONNEXT_LOG_ERROR("failed to take data from DDS reader")
         return RMW_RET_ERROR;
     }

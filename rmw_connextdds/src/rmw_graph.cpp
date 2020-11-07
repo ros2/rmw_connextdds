@@ -573,7 +573,7 @@ rmw_ret_t
 rmw_connextdds_graph_add_participant(
   rmw_context_impl_t * const ctx,
   const DDS_ParticipantBuiltinTopicData * const data,
-  const char *const enclave)
+  const char * const enclave)
 {
   DDS_GUID_t dp_guid;
   rmw_gid_t gid;
@@ -589,9 +589,8 @@ rmw_connextdds_graph_add_participant(
 
   std::string enclave_str;
 
-  if (nullptr != enclave)
-  {
-      enclave_str = enclave;
+  if (nullptr != enclave) {
+    enclave_str = enclave;
   }
 
   RMW_CONNEXT_LOG_DEBUG_A(

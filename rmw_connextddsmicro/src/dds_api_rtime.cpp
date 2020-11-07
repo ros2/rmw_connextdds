@@ -30,7 +30,7 @@ static const DDS_SubscriptionBuiltinTopicData DEFAULT_SUBSCRIPTION_DATA =
 static const DDS_PublicationBuiltinTopicData DEFAULT_PUBLICATION_DATA =
   DDS_PublicationBuiltinTopicData_INITIALIZER;
 
-template <typename T>
+template<typename T>
 struct RMW_Connext_CachedBuiltinData
 {
   T data;
@@ -43,10 +43,11 @@ struct RMW_Connext_ParticipantData
 {
   static
   rmw_ret_t
-  copy(DDS_ParticipantBuiltinTopicData * const dst, const DDS_ParticipantBuiltinTopicData * const src)
+  copy(
+    DDS_ParticipantBuiltinTopicData * const dst,
+    const DDS_ParticipantBuiltinTopicData * const src)
   {
-    if (!DDS_ParticipantBuiltinTopicData_copy(dst, src))
-    {
+    if (!DDS_ParticipantBuiltinTopicData_copy(dst, src)) {
       return RMW_RET_ERROR;
     }
     return RMW_RET_OK;
@@ -85,10 +86,11 @@ struct RMW_Connext_SubscriptionData
 {
   static
   rmw_ret_t
-  copy(DDS_SubscriptionBuiltinTopicData * const dst, const DDS_SubscriptionBuiltinTopicData * const src)
+  copy(
+    DDS_SubscriptionBuiltinTopicData * const dst,
+    const DDS_SubscriptionBuiltinTopicData * const src)
   {
-    if (!DDS_SubscriptionBuiltinTopicData_copy(dst, src))
-    {
+    if (!DDS_SubscriptionBuiltinTopicData_copy(dst, src)) {
       return RMW_RET_ERROR;
     }
     return RMW_RET_OK;
@@ -127,10 +129,11 @@ struct RMW_Connext_PublicationData
 {
   static
   rmw_ret_t
-  copy(DDS_PublicationBuiltinTopicData * const dst, const DDS_PublicationBuiltinTopicData * const src)
+  copy(
+    DDS_PublicationBuiltinTopicData * const dst,
+    const DDS_PublicationBuiltinTopicData * const src)
   {
-    if (!DDS_PublicationBuiltinTopicData_copy(dst, src))
-    {
+    if (!DDS_PublicationBuiltinTopicData_copy(dst, src)) {
       return RMW_RET_ERROR;
     }
     return RMW_RET_OK;
@@ -167,13 +170,13 @@ struct RMW_Connext_PublicationData
 
 struct RMW_Connext_BuiltinListener
 {
-  rmw_context_impl_t *ctx;
+  rmw_context_impl_t * ctx;
   DDS_DataReaderListener parent_listener;
 
-  RMW_Connext_BuiltinListener(rmw_context_impl_t *const ctx)
+  RMW_Connext_BuiltinListener(rmw_context_impl_t * const ctx)
   : ctx(ctx) {}
 
-  virtual ~RMW_Connext_BuiltinListener() { }
+  virtual ~RMW_Connext_BuiltinListener() {}
 
   virtual
   void
@@ -186,88 +189,88 @@ struct RMW_Connext_BuiltinListener
   static
   void
   on_requested_deadline_missed(
-    void *listener_data,
-    DDS_DataReader* reader,
-    const struct DDS_RequestedDeadlineMissedStatus *status);
+    void * listener_data,
+    DDS_DataReader * reader,
+    const struct DDS_RequestedDeadlineMissedStatus * status);
 
   static
   void
   on_liveliness_changed(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const struct DDS_LivelinessChangedStatus *status);
+    void * listener_data,
+    DDS_DataReader * reader,
+    const struct DDS_LivelinessChangedStatus * status);
 
   static
   void
   on_requested_incompatible_qos(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const struct DDS_RequestedIncompatibleQosStatus *status);
+    void * listener_data,
+    DDS_DataReader * reader,
+    const struct DDS_RequestedIncompatibleQosStatus * status);
 
   static
   void
   on_sample_rejected(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const struct DDS_SampleRejectedStatus *status);
+    void * listener_data,
+    DDS_DataReader * reader,
+    const struct DDS_SampleRejectedStatus * status);
 
   static
   DDS_Boolean
   on_before_sample_commit(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const void *const sample,
-    const struct DDS_SampleInfo *const sample_info,
-    DDS_Boolean *dropped);
+    void * listener_data,
+    DDS_DataReader * reader,
+    const void * const sample,
+    const struct DDS_SampleInfo * const sample_info,
+    DDS_Boolean * dropped);
 
   static
   void
   on_data_available(
-    void *listener_data,
-    DDS_DataReader *reader);
+    void * listener_data,
+    DDS_DataReader * reader);
 
   static void
   on_subscription_matched(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const struct DDS_SubscriptionMatchedStatus *status);
+    void * listener_data,
+    DDS_DataReader * reader,
+    const struct DDS_SubscriptionMatchedStatus * status);
 
   static
   void
   on_sample_lost(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const struct DDS_SampleLostStatus *status);
-  
+    void * listener_data,
+    DDS_DataReader * reader,
+    const struct DDS_SampleLostStatus * status);
+
   static
   void
   on_instance_replaced(
-    void *listener_data,
-    DDS_DataReader *reader,
-    const struct DDS_DataReaderInstanceReplacedStatus *status);
+    void * listener_data,
+    DDS_DataReader * reader,
+    const struct DDS_DataReaderInstanceReplacedStatus * status);
 
   static
   void
   initialize_listener(
-    RMW_Connext_BuiltinListener *const b_listener,
-    struct DDS_DataReaderListener *const listener);
+    RMW_Connext_BuiltinListener * const b_listener,
+    struct DDS_DataReaderListener * const listener);
 
 };
 
 template<class T, class H>
 struct RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
 {
-  rmw_context_impl_t *ctx;
+  rmw_context_impl_t * ctx;
   DDS_DataReaderListener parent_listener;
   std::mutex data_mutex;
   std::vector<RMW_Connext_CachedBuiltinData<T>> data_queue;
 
-  RMW_Connext_TypedBuiltinListener(rmw_context_impl_t *const ctx)
+  RMW_Connext_TypedBuiltinListener(rmw_context_impl_t * const ctx)
   : RMW_Connext_BuiltinListener(ctx) {}
 
-  virtual ~RMW_Connext_TypedBuiltinListener() {
-    for (auto & data : this->data_queue)
-    {
+  virtual ~RMW_Connext_TypedBuiltinListener()
+  {
+    for (auto & data : this->data_queue) {
       H::finalize(&data.data);
     }
   }
@@ -276,15 +279,16 @@ struct RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
   void
   received_sample(const void * const data, const DDS_SampleInfo * const info)
   {
-    const T * const tdata = reinterpret_cast<const T*>(data);
+    const T * const tdata = reinterpret_cast<const T *>(data);
     this->on_data(tdata, info);
   }
 
   virtual
   void
-  process_data_available(DDS_DataReader * const reader) {
+  process_data_available(DDS_DataReader * const reader)
+  {
     H::process_data_available(this, reader);
-    
+
     if (nullptr != this->parent_listener.on_data_available) {
       this->parent_listener.on_data_available(
         this->parent_listener.as_listener.listener_data, reader);
@@ -292,14 +296,13 @@ struct RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
   }
 
   rmw_ret_t
-  on_data(const T *const data, const DDS_SampleInfo * const info)
+  on_data(const T * const data, const DDS_SampleInfo * const info)
   {
     std::lock_guard<std::mutex> guard(this->data_mutex);
     RMW_Connext_CachedBuiltinData<T> qdata;
     H::initialize(&qdata.data);
     qdata.valid_data = info->valid_data;
-    if (qdata.valid_data)
-    {
+    if (qdata.valid_data) {
       rmw_ret_t rc = H::copy(&qdata.data, data);
       if (RMW_RET_OK != rc) {
         H::finalize(&qdata.data);
@@ -326,8 +329,7 @@ struct RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
     rmw_ret_t rc = H::copy(&qdata.data, &first.data);
     this->data_queue.erase(this->data_queue.begin());
     H::finalize(&first.data);
-    if (RMW_RET_OK != rc)
-    {
+    if (RMW_RET_OK != rc) {
       H::finalize(&qdata.data);
       return false;
     }
@@ -347,13 +349,13 @@ struct rmw_connextdds_api_micro
   struct UDP_InterfaceFactoryProperty * udp_property;
 
   RMW_Connext_TypedBuiltinListener<DDS_ParticipantBuiltinTopicData, RMW_Connext_ParticipantData>
-    discovery_dp_listener;
+  discovery_dp_listener;
   RMW_Connext_TypedBuiltinListener<DDS_SubscriptionBuiltinTopicData, RMW_Connext_SubscriptionData>
-    discovery_sub_listener;
+  discovery_sub_listener;
   RMW_Connext_TypedBuiltinListener<DDS_PublicationBuiltinTopicData, RMW_Connext_PublicationData>
-    discovery_pub_listener;
+  discovery_pub_listener;
 
-  rmw_connextdds_api_micro(rmw_context_impl_t *const ctx)
+  rmw_connextdds_api_micro(rmw_context_impl_t * const ctx)
   : rt_whsm(false),
     rt_rhsm(false),
     rt_udp(false),
@@ -1221,19 +1223,20 @@ RMW_Connext_ParticipantData::process_data_available(
 {
   struct DDS_ParticipantBuiltinTopicDataSeq data_seq =
     DDS_ParticipantBuiltinTopicDataSeq_INITIALIZER;
-  struct DDS_SampleInfoSeq info_seq  = DDS_SEQUENCE_INITIALIZER;
+  struct DDS_SampleInfoSeq info_seq = DDS_SEQUENCE_INITIALIZER;
 
   DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
 
   do {
     retcode =
-      DDS_DataReader_read(reader,
-        reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq),
-        &info_seq,
-        DDS_LENGTH_UNLIMITED,
-        DDS_NOT_READ_SAMPLE_STATE,
-        DDS_ANY_VIEW_STATE,
-        DDS_ANY_INSTANCE_STATE);
+      DDS_DataReader_read(
+      reader,
+      reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq),
+      &info_seq,
+      DDS_LENGTH_UNLIMITED,
+      DDS_NOT_READ_SAMPLE_STATE,
+      DDS_ANY_VIEW_STATE,
+      DDS_ANY_INSTANCE_STATE);
 
     if (DDS_RETCODE_NO_DATA == retcode) {
       break;
@@ -1244,16 +1247,17 @@ RMW_Connext_ParticipantData::process_data_available(
 
     const size_t l = DDS_ParticipantBuiltinTopicDataSeq_get_length(&data_seq);
     for (size_t i = 0; i < l; ++i) {
-      DDS_ParticipantBuiltinTopicData *const data =
+      DDS_ParticipantBuiltinTopicData * const data =
         reinterpret_cast<DDS_ParticipantBuiltinTopicData *>(
-                DDS_UntypedSampleSeq_get_reference(
-                    reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), i));
-      DDS_SampleInfo *const info = DDS_SampleInfoSeq_get_reference(&info_seq,i);
+        DDS_UntypedSampleSeq_get_reference(
+          reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), i));
+      DDS_SampleInfo * const info = DDS_SampleInfoSeq_get_reference(&info_seq, i);
       listener->received_sample(data, info);
     }
 
-    retcode = DDS_DataReader_return_loan(reader,
-                reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), &info_seq);
+    retcode = DDS_DataReader_return_loan(
+      reader,
+      reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), &info_seq);
   } while (retcode == DDS_RETCODE_OK);
 }
 
@@ -1264,19 +1268,20 @@ RMW_Connext_PublicationData::process_data_available(
 {
   struct DDS_PublicationBuiltinTopicDataSeq data_seq =
     DDS_PublicationBuiltinTopicDataSeq_INITIALIZER;
-  struct DDS_SampleInfoSeq info_seq  = DDS_SEQUENCE_INITIALIZER;
-  
+  struct DDS_SampleInfoSeq info_seq = DDS_SEQUENCE_INITIALIZER;
+
   DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
 
   do {
     retcode =
-      DDS_DataReader_read(reader,
-        reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq),
-        &info_seq,
-        DDS_LENGTH_UNLIMITED,
-        DDS_NOT_READ_SAMPLE_STATE,
-        DDS_ANY_VIEW_STATE,
-        DDS_ANY_INSTANCE_STATE);
+      DDS_DataReader_read(
+      reader,
+      reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq),
+      &info_seq,
+      DDS_LENGTH_UNLIMITED,
+      DDS_NOT_READ_SAMPLE_STATE,
+      DDS_ANY_VIEW_STATE,
+      DDS_ANY_INSTANCE_STATE);
 
     if (DDS_RETCODE_NO_DATA == retcode) {
       break;
@@ -1286,13 +1291,13 @@ RMW_Connext_PublicationData::process_data_available(
     }
 
     const size_t l =
-        DDS_PublicationBuiltinTopicDataSeq_get_length(&data_seq);
+      DDS_PublicationBuiltinTopicDataSeq_get_length(&data_seq);
     for (size_t i = 0; i < l; ++i) {
-      DDS_PublicationBuiltinTopicData *const data =
+      DDS_PublicationBuiltinTopicData * const data =
         reinterpret_cast<DDS_PublicationBuiltinTopicData *>(
-                DDS_UntypedSampleSeq_get_reference(
-                    reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), i));
-      DDS_SampleInfo *const info = DDS_SampleInfoSeq_get_reference(&info_seq,i);
+        DDS_UntypedSampleSeq_get_reference(
+          reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), i));
+      DDS_SampleInfo * const info = DDS_SampleInfoSeq_get_reference(&info_seq, i);
 
       // if (info->valid_data) {
       //   DDS_GUID_t endp_guid;
@@ -1328,8 +1333,9 @@ RMW_Connext_PublicationData::process_data_available(
       listener->received_sample(data, info);
     }
 
-    retcode = DDS_DataReader_return_loan(reader,
-                reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), &info_seq);
+    retcode = DDS_DataReader_return_loan(
+      reader,
+      reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), &info_seq);
   } while (retcode == DDS_RETCODE_OK);
 }
 
@@ -1341,19 +1347,20 @@ RMW_Connext_SubscriptionData::process_data_available(
 {
   struct DDS_SubscriptionBuiltinTopicDataSeq data_seq =
     DDS_SubscriptionBuiltinTopicDataSeq_INITIALIZER;
-  struct DDS_SampleInfoSeq info_seq  = DDS_SEQUENCE_INITIALIZER;
-  
+  struct DDS_SampleInfoSeq info_seq = DDS_SEQUENCE_INITIALIZER;
+
   DDS_ReturnCode_t retcode = DDS_RETCODE_ERROR;
 
   do {
     retcode =
-      DDS_DataReader_read(reader,
-        reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq),
-        &info_seq,
-        DDS_LENGTH_UNLIMITED,
-        DDS_NOT_READ_SAMPLE_STATE,
-        DDS_ANY_VIEW_STATE,
-        DDS_ANY_INSTANCE_STATE);
+      DDS_DataReader_read(
+      reader,
+      reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq),
+      &info_seq,
+      DDS_LENGTH_UNLIMITED,
+      DDS_NOT_READ_SAMPLE_STATE,
+      DDS_ANY_VIEW_STATE,
+      DDS_ANY_INSTANCE_STATE);
 
     if (DDS_RETCODE_NO_DATA == retcode) {
       break;
@@ -1363,13 +1370,13 @@ RMW_Connext_SubscriptionData::process_data_available(
     }
 
     const size_t l =
-        DDS_SubscriptionBuiltinTopicDataSeq_get_length(&data_seq);
+      DDS_SubscriptionBuiltinTopicDataSeq_get_length(&data_seq);
     for (size_t i = 0; i < l; ++i) {
-      DDS_SubscriptionBuiltinTopicData *const data =
+      DDS_SubscriptionBuiltinTopicData * const data =
         reinterpret_cast<DDS_SubscriptionBuiltinTopicData *>(
-                DDS_UntypedSampleSeq_get_reference(
-                    reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), i));
-      DDS_SampleInfo *const info = DDS_SampleInfoSeq_get_reference(&info_seq,i);
+        DDS_UntypedSampleSeq_get_reference(
+          reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), i));
+      DDS_SampleInfo * const info = DDS_SampleInfoSeq_get_reference(&info_seq, i);
 
       // if (info->valid_data) {
       //   DDS_GUID_t endp_guid;
@@ -1405,20 +1412,21 @@ RMW_Connext_SubscriptionData::process_data_available(
       listener->received_sample(data, info);
     }
 
-    retcode = DDS_DataReader_return_loan(reader,
-                reinterpret_cast<DDS_UntypedSampleSeq*>(&data_seq), &info_seq);
+    retcode = DDS_DataReader_return_loan(
+      reader,
+      reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), &info_seq);
   } while (retcode == DDS_RETCODE_OK);
 }
 
 void
 RMW_Connext_BuiltinListener::on_requested_deadline_missed(
-  void *listener_data,
-  DDS_DataReader* reader,
-  const struct DDS_RequestedDeadlineMissedStatus *status)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const struct DDS_RequestedDeadlineMissedStatus * status)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
-  
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
+
   if (nullptr != self->parent_listener.on_requested_deadline_missed) {
     self->parent_listener.on_requested_deadline_missed(
       self->parent_listener.as_listener.listener_data, reader, status);
@@ -1427,12 +1435,12 @@ RMW_Connext_BuiltinListener::on_requested_deadline_missed(
 
 void
 RMW_Connext_BuiltinListener::on_liveliness_changed(
-  void *listener_data,
-  DDS_DataReader *reader,
-  const struct DDS_LivelinessChangedStatus *status)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const struct DDS_LivelinessChangedStatus * status)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   if (nullptr != self->parent_listener.on_liveliness_changed) {
     self->parent_listener.on_liveliness_changed(
@@ -1442,12 +1450,12 @@ RMW_Connext_BuiltinListener::on_liveliness_changed(
 
 void
 RMW_Connext_BuiltinListener::on_requested_incompatible_qos(
-  void *listener_data,
-  DDS_DataReader *reader,
-  const struct DDS_RequestedIncompatibleQosStatus *status)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const struct DDS_RequestedIncompatibleQosStatus * status)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   if (nullptr != self->parent_listener.on_requested_incompatible_qos) {
     self->parent_listener.on_requested_incompatible_qos(
@@ -1457,12 +1465,12 @@ RMW_Connext_BuiltinListener::on_requested_incompatible_qos(
 
 void
 RMW_Connext_BuiltinListener::on_sample_rejected(
-  void *listener_data,
-  DDS_DataReader *reader,
-  const struct DDS_SampleRejectedStatus *status)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const struct DDS_SampleRejectedStatus * status)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   if (nullptr != self->parent_listener.on_sample_rejected) {
     self->parent_listener.on_sample_rejected(
@@ -1472,19 +1480,19 @@ RMW_Connext_BuiltinListener::on_sample_rejected(
 
 DDS_Boolean
 RMW_Connext_BuiltinListener::on_before_sample_commit(
-  void *listener_data,
-  DDS_DataReader *reader,
-  const void *const sample,
-  const struct DDS_SampleInfo *const sample_info,
-  DDS_Boolean *dropped)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const void * const sample,
+  const struct DDS_SampleInfo * const sample_info,
+  DDS_Boolean * dropped)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   if (nullptr != self->parent_listener.on_before_sample_commit) {
-      return self->parent_listener.on_before_sample_commit(
-        self->parent_listener.as_listener.listener_data,
-        reader, sample, sample_info, dropped);
+    return self->parent_listener.on_before_sample_commit(
+      self->parent_listener.as_listener.listener_data,
+      reader, sample, sample_info, dropped);
   }
 
   return DDS_BOOLEAN_TRUE;
@@ -1492,12 +1500,12 @@ RMW_Connext_BuiltinListener::on_before_sample_commit(
 
 void
 RMW_Connext_BuiltinListener::on_subscription_matched(
-  void *listener_data,
-  DDS_DataReader *reader,
-  const struct DDS_SubscriptionMatchedStatus *status)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const struct DDS_SubscriptionMatchedStatus * status)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   if (nullptr != self->parent_listener.on_subscription_matched) {
     self->parent_listener.on_subscription_matched(
@@ -1507,12 +1515,12 @@ RMW_Connext_BuiltinListener::on_subscription_matched(
 
 void
 RMW_Connext_BuiltinListener::on_sample_lost(
-  void *listener_data,
-  DDS_DataReader *reader,
-  const struct DDS_SampleLostStatus *status)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const struct DDS_SampleLostStatus * status)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   if (nullptr != self->parent_listener.on_sample_lost) {
     self->parent_listener.on_sample_lost(
@@ -1522,12 +1530,12 @@ RMW_Connext_BuiltinListener::on_sample_lost(
 
 void
 RMW_Connext_BuiltinListener::on_instance_replaced(
-  void *listener_data,
-  DDS_DataReader *reader,
-  const struct DDS_DataReaderInstanceReplacedStatus *status)
+  void * listener_data,
+  DDS_DataReader * reader,
+  const struct DDS_DataReaderInstanceReplacedStatus * status)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   if (nullptr != self->parent_listener.on_instance_replaced) {
     self->parent_listener.on_instance_replaced(
@@ -1537,41 +1545,41 @@ RMW_Connext_BuiltinListener::on_instance_replaced(
 
 void
 RMW_Connext_BuiltinListener::on_data_available(
-  void *listener_data, DDS_DataReader *reader)
+  void * listener_data, DDS_DataReader * reader)
 {
-  RMW_Connext_BuiltinListener *const self =
-    reinterpret_cast<RMW_Connext_BuiltinListener*>(listener_data);
+  RMW_Connext_BuiltinListener * const self =
+    reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   self->process_data_available(reader);
 }
 
 void
 RMW_Connext_BuiltinListener::initialize_listener(
-  RMW_Connext_BuiltinListener *const b_listener,
-  struct DDS_DataReaderListener *const listener)
+  RMW_Connext_BuiltinListener * const b_listener,
+  struct DDS_DataReaderListener * const listener)
 {
-    struct DDS_DataReaderListener DEFAULT_LISTENER = DDS_DataReaderListener_INITIALIZER;
+  struct DDS_DataReaderListener DEFAULT_LISTENER = DDS_DataReaderListener_INITIALIZER;
 
-    *listener = DEFAULT_LISTENER;
-    listener->as_listener.listener_data = b_listener;
-    listener->on_requested_deadline_missed =
-        RMW_Connext_BuiltinListener::on_requested_deadline_missed;
-    listener->on_requested_incompatible_qos =
-        RMW_Connext_BuiltinListener::on_requested_incompatible_qos;
-    listener->on_sample_rejected =
-        RMW_Connext_BuiltinListener::on_sample_rejected;
-    listener->on_liveliness_changed =
-        RMW_Connext_BuiltinListener::on_liveliness_changed;
-    listener->on_subscription_matched =
-        RMW_Connext_BuiltinListener::on_subscription_matched;
-    listener->on_sample_lost =
-        RMW_Connext_BuiltinListener::on_sample_lost;
-    listener->on_instance_replaced = 
-        RMW_Connext_BuiltinListener::on_instance_replaced;
-    listener->on_before_sample_commit =
-        RMW_Connext_BuiltinListener::on_before_sample_commit;
-    listener->on_data_available =
-        RMW_Connext_BuiltinListener::on_data_available;
+  *listener = DEFAULT_LISTENER;
+  listener->as_listener.listener_data = b_listener;
+  listener->on_requested_deadline_missed =
+    RMW_Connext_BuiltinListener::on_requested_deadline_missed;
+  listener->on_requested_incompatible_qos =
+    RMW_Connext_BuiltinListener::on_requested_incompatible_qos;
+  listener->on_sample_rejected =
+    RMW_Connext_BuiltinListener::on_sample_rejected;
+  listener->on_liveliness_changed =
+    RMW_Connext_BuiltinListener::on_liveliness_changed;
+  listener->on_subscription_matched =
+    RMW_Connext_BuiltinListener::on_subscription_matched;
+  listener->on_sample_lost =
+    RMW_Connext_BuiltinListener::on_sample_lost;
+  listener->on_instance_replaced =
+    RMW_Connext_BuiltinListener::on_instance_replaced;
+  listener->on_before_sample_commit =
+    RMW_Connext_BuiltinListener::on_before_sample_commit;
+  listener->on_data_available =
+    RMW_Connext_BuiltinListener::on_data_available;
 }
 
 rmw_ret_t
@@ -1582,18 +1590,16 @@ rmw_connextdds_dcps_participant_get_reader(
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
 
-  DDS_Subscriber *const sub =
+  DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
-  if (nullptr == sub)
-  {
+  if (nullptr == sub) {
     RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
     return RMW_RET_ERROR;
   }
-  DDS_DataReader *const reader =
+  DDS_DataReader * const reader =
     DDS_Subscriber_lookup_datareader(sub, DDS_PARTICIPANT_BUILTIN_TOPIC_NAME);
-  if (nullptr == reader)
-  {
-      return RMW_RET_ERROR;
+  if (nullptr == reader) {
+    return RMW_RET_ERROR;
   }
 
   ctx_api->discovery_dp_listener.parent_listener = DDS_DataReader_get_listener(reader);
@@ -1601,7 +1607,7 @@ rmw_connextdds_dcps_participant_get_reader(
   DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
   RMW_Connext_BuiltinListener::initialize_listener(
     &ctx_api->discovery_dp_listener, &dr_listener);
-  
+
   if (DDS_RETCODE_OK !=
     DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
   {
@@ -1620,19 +1626,17 @@ rmw_connextdds_dcps_publication_get_reader(
 {
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
-  
-  DDS_Subscriber *const sub =
+
+  DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
-  if (nullptr == sub)
-  {
+  if (nullptr == sub) {
     RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
     return RMW_RET_ERROR;
   }
-  DDS_DataReader *const reader =
+  DDS_DataReader * const reader =
     DDS_Subscriber_lookup_datareader(sub, DDS_PUBLICATION_BUILTIN_TOPIC_NAME);
-  if (nullptr == reader)
-  {
-      return RMW_RET_ERROR;
+  if (nullptr == reader) {
+    return RMW_RET_ERROR;
   }
 
   ctx_api->discovery_pub_listener.parent_listener = DDS_DataReader_get_listener(reader);
@@ -1640,7 +1644,7 @@ rmw_connextdds_dcps_publication_get_reader(
   DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
   RMW_Connext_BuiltinListener::initialize_listener(
     &ctx_api->discovery_pub_listener, &dr_listener);
-  
+
   if (DDS_RETCODE_OK !=
     DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
   {
@@ -1660,18 +1664,16 @@ rmw_connextdds_dcps_subscription_get_reader(
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
 
-  DDS_Subscriber *const sub =
+  DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
-  if (nullptr == sub)
-  {
+  if (nullptr == sub) {
     RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
     return RMW_RET_ERROR;
   }
-  DDS_DataReader *const reader =
+  DDS_DataReader * const reader =
     DDS_Subscriber_lookup_datareader(sub, DDS_SUBSCRIPTION_BUILTIN_TOPIC_NAME);
-  if (nullptr == reader)
-  {
-      return RMW_RET_ERROR;
+  if (nullptr == reader) {
+    return RMW_RET_ERROR;
   }
 
   ctx_api->discovery_sub_listener.parent_listener = DDS_DataReader_get_listener(reader);
@@ -1704,29 +1706,30 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
   RMW_Connext_CachedBuiltinData<DDS_ParticipantBuiltinTopicData> qdata;
-  while (ctx_api->discovery_dp_listener.next_data(qdata))
-  {
+  while (ctx_api->discovery_dp_listener.next_data(qdata)) {
     rmw_ret_t rc = RMW_RET_OK;
 
     if (qdata.valid_data) {
       if (RMW_RET_OK !=
-        rmw_connextdds_graph_add_participant(ctx, &qdata.data)) {
+        rmw_connextdds_graph_add_participant(ctx, &qdata.data))
+      {
         rc = RMW_RET_ERROR;
       }
       RMW_Connext_ParticipantData::finalize(&qdata.data);
     } else {
       if (qdata.instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-          qdata.instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+        qdata.instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+      {
         if (RMW_RET_OK !=
           rmw_connextdds_graph_remove_participant(
-            ctx, &qdata.instance_handle)) {
+            ctx, &qdata.instance_handle))
+        {
           rc = RMW_RET_ERROR;
         }
       }
     }
 
-    if (RMW_RET_OK != rc)
-    {
+    if (RMW_RET_OK != rc) {
       return rc;
     }
   }
@@ -1740,17 +1743,16 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
   RMW_Connext_CachedBuiltinData<DDS_PublicationBuiltinTopicData> qdata;
-  while (ctx_api->discovery_pub_listener.next_data(qdata))
-  {
+  while (ctx_api->discovery_pub_listener.next_data(qdata)) {
     rmw_ret_t rc = RMW_RET_OK;
 
     if (qdata.valid_data) {
       DDS_GUID_t endp_guid;
       DDS_GUID_t dp_guid;
 
-      DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid*>(&qdata.data.key));
+      DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid *>(&qdata.data.key));
       DDS_GUID_from_rtps(
-        &dp_guid, reinterpret_cast<RTPS_Guid*>(&qdata.data.participant_key));
+        &dp_guid, reinterpret_cast<RTPS_Guid *>(&qdata.data.participant_key));
 
       rmw_connextdds_graph_add_entity(
         ctx,
@@ -1763,21 +1765,22 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &qdata.data.deadline,
         &qdata.data.liveliness,
         false /* is_reader */);
-      
+
       RMW_Connext_PublicationData::finalize(&qdata.data);
     } else {
       if (qdata.instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-          qdata.instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+        qdata.instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+      {
         if (RMW_RET_OK !=
           rmw_connextdds_graph_remove_entity(
-            ctx, &qdata.instance_handle, false /* is_reader */)) {
+            ctx, &qdata.instance_handle, false /* is_reader */))
+        {
           rc = RMW_RET_ERROR;
         }
       }
     }
 
-    if (RMW_RET_OK != rc)
-    {
+    if (RMW_RET_OK != rc) {
       return rc;
     }
   }
@@ -1791,17 +1794,16 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
   RMW_Connext_CachedBuiltinData<DDS_SubscriptionBuiltinTopicData> qdata;
-  while (ctx_api->discovery_sub_listener.next_data(qdata))
-  {
+  while (ctx_api->discovery_sub_listener.next_data(qdata)) {
     rmw_ret_t rc = RMW_RET_OK;
 
     if (qdata.valid_data) {
       DDS_GUID_t endp_guid;
       DDS_GUID_t dp_guid;
 
-      DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid*>(&qdata.data.key));
+      DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid *>(&qdata.data.key));
       DDS_GUID_from_rtps(
-        &dp_guid, reinterpret_cast<RTPS_Guid*>(&qdata.data.participant_key));
+        &dp_guid, reinterpret_cast<RTPS_Guid *>(&qdata.data.participant_key));
 
       rmw_connextdds_graph_add_entity(
         ctx,
@@ -1814,21 +1816,22 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &qdata.data.deadline,
         &qdata.data.liveliness,
         true /* is_reader */);
-      
+
       RMW_Connext_SubscriptionData::finalize(&qdata.data);
     } else {
       if (qdata.instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-          qdata.instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+        qdata.instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+      {
         if (RMW_RET_OK !=
           rmw_connextdds_graph_remove_entity(
-            ctx, &qdata.instance_handle, true /* is_reader */)) {
+            ctx, &qdata.instance_handle, true /* is_reader */))
+        {
           rc = RMW_RET_ERROR;
         }
       }
     }
 
-    if (RMW_RET_OK != rc)
-    {
+    if (RMW_RET_OK != rc) {
       return rc;
     }
   }

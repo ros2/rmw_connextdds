@@ -1072,12 +1072,17 @@ class RMW_Connext_Client
 {
   RMW_Connext_Publisher * request_pub;
   RMW_Connext_Subscriber * reply_sub;
-  int64_t next_request_id;
+#if RMW_CONNEXT_EMULATE_REQUESTREPLY
+  std::atomic_uint next_request_id;
+#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
 
   RMW_Connext_Client()
   : request_pub(nullptr),
-    reply_sub(nullptr),
+    reply_sub(nullptr)
+#if RMW_CONNEXT_EMULATE_REQUESTREPLY
+    ,
     next_request_id(1)
+#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
   {}
 
 public:

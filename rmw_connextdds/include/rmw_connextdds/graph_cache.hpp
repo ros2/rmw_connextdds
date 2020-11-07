@@ -97,7 +97,7 @@ rmw_ret_t
 rmw_connextdds_graph_add_participant(
   rmw_context_impl_t * const ctx,
   const DDS_ParticipantBuiltinTopicData * const data,
-  const char *const enclave = nullptr);
+  const char * const enclave = nullptr);
 
 rmw_ret_t
 rmw_connextdds_graph_remove_participant(

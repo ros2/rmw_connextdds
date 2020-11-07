@@ -737,9 +737,11 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
            the remote participant from the graph_cache by calling:
            graph_cache.remove_participant(gid) */
         if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+        {
           if (RMW_RET_OK !=
-            rmw_connextdds_graph_remove_participant(ctx, &info->instance_handle)) {
+            rmw_connextdds_graph_remove_participant(ctx, &info->instance_handle))
+          {
             // TODO(asorbini) log without lock
             continue;
           }
@@ -803,10 +805,12 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
 
       if (!info->valid_data) {
         if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+        {
           if (RMW_RET_OK !=
             rmw_connextdds_graph_remove_entity(
-                ctx, &info->instance_handle, false /* is_reader */)) {
+              ctx, &info->instance_handle, false /* is_reader */))
+          {
             // TODO(asorbini) log without lock
             continue;
           }
@@ -881,10 +885,12 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
 
       if (!info->valid_data) {
         if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-            info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
+          info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+        {
           if (RMW_RET_OK !=
             rmw_connextdds_graph_remove_entity(
-                ctx, &info->instance_handle, true /* is_reader */)) {
+              ctx, &info->instance_handle, true /* is_reader */))
+          {
             // TODO(asorbini) log without lock
             continue;
           }

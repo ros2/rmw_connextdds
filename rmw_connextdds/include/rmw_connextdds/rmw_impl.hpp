@@ -1452,4 +1452,40 @@ rmw_connextdds_readerwriter_qos_to_ros(
   const DDS_LivelinessQosPolicy * const liveliness,
   rmw_qos_profile_t * const qos_policies);
 
+bool
+rmw_connextdds_find_string_in_list(
+  const DDS_StringSeq * const profile_names,
+  const char * const profile);
+
+rmw_ret_t
+rmw_connextdds_list_context_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  std::vector<std::string> & profiles);
+
+rmw_ret_t
+rmw_connextdds_list_publisher_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const topic_name,
+  std::vector<std::string> & profiles);
+
+rmw_ret_t
+rmw_connextdds_list_subscription_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const topic_name,
+  std::vector<std::string> & profiles);
+
+rmw_ret_t
+rmw_connextdds_list_client_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const service_name,
+  std::vector<std::string> & req_profiles,
+  std::vector<std::string> & rep_profiles);
+
+rmw_ret_t
+rmw_connextdds_list_service_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const service_name,
+  std::vector<std::string> & req_profiles,
+  std::vector<std::string> & rep_profiles);
+
 #endif  // RMW_CONNEXTDDS__RMW_IMPL_HPP_

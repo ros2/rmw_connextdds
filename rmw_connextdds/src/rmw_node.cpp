@@ -111,7 +111,7 @@ extern "C" rmw_node_t * rmw_create_node(
   }
 #endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY */
 
-  ret = ctx->initialize_node(node_localhost_only);
+  ret = ctx->initialize_node(ns, name, node_localhost_only);
   if (RMW_RET_OK != ret) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize node in context")
     return nullptr;

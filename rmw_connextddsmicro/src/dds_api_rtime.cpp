@@ -58,8 +58,7 @@ struct RMW_Connext_ParticipantData
   void
   initialize(DDS_ParticipantBuiltinTopicData * const data)
   {
-    // DDS_ParticipantBuiltinTopicData_initialize(data);
-    *data = DEFAULT_PARTICIPANT_DATA;
+    * data = DEFAULT_PARTICIPANT_DATA;
   }
 
   static
@@ -101,8 +100,7 @@ struct RMW_Connext_SubscriptionData
   void
   initialize(DDS_SubscriptionBuiltinTopicData * const data)
   {
-    // DDS_SubscriptionBuiltinTopicData_initialize(data);
-    *data = DEFAULT_SUBSCRIPTION_DATA;
+    * data = DEFAULT_SUBSCRIPTION_DATA;
   }
 
   static
@@ -144,8 +142,7 @@ struct RMW_Connext_PublicationData
   void
   initialize(DDS_PublicationBuiltinTopicData * const data)
   {
-    // DDS_PublicationBuiltinTopicData_initialize(data);
-    *data = DEFAULT_PUBLICATION_DATA;
+    * data = DEFAULT_PUBLICATION_DATA;
   }
 
   static

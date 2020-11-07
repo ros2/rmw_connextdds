@@ -439,8 +439,8 @@ rmw_connextdds_list_context_qos_profiles(
 
     if (has_lib) {
       // e.g. "my_lib::/foo/bar/my_ctx",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name;
       profiles.push_back(ss.str());
       ss.str("");
 
@@ -450,8 +450,8 @@ rmw_connextdds_list_context_qos_profiles(
       ss.str("");
 
       // e.g. "my_lib::/foo/bar/[node]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << RMW_CONNEXT_QOS_TAG_NODE;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << RMW_CONNEXT_QOS_TAG_NODE;
       profiles.push_back(ss.str());
       ss.str("");
 
@@ -472,8 +472,8 @@ rmw_connextdds_list_context_qos_profiles(
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name;
     profiles.push_back(ss.str());
     ss.str("");
 
@@ -483,8 +483,8 @@ rmw_connextdds_list_context_qos_profiles(
     ss.str("");
 
     // e.g. "ros::/foo/bar/[node]",
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << RMW_CONNEXT_QOS_TAG_NODE;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << RMW_CONNEXT_QOS_TAG_NODE;
     profiles.push_back(ss.str());
     ss.str("");
 
@@ -512,21 +512,21 @@ rmw_connextdds_list_pubsub_qos_profiles(
 
     if (has_lib) {
       // e.g. "my_lib::/foo/bar/my_ctx/my_topic[pub]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-         << topic_name << type_tag;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+        topic_name << type_tag;
       profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::/foo/bar/my_ctx/my_topic",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << topic_name;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name << topic_name;
       profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_ctx/my_topic[pub]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_name << topic_name << type_tag;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_name << topic_name << type_tag;
       profiles.push_back(ss.str());
       ss.str("");
 
@@ -536,8 +536,7 @@ rmw_connextdds_list_pubsub_qos_profiles(
       ss.str("");
 
       // e.g. "my_lib::/my_topic[pub]",
-      ss << ctx->qos_library << "::"
-         << type_tag << topic_name;
+      ss << ctx->qos_library << "::" << type_tag << topic_name;
       profiles.push_back(ss.str());
       ss.str("");
 
@@ -553,8 +552,8 @@ rmw_connextdds_list_pubsub_qos_profiles(
     }
 
     // e.g. "/foo/bar/my_ctx::/my_topic[pub]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << topic_name << type_tag;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      topic_name << type_tag;
     profiles.push_back(ss.str());
     ss.str("");
 
@@ -564,14 +563,14 @@ rmw_connextdds_list_pubsub_qos_profiles(
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::[pub]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << type_tag;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      type_tag;
     profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "/foo/bar::my_ctx/my_topic[pub]"
-    ss << ctx->qos_ctx_namespace << "::" << ctx->qos_ctx_name
-       << topic_name << type_tag;
+    ss << ctx->qos_ctx_namespace << "::" << ctx->qos_ctx_name <<
+      topic_name << type_tag;
     profiles.push_back(ss.str());
     ss.str("");
 
@@ -581,8 +580,7 @@ rmw_connextdds_list_pubsub_qos_profiles(
     ss.str("");
 
     // e.g. "/foo/bar::my_ctx[pub]"
-    ss << ctx->qos_ctx_namespace << "::" << ctx->qos_ctx_name
-       << type_tag;
+    ss << ctx->qos_ctx_namespace << "::" << ctx->qos_ctx_name << type_tag;
     profiles.push_back(ss.str());
     ss.str("");
 
@@ -602,33 +600,33 @@ rmw_connextdds_list_pubsub_qos_profiles(
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_topic[pub]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-       << topic_name << type_tag;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+      topic_name << type_tag;
     profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_topic"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << topic_name;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name << topic_name;
     profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_topic[pub]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << topic_name << type_tag;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << topic_name << type_tag;
     profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_topic"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << topic_name;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << topic_name;
     profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/my_topic[pub]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << topic_name << type_tag;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      topic_name << type_tag;
     profiles.push_back(ss.str());
     ss.str("");
 
@@ -638,8 +636,7 @@ rmw_connextdds_list_pubsub_qos_profiles(
     ss.str("");
 
     // e.g. "ros::[pub]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << type_tag;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << type_tag;
     profiles.push_back(ss.str());
   } catch (const std::exception & e) {
     return RMW_RET_ERROR;

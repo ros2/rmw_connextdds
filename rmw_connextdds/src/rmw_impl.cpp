@@ -724,7 +724,7 @@ rmw_connextdds_list_clientservice_qos_profiles(
 
       // e.g. "my_lib::my_ctx/my_service[client][request]",
       ss << ctx->qos_library << "::" <<
-        ctx->qos_ctx_name << "/" << service_name  <<
+        ctx->qos_ctx_name << "/" << service_name <<
         type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
       req_profiles.push_back(ss.str());
       ss.str("");
@@ -860,7 +860,7 @@ rmw_connextdds_list_clientservice_qos_profiles(
     // e.g. "ros::/foo/bar/my_ctx/my_service[client][request]"
     ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
       ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
-        "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
@@ -3622,8 +3622,7 @@ RMW_Connext_Client::send_request(
   rr_msg.request = true;
 
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
-  *sequence_id = this->next_request_id;
-  this->next_request_id += 1;
+  *sequence_id = ++this->next_request_id;
   rr_msg.sn = *sequence_id;
 #else
   rr_msg.sn = -1;

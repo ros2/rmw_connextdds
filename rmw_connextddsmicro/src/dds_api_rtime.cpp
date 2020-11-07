@@ -14,6 +14,7 @@
 
 #include <mutex>
 #include <vector>
+#include <algorithm>
 
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
@@ -171,7 +172,7 @@ struct RMW_Connext_PublicationData
 class RMW_Connext_BuiltinListener
 {
 public:
-  RMW_Connext_BuiltinListener(rmw_context_impl_t * const ctx)
+  explicit RMW_Connext_BuiltinListener(rmw_context_impl_t * const ctx)
   : ctx(ctx) {}
 
   virtual ~RMW_Connext_BuiltinListener() {}
@@ -263,14 +264,13 @@ private:
     void * listener_data,
     DDS_DataReader * reader,
     const struct DDS_DataReaderInstanceReplacedStatus * status);
-
 };
 
 template<class T, class H>
 class RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
 {
 public:
-  RMW_Connext_TypedBuiltinListener(rmw_context_impl_t * const ctx)
+  explicit RMW_Connext_TypedBuiltinListener(rmw_context_impl_t * const ctx)
   : RMW_Connext_BuiltinListener(ctx) {}
 
   virtual ~RMW_Connext_TypedBuiltinListener()
@@ -340,7 +340,6 @@ private:
     this->data_queue.push_back(qdata);
     return RMW_RET_OK;
   }
-
 };
 
 struct rmw_connextdds_api_micro
@@ -360,7 +359,7 @@ struct rmw_connextdds_api_micro
   RMW_Connext_TypedBuiltinListener<DDS_PublicationBuiltinTopicData, RMW_Connext_PublicationData>
   discovery_pub_listener;
 
-  rmw_connextdds_api_micro(rmw_context_impl_t * const ctx)
+  explicit rmw_connextdds_api_micro(rmw_context_impl_t * const ctx)
   : rt_whsm(false),
     rt_rhsm(false),
     rt_udp(false),
@@ -372,7 +371,6 @@ struct rmw_connextdds_api_micro
     discovery_sub_listener(ctx),
     discovery_pub_listener(ctx)
   {}
-
 };
 
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro";

@@ -680,67 +680,65 @@ rmw_connextdds_list_clientservice_qos_profiles(
 
     if (has_lib) {
       // e.g. "my_lib::/foo/bar/my_ctx/my_service[client][request]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-         << "/" << service_name
-         << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+        "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
       req_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::/foo/bar/my_ctx/my_service[client][reply]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-         << "/" << service_name
-         << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+        "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
       rep_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::/foo/bar/my_ctx/my_service[client]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-         << "/" << service_name << type_tag;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+        "/" << service_name << type_tag;
       req_profiles.push_back(ss.str());
       rep_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::/foo/bar/my_ctx/my_service[request]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
-         << RMW_CONNEXT_QOS_TAG_REQUEST;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" <<
+        service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
       req_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::/foo/bar/my_ctx/my_service[reply]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
-         << RMW_CONNEXT_QOS_TAG_REPLY;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" <<
+        service_name << RMW_CONNEXT_QOS_TAG_REPLY;
       rep_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::/foo/bar/my_ctx/my_service",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name;
       req_profiles.push_back(ss.str());
       rep_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_ctx/my_service[client][request]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_name << "/" << service_name
-         << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_name << "/" << service_name  <<
+        type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
       req_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_ctx/my_service[client][reply]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_name << "/" << service_name
-         << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_name << "/" << service_name <<
+        type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
       rep_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_ctx/my_service[client]",
-      ss << ctx->qos_library << "::"
-         << ctx->qos_ctx_name << "/" << service_name << type_tag;
+      ss << ctx->qos_library << "::" <<
+        ctx->qos_ctx_name << "/" << service_name << type_tag;
       req_profiles.push_back(ss.str());
       rep_profiles.push_back(ss.str());
       ss.str("");
@@ -752,33 +750,32 @@ rmw_connextdds_list_clientservice_qos_profiles(
       ss.str("");
 
       // e.g. "my_lib::my_service[client][request]",
-      ss << ctx->qos_library << "::"
-         << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      ss << ctx->qos_library << "::" <<
+        service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
       req_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_service[client][reply]",
-      ss << ctx->qos_library << "::"
-         << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+      ss << ctx->qos_library << "::" <<
+        service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
       rep_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_service[client]",
-      ss << ctx->qos_library << "::"
-         << service_name << type_tag;
+      ss << ctx->qos_library << "::" << service_name << type_tag;
       req_profiles.push_back(ss.str());
       rep_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_service[request]",
-      ss << ctx->qos_library << "::" << service_name
-         << RMW_CONNEXT_QOS_TAG_REQUEST;
+      ss << ctx->qos_library << "::" <<
+        service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
       req_profiles.push_back(ss.str());
       ss.str("");
 
       // e.g. "my_lib::my_service[reply]",
-      ss << ctx->qos_library << "::" << service_name
-         << RMW_CONNEXT_QOS_TAG_REPLY;
+      ss << ctx->qos_library << "::" <<
+        service_name << RMW_CONNEXT_QOS_TAG_REPLY;
       rep_profiles.push_back(ss.str());
       ss.str("");
 
@@ -806,33 +803,33 @@ rmw_connextdds_list_clientservice_qos_profiles(
     }
 
     // e.g. "/foo/bar/my_ctx::my_service[client][request]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::my_service[client][reply]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::my_service[client]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << service_name << type_tag;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      service_name << type_tag;
     req_profiles.push_back(ss.str());
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::my_service[request]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::my_service[reply]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << service_name << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      service_name << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
@@ -843,116 +840,115 @@ rmw_connextdds_list_clientservice_qos_profiles(
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::[client][request]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::[client][reply]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "/foo/bar/my_ctx::[client]"
-    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
-       << type_tag;
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" << type_tag;
     req_profiles.push_back(ss.str());
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_service[client][request]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-       << "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+        "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_service[client][reply]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-       << "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+      "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_service[client]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
-       << "/" << service_name << type_tag;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name <<
+      "/" << service_name << type_tag;
     req_profiles.push_back(ss.str());
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_service[request]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
-       << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" <<
+      service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_service[reply]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
-       << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" <<
+      service_name << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::/foo/bar/my_ctx/my_service"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name;
     req_profiles.push_back(ss.str());
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_service[client][request]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << "/" << service_name << type_tag
-       << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << "/" << service_name <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_service[client][reply]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << "/" << service_name << type_tag
-       << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << "/" << service_name <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_service[client]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << "/" << service_name << type_tag;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << "/" << service_name << type_tag;
     req_profiles.push_back(ss.str());
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_service[request]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_service[reply]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << service_name << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << service_name << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_ctx/my_service"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << ctx->qos_ctx_name << service_name;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      ctx->qos_ctx_name << service_name;
     req_profiles.push_back(ss.str());
     rep_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_service[client][request]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
-       << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_service[client][reply]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
-       << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
@@ -963,14 +959,14 @@ rmw_connextdds_list_clientservice_qos_profiles(
     ss.str("");
 
     // e.g. "ros::my_service[request]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
-       << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::my_service[reply]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
-       << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      service_name << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 
@@ -981,14 +977,14 @@ rmw_connextdds_list_clientservice_qos_profiles(
     ss.str("");
 
     // e.g. "ros::[client][request]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
     req_profiles.push_back(ss.str());
     ss.str("");
 
     // e.g. "ros::[client][reply]"
-    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
-       << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" <<
+      type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
     rep_profiles.push_back(ss.str());
     ss.str("");
 

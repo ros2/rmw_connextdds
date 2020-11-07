@@ -19,6 +19,7 @@
 
 #include <limits>
 #include <mutex>
+#include <string>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"

@@ -15,7 +15,7 @@
 #ifndef RMW_CONNEXTDDS__DDS_API_RTIME_HPP_
 #define RMW_CONNEXTDDS__DDS_API_RTIME_HPP_
 
-#include "rti_me_c.h"
+#include "rti_me_c.h"  // NOLINT(build/include)
 #include "disc_dpde/disc_dpde_discovery_plugin.h"
 #include "wh_sm/wh_sm_history.h"
 #include "rh_sm/rh_sm_history.h"

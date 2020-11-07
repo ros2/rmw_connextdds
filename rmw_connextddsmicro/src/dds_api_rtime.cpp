@@ -168,23 +168,39 @@ struct RMW_Connext_PublicationData
     DDS_DataReader * const reader);
 };
 
-struct RMW_Connext_BuiltinListener
+class RMW_Connext_BuiltinListener
 {
-  rmw_context_impl_t * ctx;
-  DDS_DataReaderListener parent_listener;
-
+public:
   RMW_Connext_BuiltinListener(rmw_context_impl_t * const ctx)
   : ctx(ctx) {}
 
   virtual ~RMW_Connext_BuiltinListener() {}
 
+  static
+  void
+  initialize_listener(
+    RMW_Connext_BuiltinListener * const b_listener,
+    struct DDS_DataReaderListener * const listener);
+  
   virtual
   void
   received_sample(const void * const data, const DDS_SampleInfo * const info) = 0;
 
+  void
+  set_parent_listener(const DDS_DataReaderListener & parent_listener)
+  {
+    this->parent_listener = parent_listener;
+  }
+
+protected:
+
   virtual
   void
   process_data_available(DDS_DataReader * const reader) = 0;
+
+private:
+  rmw_context_impl_t * ctx;
+  DDS_DataReaderListener parent_listener;
 
   static
   void
@@ -249,22 +265,12 @@ struct RMW_Connext_BuiltinListener
     DDS_DataReader * reader,
     const struct DDS_DataReaderInstanceReplacedStatus * status);
 
-  static
-  void
-  initialize_listener(
-    RMW_Connext_BuiltinListener * const b_listener,
-    struct DDS_DataReaderListener * const listener);
-
 };
 
 template<class T, class H>
-struct RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
+class RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
 {
-  rmw_context_impl_t * ctx;
-  DDS_DataReaderListener parent_listener;
-  std::mutex data_mutex;
-  std::vector<RMW_Connext_CachedBuiltinData<T>> data_queue;
-
+public:
   RMW_Connext_TypedBuiltinListener(rmw_context_impl_t * const ctx)
   : RMW_Connext_BuiltinListener(ctx) {}
 
@@ -273,46 +279,6 @@ struct RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
     for (auto & data : this->data_queue) {
       H::finalize(&data.data);
     }
-  }
-
-  virtual
-  void
-  received_sample(const void * const data, const DDS_SampleInfo * const info)
-  {
-    const T * const tdata = reinterpret_cast<const T *>(data);
-    this->on_data(tdata, info);
-  }
-
-  virtual
-  void
-  process_data_available(DDS_DataReader * const reader)
-  {
-    H::process_data_available(this, reader);
-
-    if (nullptr != this->parent_listener.on_data_available) {
-      this->parent_listener.on_data_available(
-        this->parent_listener.as_listener.listener_data, reader);
-    }
-  }
-
-  rmw_ret_t
-  on_data(const T * const data, const DDS_SampleInfo * const info)
-  {
-    std::lock_guard<std::mutex> guard(this->data_mutex);
-    RMW_Connext_CachedBuiltinData<T> qdata;
-    H::initialize(&qdata.data);
-    qdata.valid_data = info->valid_data;
-    if (qdata.valid_data) {
-      rmw_ret_t rc = H::copy(&qdata.data, data);
-      if (RMW_RET_OK != rc) {
-        H::finalize(&qdata.data);
-        return rc;
-      }
-    }
-    qdata.instance_state = info->instance_state;
-    qdata.instance_handle = info->instance_handle;
-    this->data_queue.push_back(qdata);
-    return RMW_RET_OK;
   }
 
   bool
@@ -334,6 +300,47 @@ struct RMW_Connext_TypedBuiltinListener : public RMW_Connext_BuiltinListener
       return false;
     }
     return true;
+  }
+
+  virtual
+  void
+  received_sample(const void * const data, const DDS_SampleInfo * const info)
+  {
+    const T * const tdata = reinterpret_cast<const T *>(data);
+    this->on_data(tdata, info);
+  }
+  
+protected:
+
+  virtual
+  void
+  process_data_available(DDS_DataReader * const reader)
+  {
+    H::process_data_available(this, reader);
+  }
+
+private:
+  std::mutex data_mutex;
+  std::vector<RMW_Connext_CachedBuiltinData<T>> data_queue;
+
+  rmw_ret_t
+  on_data(const T * const data, const DDS_SampleInfo * const info)
+  {
+    std::lock_guard<std::mutex> guard(this->data_mutex);
+    RMW_Connext_CachedBuiltinData<T> qdata;
+    H::initialize(&qdata.data);
+    qdata.valid_data = info->valid_data;
+    if (qdata.valid_data) {
+      rmw_ret_t rc = H::copy(&qdata.data, data);
+      if (RMW_RET_OK != rc) {
+        H::finalize(&qdata.data);
+        return rc;
+      }
+    }
+    qdata.instance_state = info->instance_state;
+    qdata.instance_handle = info->instance_handle;
+    this->data_queue.push_back(qdata);
+    return RMW_RET_OK;
   }
 
 };
@@ -1551,6 +1558,11 @@ RMW_Connext_BuiltinListener::on_data_available(
     reinterpret_cast<RMW_Connext_BuiltinListener *>(listener_data);
 
   self->process_data_available(reader);
+
+  if (nullptr != self->parent_listener.on_data_available) {
+    self->parent_listener.on_data_available(
+      self->parent_listener.as_listener.listener_data, reader);
+  }
 }
 
 void
@@ -1602,7 +1614,10 @@ rmw_connextdds_dcps_participant_get_reader(
     return RMW_RET_ERROR;
   }
 
-  ctx_api->discovery_dp_listener.parent_listener = DDS_DataReader_get_listener(reader);
+  const DDS_DataReaderListener parent_listener =
+    DDS_DataReader_get_listener(reader);
+
+  ctx_api->discovery_dp_listener.set_parent_listener(parent_listener);
 
   DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
   RMW_Connext_BuiltinListener::initialize_listener(
@@ -1639,7 +1654,10 @@ rmw_connextdds_dcps_publication_get_reader(
     return RMW_RET_ERROR;
   }
 
-  ctx_api->discovery_pub_listener.parent_listener = DDS_DataReader_get_listener(reader);
+  const DDS_DataReaderListener parent_listener =
+    DDS_DataReader_get_listener(reader);
+
+  ctx_api->discovery_pub_listener.set_parent_listener(parent_listener);
 
   DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
   RMW_Connext_BuiltinListener::initialize_listener(
@@ -1676,7 +1694,10 @@ rmw_connextdds_dcps_subscription_get_reader(
     return RMW_RET_ERROR;
   }
 
-  ctx_api->discovery_sub_listener.parent_listener = DDS_DataReader_get_listener(reader);
+  const DDS_DataReaderListener parent_listener =
+    DDS_DataReader_get_listener(reader);
+
+  ctx_api->discovery_sub_listener.set_parent_listener(parent_listener);
 
   DDS_DataReaderListener dr_listener = DDS_DataReaderListener_INITIALIZER;
   RMW_Connext_BuiltinListener::initialize_listener(

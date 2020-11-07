@@ -116,7 +116,10 @@ rmw_connextdds_initialize_participant_qos(
 
 
 rmw_ret_t
-rmw_context_impl_t::initialize_node(const bool localhost_only)
+rmw_context_impl_t::initialize_node(
+  const char * const node_name,
+  const char * const node_namespace,
+  const bool localhost_only)
 {
   RMW_CONNEXT_LOG_DEBUG_A(
     "initializing new node: total=%lu, localhost=%d",
@@ -143,6 +146,30 @@ rmw_context_impl_t::initialize_node(const bool localhost_only)
   RMW_CONNEXT_LOG_DEBUG("initializing RMW context")
 
   this->localhost_only = localhost_only;
+
+  std::ostringstream ss;
+  ss << node_namespace;
+  this->qos_ctx_namespace = ss.str();
+  ss.str("");
+  ss << node_name;
+  this->qos_ctx_name = ss.str();
+
+  /* Lookup name of custom QoS library */
+  const char * qos_library = nullptr;
+  const char * lookup_rc =
+    rcutils_get_env(RMW_CONNEXT_ENV_QOS_LIBRARY, &qos_library);
+
+  if (nullptr != lookup_rc || nullptr == qos_library) {
+    RMW_CONNEXT_LOG_ERROR_A(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_QOS_LIBRARY,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  this->qos_library = qos_library;
 
   if (RMW_RET_OK != rmw_connextdds_initialize_participant_factory(this)) {
     RMW_CONNEXT_LOG_ERROR(

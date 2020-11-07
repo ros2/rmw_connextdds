@@ -403,6 +403,631 @@ rmw_connextdds_datareader_qos_to_ros(
     qos_policies);
 }
 
+bool
+rmw_connextdds_find_string_in_list(
+  const DDS_StringSeq * const profile_names,
+  const char * const profile)
+{
+  const size_t profiles_len = DDS_StringSeq_get_length(profile_names);
+  for (size_t i = 0; i < profiles_len; i++) {
+    const char * const profile_str =
+      *DDS_StringSeq_get_reference(profile_names, i);
+
+    if (strcmp(profile_str, profile) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+#define RMW_CONNEXT_QOS_TAG_NODE          "[node]"
+#define RMW_CONNEXT_QOS_TAG_PUBLISHER     "[pub]"
+#define RMW_CONNEXT_QOS_TAG_SUBSCRIPTION  "[sub]"
+#define RMW_CONNEXT_QOS_TAG_CLIENT        "[client]"
+#define RMW_CONNEXT_QOS_TAG_SERVICE       "[service]"
+#define RMW_CONNEXT_QOS_TAG_REQUEST       "[request]"
+#define RMW_CONNEXT_QOS_TAG_REPLY         "[reply]"
+
+rmw_ret_t
+rmw_connextdds_list_context_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  std::vector<std::string> & profiles)
+{
+  const bool has_lib = ctx->qos_library.size() > 0;
+  try {
+    std::ostringstream ss;
+
+    if (has_lib) {
+      // e.g. "my_lib::/foo/bar/my_ctx",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_ctx"
+      ss << ctx->qos_library << "::" << ctx->qos_ctx_name;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/foo/bar/[node]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << RMW_CONNEXT_QOS_TAG_NODE;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::[node]"
+      ss << ctx->qos_library << "::" << RMW_CONNEXT_QOS_TAG_NODE;
+      profiles.push_back(ss.str());
+      ss.str("");
+    }
+
+    // e.g. "/foo/bar/my_ctx::[node]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" << RMW_CONNEXT_QOS_TAG_NODE;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/::[node]"
+    ss << ctx->qos_ctx_namespace << "::" << RMW_CONNEXT_QOS_TAG_NODE;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << ctx->qos_ctx_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/[node]",
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << RMW_CONNEXT_QOS_TAG_NODE;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::[node]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << RMW_CONNEXT_QOS_TAG_NODE;
+    profiles.push_back(ss.str());
+  } catch (const std::exception & e) {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+static
+rmw_ret_t
+rmw_connextdds_list_pubsub_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const topic_name,
+  const char * const type_tag,
+  std::vector<std::string> & profiles)
+{
+  const bool has_lib = ctx->qos_library.size() > 0;
+  try {
+    std::ostringstream ss;
+
+    if (has_lib) {
+      // e.g. "my_lib::/foo/bar/my_ctx/my_topic[pub]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+         << topic_name << type_tag;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/foo/bar/my_ctx/my_topic",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << topic_name;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_ctx/my_topic[pub]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_name << topic_name << type_tag;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_ctx/my_topic",
+      ss << ctx->qos_library << "::" << ctx->qos_ctx_name << topic_name;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/my_topic[pub]",
+      ss << ctx->qos_library << "::"
+         << type_tag << topic_name;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/my_topic",
+      ss << ctx->qos_library << "::" << topic_name;
+      profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::[pub]"
+      ss << ctx->qos_library << "::" << type_tag;
+      profiles.push_back(ss.str());
+      ss.str("");
+    }
+
+    // e.g. "/foo/bar/my_ctx::/my_topic[pub]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << topic_name << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::/my_topic"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" << topic_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::[pub]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar::my_ctx/my_topic[pub]"
+    ss << ctx->qos_ctx_namespace << "::" << ctx->qos_ctx_name
+       << topic_name << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar::my_ctx/my_topic"
+    ss << ctx->qos_ctx_namespace << "::" << ctx->qos_ctx_name << topic_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar::my_ctx[pub]"
+    ss << ctx->qos_ctx_namespace << "::" << ctx->qos_ctx_name
+       << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar::/my_topic[pub]"
+    ss << ctx->qos_ctx_namespace << "::" << topic_name << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar::/my_topic"
+    ss << ctx->qos_ctx_namespace << "::" << topic_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/::[pub]"
+    ss << ctx->qos_ctx_namespace << "::" << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_topic[pub]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+       << topic_name << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_topic"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << topic_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_topic[pub]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << topic_name << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_topic"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << topic_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/my_topic[pub]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << topic_name << type_tag;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/my_topic"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << topic_name;
+    profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::[pub]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << type_tag;
+    profiles.push_back(ss.str());
+  } catch (const std::exception & e) {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_list_publisher_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const topic_name,
+  std::vector<std::string> & profiles)
+{
+  return rmw_connextdds_list_pubsub_qos_profiles(
+    ctx, topic_name, RMW_CONNEXT_QOS_TAG_PUBLISHER, profiles);
+}
+
+rmw_ret_t
+rmw_connextdds_list_subscription_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const topic_name,
+  std::vector<std::string> & profiles)
+{
+  return rmw_connextdds_list_pubsub_qos_profiles(
+    ctx, topic_name, RMW_CONNEXT_QOS_TAG_SUBSCRIPTION, profiles);
+}
+
+static
+rmw_ret_t
+rmw_connextdds_list_clientservice_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const service_name,
+  const char * const type_tag,
+  std::vector<std::string> & req_profiles,
+  std::vector<std::string> & rep_profiles)
+{
+  const bool has_lib = ctx->qos_library.size() > 0;
+  try {
+    std::ostringstream ss;
+
+    if (has_lib) {
+      // e.g. "my_lib::/foo/bar/my_ctx/my_service[client][request]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+         << "/" << service_name
+         << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      req_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/foo/bar/my_ctx/my_service[client][reply]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+         << "/" << service_name
+         << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/foo/bar/my_ctx/my_service[client]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+         << "/" << service_name << type_tag;
+      req_profiles.push_back(ss.str());
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/foo/bar/my_ctx/my_service[request]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
+         << RMW_CONNEXT_QOS_TAG_REQUEST;
+      req_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/foo/bar/my_ctx/my_service[reply]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
+         << RMW_CONNEXT_QOS_TAG_REPLY;
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::/foo/bar/my_ctx/my_service",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name;
+      req_profiles.push_back(ss.str());
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_ctx/my_service[client][request]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_name << "/" << service_name
+         << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      req_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_ctx/my_service[client][reply]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_name << "/" << service_name
+         << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_ctx/my_service[client]",
+      ss << ctx->qos_library << "::"
+         << ctx->qos_ctx_name << "/" << service_name << type_tag;
+      req_profiles.push_back(ss.str());
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_ctx/my_service",
+      ss << ctx->qos_library << "::" << ctx->qos_ctx_name << "/" << service_name;
+      req_profiles.push_back(ss.str());
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_service[client][request]",
+      ss << ctx->qos_library << "::"
+         << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      req_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_service[client][reply]",
+      ss << ctx->qos_library << "::"
+         << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_service[client]",
+      ss << ctx->qos_library << "::"
+         << service_name << type_tag;
+      req_profiles.push_back(ss.str());
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_service[request]",
+      ss << ctx->qos_library << "::" << service_name
+         << RMW_CONNEXT_QOS_TAG_REQUEST;
+      req_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_service[reply]",
+      ss << ctx->qos_library << "::" << service_name
+         << RMW_CONNEXT_QOS_TAG_REPLY;
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::my_service",
+      ss << ctx->qos_library << "::" << service_name;
+      req_profiles.push_back(ss.str());
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::[client][request]"
+      ss << ctx->qos_library << "::" << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+      req_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::[client][reply]"
+      ss << ctx->qos_library << "::" << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+
+      // e.g. "my_lib::[client]"
+      ss << ctx->qos_library << "::" << type_tag;
+      req_profiles.push_back(ss.str());
+      rep_profiles.push_back(ss.str());
+      ss.str("");
+    }
+
+    // e.g. "/foo/bar/my_ctx::my_service[client][request]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::my_service[client][reply]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::my_service[client]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << service_name << type_tag;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::my_service[request]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::my_service[reply]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << service_name << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::my_service"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::" << service_name;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::[client][request]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::[client][reply]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "/foo/bar/my_ctx::[client]"
+    ss << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "::"
+       << type_tag;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_service[client][request]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+       << "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_service[client][reply]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+       << "/" << service_name << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_service[client]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name
+       << "/" << service_name << type_tag;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_service[request]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
+       << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_service[reply]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name
+       << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::/foo/bar/my_ctx/my_service"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_namespace << ctx->qos_ctx_name << "/" << service_name;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_service[client][request]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << "/" << service_name << type_tag
+       << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_service[client][reply]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << "/" << service_name << type_tag
+       << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_service[client]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << "/" << service_name << type_tag;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_service[request]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << service_name << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_service[reply]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << service_name << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_ctx/my_service"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << ctx->qos_ctx_name << service_name;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_service[client][request]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
+       << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_service[client][reply]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
+       << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_service[client]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name << type_tag;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_service[request]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
+       << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_service[reply]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name
+       << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::my_service"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << service_name;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::[client][request]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << type_tag << RMW_CONNEXT_QOS_TAG_REQUEST;
+    req_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::[client][reply]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::"
+       << type_tag << RMW_CONNEXT_QOS_TAG_REPLY;
+    rep_profiles.push_back(ss.str());
+    ss.str("");
+
+    // e.g. "ros::[client]"
+    ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << type_tag;
+    req_profiles.push_back(ss.str());
+    rep_profiles.push_back(ss.str());
+  } catch (const std::exception & e) {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+
+rmw_ret_t
+rmw_connextdds_list_client_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const service_name,
+  std::vector<std::string> & req_profiles,
+  std::vector<std::string> & rep_profiles)
+{
+  return rmw_connextdds_list_clientservice_qos_profiles(
+    ctx, service_name, RMW_CONNEXT_QOS_TAG_CLIENT, req_profiles, rep_profiles);
+}
+
+rmw_ret_t
+rmw_connextdds_list_service_qos_profiles(
+  rmw_context_impl_t * const ctx,
+  const char * const service_name,
+  std::vector<std::string> & req_profiles,
+  std::vector<std::string> & rep_profiles)
+{
+  return rmw_connextdds_list_clientservice_qos_profiles(
+    ctx, service_name, RMW_CONNEXT_QOS_TAG_SERVICE, req_profiles, rep_profiles);
+}
 
 /******************************************************************************
  * Node support

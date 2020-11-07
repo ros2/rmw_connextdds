@@ -26,6 +26,10 @@
 #define RMW_CONNEXT_DEFAULT_UDP_INTERFACE          "lo"
 #endif /* RMW_CONNEXT_DEFAULT_UDP_INTERFACE */
 
+#ifndef RMW_CONNEXT_DEFAULT_QOS_LIBRARY
+#define RMW_CONNEXT_DEFAULT_QOS_LIBRARY            "ros2"
+#endif /* RMW_CONNEXT_DEFAULT_QOS_LIBRARY */
+
 /******************************************************************************
  * Environment Variables
  ******************************************************************************/
@@ -37,15 +41,9 @@
 #define RMW_CONNEXT_ENV_INITIAL_PEER    "RMW_CONNEXT_INITIAL_PEER"
 #endif /* RMW_CONNEXT_ENV_INITIAL_PEER */
 
-#ifndef RMW_CONNEXT_ENV_DEFAULT_RELIABLE_READER_PROFILE
-#define RMW_CONNEXT_ENV_DEFAULT_RELIABLE_READER_PROFILE \
-  "RMW_CONNEXT_DEFAULT_RELIABLE_READER_PROFILE"
-#endif /* RMW_CONNEXT_ENV_DEFAULT_RELIABLE_READER_PROFILE */
-
-#ifndef RMW_CONNEXT_ENV_DEFAULT_BESTEFFORT_READER_PROFILE
-#define RMW_CONNEXT_ENV_DEFAULT_BESTEFFORT_READER_PROFILE \
-  "RMW_CONNEXT_DEFAULT_BESTEFFORT_READER_PROFILE"
-#endif /* RMW_CONNEXT_DEFAULT_BESTEFFORT_READER_PROFILE */
+#ifndef RMW_CONNEXT_ENV_QOS_LIBRARY
+#define RMW_CONNEXT_ENV_QOS_LIBRARY     "RMW_CONNEXT_QOS_LIBRARY"
+#endif /* RMW_CONNEXT_ENV_QOS_LIBRARY */
 
 /******************************************************************************
  * DDS Implementation

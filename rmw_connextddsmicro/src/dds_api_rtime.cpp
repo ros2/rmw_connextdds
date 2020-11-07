@@ -181,7 +181,7 @@ public:
   initialize_listener(
     RMW_Connext_BuiltinListener * const b_listener,
     struct DDS_DataReaderListener * const listener);
-  
+
   virtual
   void
   received_sample(const void * const data, const DDS_SampleInfo * const info) = 0;
@@ -193,7 +193,6 @@ public:
   }
 
 protected:
-
   virtual
   void
   process_data_available(DDS_DataReader * const reader) = 0;
@@ -309,9 +308,8 @@ public:
     const T * const tdata = reinterpret_cast<const T *>(data);
     this->on_data(tdata, info);
   }
-  
-protected:
 
+protected:
   virtual
   void
   process_data_available(DDS_DataReader * const reader)
@@ -969,6 +967,7 @@ rmw_ret_t
 rmw_connextdds_get_datawriter_qos(
   rmw_context_impl_t * const ctx,
   RMW_Connext_MessageTypeSupport * const type_support,
+  DDS_Topic * const topic,
   DDS_DataWriterQos * const qos,
   const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
@@ -978,6 +977,7 @@ rmw_connextdds_get_datawriter_qos(
 )
 {
   UNUSED_ARG(ctx);
+  UNUSED_ARG(topic);
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_readerwriter_qos(
@@ -1027,6 +1027,7 @@ rmw_ret_t
 rmw_connextdds_get_datareader_qos(
   rmw_context_impl_t * const ctx,
   RMW_Connext_MessageTypeSupport * const type_support,
+  DDS_Topic * const topic,
   DDS_DataReaderQos * const qos,
   const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
@@ -1035,6 +1036,7 @@ rmw_connextdds_get_datareader_qos(
 )
 {
   UNUSED_ARG(ctx);
+  UNUSED_ARG(topic);
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_readerwriter_qos(
@@ -1099,7 +1101,7 @@ rmw_connextdds_create_datawriter(
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datawriter_qos(
-      ctx, type_support, dw_qos, qos_policies
+      ctx, type_support, topic, dw_qos, qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
       , publisher_options
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
@@ -1136,7 +1138,7 @@ rmw_connextdds_create_datareader(
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datareader_qos(
-      ctx, type_support, dr_qos, qos_policies
+      ctx, type_support, topic, dr_qos, qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
       , subscriber_options
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */

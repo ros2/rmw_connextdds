@@ -66,6 +66,11 @@ struct rmw_context_impl_t
   /* Keep track of whether the DomainParticipant is localhost only */
   bool localhost_only;
 
+  /* Global configuration for QoS profiles */
+  std::string qos_library;
+  std::string qos_ctx_name;
+  std::string qos_ctx_namespace;
+
   /* Participant reference count*/
   size_t node_count{0};
   std::mutex initialization_mutex;
@@ -109,7 +114,10 @@ struct rmw_context_impl_t
   // Initializes the participant, if it wasn't done already.
   // node_count is increased
   rmw_ret_t
-  initialize_node(const bool localhost_only);
+  initialize_node(
+    const char * const node_name,
+    const char * const node_namespace,
+    const bool localhost_only);
 
   // Destroys the participant, when node_count reaches 0.
   rmw_ret_t

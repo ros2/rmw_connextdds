@@ -12,28 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include(CMakeParseArguments)
+
 ################################################################################
-#
+# rti_lib_suffix()
 ################################################################################
-function(rti_load_rmw_source basedir)
-    set(sources ${ARGN})
-
-    get_filename_component(RMW_CONNEXT_DIR "${basedir}/../../.." REALPATH CACHE)
-
-    if(NOT EXISTS "${RMW_CONNEXT_DIR}")
-        message(FATAL_ERROR "Invalid base directory for RMW common source: ${RMW_CONNEXT_DIR}")
-    endif()
-
-    set(qsources)
-    foreach(src_f ${sources})
-        list(APPEND qsources "${RMW_CONNEXT_DIR}/${src_f}")
-    endforeach()
-
-    set(RMW_CONNEXT_COMMON_SOURCE ${qsources}
-        CACHE INTERNAL "Common source code for RMW implementations" FORCE)
-
-endfunction()
-
 function(rti_lib_suffix var)
     set(rti_lib_sfx         "")
 
@@ -46,7 +29,7 @@ function(rti_lib_suffix var)
 endfunction()
 
 ################################################################################
-#
+# rti_init_env()
 ################################################################################
 function(rti_init_env)
     if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -65,6 +48,9 @@ function(rti_init_env)
         CACHE STRING "Suffix for RTI libraries based on target build")
 endfunction()
 
+################################################################################
+# _list_first_element(list_var match_prefix out_var)
+################################################################################
 function(_list_first_element list_var match_prefix out_var)
     file(GLOB ${list_var} "${match_prefix}")
     list(LENGTH ${list_var} ${list_var}_len)
@@ -75,7 +61,7 @@ function(_list_first_element list_var match_prefix out_var)
 endfunction()
 
 ################################################################################
-#
+# rti_load_rtimehome()
 ################################################################################
 function(rti_load_rtimehome)
     if(NOT DEFINED RTIMEHOME)
@@ -107,31 +93,8 @@ function(rti_load_rtimehome)
 endfunction()
 
 ################################################################################
-#
+# rti_build_connextmicro()
 ################################################################################
-
-# macro(get_directories _result _root)
-#     file(GLOB_RECURSE dirs RELATIVE ${_root} LIST_DIRECTORIES ON ${_root}/*)
-#     foreach(dir ${dirs})
-#         if(IS_DIRECTORY ${dir})
-#             list(APPEND ${_result} ${dir})
-#         endif()
-#     endforeach()
-# endmacro()
-# macro(get_targets_by_directory _result _dir)
-#     get_property(_target DIRECTORY ${_dir} PROPERTY BUILDSYSTEM_TARGETS)
-#     set(_result ${_target})
-# endmacro()
-# macro(get_all_targets _result _root_dir)
-#     get_directories(_all_directories ${_root_dir})
-#     foreach(_dir ${_all_directories})
-#         get_targets_by_directory(_target ${_dir})
-#         if(_target)
-#             list(APPEND ${_result} ${_target})
-#         endif()
-#     endforeach()
-# endmacro()
-
 function(rti_build_connextmicro)
     set(RTIMEHOME_FOUND false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
@@ -139,12 +102,14 @@ function(rti_build_connextmicro)
 
     rti_load_rtimehome()
 
-    if(WIN32 OR CYGWIN)
-        set(RTIME_TARGET_NAME       "Windows")
-    elseif(APPLE)
-        set(RTIME_TARGET_NAME       "Darwin")
-    else()
-        set(RTIME_TARGET_NAME       "Linux")
+    if(NOT RTIME_TARGET_NAME)
+      if(WIN32 OR CYGWIN)
+          set(RTIME_TARGET_NAME       "Windows")
+      elseif(APPLE)
+          set(RTIME_TARGET_NAME       "Darwin")
+      else()
+          set(RTIME_TARGET_NAME       "Linux")
+      endif()
     endif()
     set(RTIME_TARGET_NAME           "${RTIME_TARGET_NAME}")
     set(RTIME_DDS_ENABLE_APPGEN     false)
@@ -163,14 +128,32 @@ function(rti_build_connextmicro)
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
+    
+    set(RTIME_TARGETS)
+    # define imported targets to match those that would be defined
+    # by RTIFindConnextDDSMicro.cmake
+    foreach(rtime_tgt ${rtime_targets})
+        if(NOT TARGET RTIConnextDDSMicro::${rtime_tgt})
+            # add_custom_target(RTIConnextDDSMicro::${rtime_tgt}
+            #     DEPENDS ${rtime_tgt})
+            add_library(RTIConnextDDSMicro::${rtime_tgt} SHARED IMPORTED)
+            set_target_properties(RTIConnextDDSMicro::${rtime_tgt}
+              PROPERTIES IMPORTED_LINK_INTERFACE_LIBRARIES 
+                ${rtime_tgt}
+            )
+        endif()
+        list(APPEND RTIME_TARGETS RTIConnextDDSMicro::${rtime_tgt})
+    endforeach()
 
+    set(RTIME_TARGET_NAME ${RTIME_TARGET_NAME} PARENT_SCOPE)
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
+    set(RTIMEHOME ${RTIMEHOME} PARENT_SCOPE)
     set(RTIMEHOME_FOUND true PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
 endfunction()
 
 ################################################################################
-#
+# rti_find_connextmicro_lib(basedir rtime_lib)
 ################################################################################
 function(rti_find_connextmicro_lib basedir rtime_lib)
     find_library(lib${rtime_lib}
@@ -196,7 +179,7 @@ function(rti_find_connextmicro_lib basedir rtime_lib)
 endfunction()
 
 ################################################################################
-#
+# rti_find_connextmicro()
 ################################################################################
 function(rti_find_connextmicro)
     set(RTIMEHOME_FOUND             false PARENT_SCOPE)
@@ -229,11 +212,13 @@ function(rti_find_connextmicro)
             rtime_target_dir)
 
         if("${rtime_target_dir}" STREQUAL "")
-            message(STATUS "No RTI Connext DDS Micro libraries found under ${RTIMEHOME}/lib")
+            message(STATUS
+              "No RTI Connext DDS Micro libraries found under ${RTIMEHOME}/lib")
         else()
             get_filename_component(RTIME_TARGET_NAME
                 "${rtime_target_dir}" NAME CACHE)
-            message(STATUS "Automatically detected RTIME_TARGET_NAME = '${RTIME_TARGET_NAME}'")
+            message(STATUS
+              "Automatically detected RTIME_TARGET_NAME = '${RTIME_TARGET_NAME}'")
         endif()
     endif()
 
@@ -294,10 +279,11 @@ function(rti_find_connextmicro)
     set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
+    set(RTIME_TARGET_NAME ${RTIME_TARGET_NAME} PARENT_SCOPE)
 endfunction()
 
 ################################################################################
-#
+# rti_load_connextddsdir()
 ################################################################################
 function(rti_load_connextddsdir)
     if(NOT DEFINED CONNEXTDDS_DIR)
@@ -330,7 +316,7 @@ function(rti_load_connextddsdir)
 endfunction()
 
 ################################################################################
-#
+# rti_find_connextpro()
 ################################################################################
 function(rti_find_connextpro)
     rti_load_connextddsdir()
@@ -351,123 +337,4 @@ function(rti_find_connextpro)
     set(CONNEXTDDS_DIR      "${CONNEXTDDS_DIR}" PARENT_SCOPE)
     set(CONNEXTDDS_ARCH     "${CONNEXTDDS_ARCH}" PARENT_SCOPE)
 endfunction()
-
-################################################################################
-#
-################################################################################
-macro(rti_build_rmw_connext)
-    # for some reason, if we don't set this explicitly, cmake will only build
-    # a static library
-    set(BUILD_SHARED_LIBS       ON)
-
-    # Default to C++14
-    if(NOT CMAKE_CXX_STANDARD)
-        set(CMAKE_CXX_STANDARD 14)
-    endif()
-
-    set(RMW_CONNEXT_DDS_API     "RMW_CONNEXT_DDS_API_${connext_api}"
-        CACHE STRING "DDS implementation to use")
-
-    if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        add_compile_options(-Wall -Wextra -Wpedantic -Wimplicit-fallthrough)
-    endif()
-
-    set(package_deps
-        rcutils
-        rcpputils
-        rmw
-        rmw_dds_common
-        rosidl_runtime_c
-        rosidl_runtime_cpp
-        fastcdr
-        rosidl_typesupport_fastrtps_c
-        rosidl_typesupport_fastrtps_cpp
-        rosidl_typesupport_introspection_c
-        rosidl_typesupport_introspection_cpp)
-
-    foreach(pkg_dep ${package_deps})
-        find_package(${pkg_dep} REQUIRED)
-    endforeach()
-
-    ament_export_dependencies(${package_deps} ${connext_deps})
-
-    add_library(${PROJECT_NAME}
-        ${RMW_CONNEXT_COMMON_SOURCE}
-        ${connext_src})
-
-    target_include_directories(${PROJECT_NAME} PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${RMW_CONNEXT_DIR}/include>
-        $<BUILD_INTERFACE:${RMW_CONNEXT_DIR}/src>
-        ${connext_includes}
-        $<INSTALL_INTERFACE:include>)
-
-    target_link_libraries(${PROJECT_NAME}   ${connext_libs} fastcdr)
-
-    ament_target_dependencies(${PROJECT_NAME} ${package_deps} ${connext_deps})
-
-    configure_rmw_library(${PROJECT_NAME})
-
-    target_compile_definitions(${PROJECT_NAME}
-        PRIVATE
-            RMW_VERSION_MAJOR=${rmw_VERSION_MAJOR}
-            RMW_VERSION_MINOR=${rmw_VERSION_MINOR}
-            RMW_VERSION_PATCH=${rmw_VERSION_PATCH}
-            RMW_CONNEXT_DDS_API=${RMW_CONNEXT_DDS_API}
-            ${connext_defines}
-    )
-
-    if(NOT "${RMW_CONNEXT_RELEASE}" STREQUAL "")
-        string(TOUPPER "${RMW_CONNEXT_RELEASE}" rmw_connext_release)
-        target_compile_definitions(${PROJECT_NAME}
-            PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${rmw_connext_release})
-        set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}"
-            CACHE INTERNAL "")
-    endif()
-
-    if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
-        string(TOUPPER "${RMW_CONNEXT_LOG_MODE}" rmw_connext_log_mode)
-        target_compile_definitions(${PROJECT_NAME}
-            PRIVATE RMW_CONNEXT_LOG_MODE=RMW_CONNEXT_LOG_MODE_${rmw_connext_log_mode})
-        set(RMW_CONNEXT_LOG_MODE "${RMW_CONNEXT_LOG_MODE}"
-            CACHE INTERNAL "")
-    endif()
-
-    # Causes the visibility macros to use dllexport rather than dllimport,
-    # which is appropriate when building the dll but not consuming it.
-    target_compile_definitions(${PROJECT_NAME}
-        PRIVATE "RMW_CONNEXT_BUILDING_LIBRARY")
-
-    ament_export_include_directories(include ${RMW_CONNEXT_DIR}/include)
-    ament_export_libraries(${PROJECT_NAME})
-
-    register_rmw_implementation(
-        "c:rosidl_typesupport_c:rosidl_typesupport_fastrtps_c"
-        "cpp:rosidl_typesupport_cpp:rosidl_typesupport_fastrtps_cpp")
-
-    if(BUILD_TESTING)
-        find_package(ament_lint_auto REQUIRED)
-        ament_lint_auto_find_test_dependencies()
-    endif()
-
-    # ament_package()
-
-    # install(
-    #     DIRECTORY include/
-    #     DESTINATION include
-    # )
-
-    # install(
-    #     DIRECTORY ${RMW_CONNEXT_DIR}/include/
-    #     DESTINATION include
-    # )
-
-    install(
-        TARGETS ${PROJECT_NAME}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-    )
-endmacro()
 

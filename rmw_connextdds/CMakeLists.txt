@@ -17,76 +17,47 @@ cmake_minimum_required(VERSION 3.5)
 project(rmw_connextdds)
 
 find_package(ament_cmake REQUIRED)
-find_package(rti_connext_dds_cmake_module REQUIRED)
+find_package(rmw_connextdds_common REQUIRED)
 
-set(RMW_CONNEXT_DIR     ${CMAKE_CURRENT_SOURCE_DIR})
-
-set(RMW_CONNEXT_COMMON_SOURCE_CPP
-    src/rmw_context.cpp
-    src/rmw_discovery.cpp
-    src/rmw_graph.cpp
-    src/rmw_event.cpp
-    src/rmw_impl.cpp
-    src/rmw_info.cpp
-    src/rmw_node.cpp
-    src/rmw_publication.cpp
-    src/rmw_serde.cpp
-    src/rmw_service.cpp
-    src/rmw_subscription.cpp
-    src/rmw_waitset.cpp
-    src/rmw_type_support.cpp
-    src/demangle.cpp)
-
-set(RMW_CONNEXT_COMMON_SOURCE_HPP
-    include/rmw_connextdds/context.hpp
-    include/rmw_connextdds/dds_api.hpp
-    include/rmw_connextdds/demangle.hpp
-    include/rmw_connextdds/discovery.hpp
-    include/rmw_connextdds/graph_cache.hpp
-    include/rmw_connextdds/log.hpp
-    include/rmw_connextdds/namespace_prefix.hpp
-    include/rmw_connextdds/resource_limits.hpp
-    include/rmw_connextdds/rmw_impl.hpp
-    include/rmw_connextdds/scope_exit.hpp
-    include/rmw_connextdds/static_config.hpp
-    include/rmw_connextdds/type_support.hpp
-    include/rmw_connextdds/visibility_control.h)
-
-set(RMW_CONNEXT_COMMON_SOURCE
-    ${RMW_CONNEXT_COMMON_SOURCE_CPP}
-    ${RMW_CONNEXT_COMMON_SOURCE_HPP})
-
-install(
-    FILES ${RMW_CONNEXT_COMMON_SOURCE_HPP}
-    DESTINATION include/rmw_connextdds
-)
-
-install(
-    FILES ${RMW_CONNEXT_COMMON_SOURCE_CPP}
-    DESTINATION src
-)
+if(NOT TARGET rmw_connextdds_common::rmw_connextdds_common)
+    message(WARNING "Common RMW implementation not found. Skipping ${PROJECT_NAME}.")
+    ament_package()
+    return()
+endif()
 
 rti_find_connextpro()
 
 if(NOT RTIConnextDDS_FOUND)
-    # Skip package if Connext DDS Professional was not found
-    message(WARNING
-        "RTI Connext DDS Professional not found, skipping ${PROJECT_NAME}")
-else()
-    set(connext_deps        rti_connext_dds_cmake_module)
-    set(connext_api         PRO)
-    set(connext_libs        RTIConnextDDS::c_api)
-    set(connext_src
-        src/rmw_type_support_ndds.cpp
-        src/rmw_typecode.cpp
-        src/dds_api_ndds.cpp
-        include/rmw_connextdds/type_support_impl.hpp
-        include/rmw_connextdds/typecode.hpp
-        include/rmw_connextdds/dds_api_ndds.hpp)
-
-    rti_build_rmw_connext()
+    message(WARNING "RTI Connext DDS Micro not found. Skipping ${PROJECT_NAME}.")
+    ament_package()
+    return()
 endif()
 
-ament_package(
-    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
+add_library(${PROJECT_NAME} SHARED
+    src/rmw_context_ndds.cpp)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
+
+target_link_libraries(${PROJECT_NAME}
+    rmw_connextdds_common::rmw_connextdds_common)
+
+configure_rmw_library(${PROJECT_NAME})
+
+register_rmw_implementation(
+    "c:rosidl_typesupport_c:rosidl_typesupport_fastrtps_c:rosidl_typesupport_introspection_c"
+    "cpp:rosidl_typesupport_cpp:rosidl_typesupport_fastrtps_cpp:rosidl_typesupport_introspection_cpp")
+
+if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+endif()
+
+install(
+    TARGETS ${PROJECT_NAME}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
 )
+
+ament_package()

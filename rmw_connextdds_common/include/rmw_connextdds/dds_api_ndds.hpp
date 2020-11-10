@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RMW_CONNEXTDDS__TYPE_SUPPORT_IMPL_HPP_
-#define RMW_CONNEXTDDS__TYPE_SUPPORT_IMPL_HPP_
+#ifndef RMW_CONNEXTDDS__DDS_API_NDDS_HPP_
+#define RMW_CONNEXTDDS__DDS_API_NDDS_HPP_
+
+#include "ndds/ndds_c.h"
 
 #include "rcutils/types.h"
 
@@ -29,4 +31,4 @@ typedef RMW_Connext_Uint8ArrayPtrSeq RMW_Connext_UntypedSampleSeq;
 #define DDS_UntypedSampleSeq_get_length(seq_) \
   RMW_Connext_Uint8ArrayPtrSeq_get_length(seq_)
 
-#endif  // RMW_CONNEXTDDS__TYPE_SUPPORT_IMPL_HPP_
+#endif  // RMW_CONNEXTDDS__DDS_API_NDDS_HPP_

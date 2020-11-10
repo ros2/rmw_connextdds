@@ -9,20 +9,7 @@
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
-  <build_depend>rmw_connextdds</build_depend>
-
-  <depend>rti_connext_dds_cmake_module</depend>
-  <depend>fastcdr</depend>
-  <depend>rcutils</depend>
-  <depend>rcpputils</depend>
-  <depend>rmw</depend>
-  <depend>rmw_dds_common</depend>
-  <depend>rosidl_runtime_c</depend>
-  <depend>rosidl_runtime_cpp</depend>
-  <depend>rosidl_typesupport_fastrtps_c</depend>
-  <depend>rosidl_typesupport_fastrtps_cpp</depend>
-  <depend>rosidl_typesupport_introspection_c</depend>
-  <depend>rosidl_typesupport_introspection_cpp</depend>
+  <depend>rmw_connextdds_common</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

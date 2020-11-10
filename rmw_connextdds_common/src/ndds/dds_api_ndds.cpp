@@ -110,6 +110,9 @@ rmw_connextdds_initialize_participant_qos_impl(
 
   // Only propagate type object
   dp_qos->resource_limits.type_code_max_serialized_length = 0;
+#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
+  dp_qos->resource_limits.type_object_max_serialized_length = 0;
+#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
   if (ctx->localhost_only) {
     if (DDS_RETCODE_OK !=

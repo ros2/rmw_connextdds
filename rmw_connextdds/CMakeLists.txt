@@ -19,7 +19,7 @@ project(rmw_connextdds)
 find_package(ament_cmake REQUIRED)
 find_package(rmw_connextdds_common REQUIRED)
 
-if(NOT TARGET rmw_connextdds_common::rmw_connextdds_common)
+if(NOT TARGET rmw_connextdds_common::rmw_connextdds_common_pro)
     message(WARNING "Common RMW implementation not found. Skipping ${PROJECT_NAME}.")
     ament_package()
     return()
@@ -28,7 +28,7 @@ endif()
 rti_find_connextpro()
 
 if(NOT RTIConnextDDS_FOUND)
-    message(WARNING "RTI Connext DDS Micro not found. Skipping ${PROJECT_NAME}.")
+    message(WARNING "RTI Connext DDS Professional not found. Skipping ${PROJECT_NAME}.")
     ament_package()
     return()
 endif()
@@ -40,7 +40,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
 target_link_libraries(${PROJECT_NAME}
-    rmw_connextdds_common::rmw_connextdds_common)
+    rmw_connextdds_common::rmw_connextdds_common_pro)
+  
+ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
 
 configure_rmw_library(${PROJECT_NAME})
 

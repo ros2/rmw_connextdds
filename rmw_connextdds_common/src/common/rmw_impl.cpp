@@ -1047,18 +1047,6 @@ RMW_Connext_Node::finalize()
   return RMW_RET_OK;
 }
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-RMW_Connext_Node::RMW_Connext_Node(rmw_context_impl_t * const ctx)
-: ctx(ctx)
-{
-  this->gcond = rmw_connextdds_create_guard_condition();
-  if (nullptr == this->gcond) {
-    RMW_CONNEXT_LOG_ERROR(
-      "failed to create graph guard condition")
-  }
-}
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
-
 /******************************************************************************
  * Publisher Implementation functions
  ******************************************************************************/
@@ -1104,9 +1092,7 @@ RMW_Connext_Publisher::create(
   const bool intro_members_cpp,
   std::string * const type_name)
 {
-#if RMW_CONNEXT_HAVE_COMMON_MUTEX
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
   UNUSED_ARG(internal);
 
   bool type_registered = false;
@@ -1263,9 +1249,7 @@ RMW_Connext_Publisher::create(
 rmw_ret_t
 RMW_Connext_Publisher::finalize()
 {
-#if RMW_CONNEXT_HAVE_COMMON_MUTEX
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing publisher: pub=%p, type=%s",
@@ -1644,9 +1628,7 @@ RMW_Connext_Subscriber::create(
   const bool intro_members_cpp,
   std::string * const type_name)
 {
-#if RMW_CONNEXT_HAVE_COMMON_MUTEX
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
   UNUSED_ARG(internal);
 
   bool type_registered = false;
@@ -1825,9 +1807,7 @@ RMW_Connext_Subscriber::create(
 rmw_ret_t
 RMW_Connext_Subscriber::finalize()
 {
-#if RMW_CONNEXT_HAVE_COMMON_MUTEX
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-#endif /* RMW_CONNEXT_HAVE_COMMON_MUTEX */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing subscriber: sub=%p, type=%s",

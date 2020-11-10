@@ -20,8 +20,6 @@
  * Discovery Thread
  ******************************************************************************/
 
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 static
 DDS_Condition *
 rmw_connextdds_attach_reader_to_waitset(
@@ -343,23 +341,3 @@ rmw_connextdds_discovery_thread_stop(rmw_context_impl_t * ctx)
   RMW_CONNEXT_LOG_DEBUG("discovery thread stopped")
   return RMW_RET_OK;
 }
-
-#else
-
-rmw_ret_t
-rmw_connextdds_discovery_thread_start(rmw_context_impl_t * ctx)
-{
-  UNUSED_ARG(ctx);
-
-  return RMW_RET_ERROR;
-}
-
-rmw_ret_t
-rmw_connextdds_discovery_thread_stop(rmw_context_impl_t * ctx)
-{
-  UNUSED_ARG(ctx);
-
-  return RMW_RET_OK;
-}
-
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

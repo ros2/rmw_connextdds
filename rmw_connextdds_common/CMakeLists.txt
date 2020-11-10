@@ -105,6 +105,7 @@ set(RMW_CONNEXT_DEPS
     rosidl_runtime_c
     rosidl_runtime_cpp
     fastcdr
+    rosidl_default_runtime
     rosidl_typesupport_fastrtps_c
     rosidl_typesupport_fastrtps_cpp
     rosidl_typesupport_introspection_c
@@ -128,7 +129,7 @@ if(NOT DEFINED RMW_CONNEXT_RELEASE)
   endif()
 endif()
 
-string(TOUPPER "${RMW_CONNEXT_RELEASE}" rmw_connext_release)
+string(TOUPPER "${RMW_CONNEXT_RELEASE}" RMW_CONNEXT_RELEASE)
 set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}" CACHE INTERNAL "" FORCE)
 
 ################################################################################
@@ -167,6 +168,19 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
     include/rmw_connextdds/type_support.hpp
     include/rmw_connextdds/visibility_control.h)
 
+if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING")
+  list(APPEND RMW_CONNEXT_COMMON_SOURCE_CPP
+      src/common/graph_cache.cpp
+      src/common/topic_endpoint_info.c
+      src/common/topic_endpoint_info_array.c
+      src/common/gid_utils.cpp)
+  list(APPEND RMW_CONNEXT_COMMON_SOURCE_HPP
+      include/rmw_connextdds/graph_cache_common.hpp
+      include/rmw_connextdds/topic_endpoint_info.h
+      include/rmw_connextdds/topic_endpoint_info_array.h
+      include/rmw_connextdds/gid_utils.hpp)
+endif()
+
 set(RMW_CONNEXT_COMMON_SOURCE
     ${RMW_CONNEXT_COMMON_SOURCE_CPP}
     ${RMW_CONNEXT_COMMON_SOURCE_HPP})
@@ -180,10 +194,10 @@ if(NOT RTIConnextDDS_FOUND)
     # Skip package if Connext DDS Professional was not found
     message(STATUS
       "RTI Connext DDS Professional not found. "
-      "Skipping library ${PROJECT_NAME}")
+      "Skipping library ${PROJECT_NAME}_pro")
 else()
     rtirmw_add_library(
-        NAME      ${PROJECT_NAME}
+        NAME      ${PROJECT_NAME}_pro
         API       PRO
         EXPORT    export_${PROJECT_NAME}
         SOURCES   ${RMW_CONNEXT_COMMON_SOURCE}
@@ -252,12 +266,40 @@ else()
       INCLUDES  ${${rti_connext_dds_cmake_module_DIR}/../../../include})
 endif()
 
+if(TARGET ${PROJECT_NAME}_pro OR TARGET ${PROJECT_NAME}_micro)
+  set(RMW_CONNEXT_BUILT   true)
+endif()
+
+if(RMW_CONNEXT_BUILT)
+  rosidl_generate_interfaces(
+    ${PROJECT_NAME}
+    "msg/Gid.msg"
+    "msg/NodeEntitiesInfo.msg"
+    "msg/ParticipantEntitiesInfo.msg"
+  )
+
+  if(TARGET ${PROJECT_NAME}_pro)
+    add_dependencies(${PROJECT_NAME}_pro ${PROJECT_NAME})
+    target_include_directories(${PROJECT_NAME}_pro
+      PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c>"
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
+  endif()
+  if(TARGET ${PROJECT_NAME}_micro)
+  add_dependencies(${PROJECT_NAME}_micro ${PROJECT_NAME})
+    target_include_directories(${PROJECT_NAME}_micro
+      PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c>"
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
+  endif()
+endif()
+
 ################################################################################
 # Configure Ament package
 ################################################################################
 ament_export_dependencies(${RMW_CONNEXT_DEPS})
 
-if(TARGET ${PROJECT_NAME} OR TARGET ${PROJECT_NAME}_micro)
+if(RMW_CONNEXT_BUILT)
     ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 endif()
 

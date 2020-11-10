@@ -526,14 +526,10 @@ protected:
 class RMW_Connext_Node
 {
   rmw_context_impl_t * ctx;
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-  rmw_guard_condition_t * gcond;
-  explicit RMW_Connext_Node(rmw_context_impl_t * const ctx);
-#else
+
   explicit RMW_Connext_Node(rmw_context_impl_t * const ctx)
   : ctx(ctx)
   {}
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 public:
   static
@@ -546,11 +542,7 @@ public:
   rmw_guard_condition_t *
   graph_guard_condition()
   {
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
     return this->ctx->common.graph_guard_condition;
-#else
-    return this->gcond;
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
   }
 };
 

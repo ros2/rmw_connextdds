@@ -17,8 +17,6 @@
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 rmw_ret_t
 rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 {
@@ -29,14 +27,23 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
   pubsub_qos.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
   pubsub_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
 
+#if RMW_CONNEXT_HAVE_OPTIONS
   /* Create RMW publisher/subscription/guard condition used by rmw_dds_common
       discovery */
   rmw_publisher_options_t publisher_options =
     rmw_get_default_publisher_options();
+  rmw_subscription_options_t subscription_options =
+    rmw_get_default_subscription_options();
+  subscription_options.ignore_local_publications = true;
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
   const rosidl_message_type_support_t * const type_supports_partinfo =
     rosidl_typesupport_cpp::get_message_type_support_handle<
-    rmw_dds_common::msg::ParticipantEntitiesInfo>();
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
+      rmw_dds_common::msg::ParticipantEntitiesInfo>();
+#else
+      rmw_connextdds_common::msg::ParticipantEntitiesInfo>();
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
   const char * const topic_name_partinfo = "ros_discovery_info";
 
@@ -51,7 +58,9 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     type_supports_partinfo,
     topic_name_partinfo,
     &pubsub_qos,
+#if RMW_CONNEXT_HAVE_OPTIONS
     &publisher_options,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     true /* internal */);
 
   if (nullptr == ctx->common.pub) {
@@ -60,9 +69,6 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     return RMW_RET_ERROR;
   }
 
-  rmw_subscription_options_t subscription_options =
-    rmw_get_default_subscription_options();
-  subscription_options.ignore_local_publications = true;
 
   pubsub_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_ALL;
 
@@ -77,7 +83,11 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     type_supports_partinfo,
     topic_name_partinfo,
     &pubsub_qos,
+#if RMW_CONNEXT_HAVE_OPTIONS
     &subscription_options,
+#else
+    true /* ignore_local_publications */,
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     true /* internal */);
   if (nullptr == ctx->common.sub) {
     RMW_CONNEXT_LOG_ERROR(
@@ -107,8 +117,13 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   rmw_connextdds_get_entity_gid(ctx->participant, ctx->common.gid);
 
-  ctx->common.graph_cache.add_participant(
-    ctx->common.gid, ctx->base->options.enclave);
+  std::string dp_enclave;
+
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
+  dp_enclave = ctx->base->options.enclave
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
+
+  ctx->common.graph_cache.add_participant(ctx->common.gid, dp_enclave);
 
   if (RMW_RET_OK !=
     rmw_connextdds_dcps_participant_get_reader(
@@ -630,7 +645,7 @@ rmw_connextdds_graph_add_entity(
     return;
   }
 
-  rmw_qos_profile_t qos_profile = rmw_qos_profile_unknown;
+  rmw_qos_profile_t qos_profile = rmw_qos_profile_default;
 
   if (RMW_RET_OK !=
     rmw_connextdds_readerwriter_qos_to_ros(
@@ -699,215 +714,3 @@ rmw_connextdds_graph_remove_entity(
   ctx->common.graph_cache.remove_entity(endp_gid, is_reader);
   return RMW_RET_OK;
 }
-
-#else
-
-rmw_ret_t
-rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
-{
-  UNUSED_ARG(ctx);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_enable(rmw_context_impl_t * const ctx)
-{
-  UNUSED_ARG(ctx);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx)
-{
-  UNUSED_ARG(ctx);
-
-  return RMW_RET_OK;
-}
-
-
-rmw_ret_t
-rmw_connextdds_graph_publish_update(
-  rmw_context_impl_t * const ctx,
-  void * const msg)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(msg);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_node_created(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_node_deleted(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-
-  return RMW_RET_OK;
-}
-
-
-rmw_ret_t
-rmw_connextdds_graph_on_publisher_created(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Publisher * const pub)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(pub);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_publisher_deleted(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Publisher * const pub)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(pub);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_subscriber_created(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Subscriber * const sub)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(sub);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_subscriber_deleted(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Subscriber * const sub)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(sub);
-
-  return RMW_RET_OK;
-}
-
-
-rmw_ret_t
-rmw_connextdds_graph_on_service_created(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Service * const svc)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(svc);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_service_deleted(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Service * const svc)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(svc);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_client_created(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Client * const client)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(client);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_client_deleted(
-  rmw_context_impl_t * const ctx,
-  const rmw_node_t * const node,
-  RMW_Connext_Client * const client)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(node);
-  UNUSED_ARG(client);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
-{
-  UNUSED_ARG(ctx);
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-rmw_connextdds_graph_add_participant(
-  rmw_context_impl_t * const ctx,
-  const DDS_ParticipantBuiltinTopicData * const data)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(data);
-
-  return RMW_RET_OK;
-}
-
-void
-rmw_connextdds_graph_add_entity(
-  rmw_context_impl_t * ctx,
-  const DDS_GUID_t * const endp_guid,
-  const DDS_GUID_t * const dp_guid,
-  const char * const topic_name,
-  const char * const type_name,
-  const DDS_ReliabilityQosPolicy * const reliability,
-  const DDS_DurabilityQosPolicy * const durability,
-  const DDS_DeadlineQosPolicy * const deadline,
-  const DDS_LivelinessQosPolicy * const liveliness,
-  const bool is_reader)
-{
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(endp_guid);
-  UNUSED_ARG(dp_guid);
-  UNUSED_ARG(topic_name);
-  UNUSED_ARG(type_name);
-  UNUSED_ARG(reliability);
-  UNUSED_ARG(durability);
-  UNUSED_ARG(deadline);
-  UNUSED_ARG(liveliness);
-  UNUSED_ARG(is_reader);
-}
-
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

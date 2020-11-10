@@ -30,6 +30,9 @@
 #if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
 #include "rmw_dds_common/context.hpp"
 #include "rmw_dds_common/msg/participant_entities_info.hpp"
+#else
+#include "rmw_connextdds/context_common.hpp"
+#include "rmw_connextdds_common/msg/participant_entities_info.hpp"
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #include "rcutils/strdup.h"
@@ -43,9 +46,7 @@
 
 struct rmw_context_impl_t
 {
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
   rmw_dds_common::Context common;
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
   rmw_context_t * base;
 
   DDS_DomainParticipantFactory * factory;
@@ -85,9 +86,7 @@ struct rmw_context_impl_t
 
   explicit rmw_context_impl_t(rmw_context_t * const base)
   :
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
     common(),
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
     base(base),
     factory(nullptr),
     domain_id(RMW_CONNEXT_DEFAULT_DOMAIN),
@@ -103,13 +102,11 @@ struct rmw_context_impl_t
     localhost_only(false)
 #endif /* RMW_CONNEXT_HAVE_LOCALHOST_ONLY */
   {
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
     /* destructor relies on these being initialized properly */
     common.thread_is_running.store(false);
     common.graph_guard_condition = nullptr;
     common.pub = nullptr;
     common.sub = nullptr;
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
   }
 
   // Initializes the participant, if it wasn't done already.

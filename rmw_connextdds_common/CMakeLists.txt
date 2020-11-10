@@ -70,7 +70,7 @@ function(rtirmw_add_library)
     )
 
     target_compile_definitions(${_rti_build_NAME}
-        PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${rmw_connext_release})
+        PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
 
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
         string(TOUPPER "${RMW_CONNEXT_LOG_MODE}" rmw_connext_log_mode)
@@ -132,6 +132,11 @@ endif()
 string(TOUPPER "${RMW_CONNEXT_RELEASE}" RMW_CONNEXT_RELEASE)
 set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}" CACHE INTERNAL "" FORCE)
 
+set(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON      false)
+if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING")
+  set(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON      true)
+endif()
+
 ################################################################################
 # Common Source Configuration
 ################################################################################
@@ -168,7 +173,7 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
     include/rmw_connextdds/type_support.hpp
     include/rmw_connextdds/visibility_control.h)
 
-if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING")
+if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
   list(APPEND RMW_CONNEXT_COMMON_SOURCE_CPP
       src/rmw_dds_common/graph_cache.cpp
       src/rmw_dds_common/topic_endpoint_info.c
@@ -270,7 +275,7 @@ if(TARGET ${PROJECT_NAME}_pro OR TARGET ${PROJECT_NAME}_micro)
   set(RMW_CONNEXT_BUILT   true)
 endif()
 
-if(RMW_CONNEXT_BUILT)
+if(RMW_CONNEXT_BUILT AND RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
   rosidl_generate_interfaces(
     ${PROJECT_NAME}
     "msg/Gid.msg"
@@ -313,4 +318,6 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
+ament_package(
+    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
+)

@@ -120,7 +120,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
   std::string dp_enclave;
 
 #if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-  dp_enclave = ctx->base->options.enclave
+  dp_enclave = ctx->base->options.enclave;
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
   ctx->common.graph_cache.add_participant(ctx->common.gid, dp_enclave);

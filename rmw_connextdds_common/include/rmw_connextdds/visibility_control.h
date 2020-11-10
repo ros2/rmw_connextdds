@@ -27,30 +27,30 @@
 
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef __GNUC__
-    #define RMW_CONNEXT_EXPORT __attribute__ ((dllexport))
-    #define RMW_CONNEXT_IMPORT __attribute__ ((dllimport))
+    #define RMW_CONNEXTDDS_EXPORT __attribute__ ((dllexport))
+    #define RMW_CONNEXTDDS_IMPORT __attribute__ ((dllimport))
   #else
-    #define RMW_CONNEXT_EXPORT __declspec(dllexport)
-    #define RMW_CONNEXT_IMPORT __declspec(dllimport)
+    #define RMW_CONNEXTDDS_EXPORT __declspec(dllexport)
+    #define RMW_CONNEXTDDS_IMPORT __declspec(dllimport)
   #endif
-  #ifdef RMW_CONNEXT_BUILDING_LIBRARY
-    #define RMW_CONNEXT_PUBLIC RMW_CONNEXT_EXPORT
+  #ifdef RMW_CONNEXTDDS_BUILDING_LIBRARY
+    #define RMW_CONNEXTDDS_PUBLIC RMW_CONNEXTDDS_EXPORT
   #else
-    #define RMW_CONNEXT_PUBLIC RMW_CONNEXT_IMPORT
+    #define RMW_CONNEXTDDS_PUBLIC RMW_CONNEXTDDS_IMPORT
   #endif
-  #define RMW_CONNEXT_PUBLIC_TYPE RMW_CONNEXT_PUBLIC
-  #define RMW_CONNEXT_LOCAL
+  #define RMW_CONNEXTDDS_PUBLIC_TYPE RMW_CONNEXTDDS_PUBLIC
+  #define RMW_CONNEXTDDS_LOCAL
 #else
-  #define RMW_CONNEXT_EXPORT __attribute__ ((visibility("default")))
-  #define RMW_CONNEXT_IMPORT
+  #define RMW_CONNEXTDDS_EXPORT __attribute__ ((visibility("default")))
+  #define RMW_CONNEXTDDS_IMPORT
   #if __GNUC__ >= 4
-    #define RMW_CONNEXT_PUBLIC __attribute__ ((visibility("default")))
-    #define RMW_CONNEXT_LOCAL  __attribute__ ((visibility("hidden")))
+    #define RMW_CONNEXTDDS_PUBLIC __attribute__ ((visibility("default")))
+    #define RMW_CONNEXTDDS_LOCAL  __attribute__ ((visibility("hidden")))
   #else
-    #define RMW_CONNEXT_PUBLIC
-    #define RMW_CONNEXT_LOCAL
+    #define RMW_CONNEXTDDS_PUBLIC
+    #define RMW_CONNEXTDDS_LOCAL
   #endif
-  #define RMW_CONNEXT_PUBLIC_TYPE
+  #define RMW_CONNEXTDDS_PUBLIC_TYPE
 #endif
 
 #endif  // RMW_CONNEXTDDS__VISIBILITY_CONTROL_H_

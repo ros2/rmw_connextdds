@@ -17,39 +17,48 @@ cmake_minimum_required(VERSION 3.5)
 project(rmw_connextddsmicro)
 
 find_package(ament_cmake REQUIRED)
-find_package(rti_connext_dds_cmake_module REQUIRED)
+find_package(rmw_connextdds_common REQUIRED)
+
+if(NOT TARGET rmw_connextdds_common::rmw_connextdds_common_micro)
+    message(WARNING
+      "Common RMW implementation not found. Skipping ${PROJECT_NAME}.")
+    ament_package()
+    return()
+endif()
 
 rti_find_connextmicro()
 
 if(NOT RTIConnextDDSMicro_FOUND)
+    message(WARNING "RTI Connext DDS Micro not found. Skipping ${PROJECT_NAME}.")
     ament_package()
-    message(WARNING
-        "RTI Connext DDS Micro not found, skipping ${PROJECT_NAME}")
     return()
 endif()
 
-find_package(rmw_connextdds REQUIRED)
+add_library(${PROJECT_NAME} SHARED
+    src/rmw_context_rtime.cpp)
 
-set(connext_deps        rti_connext_dds_cmake_module)
-set(connext_includes)
-set(connext_api         MICRO)
-set(connext_libs        ${RTIME_TARGETS})
-set(connext_src
-    src/rmw_type_support_rtime.cpp
-    src/dds_api_rtime.cpp
-    include/rmw_connextdds/type_support_impl.hpp
-    include/rmw_connextdds/dds_api_rtime.hpp)
+target_include_directories(${PROJECT_NAME} PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
-rti_build_rmw_connext()
+target_link_libraries(${PROJECT_NAME}
+    rmw_connextdds_common::rmw_connextdds_common_micro)
 
-install(
-    DIRECTORY include/
-    DESTINATION include
-)
+configure_rmw_library(${PROJECT_NAME})
+
+register_rmw_implementation(
+    "c:rosidl_typesupport_c:rosidl_typesupport_fastrtps_c"
+    "cpp:rosidl_typesupport_cpp:rosidl_typesupport_fastrtps_cpp")
 
 install(
-    DIRECTORY ${RMW_CONNEXT_DIR}/include/
-    DESTINATION include
+    TARGETS ${PROJECT_NAME}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
 )
+
+if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_package()

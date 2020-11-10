@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RMW_CONNEXTDDS__DDS_API_NDDS_HPP_
-#define RMW_CONNEXTDDS__DDS_API_NDDS_HPP_
+#include "rmw_connextdds/rmw_impl.hpp"
 
-#include "ndds/ndds_c.h"
+/******************************************************************************
+ * Context interface functions
+ ******************************************************************************/
 
-#endif  // RMW_CONNEXTDDS__DDS_API_NDDS_HPP_
+extern "C" const char * rmw_get_implementation_identifier()
+{
+  return RMW_CONNEXTDDS_ID;
+}

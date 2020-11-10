@@ -30,8 +30,6 @@
 #define UNUSED_ARG(arg_)        (void)(arg_)
 #endif /* UNUSED_ARG */
 
-#include "rmw_connextdds/type_support_impl.hpp"
-
 #include "rmw/rmw.h"
 #include "rosidl_typesupport_cpp/message_type_support.hpp"
 

@@ -49,7 +49,7 @@
 
 #include "DomainParticipant.h"
 
-#include "rtiros/rtime_ext.h"
+#include "rmw_connextdds/rtime_ext.h"
 
 DDS_ReturnCode_t
 DDS_DomainParticipant_lookup_type_pluginI(

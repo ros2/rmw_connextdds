@@ -41,3 +41,11 @@ if(@RTIConnextDDS_FOUND@)
     set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
         CACHE INTERNAL "Architecture target for RTI Connext DDS Professional")
 endif()
+
+message(STATUS "Loaded RTI Connext DDS module:")
+message(STATUS "  RTIConnextDDSMicro_FOUND: ${RTIConnextDDSMicro_FOUND}")
+message(STATUS "    RTIMEHOME: ${RTIMEHOME}")
+message(STATUS "    RTIME_TARGET_NAME: ${RTIME_TARGET_NAME}")
+message(STATUS "  RTIConnextDDS_FOUND: ${RTIConnextDDS_FOUND}")
+message(STATUS "    CONNEXTDDS_DIR: ${CONNEXTDDS_DIR}")
+message(STATUS "    CONNEXTDDS_ARCH: ${CONNEXTDDS_ARCH}")

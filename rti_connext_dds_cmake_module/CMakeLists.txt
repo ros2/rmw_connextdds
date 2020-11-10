@@ -36,55 +36,14 @@ if(NOT RTIMEHOME_FOUND)
     message(STATUS "RTI Connext DDS Micro: NOT FOUND")
 else()
     if(NOT RTIConnextDDSMicro_FOUND)
+        if(NOT RTIME_TARGET_NAME AND CONNEXTDDS_ARCH)
+          set(RTIME_TARGET_NAME   "${CONNEXTDDS_ARCH}")
+        endif()
         rti_build_connextmicro()
         message(STATUS "RTI Connext DDS Micro: '${RTIMEHOME}' (build)")
     else()
         message(STATUS "RTI Connext DDS Micro: '${RTIMEHOME}'")
     endif()
-
-    set(RTIME_EXT           rti_connextdds_micro_ext)
-
-    set(BUILD_SHARED_LIBS       ON)
-
-    add_library(${RTIME_EXT}
-        src/rtime_ext.c
-        include/rtiros/rtime_ext.h
-        include/rtiros/visibility_control.h)
-
-    target_include_directories(${RTIME_EXT}
-        PRIVATE "$<BUILD_INTERFACE:${RTIMEHOME}/include>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/domain>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/subscription>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/publication>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/infrastructure>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/topic>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/type>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/dds_c/builtin_ipc>"
-                "$<BUILD_INTERFACE:${RTIMEHOME}/src/reda/sequence>")
-
-    target_include_directories(${RTIME_EXT}
-        PUBLIC
-            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-            "$<INSTALL_INTERFACE:include>")
-
-    target_link_libraries(${RTIME_EXT}  ${RTIME_TARGETS})
-
-
-    install(
-        DIRECTORY include/
-        DESTINATION include
-    )
-
-    install(
-        TARGETS ${RTIME_EXT}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-    )
-
-    ament_export_include_directories(include)
-    ament_export_libraries(${RTIME_EXT})
-
 endif()
 
 
@@ -102,10 +61,10 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package(
-    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
-)
-
 install(
     FILES cmake/rti_build_helper.cmake
     DESTINATION "share/${PROJECT_NAME}/cmake")
+
+ament_package(
+    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
+)

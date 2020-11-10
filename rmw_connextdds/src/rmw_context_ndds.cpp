@@ -12,31 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RTIROS__RTIME_EXT_H_
-#define RTIROS__RTIME_EXT_H_
+#include "rmw_connextdds/rmw_impl.hpp"
 
-#include "rtiros/visibility_control.h"
+/******************************************************************************
+ * Context interface functions
+ ******************************************************************************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif  // __cplusplus
-
-RTIROS_PUBLIC
-DDS_ReturnCode_t
-DDS_DomainParticipant_lookup_type_pluginI(
-  DDS_DomainParticipant * const self,
-  const char * const type_name,
-  struct DDS_TypePluginI ** const plugin_out);
-
-RTIROS_PUBLIC
-DDS_ReturnCode_t
-DDS_DomainParticipant_is_type_in_use(
-  DDS_DomainParticipant * const self,
-  const char * const type_name,
-  DDS_Boolean * const in_use_out);
-
-#ifdef __cplusplus
+extern "C" const char * rmw_get_implementation_identifier()
+{
+  return RMW_CONNEXTDDS_ID;
 }
-#endif  // __cplusplus
-
-#endif  // RTIROS__RTIME_EXT_H_

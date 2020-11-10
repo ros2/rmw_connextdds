@@ -12,11 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RMW_CONNEXTDDS__TYPE_SUPPORT_IMPL_HPP_
-#define RMW_CONNEXTDDS__TYPE_SUPPORT_IMPL_HPP_
+#ifndef RMW_CONNEXTDDS__DDS_API_RTIME_HPP_
+#define RMW_CONNEXTDDS__DDS_API_RTIME_HPP_
+
+#include "rti_me_c.h"  // NOLINT(build/include)
+#include "disc_dpde/disc_dpde_discovery_plugin.h"
+#include "wh_sm/wh_sm_history.h"
+#include "rh_sm/rh_sm_history.h"
+#include "netio/netio_udp.h"
+#include "netio_shmem/netio_shmem.h"
+// #include "sec_core/sec_core_c.h"
+#include "rmw_connextdds/rtime_ext.h"
+#include "REDASequence.h"
 
 typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
 
 #define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER
 
-#endif  // RMW_CONNEXTDDS__TYPE_SUPPORT_IMPL_HPP_
+#endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

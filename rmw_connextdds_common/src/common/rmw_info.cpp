@@ -608,37 +608,3 @@ extern "C" rmw_ret_t rmw_get_subscriptions_info_by_topic(
     allocator,
     subscriptions_info);
 }
-
-#if RMW_CONNEXT_HAVE_GET_INFO_BY_TOPIC
-
-extern "C" rmw_ret_t rmw_get_publishers_info_by_topic(
-  const rmw_node_t * node,
-  rcutils_allocator_t * allocator,
-  const char * topic_name,
-  bool no_mangle,
-  rmw_topic_endpoint_info_array_t * publishers_info)
-{
-  UNUSED_ARG(node);
-  UNUSED_ARG(allocator);
-  UNUSED_ARG(topic_name);
-  UNUSED_ARG(no_mangle);
-  UNUSED_ARG(publishers_info);
-  return RMW_RET_UNSUPPORTED;
-}
-
-extern "C" rmw_ret_t rmw_get_subscriptions_info_by_topic(
-  const rmw_node_t * node,
-  rcutils_allocator_t * allocator,
-  const char * topic_name,
-  bool no_mangle,
-  rmw_topic_endpoint_info_array_t * subscriptions_info)
-{
-  UNUSED_ARG(node);
-  UNUSED_ARG(allocator);
-  UNUSED_ARG(topic_name);
-  UNUSED_ARG(no_mangle);
-  UNUSED_ARG(subscriptions_info);
-  return RMW_RET_UNSUPPORTED;
-}
-
-#endif /* RMW_CONNEXT_HAVE_GET_INFO_BY_TOPIC */

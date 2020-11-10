@@ -41,8 +41,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
     rmw_connextdds_common::rmw_connextdds_common_pro)
-  
-ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
+
+if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING")
+  ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
+endif()
 
 configure_rmw_library(${PROJECT_NAME})
 

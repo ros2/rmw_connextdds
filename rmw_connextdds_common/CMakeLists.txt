@@ -106,8 +106,6 @@ set(RMW_CONNEXT_DEPS
     rcutils
     rcpputils
     rmw
-    rosidl_runtime_c
-    rosidl_runtime_cpp
     fastcdr
     rosidl_typesupport_fastrtps_c
     rosidl_typesupport_fastrtps_cpp

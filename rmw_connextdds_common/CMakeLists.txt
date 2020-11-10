@@ -69,13 +69,8 @@ function(rtirmw_add_library)
             RMW_CONNEXT_DDS_API=RMW_CONNEXT_DDS_API_${_rti_build_API}
     )
 
-    if(NOT "${RMW_CONNEXT_RELEASE}" STREQUAL "")
-        string(TOUPPER "${RMW_CONNEXT_RELEASE}" rmw_connext_release)
-        target_compile_definitions(${_rti_build_NAME}
-            PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${rmw_connext_release})
-        set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}"
-            CACHE INTERNAL "")
-    endif()
+    target_compile_definitions(${_rti_build_NAME}
+        PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${rmw_connext_release})
 
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
         string(TOUPPER "${RMW_CONNEXT_LOG_MODE}" rmw_connext_log_mode)
@@ -119,6 +114,22 @@ set(RMW_CONNEXT_DEPS
 foreach(pkg_dep ${RMW_CONNEXT_DEPS})
     find_package(${pkg_dep} REQUIRED)
 endforeach()
+
+################################################################################
+# Detect target rmw version
+################################################################################
+if(NOT DEFINED RMW_CONNEXT_RELEASE)
+  if(${rmw_VERSION} VERSION_GREATER_EQUAL "2.1.0")
+      set(RMW_CONNEXT_RELEASE       rolling)
+  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.2")
+      set(RMW_CONNEXT_RELEASE       foxy)
+  else()
+      set(RMW_CONNEXT_RELEASE       dashing)
+  endif()
+endif()
+
+string(TOUPPER "${RMW_CONNEXT_RELEASE}" rmw_connext_release)
+set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}" CACHE INTERNAL "" FORCE)
 
 ################################################################################
 # Common Source Configuration
@@ -246,7 +257,9 @@ endif()
 ################################################################################
 ament_export_dependencies(${RMW_CONNEXT_DEPS})
 
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+if(TARGET ${PROJECT_NAME} OR TARGET ${PROJECT_NAME}_micro)
+    ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+endif()
 
 install(
     DIRECTORY include/

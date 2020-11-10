@@ -382,8 +382,7 @@ function(rti_find_connextpro)
                 INTERFACE_COMPILE_DEFINITIONS
                   "${ndds_defines}"
                 INTERFACE_COMPILE_OPTIONS
-                  "${ndds_compile_opts}"
-            )
+                  "${ndds_compile_opts}")
     endif()
 
     set(RTIConnextDDS_FOUND ${RTIConnextDDS_FOUND} PARENT_SCOPE)

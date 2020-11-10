@@ -69,7 +69,7 @@ extern "C" rmw_ret_t rmw_publish_serialized_message(
   auto pub_impl = static_cast<RMW_Connext_Publisher *>(publisher->data);
   RMW_CHECK_ARGUMENT_FOR_NULL(pub_impl, RMW_RET_INVALID_ARGUMENT);
 
-  return pub_impl->write(serialized_message, false /* serialized */);
+  return pub_impl->write(serialized_message, true /* serialized */);
 }
 
 extern "C" rmw_ret_t rmw_publish_loaned_message(

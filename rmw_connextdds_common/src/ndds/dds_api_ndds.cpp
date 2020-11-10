@@ -495,9 +495,11 @@ rmw_connextdds_take_samples(
     1 /* data_size -- ignored because loaning*/,
     DDS_LENGTH_UNLIMITED /* max_samples */,
     &DDS_HANDLE_NIL /* a_handle */,
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
     NULL /* topic_query_guid */,
-    DDS_ANY_VIEW_STATE,
+#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
     DDS_ANY_SAMPLE_STATE,
+    DDS_ANY_VIEW_STATE,
     DDS_ANY_INSTANCE_STATE,
     DDS_BOOLEAN_TRUE /* take */);
   if (DDS_RETCODE_OK != rc) {

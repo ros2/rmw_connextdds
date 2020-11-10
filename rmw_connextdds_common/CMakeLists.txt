@@ -168,7 +168,8 @@ rti_find_connextpro()
 if(NOT RTIConnextDDS_FOUND)
     # Skip package if Connext DDS Professional was not found
     message(STATUS
-      "RTI Connext DDS Professional not found. Skipping library ${PROJECT_NAME}")
+      "RTI Connext DDS Professional not found. "
+      "Skipping library ${PROJECT_NAME}")
 else()
     rtirmw_add_library(
         NAME      ${PROJECT_NAME}

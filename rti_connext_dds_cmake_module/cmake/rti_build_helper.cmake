@@ -128,7 +128,7 @@ function(rti_build_connextmicro)
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
-    
+
     set(RTIME_TARGETS)
     # define imported targets to match those that would be defined
     # by RTIFindConnextDDSMicro.cmake
@@ -138,8 +138,8 @@ function(rti_build_connextmicro)
             #     DEPENDS ${rtime_tgt})
             add_library(RTIConnextDDSMicro::${rtime_tgt} SHARED IMPORTED)
             set_target_properties(RTIConnextDDSMicro::${rtime_tgt}
-              PROPERTIES IMPORTED_LINK_INTERFACE_LIBRARIES 
-                ${rtime_tgt}
+              PROPERTIES IMPORTED_LINK_INTERFACE_LIBRARIES
+                  ${rtime_tgt}
             )
         endif()
         list(APPEND RTIME_TARGETS RTIConnextDDSMicro::${rtime_tgt})
@@ -218,7 +218,8 @@ function(rti_find_connextmicro)
             get_filename_component(RTIME_TARGET_NAME
                 "${rtime_target_dir}" NAME CACHE)
             message(STATUS
-              "Automatically detected RTIME_TARGET_NAME = '${RTIME_TARGET_NAME}'")
+              "Automatically detected "
+              "RTIME_TARGET_NAME = '${RTIME_TARGET_NAME}'")
         endif()
     endif()
 

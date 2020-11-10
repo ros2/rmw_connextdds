@@ -146,12 +146,12 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
           return RMW_RET_ERROR;
         }
       } catch (const std::exception & exc) {
-        RMW_CONNEXT_LOG_ERROR("Failed to deserialize data")
+        RMW_CONNEXT_LOG_ERROR("Failed to serialize data")
         RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-          "Failed to deserialize data: %s", exc.what());
+          "Failed to serialize data: %s", exc.what());
         return RMW_RET_ERROR;
       } catch (...) {
-        RMW_CONNEXT_LOG_ERROR("Failed to deserialize data")
+        RMW_CONNEXT_LOG_ERROR("Failed to serialize data")
         return RMW_RET_ERROR;
       }
     } else {

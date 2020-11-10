@@ -58,7 +58,7 @@ struct RMW_Connext_ParticipantData
   void
   initialize(DDS_ParticipantBuiltinTopicData * const data)
   {
-    * data = DEFAULT_PARTICIPANT_DATA;
+    *data = DEFAULT_PARTICIPANT_DATA;
   }
 
   static
@@ -100,7 +100,7 @@ struct RMW_Connext_SubscriptionData
   void
   initialize(DDS_SubscriptionBuiltinTopicData * const data)
   {
-    * data = DEFAULT_SUBSCRIPTION_DATA;
+    *data = DEFAULT_SUBSCRIPTION_DATA;
   }
 
   static
@@ -142,7 +142,7 @@ struct RMW_Connext_PublicationData
   void
   initialize(DDS_PublicationBuiltinTopicData * const data)
   {
-    * data = DEFAULT_PUBLICATION_DATA;
+    *data = DEFAULT_PUBLICATION_DATA;
   }
 
   static
@@ -1216,7 +1216,7 @@ rmw_connextdds_filter_sample(
   UNUSED_ARG(sub);
   UNUSED_ARG(sample);
   UNUSED_ARG(info);
-  // In this implementation, local samples are dropped by the 
+  // In this implementation, local samples are dropped by the
   // DataReaderListener::on_before_sample_commit() callback.
   *accepted = true;
   return RMW_RET_OK;

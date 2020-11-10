@@ -306,7 +306,8 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
       serialized_size += RMW_GID_STORAGE_SIZE + sizeof(int64_t);
     }
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
-    RMW_CONNEXT_LOG_DEBUG_A("[type support] %s serialized size_MAX: %u",
+    RMW_CONNEXT_LOG_DEBUG_A(
+      "[type support] %s serialized size_MAX: %u",
       this->type_name(), serialized_size)
   }
 

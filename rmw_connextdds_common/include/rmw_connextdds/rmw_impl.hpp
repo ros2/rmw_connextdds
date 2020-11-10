@@ -903,14 +903,14 @@ done:
     const size_t max_samples,
     size_t * const taken,
     const bool serialized,
-    const DDS_InstanceHandle_t *const request_writer_handle = nullptr);
+    const DDS_InstanceHandle_t * const request_writer_handle = nullptr);
 
   rmw_ret_t
   take_message(
     void * const ros_message,
     rmw_message_info_t * const message_info,
     bool * const taken,
-    const DDS_InstanceHandle_t *const request_writer_handle = nullptr);
+    const DDS_InstanceHandle_t * const request_writer_handle = nullptr);
 
 #if RMW_CONNEXT_HAVE_TAKE_SEQ
   rmw_ret_t

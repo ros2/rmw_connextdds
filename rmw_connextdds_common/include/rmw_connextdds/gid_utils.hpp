@@ -31,9 +31,9 @@ namespace rmw_dds_common
 
 namespace msg
 {
-  using Gid = rmw_connextdds_common::msg::Gid;
-  using NodeEntitiesInfo = rmw_connextdds_common::msg::NodeEntitiesInfo;
-  using ParticipantEntitiesInfo = rmw_connextdds_common::msg::ParticipantEntitiesInfo;
+using Gid = rmw_connextdds_common::msg::Gid;
+using NodeEntitiesInfo = rmw_connextdds_common::msg::NodeEntitiesInfo;
+using ParticipantEntitiesInfo = rmw_connextdds_common::msg::ParticipantEntitiesInfo;
 }
 
 /// Comparator for rmw_gid_t, in order to use them as a key of a map
@@ -77,4 +77,4 @@ convert_msg_to_gid(
 
 #endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
-#endif  // RMW_CONNEXTDDS__GID_UTILS_HPP___GID_UTILS_HPP_
+#endif  // RMW_CONNEXTDDS__GID_UTILS_HPP_

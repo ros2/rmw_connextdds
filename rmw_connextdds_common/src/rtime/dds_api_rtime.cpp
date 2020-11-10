@@ -58,7 +58,7 @@ struct RMW_Connext_ParticipantData
   void
   initialize(DDS_ParticipantBuiltinTopicData * const data)
   {
-    *data = DEFAULT_PARTICIPANT_DATA;
+    * data = DEFAULT_PARTICIPANT_DATA;
   }
 
   static
@@ -100,7 +100,7 @@ struct RMW_Connext_SubscriptionData
   void
   initialize(DDS_SubscriptionBuiltinTopicData * const data)
   {
-    *data = DEFAULT_SUBSCRIPTION_DATA;
+    * data = DEFAULT_SUBSCRIPTION_DATA;
   }
 
   static
@@ -142,7 +142,7 @@ struct RMW_Connext_PublicationData
   void
   initialize(DDS_PublicationBuiltinTopicData * const data)
   {
-    *data = DEFAULT_PUBLICATION_DATA;
+    * data = DEFAULT_PUBLICATION_DATA;
   }
 
   static

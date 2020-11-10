@@ -665,7 +665,6 @@ RMW_Connext_TypePlugin_initialize(
   plugin->typeCode = type_code;
   plugin->languageKind = PRES_TYPEPLUGIN_NON_DDS_TYPE;
   plugin->endpointTypeName = type_name;
-  plugin->isMetpType = RTI_FALSE;
 
   /* Partcipant/endpoint events */
   plugin->onParticipantAttached =
@@ -701,12 +700,6 @@ RMW_Connext_TypePlugin_initialize(
     (PRESTypePluginFinalizeOptionalMembersFunction)
     NULL /* TODO(asorbini): implement? */;
 
-  plugin->getWriterLoanedSampleFnc = NULL;
-  plugin->returnWriterLoanedSampleFnc = NULL;
-  plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
-  plugin->validateWriterLoanedSampleFnc = NULL;
-  plugin->setWriterLoanedSampleSerializedStateFnc = NULL;
-
   /* Serialization/deserialization */
   plugin->serializeFnc =
     (PRESTypePluginSerializeFunction)
@@ -729,8 +722,6 @@ RMW_Connext_TypePlugin_initialize(
   plugin->getSerializedSampleSizeFnc =
     (PRESTypePluginGetSerializedSampleSizeFunction)
     RMW_Connext_TypePlugin_get_serialized_sample_size;
-  plugin->getBufferWithParams = NULL;
-  plugin->returnBufferWithParams = NULL;
 
   /* Key management */
   plugin->getKeyKindFnc =
@@ -746,6 +737,18 @@ RMW_Connext_TypePlugin_initialize(
   plugin->instanceToKeyHashFnc = NULL;
   plugin->serializedSampleToKeyHashFnc = NULL;
   plugin->serializedKeyToKeyHashFnc = NULL;
+
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
+  /* This functions are not part of the pre-6.x type plugin */
+  plugin->isMetpType = RTI_FALSE;
+  plugin->getWriterLoanedSampleFnc = NULL;
+  plugin->returnWriterLoanedSampleFnc = NULL;
+  plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
+  plugin->validateWriterLoanedSampleFnc = NULL;
+  plugin->setWriterLoanedSampleSerializedStateFnc = NULL;
+  plugin->getBufferWithParams = NULL;
+  plugin->returnBufferWithParams = NULL;
+#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
 }
 
 /******************************************************************************

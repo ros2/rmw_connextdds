@@ -325,17 +325,70 @@ function(rti_find_connextpro)
     if(NOT CONNEXTDDS_DIR_FOUND)
         set(RTIConnextDDS_FOUND false)
     else()
-        set(CONNEXTDDS_VERSION      "6.0.0")
-
         list(APPEND CMAKE_MODULE_PATH
             "${CONNEXTDDS_DIR}/resource/cmake")
 
+        set(CONNEXTDDS_VERSION      "5.3.1")
         find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
             COMPONENTS     core)
+    endif()
+
+    if(RTIConnextDDS_FOUND AND NOT TARGET RTIConnextDDS::c_api)
+      if("${CONNEXTDDS_DIR}" VERSION_GREATER_EQUAL "6.0.0")
+        message(FATAL_ERROR
+          "Expected imported targets to be created by "
+          "FindRTIConnextDDS.cmake 6.x")
+      endif()
+
+      # define imported targets, since they are not defined by
+      # FindRTIConnextDDS.cmake before 6.0.0
+
+      if("${CMAKE_BUILD_TYPE}" MATCHES "[dD]ebug")
+          set(release_type DEBUG)
+      else()
+          set(release_type RELEASE)
+      endif()
+
+      set(location_property IMPORTED_LOCATION)
+      if(WIN32)
+          set(location_property IMPORTED_IMPLIB)
+      endif()
+
+      add_library(RTIConnextDDS::c_api SHARED IMPORTED)
+      list(GET CONNEXTDDS_C_API_LIBRARIES_${release_type}_SHARED 0 libnddsc)
+      set(c_api_libs
+          ${CONNEXTDDS_C_API_LIBRARIES_${release_type}_SHARED}
+          ${CONNEXTDDS_EXTERNAL_LIBS})
+      list(REMOVE_AT c_api_libs 0)
+      # remove "-D" from defines
+      string(REPLACE "-D" "" ndds_defines "${CONNEXTDDS_DEFINITIONS}")
+      # expand ndds_defines into a cmake list
+      string(REPLACE " " ";" ndds_defines "${ndds_defines}")
+      # Detect 64-bit build and remove flag from defines
+      list(FIND ndds_defines "-m64" ndds_64bit)
+      list(REMOVE_ITEM ndds_defines "-m64")
+      set(ndds_compile_opts)
+      if(${ndds_64bit} GREATER_EQUAL 0)
+        list(APPEND ndds_compile_opts "-m64")
+      endif()
+      set_target_properties(RTIConnextDDS::c_api
+              PROPERTIES
+                ${location_property}
+                  "${libnddsc}"
+                IMPORTED_LINK_INTERFACE_LIBRARIES
+                  "${c_api_libs}"
+                INTERFACE_INCLUDE_DIRECTORIES
+                  "${CONNEXTDDS_INCLUDE_DIRS}"
+                INTERFACE_COMPILE_DEFINITIONS
+                  "${ndds_defines}"
+                INTERFACE_COMPILE_OPTIONS
+                  "${ndds_compile_opts}"
+            )
     endif()
 
     set(RTIConnextDDS_FOUND ${RTIConnextDDS_FOUND} PARENT_SCOPE)
     set(CONNEXTDDS_DIR      "${CONNEXTDDS_DIR}" PARENT_SCOPE)
     set(CONNEXTDDS_ARCH     "${CONNEXTDDS_ARCH}" PARENT_SCOPE)
+    set(CONNEXTDDS_VERSION  "${RTICONNEXTDDS_VERSION}" PARENT_SCOPE)
 endfunction()
 

@@ -25,7 +25,7 @@ rti_init_env()
 rti_find_connextpro()
 
 if(RTIConnextDDS_FOUND)
-    message(STATUS "RTI Connext DDS Professional (${CONNEXTDDS_ARCH}): '${CONNEXTDDS_DIR}'")
+    message(STATUS "RTI Connext DDS Professional (${CONNEXTDDS_VERSION}, ${CONNEXTDDS_ARCH}): '${CONNEXTDDS_DIR}'")
 else()
     message(STATUS "RTI Connext DDS Professional: NOT FOUND")
 endif()

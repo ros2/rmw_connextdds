@@ -31,4 +31,8 @@ typedef RMW_Connext_Uint8ArrayPtrSeq RMW_Connext_UntypedSampleSeq;
 #define DDS_UntypedSampleSeq_get_length(seq_) \
   RMW_Connext_Uint8ArrayPtrSeq_get_length(seq_)
 
+#if RMW_CONNEXT_DDS_API_PRO_LEGACY
+#define RTIXCdrLong_MAX 2147483647
+#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
+
 #endif  // RMW_CONNEXTDDS__DDS_API_NDDS_HPP_

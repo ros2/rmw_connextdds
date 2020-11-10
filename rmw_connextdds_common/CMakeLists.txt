@@ -26,6 +26,7 @@ find_package(ament_cmake REQUIRED)
 #     DEPS      <ament package dependencies>
 #     INCLUDES  <extra include directories>
 #     LIBRARIES <extra linked libraries>
+#     DEFINES   <extra defines>
 #     [STATIC]
 #     )
 ################################################################################
@@ -33,7 +34,7 @@ function(rtirmw_add_library)
     cmake_parse_arguments(_rti_build
       "" # boolean arguments
       "NAME;API;EXPORT" # single value arguments
-      "SOURCES;DEPS;INCLUDES;LIBRARIES" # multi-value arguments
+      "SOURCES;DEPS;INCLUDES;LIBRARIES;DEFINES" # multi-value arguments
       ${ARGN} # current function arguments
     )
 
@@ -67,6 +68,7 @@ function(rtirmw_add_library)
             RMW_VERSION_MINOR=${rmw_VERSION_MINOR}
             RMW_VERSION_PATCH=${rmw_VERSION_PATCH}
             RMW_CONNEXT_DDS_API=RMW_CONNEXT_DDS_API_${_rti_build_API}
+            ${_rti_build_DEFINES}
     )
 
     target_compile_definitions(${_rti_build_NAME}
@@ -201,6 +203,10 @@ if(NOT RTIConnextDDS_FOUND)
       "RTI Connext DDS Professional not found. "
       "Skipping library ${PROJECT_NAME}_pro")
 else()
+    set(extra_defines)
+    if("${CONNEXTDDS_VERSION}" VERSION_LESS "6.0.0")
+      list(APPEND extra_defines "RMW_CONNEXT_DDS_API_PRO_LEGACY")
+    endif()
     rtirmw_add_library(
         NAME      ${PROJECT_NAME}_pro
         API       PRO
@@ -212,7 +218,8 @@ else()
                   include/rmw_connextdds/typecode.hpp
                   include/rmw_connextdds/dds_api_ndds.hpp
         DEPS      ${RMW_CONNEXT_DEPS}
-        LIBRARIES RTIConnextDDS::c_api)
+        LIBRARIES RTIConnextDDS::c_api
+        DEFINES   ${extra_defines})
 endif()
 
 ################################################################################

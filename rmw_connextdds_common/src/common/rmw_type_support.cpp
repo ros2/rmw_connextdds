@@ -109,14 +109,12 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
     "type.unbounded=%d, "
     "type.empty=%d, "
     "type.serialized_size_max=%u, "
-    "buffer.capacity=%lu, "
-    "msg.serialized_size_max=%u",
+    "buffer.capacity=%lu",
     this->_type_name.c_str(),
     this->_unbounded,
     this->_empty,
     this->_serialized_size_max,
-    to_buffer->buffer_capacity,
-    this->serialized_size_max(ros_msg))
+    to_buffer->buffer_capacity)
 
   const void * payload = ros_msg;
 
@@ -308,6 +306,8 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
       serialized_size += RMW_GID_STORAGE_SIZE + sizeof(int64_t);
     }
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
+    RMW_CONNEXT_LOG_DEBUG_A("[type support] %s serialized size_MAX: %u",
+      this->type_name(), serialized_size)
   }
 
   return serialized_size;

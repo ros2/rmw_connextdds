@@ -1891,7 +1891,7 @@ RMW_Connext_Subscriber::take_message(
   void * const ros_message,
   rmw_message_info_t * const message_info,
   bool * const taken,
-  const DDS_InstanceHandle_t *const request_writer_handle)
+  const DDS_InstanceHandle_t * const request_writer_handle)
 {
   *taken = false;
   size_t taken_count = 0;
@@ -2069,7 +2069,7 @@ RMW_Connext_Subscriber::take_next(
   const size_t max_samples,
   size_t * const taken,
   const bool serialized,
-  const DDS_InstanceHandle_t *const request_writer_handle)
+  const DDS_InstanceHandle_t * const request_writer_handle)
 {
   rmw_ret_t rc = RMW_RET_OK;
 
@@ -2103,7 +2103,7 @@ RMW_Connext_Subscriber::take_next(
         bool accepted = false;
         DDS_InstanceHandle_t reader_ih = this->instance_handle();
         if (nullptr != request_writer_handle &&
-            !DDS_InstanceHandle_equals(request_writer_handle, &reader_ih))
+          !DDS_InstanceHandle_equals(request_writer_handle, &reader_ih))
         {
           // ignore response not for this client.
           continue;

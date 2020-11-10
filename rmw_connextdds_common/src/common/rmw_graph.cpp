@@ -40,9 +40,9 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
   const rosidl_message_type_support_t * const type_supports_partinfo =
     rosidl_typesupport_cpp::get_message_type_support_handle<
 #if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-      rmw_dds_common::msg::ParticipantEntitiesInfo>();
+    rmw_dds_common::msg::ParticipantEntitiesInfo>();
 #else
-      rmw_connextdds_common::msg::ParticipantEntitiesInfo>();
+    rmw_connextdds_common::msg::ParticipantEntitiesInfo > ();
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
   const char * const topic_name_partinfo = "ros_discovery_info";

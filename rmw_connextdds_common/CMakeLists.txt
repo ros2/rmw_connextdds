@@ -170,10 +170,10 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
 
 if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING")
   list(APPEND RMW_CONNEXT_COMMON_SOURCE_CPP
-      src/common/graph_cache.cpp
-      src/common/topic_endpoint_info.c
-      src/common/topic_endpoint_info_array.c
-      src/common/gid_utils.cpp)
+      src/rmw_dds_common/graph_cache.cpp
+      src/rmw_dds_common/topic_endpoint_info.c
+      src/rmw_dds_common/topic_endpoint_info_array.c
+      src/rmw_dds_common/gid_utils.cpp)
   list(APPEND RMW_CONNEXT_COMMON_SOURCE_HPP
       include/rmw_connextdds/graph_cache_common.hpp
       include/rmw_connextdds/topic_endpoint_info.h

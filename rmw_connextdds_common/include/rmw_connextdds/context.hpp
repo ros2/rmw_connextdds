@@ -85,8 +85,7 @@ struct rmw_context_impl_t
   uint32_t client_service_id{0};
 
   explicit rmw_context_impl_t(rmw_context_t * const base)
-  :
-    common(),
+  : common(),
     base(base),
     factory(nullptr),
     domain_id(RMW_CONNEXT_DEFAULT_DOMAIN),

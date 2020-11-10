@@ -1216,6 +1216,8 @@ rmw_connextdds_filter_sample(
   UNUSED_ARG(sub);
   UNUSED_ARG(sample);
   UNUSED_ARG(info);
+  // In this implementation, local samples are dropped by the 
+  // DataReaderListener::on_before_sample_commit() callback.
   *accepted = true;
   return RMW_RET_OK;
 }

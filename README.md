@@ -10,13 +10,11 @@ The repository provides two RMW packages:
 
 - `rmw_connextddsmicro`
 
-Package `rmw_connextdds` is meant as a replacement for [`rmw_connext_cpp`](https://github.com/ros2/rmw_connext).
+Package `rmw_connextdds` is meant as a replacement for [`rmw_connext_cpp`](https://github.com/ros2/rmw_connext). This new implementation resolves
+performance issues present in the old one, and it improves out-of-the-box
+interoperability with DDS applications.
 
-The new implementation resolves performance issues present in the old one, and
-it improves interoperability with DDS applications by avoiding mangling the names
-of data type members.
-
-*The repository is still undergoing stabilization, with some features still in
+*The repository is undergoing stabilization, with some features still in
 active development.
 Please consider reporting any [issue](https://github.com/rticommunity/rmw_connextdds/issues)
 that you may experience, while monitoring the repository for frequent updates.*

@@ -87,7 +87,7 @@ valid installation is detected, the packages will be skipped and not be built.
 
 |RMW|RTI Product|Environment Variable(s)|Required|Default|
 |---|-----------|-----------------------|--------|-------|
-|`rmw_connextdds`|RTI Connext DDS Professional 6.x|`CONNEXTDDS_DIR`, or `NDDSHOME`|Yes|None|
+|`rmw_connextdds`|RTI Connext DDS Professional 5.3.1, or 6.x|`CONNEXTDDS_DIR`, or `NDDSHOME`|Yes|None|
 |`rmw_connextddsmicro`|RTI Connext DDS Micro 3.x |`RTIMEHOME`|No (if RTI Connext DDS Professional 6.x is available)|Guessed from contents of RTI Connext DDS Professional installation (6.x only, 5.3.1 users must specify `RTIMEHOME`).|
 
 ### Multiple versions of RTI Connext DDS Professional

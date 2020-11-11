@@ -16,8 +16,8 @@ The new implementation resolves performance issues present in the old one, and
 it improves interoperability with DDS applications by avoiding mangling the names
 of data type members.
 
-*The repository is still undergoing stabilization, and some remaining active
-development (e.g. DDS Security).
+*The repository is still undergoing stabilization, with some features still in
+active development.
 Please consider reporting any [issue](https://github.com/rticommunity/rmw_connextdds/issues)
 that you may experience, while monitoring the repository for frequent updates.*
 

@@ -21,12 +21,18 @@
 #include "rh_sm/rh_sm_history.h"
 #include "netio/netio_udp.h"
 #include "netio_shmem/netio_shmem.h"
-// #include "sec_core/sec_core_c.h"
+#if RMW_CONNEXT_ENABLE_SECURITY
+#include "sec_core/sec_core_c.h"
+#endif /* RMW_CONNEXT_ENABLE_SECURITY */
 #include "rmw_connextdds/rtime_ext.h"
 #include "REDASequence.h"
 
 typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
 
 #define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER
+
+#define DDS_PropertyQosPolicyHelper_assert_property(p_,n_,v_,pr_) \
+    (DDS_PropertySeq_assert_property(&(p_)->value,(n_),(v_),(pr_))? \
+            DDS_RETCODE_OK : DDS_RETCODE_ERROR)
 
 #endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

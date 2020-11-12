@@ -106,19 +106,21 @@ struct RMW_Connext_NddsTypePluginI
 
 struct RMW_Connext_NddsParticipantData
 {
-  PRESTypePluginDefaultParticipantData * pres_data;
+  PRESTypePluginDefaultParticipantData pres_data;
+  PRESTypePluginDefaultParticipantData *pres_data_ptr;
   RMW_Connext_NddsTypePluginI * type_plugin;
 
   RMW_Connext_NddsParticipantData(
     PRESTypePluginDefaultParticipantData * const pres_data,
     RMW_Connext_NddsTypePluginI * const type_plugin)
-  : pres_data(pres_data),
+  : pres_data(*pres_data),
+    pres_data_ptr(pres_data),
     type_plugin(type_plugin)
   {}
 
   ~RMW_Connext_NddsParticipantData()
   {
-    PRESTypePluginDefaultParticipantData_delete(this->pres_data);
+    PRESTypePluginDefaultParticipantData_delete(this->pres_data_ptr);
     delete this->type_plugin;
   }
 };
@@ -344,7 +346,7 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
   PRESTypePluginDefaultEndpointData * const epd =
     reinterpret_cast<PRESTypePluginDefaultEndpointData *>(
     PRESTypePluginDefaultEndpointData_newWithNotification(
-      pdata->pres_data,
+      &pdata->pres_data,
       endpoint_info,
       (REDAFastBufferPoolBufferInitializeFunction)
       RMW_Connext_TypePlugin_create_data,

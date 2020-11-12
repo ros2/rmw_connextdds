@@ -965,11 +965,50 @@ rmw_connextdds_configure_subscriber_condition_listener(
   UNUSED_ARG(listener);
 }
 
-
 void
 rmw_connextdds_builtinkey_to_guid(
   const DDS_BuiltinTopicKey_t * const self,
   DDS_GUID_t * const dst)
 {
   DDS_BuiltinTopicKey_to_guid(self, dst);
+}
+
+rmw_ret_t
+rmw_connextdds_enable_security(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipantQos * const qos)
+{
+  UNUSED_ARG(ctx);
+  
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          "com.rti.serv.load_plugin",
+          "com.rti.serv.secure",
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+  
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          "com.rti.serv.secure.library",
+          "nddssecurity",
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          "com.rti.serv.secure.create_function",
+          "RTI_Security_PluginSuite_create",
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;  
 }

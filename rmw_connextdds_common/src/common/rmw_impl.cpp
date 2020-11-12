@@ -1174,6 +1174,8 @@ RMW_Connext_Publisher::create(
       }
     });
 
+  // The following initialization generates warnings when built
+  // with RTI Connext DDS Professional 5.3.1
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
 
   DDS_DataWriterQos * const dw_qos_ptr = &dw_qos;
@@ -1426,6 +1428,8 @@ RMW_Connext_Publisher::assert_liveliness()
 rmw_ret_t
 RMW_Connext_Publisher::qos(rmw_qos_profile_t * const qos)
 {
+  // The following initialization generates warnings when built
+  // with RTI Connext DDS Professional 5.3.1
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
 
   if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(this->dds_writer, &dw_qos)) {
@@ -1709,7 +1713,8 @@ RMW_Connext_Subscriber::create(
         }
       }
     });
-
+  // The following initialization generates warnings when built
+  // with RTI Connext DDS Professional 5.3.1
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
 
   DDS_DataReaderQos * const dr_qos_ptr = &dr_qos;
@@ -1873,6 +1878,8 @@ RMW_Connext_Subscriber::publications_count()
 rmw_ret_t
 RMW_Connext_Subscriber::qos(rmw_qos_profile_t * const qos)
 {
+  // The following initialization generates warnings when built
+  // with RTI Connext DDS Professional 5.3.1
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
 
   if (DDS_RETCODE_OK != DDS_DataReader_get_qos(this->dds_reader, &dr_qos)) {

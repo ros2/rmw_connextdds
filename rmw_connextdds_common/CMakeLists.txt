@@ -193,6 +193,14 @@ set(RMW_CONNEXT_COMMON_SOURCE
     ${RMW_CONNEXT_COMMON_SOURCE_HPP})
 
 ################################################################################
+# Check if additional Connext components are needed (e.g. security)
+################################################################################
+set(extra_components)
+if(RMW_CONNEXT_ENABLE_SECURITY)
+  list(APPEND extra_components "security_plugins")
+endif()
+
+################################################################################
 # Build Connext Pro version
 ################################################################################
 rti_find_connextpro()
@@ -205,7 +213,7 @@ if(NOT RTIConnextDDS_FOUND)
 else()
     set(extra_defines)
     if("${CONNEXTDDS_VERSION}" VERSION_LESS "6.0.0")
-      list(APPEND extra_defines "RMW_CONNEXT_DDS_API_PRO_LEGACY")
+      list(APPEND extra_defines "RMW_CONNEXT_DDS_API_PRO_LEGACY=1")
     endif()
     rtirmw_add_library(
         NAME      ${PROJECT_NAME}_pro
@@ -225,7 +233,7 @@ endif()
 ################################################################################
 # Build Connext Micro version
 ################################################################################
-rti_find_connextmicro()
+rti_find_connextmicro(${extra_components})
 
 if(NOT RTIConnextDDSMicro_FOUND)
     message(STATUS
@@ -254,7 +262,7 @@ else()
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
             "$<INSTALL_INTERFACE:include>")
 
-    target_link_libraries(${RTIME_EXT}  ${RTIME_TARGETS})
+    target_link_libraries(${RTIME_EXT}  RTIConnextDDSMicro::c_api)
 
     install(
         TARGETS ${RTIME_EXT}
@@ -263,6 +271,16 @@ else()
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
     )
+
+    set(extra_libs)
+    set(extra_defines)
+    if(RMW_CONNEXT_ENABLE_SECURITY)
+      list(APPEND extra_libs
+        RTIConnextDDSMicro::ddssecurity
+        RTIConnextDDSMicro::seccore)
+      list(APPEND extra_defines
+        RMW_CONNEXT_ENABLE_SECURITY=1)
+    endif()
 
     rtirmw_add_library(
       NAME      ${PROJECT_NAME}_micro
@@ -273,9 +291,16 @@ else()
                 src/rtime/dds_api_rtime.cpp
                 include/rmw_connextdds/dds_api_rtime.hpp
       DEPS      ${RMW_CONNEXT_DEPS}
-      LIBRARIES ${RTIME_TARGETS}
+      LIBRARIES RTIConnextDDSMicro::c_api
+                RTIConnextDDSMicro::netiosdm
+                RTIConnextDDSMicro::netioshmem
+                RTIConnextDDSMicro::whsm
+                RTIConnextDDSMicro::rhsm
+                RTIConnextDDSMicro::discdpde
+                ${extra_libs}
                 ${RTIME_EXT}
-      INCLUDES  ${${rti_connext_dds_cmake_module_DIR}/../../../include})
+      INCLUDES  ${${rti_connext_dds_cmake_module_DIR}/../../../include}
+      DEFINES   ${extra_defines})
 endif()
 
 if(TARGET ${PROJECT_NAME}_pro OR TARGET ${PROJECT_NAME}_micro)

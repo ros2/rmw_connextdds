@@ -208,37 +208,37 @@ rmw_connextdds_enable_security(
 // Define some macro aliases for security-related properties
 #ifndef DDS_SECURITY_PROPERTY_PREFIX
 #define DDS_SECURITY_PROPERTY_PREFIX \
-        "com.rti.serv.secure"
+  "com.rti.serv.secure"
 #endif /* DDS_SECURITY_PROPERTY_PREFIX */
 
 #ifndef DDS_SECURITY_IDENTITY_CA_PROPERTY
 #define DDS_SECURITY_IDENTITY_CA_PROPERTY \
-        DDS_SECURITY_PROPERTY_PREFIX".authentication.ca_file"
+  DDS_SECURITY_PROPERTY_PREFIX ".authentication.ca_file"
 #endif /* DDS_SECURITY_IDENTITY_CA_PROPERTY */
 
 #ifndef DDS_SECURITY_PERMISSIONS_CA_PROPERTY
 #define DDS_SECURITY_PERMISSIONS_CA_PROPERTY \
-        DDS_SECURITY_PROPERTY_PREFIX".access_control.permissions_authority_file"
+  DDS_SECURITY_PROPERTY_PREFIX ".access_control.permissions_authority_file"
 #endif /* DDS_SECURITY_PERMISSIONS_CA_PROPERTY */
 
 #ifndef DDS_SECURITY_PRIVATE_KEY_PROPERTY
 #define DDS_SECURITY_PRIVATE_KEY_PROPERTY \
-        DDS_SECURITY_PROPERTY_PREFIX".authentication.private_key_file"
+  DDS_SECURITY_PROPERTY_PREFIX ".authentication.private_key_file"
 #endif /* DDS_SECURITY_PRIVATE_KEY_PROPERTY */
 
 #ifndef DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY
 #define DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY \
-        DDS_SECURITY_PROPERTY_PREFIX".authentication.certificate_file"
+  DDS_SECURITY_PROPERTY_PREFIX ".authentication.certificate_file"
 #endif /* DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY */
 
 #ifndef DDS_SECURITY_GOVERNANCE_PROPERTY
 #define DDS_SECURITY_GOVERNANCE_PROPERTY \
-        DDS_SECURITY_PROPERTY_PREFIX".access_control.governance_file"
+  DDS_SECURITY_PROPERTY_PREFIX ".access_control.governance_file"
 #endif /* DDS_SECURITY_GOVERNANCE_PROPERTY */
 
 #ifndef DDS_SECURITY_PERMISSIONS_PROPERTY
 #define DDS_SECURITY_PERMISSIONS_PROPERTY \
-        DDS_SECURITY_PROPERTY_PREFIX".access_control.permissions_file"
+  DDS_SECURITY_PROPERTY_PREFIX ".access_control.permissions_file"
 #endif /* DDS_SECURITY_PERMISSIONS_PROPERTY */
 
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

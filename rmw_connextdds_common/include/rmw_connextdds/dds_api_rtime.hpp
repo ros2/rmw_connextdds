@@ -31,8 +31,8 @@ typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
 
 #define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER
 
-#define DDS_PropertyQosPolicyHelper_assert_property(p_,n_,v_,pr_) \
-    (DDS_PropertySeq_assert_property(&(p_)->value,(n_),(v_),(pr_))? \
-            DDS_RETCODE_OK : DDS_RETCODE_ERROR)
+#define DDS_PropertyQosPolicyHelper_assert_property(p_, n_, v_, pr_) \
+  (DDS_PropertySeq_assert_property(&(p_)->value, (n_), (v_), (pr_)) ? \
+  DDS_RETCODE_OK : DDS_RETCODE_ERROR)
 
 #endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

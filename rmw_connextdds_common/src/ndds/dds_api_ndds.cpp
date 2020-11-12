@@ -979,36 +979,36 @@ rmw_connextdds_enable_security(
   DDS_DomainParticipantQos * const qos)
 {
   UNUSED_ARG(ctx);
-  
+
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          "com.rti.serv.load_plugin",
-          "com.rti.serv.secure",
-          RTI_FALSE))
-  {
-    return RMW_RET_ERROR;
-  }
-  
-  if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          "com.rti.serv.secure.library",
-          "nddssecurity",
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      "com.rti.serv.load_plugin",
+      "com.rti.serv.secure",
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
 
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          "com.rti.serv.secure.create_function",
-          "RTI_Security_PluginSuite_create",
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      "com.rti.serv.secure.library",
+      "nddssecurity",
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
 
-  return RMW_RET_OK;  
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      "com.rti.serv.secure.create_function",
+      "RTI_Security_PluginSuite_create",
+      RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
 }

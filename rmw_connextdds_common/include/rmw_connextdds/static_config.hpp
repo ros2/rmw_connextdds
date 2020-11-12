@@ -62,7 +62,7 @@
 
 #ifndef RMW_CONNEXT_ENABLE_SECURITY
 #define RMW_CONNEXT_ENABLE_SECURITY \
-        (RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO)
+  (RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO)
 #endif /* RMW_CONNEXT_ENABLE_SECURITY */
 
 /******************************************************************************

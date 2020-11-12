@@ -107,7 +107,7 @@ struct RMW_Connext_NddsTypePluginI
 struct RMW_Connext_NddsParticipantData
 {
   PRESTypePluginDefaultParticipantData pres_data;
-  PRESTypePluginDefaultParticipantData *pres_data_ptr;
+  PRESTypePluginDefaultParticipantData * pres_data_ptr;
   RMW_Connext_NddsTypePluginI * type_plugin;
 
   RMW_Connext_NddsParticipantData(

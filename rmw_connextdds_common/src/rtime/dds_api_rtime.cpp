@@ -58,7 +58,7 @@ struct RMW_Connext_ParticipantData
   void
   initialize(DDS_ParticipantBuiltinTopicData * const data)
   {
-    * data = DEFAULT_PARTICIPANT_DATA;
+    *data = DEFAULT_PARTICIPANT_DATA;
   }
 
   static
@@ -100,7 +100,7 @@ struct RMW_Connext_SubscriptionData
   void
   initialize(DDS_SubscriptionBuiltinTopicData * const data)
   {
-    * data = DEFAULT_SUBSCRIPTION_DATA;
+    *data = DEFAULT_SUBSCRIPTION_DATA;
   }
 
   static
@@ -142,7 +142,7 @@ struct RMW_Connext_PublicationData
   void
   initialize(DDS_PublicationBuiltinTopicData * const data)
   {
-    * data = DEFAULT_PUBLICATION_DATA;
+    *data = DEFAULT_PUBLICATION_DATA;
   }
 
   static
@@ -1932,7 +1932,7 @@ rmw_connextdds_enable_security(
     SECCORE_SecurePluginFactoryProperty_INITIALIZER;
 
   if (!SECCORE_SecurePluginFactory_register(
-        registry, SECCORE_DEFAULT_SUITE_NAME, &sec_plugin_prop))
+      registry, SECCORE_DEFAULT_SUITE_NAME, &sec_plugin_prop))
   {
     RMW_CONNEXT_LOG_ERROR("failed to register DDS Security plugins")
     return RMW_RET_ERROR;
@@ -1941,7 +1941,7 @@ rmw_connextdds_enable_security(
   // In order to enable security, the name used to register the suite of
   // plugins must be set in DomainParticipantQos
   if (!RT_ComponentFactoryId_set_name(
-        &qos->trust.suite, SECCORE_DEFAULT_SUITE_NAME))
+      &qos->trust.suite, SECCORE_DEFAULT_SUITE_NAME))
   {
     return RMW_RET_ERROR;
   }

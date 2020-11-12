@@ -134,7 +134,7 @@ function(rti_build_connextmicro)
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
-    
+
     if(TARGET rti_me_ddssecurity${rti_lib_sfx} AND
         TARGET rti_me_seccore${rti_lib_sfx})
       list(APPEND rtime_libraries
@@ -209,7 +209,7 @@ endfunction()
 ################################################################################
 function(rti_find_connextmicro)
     set(extra_components ${ARGN})
-    
+
     set(RTIMEHOME_FOUND             false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND    false PARENT_SCOPE)
     set(RTIME_TARGETS               "" PARENT_SCOPE)
@@ -223,7 +223,7 @@ function(rti_find_connextmicro)
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
-    
+
     list(FIND extra_components "security_plugins" component_security)
     if(${component_security} GREATER_EQUAL 0)
       list(APPEND rtime_libraries

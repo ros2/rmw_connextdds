@@ -14,6 +14,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/discovery.hpp"
@@ -199,8 +200,7 @@ rmw_context_impl_t::initialize_node(
     return RMW_RET_ERROR;
   }
 
-  if (RMW_RET_OK != rmw_connextdds_configure_security(this, &dp_qos))
-  {
+  if (RMW_RET_OK != rmw_connextdds_configure_security(this, &dp_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to configure DDS Security")
     this->clean_up();
     return RMW_RET_ERROR;
@@ -751,29 +751,27 @@ rmw_connextdds_configure_security(
   DDS_DomainParticipantQos * const qos)
 {
 #if RMW_CONNEXT_HAVE_SECURITY
-  if (nullptr == ctx->base->options.security_options.security_root_path)
-  {
+  if (nullptr == ctx->base->options.security_options.security_root_path) {
     // Security not enabled;
     return RMW_RET_OK;
   }
 
   rmw_ret_t rc = rmw_connextdds_enable_security(ctx, qos);
-  if (RMW_RET_OK != rc)
-  {
+  if (RMW_RET_OK != rc) {
     return rc;
   }
 
   rcutils_allocator_t allocator = rcutils_get_default_allocator();
-  rcutils_allocator_t *const allocator_ptr = &allocator;
+  rcutils_allocator_t * const allocator_ptr = &allocator;
   std::ostringstream ss;
   std::string prop_uri;
-  static const char *const uri_prefix = "file:";
+  static const char * const uri_prefix = "file:";
 
-  char *const prop_identity_ca =
+  char * const prop_identity_ca =
     rcutils_join_path(
-      ctx->base->options.security_options.security_root_path,
-      "identity_ca.cert.pem",
-      allocator);
+    ctx->base->options.security_options.security_root_path,
+    "identity_ca.cert.pem",
+    allocator);
   auto scope_exit_prop_identity_ca = rcpputils::make_scope_exit(
     [allocator_ptr, prop_identity_ca]()
     {
@@ -784,20 +782,20 @@ rmw_connextdds_configure_security(
   ss.str("");
   /* X509 Certificate of the Identity CA */
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          DDS_SECURITY_IDENTITY_CA_PROPERTY,
-          prop_uri.c_str(),
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_IDENTITY_CA_PROPERTY,
+      prop_uri.c_str(),
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
 
-  char *const prop_perm_ca =
+  char * const prop_perm_ca =
     rcutils_join_path(
-      ctx->base->options.security_options.security_root_path,
-      "permissions_ca.cert.pem",
-      allocator);
+    ctx->base->options.security_options.security_root_path,
+    "permissions_ca.cert.pem",
+    allocator);
   auto scope_exit_prop_perm_ca = rcpputils::make_scope_exit(
     [allocator_ptr, prop_perm_ca]()
     {
@@ -808,20 +806,20 @@ rmw_connextdds_configure_security(
   ss.str("");
   /* X509 Certificate of the Permissions CA */
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
-          prop_uri.c_str(),
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
+      prop_uri.c_str(),
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
 
-  char *const prop_peer_key =
+  char * const prop_peer_key =
     rcutils_join_path(
-      ctx->base->options.security_options.security_root_path,
-      "key.pem",
-      allocator);
+    ctx->base->options.security_options.security_root_path,
+    "key.pem",
+    allocator);
   auto scope_exit_prop_peer_key = rcpputils::make_scope_exit(
     [allocator_ptr, prop_peer_key]()
     {
@@ -832,20 +830,20 @@ rmw_connextdds_configure_security(
   ss.str("");
   /* Private Key of the DomainParticipant's identity */
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          DDS_SECURITY_PRIVATE_KEY_PROPERTY,
-          prop_uri.c_str(),
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
+      prop_uri.c_str(),
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
 
-  char *const prop_peer_cert =
+  char * const prop_peer_cert =
     rcutils_join_path(
-      ctx->base->options.security_options.security_root_path,
-      "cert.pem",
-      allocator);
+    ctx->base->options.security_options.security_root_path,
+    "cert.pem",
+    allocator);
   auto scope_exit_prop_peer_cert = rcpputils::make_scope_exit(
     [allocator_ptr, prop_peer_cert]()
     {
@@ -857,20 +855,20 @@ rmw_connextdds_configure_security(
   /* Public certificate of the DomainParticipant's identity, signed
    * by the Certificate Authority */
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
-          prop_uri.c_str(),
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
+      prop_uri.c_str(),
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
 
-  char *const prop_governance =
+  char * const prop_governance =
     rcutils_join_path(
-      ctx->base->options.security_options.security_root_path,
-      "governance.p7s",
-      allocator);
+    ctx->base->options.security_options.security_root_path,
+    "governance.p7s",
+    allocator);
   auto scope_exit_prop_governance = rcpputils::make_scope_exit(
     [allocator_ptr, prop_governance]()
     {
@@ -882,20 +880,20 @@ rmw_connextdds_configure_security(
   /* XML file containing domain governance configuration, signed by
    * the Permission CA */
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          DDS_SECURITY_GOVERNANCE_PROPERTY,
-          prop_uri.c_str(),
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_GOVERNANCE_PROPERTY,
+      prop_uri.c_str(),
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
 
-  char *const prop_permissions =
+  char * const prop_permissions =
     rcutils_join_path(
-      ctx->base->options.security_options.security_root_path,
-      "permissions.p7s",
-      allocator);
+    ctx->base->options.security_options.security_root_path,
+    "permissions.p7s",
+    allocator);
   auto scope_exit_prop_permissions = rcpputils::make_scope_exit(
     [allocator_ptr, prop_permissions]()
     {
@@ -907,11 +905,11 @@ rmw_connextdds_configure_security(
   /* XML file containing domain permissions configuration, signed by
    * the Permission CA */
   if (DDS_RETCODE_OK !=
-        DDS_PropertyQosPolicyHelper_assert_property(
-          &qos->property,
-          DDS_SECURITY_PERMISSIONS_PROPERTY,
-          prop_uri.c_str(),
-          RTI_FALSE))
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PERMISSIONS_PROPERTY,
+      prop_uri.c_str(),
+      RTI_FALSE))
   {
     return RMW_RET_ERROR;
   }
@@ -920,4 +918,3 @@ rmw_connextdds_configure_security(
 #endif /* RMW_CONNEXT_HAVE_SECURITY */
   return RMW_RET_OK;
 }
-

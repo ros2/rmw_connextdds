@@ -200,4 +200,45 @@ rmw_connextdds_builtinkey_to_guid(
   const DDS_BuiltinTopicKey_t * const self,
   DDS_GUID_t * const dst);
 
+rmw_ret_t
+rmw_connextdds_enable_security(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipantQos * const qos);
+
+// Define some macro aliases for security-related properties
+#ifndef DDS_SECURITY_PROPERTY_PREFIX
+#define DDS_SECURITY_PROPERTY_PREFIX \
+        "com.rti.serv.secure"
+#endif /* DDS_SECURITY_PROPERTY_PREFIX */
+
+#ifndef DDS_SECURITY_IDENTITY_CA_PROPERTY
+#define DDS_SECURITY_IDENTITY_CA_PROPERTY \
+        DDS_SECURITY_PROPERTY_PREFIX".authentication.ca_file"
+#endif /* DDS_SECURITY_IDENTITY_CA_PROPERTY */
+
+#ifndef DDS_SECURITY_PERMISSIONS_CA_PROPERTY
+#define DDS_SECURITY_PERMISSIONS_CA_PROPERTY \
+        DDS_SECURITY_PROPERTY_PREFIX".access_control.permissions_authority_file"
+#endif /* DDS_SECURITY_PERMISSIONS_CA_PROPERTY */
+
+#ifndef DDS_SECURITY_PRIVATE_KEY_PROPERTY
+#define DDS_SECURITY_PRIVATE_KEY_PROPERTY \
+        DDS_SECURITY_PROPERTY_PREFIX".authentication.private_key_file"
+#endif /* DDS_SECURITY_PRIVATE_KEY_PROPERTY */
+
+#ifndef DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY
+#define DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY \
+        DDS_SECURITY_PROPERTY_PREFIX".authentication.certificate_file"
+#endif /* DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY */
+
+#ifndef DDS_SECURITY_GOVERNANCE_PROPERTY
+#define DDS_SECURITY_GOVERNANCE_PROPERTY \
+        DDS_SECURITY_PROPERTY_PREFIX".access_control.governance_file"
+#endif /* DDS_SECURITY_GOVERNANCE_PROPERTY */
+
+#ifndef DDS_SECURITY_PERMISSIONS_PROPERTY
+#define DDS_SECURITY_PERMISSIONS_PROPERTY \
+        DDS_SECURITY_PROPERTY_PREFIX".access_control.permissions_file"
+#endif /* DDS_SECURITY_PERMISSIONS_PROPERTY */
+
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

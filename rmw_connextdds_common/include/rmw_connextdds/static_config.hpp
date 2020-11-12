@@ -60,6 +60,11 @@
 #define RMW_CONNEXT_DDS_API_PRO_LEGACY  0
 #endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
+#ifndef RMW_CONNEXT_ENABLE_SECURITY
+#define RMW_CONNEXT_ENABLE_SECURITY \
+        (RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO)
+#endif /* RMW_CONNEXT_ENABLE_SECURITY */
+
 /******************************************************************************
  * Log configuration.
  * This option controls the logging output of the RMW and which logging

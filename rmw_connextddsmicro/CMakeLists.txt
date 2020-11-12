@@ -26,7 +26,12 @@ if(NOT TARGET rmw_connextdds_common::rmw_connextdds_common_micro)
     return()
 endif()
 
-rti_find_connextmicro()
+set(extra_components)
+if(RMW_CONNEXT_ENABLE_SECURITY)
+  list(APPEND extra_components "security_plugins")
+endif()
+
+rti_find_connextmicro(${extra_components})
 
 if(NOT RTIConnextDDSMicro_FOUND)
     message(WARNING "RTI Connext DDS Micro not found. Skipping ${PROJECT_NAME}.")

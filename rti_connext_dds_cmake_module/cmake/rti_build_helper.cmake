@@ -96,6 +96,9 @@ endfunction()
 # rti_build_connextmicro()
 ################################################################################
 function(rti_build_connextmicro)
+    set(extra_components ${ARGN})
+    list(FIND extra_components "security_plugins" component_security)
+
     set(RTIMEHOME_FOUND false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
     set(RTIME_TARGETS "" PARENT_SCOPE)
@@ -116,40 +119,63 @@ function(rti_build_connextmicro)
     set(RTIME_NO_SHARED_LIB         false)
     set(RTIME_EXCLUDE_DPSE          true)
     set(RTIME_EXCLUDE_CPP           true)
+    if(${component_security} GREATER_EQUAL 0)
+      set(RTIME_TRUST_INCLUDE_INTERFACES   true)
+    endif()
 
     add_subdirectory(${RTIMEHOME} rtime)
 
     rti_lib_suffix(rti_lib_sfx)
 
-    set(rtime_targets
+    set(rtime_libraries
         rti_me${rti_lib_sfx}
         rti_me_netiosdm${rti_lib_sfx}
         rti_me_netioshmem${rti_lib_sfx}
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
+    
+    if(TARGET rti_me_ddssecurity${rti_lib_sfx} AND
+        TARGET rti_me_seccore${rti_lib_sfx})
+      list(APPEND rtime_libraries
+          rti_me_ddssecurity${rti_lib_sfx}
+          rti_me_seccore${rti_lib_sfx})
+      set(rtime_have_security     true)
+    endif()
 
     set(RTIME_TARGETS)
     # define imported targets to match those that would be defined
     # by RTIFindConnextDDSMicro.cmake
-    foreach(rtime_tgt ${rtime_targets})
+    foreach(rtime_lib ${rtime_libraries})
+        if("${rtime_lib}" STREQUAL "rti_me${rti_lib_sfx}")
+          set(rtime_tgt     "c_api")
+        else()
+          string(REGEX REPLACE "^rti_me_" "" rtime_tgt "${rtime_lib}")
+          if(NOT "${rti_lib_sfx}" STREQUAL "")
+            string(REGEX REPLACE "${rti_lib_sfx}$" "" rtime_tgt "${rtime_tgt}")
+          endif()
+        endif()
+
         if(NOT TARGET RTIConnextDDSMicro::${rtime_tgt})
             # add_custom_target(RTIConnextDDSMicro::${rtime_tgt}
             #     DEPENDS ${rtime_tgt})
             add_library(RTIConnextDDSMicro::${rtime_tgt} SHARED IMPORTED)
             set_target_properties(RTIConnextDDSMicro::${rtime_tgt}
-              PROPERTIES IMPORTED_LINK_INTERFACE_LIBRARIES
-                  ${rtime_tgt}
+              PROPERTIES
+                IMPORTED_LINK_INTERFACE_LIBRARIES
+                  ${rtime_lib}
             )
         endif()
         list(APPEND RTIME_TARGETS RTIConnextDDSMicro::${rtime_tgt})
     endforeach()
 
-    set(RTIME_TARGET_NAME ${RTIME_TARGET_NAME} PARENT_SCOPE)
-    set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
-    set(RTIMEHOME ${RTIMEHOME} PARENT_SCOPE)
+    set(RTIME_TARGETS ${RTIME_TARGETS} PARENT_SCOPE)
     set(RTIMEHOME_FOUND true PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
+    # Re-export RTIME_TARGET_NAME and RTIMEHOME in case they were
+    # automatically detected.
+    set(RTIME_TARGET_NAME ${RTIME_TARGET_NAME} PARENT_SCOPE)
+    set(RTIMEHOME ${RTIMEHOME} PARENT_SCOPE)
 endfunction()
 
 ################################################################################
@@ -182,6 +208,8 @@ endfunction()
 # rti_find_connextmicro()
 ################################################################################
 function(rti_find_connextmicro)
+    set(extra_components ${ARGN})
+    
     set(RTIMEHOME_FOUND             false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND    false PARENT_SCOPE)
     set(RTIME_TARGETS               "" PARENT_SCOPE)
@@ -195,6 +223,13 @@ function(rti_find_connextmicro)
         rti_me_whsm${rti_lib_sfx}
         rti_me_rhsm${rti_lib_sfx}
         rti_me_discdpde${rti_lib_sfx})
+    
+    list(FIND extra_components "security_plugins" component_security)
+    if(${component_security} GREATER_EQUAL 0)
+      list(APPEND rtime_libraries
+        rti_me_ddssecurity${rti_lib_sfx}
+        rti_me_seccore${rti_lib_sfx})
+    endif()
 
     rti_load_rtimehome()
 
@@ -238,15 +273,16 @@ function(rti_find_connextmicro)
     rti_find_connextmicro_lib(${rtime_lib_dir} ${rtime_core})
 
     if(NOT ${rtime_core}_FOUND)
+        message(STATUS "Required library not found: ${rtime_core}")
         return()
     endif()
 
     set(rtime_core_inc_dirs
-            "${rtime_inc_dir}"
-            "${RTIMEHOME}/src/reda/sequence")
+        "${rtime_inc_dir}"
+        "${RTIMEHOME}/src/reda/sequence")
 
-    add_library(RTIConnextDDSMicro::${rtime_core} SHARED IMPORTED)
-    set_target_properties(RTIConnextDDSMicro::${rtime_core}
+    add_library(RTIConnextDDSMicro::c_api SHARED IMPORTED)
+    set_target_properties(RTIConnextDDSMicro::c_api
         PROPERTIES
             IMPORTED_NO_SONAME TRUE
             ${location_property}
@@ -254,17 +290,23 @@ function(rti_find_connextmicro)
             INTERFACE_INCLUDE_DIRECTORIES
                 "${rtime_core_inc_dirs}")
 
-    set(rtime_targets     RTIConnextDDSMicro::${rtime_core})
+    set(rtime_targets     RTIConnextDDSMicro::c_api)
 
     foreach(rtime_lib ${rtime_extra})
         rti_find_connextmicro_lib(${rtime_lib_dir} ${rtime_lib})
 
         if(NOT ${rtime_lib}_FOUND)
+            message(STATUS "Required library not found: ${rtime_lib}")
             return()
         endif()
 
-        add_library(RTIConnextDDSMicro::${rtime_lib} SHARED IMPORTED)
-        set_target_properties(RTIConnextDDSMicro::${rtime_lib}
+        string(REGEX REPLACE "^rti_me_" "" rtime_tgt "${rtime_lib}")
+        if(NOT "${rti_lib_sfx}" STREQUAL "")
+          string(REGEX REPLACE "${rti_lib_sfx}$" "" rtime_tgt "${rtime_tgt}")
+        endif()
+
+        add_library(RTIConnextDDSMicro::${rtime_tgt} SHARED IMPORTED)
+        set_target_properties(RTIConnextDDSMicro::${rtime_tgt}
             PROPERTIES
                 IMPORTED_NO_SONAME TRUE
                 ${location_property}
@@ -272,9 +314,11 @@ function(rti_find_connextmicro)
                 INTERFACE_INCLUDE_DIRECTORIES
                     "${rtime_inc_dir}"
                 INTERFACE_LINK_LIBRARIES
-                    RTIConnextDDSMicro::${rtime_core})
-        list(APPEND rtime_targets RTIConnextDDSMicro::${rtime_lib})
+                    RTIConnextDDSMicro::c_api)
+        list(APPEND rtime_targets RTIConnextDDSMicro::${rtime_tgt})
     endforeach()
+
+    message(STATUS "RTIME_TARGETS: ${rtime_targets}")
 
     set(RTIMEHOME_FOUND true PARENT_SCOPE)
     set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
@@ -320,6 +364,8 @@ endfunction()
 # rti_find_connextpro()
 ################################################################################
 function(rti_find_connextpro)
+    set(extra_components ${ARGN})
+
     rti_load_connextddsdir()
 
     if(NOT CONNEXTDDS_DIR_FOUND)
@@ -330,7 +376,7 @@ function(rti_find_connextpro)
 
         set(CONNEXTDDS_VERSION      "5.3.1")
         find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
-            COMPONENTS     core)
+            COMPONENTS     core ${extra_components})
     endif()
 
     if(RTIConnextDDS_FOUND AND NOT TARGET RTIConnextDDS::c_api)

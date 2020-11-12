@@ -19,11 +19,12 @@
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
+#include "rcutils/get_env.h"
+#include "rcutils/filesystem.h"
+
 /******************************************************************************
  * Context Implementation
  ******************************************************************************/
-
-#include "rcutils/get_env.h"
 
 rmw_ret_t
 rmw_connextdds_initialize_participant_factory_qos(
@@ -114,7 +115,6 @@ rmw_connextdds_initialize_participant_qos(
   return RMW_RET_OK;
 }
 
-
 rmw_ret_t
 rmw_context_impl_t::initialize_node(
   const char * const node_name,
@@ -195,6 +195,13 @@ rmw_context_impl_t::initialize_node(
     rmw_connextdds_initialize_participant_qos(this, dp_qos))
   {
     RMW_CONNEXT_LOG_ERROR("failed to initialize participant qos")
+    this->clean_up();
+    return RMW_RET_ERROR;
+  }
+
+  if (RMW_RET_OK != rmw_connextdds_configure_security(this, &dp_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to configure DDS Security")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -737,3 +744,180 @@ extern "C" rmw_ret_t rmw_context_fini(rmw_context_t * context)
   *context = rmw_get_zero_initialized_context();
   return RMW_RET_OK;
 }
+
+rmw_ret_t
+rmw_connextdds_configure_security(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipantQos * const qos)
+{
+#if RMW_CONNEXT_HAVE_SECURITY
+  if (nullptr == ctx->base->options.security_options.security_root_path)
+  {
+    // Security not enabled;
+    return RMW_RET_OK;
+  }
+
+  rmw_ret_t rc = rmw_connextdds_enable_security(ctx, qos);
+  if (RMW_RET_OK != rc)
+  {
+    return rc;
+  }
+
+  rcutils_allocator_t allocator = rcutils_get_default_allocator();
+  rcutils_allocator_t *const allocator_ptr = &allocator;
+  std::ostringstream ss;
+  std::string prop_uri;
+  static const char *const uri_prefix = "file:";
+
+  char *const prop_identity_ca =
+    rcutils_join_path(
+      ctx->base->options.security_options.security_root_path,
+      "identity_ca.cert.pem",
+      allocator);
+  auto scope_exit_prop_identity_ca = rcpputils::make_scope_exit(
+    [allocator_ptr, prop_identity_ca]()
+    {
+      allocator_ptr->deallocate(prop_identity_ca, allocator_ptr->state);
+    });
+  ss << uri_prefix << prop_identity_ca;
+  prop_uri = ss.str();
+  ss.str("");
+  /* X509 Certificate of the Identity CA */
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          DDS_SECURITY_IDENTITY_CA_PROPERTY,
+          prop_uri.c_str(),
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  char *const prop_perm_ca =
+    rcutils_join_path(
+      ctx->base->options.security_options.security_root_path,
+      "permissions_ca.cert.pem",
+      allocator);
+  auto scope_exit_prop_perm_ca = rcpputils::make_scope_exit(
+    [allocator_ptr, prop_perm_ca]()
+    {
+      allocator_ptr->deallocate(prop_perm_ca, allocator_ptr->state);
+    });
+  ss << uri_prefix << prop_perm_ca;
+  prop_uri = ss.str();
+  ss.str("");
+  /* X509 Certificate of the Permissions CA */
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
+          prop_uri.c_str(),
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  char *const prop_peer_key =
+    rcutils_join_path(
+      ctx->base->options.security_options.security_root_path,
+      "key.pem",
+      allocator);
+  auto scope_exit_prop_peer_key = rcpputils::make_scope_exit(
+    [allocator_ptr, prop_peer_key]()
+    {
+      allocator_ptr->deallocate(prop_peer_key, allocator_ptr->state);
+    });
+  ss << uri_prefix << prop_peer_key;
+  prop_uri = ss.str();
+  ss.str("");
+  /* Private Key of the DomainParticipant's identity */
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          DDS_SECURITY_PRIVATE_KEY_PROPERTY,
+          prop_uri.c_str(),
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  char *const prop_peer_cert =
+    rcutils_join_path(
+      ctx->base->options.security_options.security_root_path,
+      "cert.pem",
+      allocator);
+  auto scope_exit_prop_peer_cert = rcpputils::make_scope_exit(
+    [allocator_ptr, prop_peer_cert]()
+    {
+      allocator_ptr->deallocate(prop_peer_cert, allocator_ptr->state);
+    });
+  ss << uri_prefix << prop_peer_cert;
+  prop_uri = ss.str();
+  ss.str("");
+  /* Public certificate of the DomainParticipant's identity, signed
+   * by the Certificate Authority */
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
+          prop_uri.c_str(),
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  char *const prop_governance =
+    rcutils_join_path(
+      ctx->base->options.security_options.security_root_path,
+      "governance.p7s",
+      allocator);
+  auto scope_exit_prop_governance = rcpputils::make_scope_exit(
+    [allocator_ptr, prop_governance]()
+    {
+      allocator_ptr->deallocate(prop_governance, allocator_ptr->state);
+    });
+  ss << uri_prefix << prop_governance;
+  prop_uri = ss.str();
+  ss.str("");
+  /* XML file containing domain governance configuration, signed by
+   * the Permission CA */
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          DDS_SECURITY_GOVERNANCE_PROPERTY,
+          prop_uri.c_str(),
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  char *const prop_permissions =
+    rcutils_join_path(
+      ctx->base->options.security_options.security_root_path,
+      "permissions.p7s",
+      allocator);
+  auto scope_exit_prop_permissions = rcpputils::make_scope_exit(
+    [allocator_ptr, prop_permissions]()
+    {
+      allocator_ptr->deallocate(prop_permissions, allocator_ptr->state);
+    });
+  ss << uri_prefix << prop_permissions;
+  prop_uri = ss.str();
+  ss.str("");
+  /* XML file containing domain permissions configuration, signed by
+   * the Permission CA */
+  if (DDS_RETCODE_OK !=
+        DDS_PropertyQosPolicyHelper_assert_property(
+          &qos->property,
+          DDS_SECURITY_PERMISSIONS_PROPERTY,
+          prop_uri.c_str(),
+          RTI_FALSE))
+  {
+    return RMW_RET_ERROR;
+  }
+#else
+  // Security not supported by ROS release
+#endif /* RMW_CONNEXT_HAVE_SECURITY */
+  return RMW_RET_OK;
+}
+

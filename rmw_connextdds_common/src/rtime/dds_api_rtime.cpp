@@ -619,22 +619,6 @@ rmw_connextdds_initialize_participant_factory(
 
   ctx_api->rt_dpde = true;
 
-
-#if defined(CONFIGURE_SECURITY_SOMEHOW)
-  /* Configure DDS Security plugins */
-  {
-    struct SECCORE_SecurePluginFactoryProperty sec_plugin_prop =
-      SECCORE_SecurePluginFactoryProperty_INITIALIZER;
-
-    if (!SECCORE_SecurePluginFactory_register(
-        registry, SECCORE_DEFAULT_SUITE_NAME, &sec_plugin_prop))
-    {
-      RMW_CONNEXT_LOG_ERROR(
-        "failed to register DDS Security plugins")
-      return RMW_RET_ERROR;
-    }
-  }
-#endif
   /* We do this here instead of rmw_context_impl_t::initialize_node
      because we can clean up the participant factory upon error */
   if (RMW_RET_OK !=
@@ -1928,4 +1912,48 @@ rmw_connextdds_builtinkey_to_guid(
   guid.object_id = self->value[3];
 
   DDS_GUID_from_rtps(dst, &guid);
+}
+
+rmw_ret_t
+rmw_connextdds_enable_security(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipantQos * const qos)
+{
+#if RMW_CONNEXT_ENABLE_SECURITY
+  RT_Registry_T * registry =
+    DDS_DomainParticipantFactory_get_registry(ctx->factory);
+  if (nullptr == registry) {
+    RMW_CONNEXT_LOG_ERROR("failed to get factory registry")
+    return RMW_RET_ERROR;
+  }
+
+  // Register security plugin suite with DomainParticipantFactory
+  struct SECCORE_SecurePluginFactoryProperty sec_plugin_prop =
+    SECCORE_SecurePluginFactoryProperty_INITIALIZER;
+
+  if (!SECCORE_SecurePluginFactory_register(
+        registry, SECCORE_DEFAULT_SUITE_NAME, &sec_plugin_prop))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to register DDS Security plugins")
+    return RMW_RET_ERROR;
+  }
+
+  // In order to enable security, the name used to register the suite of
+  // plugins must be set in DomainParticipantQos
+  if (!RT_ComponentFactoryId_set_name(
+        &qos->trust.suite, SECCORE_DEFAULT_SUITE_NAME))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+#else
+  UNUSED_ARG(ctx);
+  UNUSED_ARG(qos);
+  RMW_CONNEXT_LOG_ERROR_A(
+    "DDS Security not available. "
+    "Please rebuild %s with -DRMW_CONNEXT_ENABLE_SECURITY",
+    RMW_CONNEXTDDS_ID)
+  return RMW_RET_ERROR;
+#endif /* RMW_CONNEXT_ENABLE_SECURITY */
 }

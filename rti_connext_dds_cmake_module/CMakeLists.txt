@@ -30,12 +30,12 @@ else()
     message(STATUS "RTI Connext DDS Professional: NOT FOUND")
 endif()
 
-set(extra_components)
+set(RTIME_COMPONENTS)
 if(RMW_CONNEXT_ENABLE_SECURITY)
-  list(APPEND extra_components "security_plugins")
+  list(APPEND RTIME_COMPONENTS "security_plugins")
 endif()
 
-rti_find_connextmicro(${extra_components})
+rti_find_connextmicro(${RTIME_COMPONENTS})
 
 if(NOT RTIMEHOME_FOUND)
     message(STATUS "RTI Connext DDS Micro: NOT FOUND")

@@ -86,10 +86,24 @@ function(rti_load_rtimehome)
     else()
         set(RTIMEHOME_FOUND true)
         message(STATUS "Detected RTIMEHOME = '${RTIMEHOME}'")
+
+        # Detect Micro version
+        if(NOT DEFINED RTIME_VERSION)
+          get_filename_component(rtimehome_base "${RTIMEHOME}" NAME)
+          string(REGEX REPLACE
+            "^rti_connext_dds_micro[_a-z]*-([0-9.a-z\\-_]+)$"
+            "\\1"
+            RTIME_VERSION
+            "${rtimehome_base}")
+          if("${RTIME_VERSION}" STREQUAL "")
+            set(RTIME_VERSION "unknown")
+          endif()
+        endif()
     endif()
 
     set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
     set(RTIMEHOME_FOUND "${RTIMEHOME_FOUND}" PARENT_SCOPE)
+    set(RTIME_VERSION "${RTIME_VERSION}" PARENT_SCOPE)
 endfunction()
 
 ################################################################################
@@ -323,6 +337,7 @@ function(rti_find_connextmicro)
     set(RTIMEHOME_FOUND true PARENT_SCOPE)
     set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
+    set(RTIME_VERSION "${RTIME_VERSION}" PARENT_SCOPE)
     set(RTIME_TARGETS ${rtime_targets} PARENT_SCOPE)
     set(RTIME_TARGET_NAME ${RTIME_TARGET_NAME} PARENT_SCOPE)
 endfunction()

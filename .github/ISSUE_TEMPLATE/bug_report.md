@@ -19,19 +19,25 @@ assignees: asorbini
   - [e.g. 44cbdc3f45365890921195cf8ed10aaea9633270]
 
 **Bug Description**
+
 [A clear and concise description of what the problem is]
 
 **Expected Behavior**
+
 [A description of what you expected to happen]
 
-**How to reproduce**
-Instructions on how to reproduce the behavior:
-1. Do this `...`
-2. Then maybe that `...`
-3. See error
+**How to Reproduce**
+
+[Instructions on how to reproduce the problem]
+
+```
+
+```
 
 **Workarounds**
-Ways that you have discovered to overcome the issue, if any.
+
+[Ways that you have discovered to overcome the issue, if any]
 
 **Additional context**
-Add any other relevant information about the problem here.
+
+[Any additional relevant information about the problem]

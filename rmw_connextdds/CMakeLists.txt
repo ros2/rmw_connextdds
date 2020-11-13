@@ -64,4 +64,9 @@ install(
     RUNTIME DESTINATION bin
 )
 
-ament_package()
+ament_export_dependencies(
+    rmw_connextdds_common)
+
+ament_package(
+  CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
+)

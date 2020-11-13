@@ -46,6 +46,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
 target_link_libraries(${PROJECT_NAME}
+  PUBLIC
     rmw_connextdds_common::rmw_connextdds_common_micro)
 
 if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
@@ -70,4 +71,9 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
+ament_export_dependencies(
+  rmw_connextdds_common)
+
+ament_package(
+  CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
+)

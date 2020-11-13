@@ -31,21 +31,47 @@ if(@RTIConnextDDSMicro_FOUND@)
         CACHE INTERNAL "Installation directory for RTI Connext DDS Micro")
 
     set(RTIME_TARGET_NAME       @RTIME_TARGET_NAME@
-        CACHE INTERNAL "Architecture target for RTI Connext DDS Micro libraries")
+        CACHE INTERNAL
+          "Architecture target for RTI Connext DDS Micro")
+
+    set(RTIME_VERSION           @RTIME_VERSION@
+        CACHE INTERNAL "Version of RTI Connext DDS Micro")
+
+    set(RTIME_FOUND             @RTIConnextDDSMicro_FOUND@
+        CACHE INTERNAL
+          "Whether RTI Connext DDS Micro was detected at build time")
+    
+    set(RTIME_COMPONENTS        @RTIME_COMPONENTS@
+        CACHE INTERNAL "Extra RTI Connext DDS Micro components to load")
 endif()
 
 if(@RTIConnextDDS_FOUND@)
     set(CONNEXTDDS_DIR          @CONNEXTDDS_DIR@
-        CACHE INTERNAL "Installation directory for RTI Connext DDS Professional")
+        CACHE INTERNAL
+          "Installation directory for RTI Connext DDS Professional")
 
     set(CONNEXTDDS_ARCH         @CONNEXTDDS_ARCH@
         CACHE INTERNAL "Architecture target for RTI Connext DDS Professional")
+
+    set(CONNEXTDDS_VERSION      @CONNEXTDDS_VERSION@
+        CACHE INTERNAL "Version for RTI Connext DDS Professional")
+
+    set(CONNEXTDDS_FOUND        @RTIConnextDDS_FOUND@
+        CACHE INTERNAL
+          "Whether RTI Connext DDS Professional was detected at build time")
+    
+    set(CONNEXTDDS_COMPONENTS   @CONNEXTDDS_COMPONENTS@
+        CACHE INTERNAL "Extra RTI Connext DDS Professional components to load")
 endif()
 
-message(STATUS "Loaded RTI Connext DDS module:")
-message(STATUS "  RTIConnextDDSMicro_FOUND: ${RTIConnextDDSMicro_FOUND}")
-message(STATUS "    RTIMEHOME: ${RTIMEHOME}")
-message(STATUS "    RTIME_TARGET_NAME: ${RTIME_TARGET_NAME}")
-message(STATUS "  RTIConnextDDS_FOUND: ${RTIConnextDDS_FOUND}")
-message(STATUS "    CONNEXTDDS_DIR: ${CONNEXTDDS_DIR}")
-message(STATUS "    CONNEXTDDS_ARCH: ${CONNEXTDDS_ARCH}")
+message(STATUS "Loaded RTI Connext DDS environment:")
+message(STATUS "- RTI Connext DDS Professional:")
+message(STATUS "  - Found: ${CONNEXTDDS_FOUND}")
+message(STATUS "  - Version: ${CONNEXTDDS_VERSION}")
+message(STATUS "  - Directory: ${CONNEXTDDS_DIR}")
+message(STATUS "  - Architecture: ${CONNEXTDDS_ARCH}")
+message(STATUS "- RTI Connext DDS Micro:")
+message(STATUS "  - Found: ${RTIME_FOUND}")
+message(STATUS "  - Version: ${RTIME_VERSION}")
+message(STATUS "  - Directory: ${RTIMEHOME}")
+message(STATUS "  - Architecture: ${RTIME_TARGET_NAME}")

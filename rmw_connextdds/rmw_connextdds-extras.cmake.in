@@ -18,8 +18,10 @@
 
 # Generated from @PROJECT_NAME@/cmake/@PROJECT_NAME@-extras.cmake.in
 
-set(rmw_connext_common_source   @RMW_CONNEXT_COMMON_SOURCE@)
+# Load RTI Connext DDS Professional
 
-find_package(rti_connext_dds_cmake_module REQUIRED)
+rti_find_connextpro(${CONNEXTDDS_COMPONENTS})
 
-rti_load_rmw_source(${@PROJECT_NAME@_DIR} ${rmw_connext_common_source})
+if(NOT RTIConnextDDS_FOUND)
+  message(ERROR "Failed to load RTI Connext DDS Micro")
+endif()

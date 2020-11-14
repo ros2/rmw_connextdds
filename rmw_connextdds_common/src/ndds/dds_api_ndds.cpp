@@ -568,16 +568,14 @@ rmw_connextdds_filter_sample(
         12));
   }
 
-  if (!*accepted)
-  {
+  if (!*accepted) {
     return RMW_RET_OK;
   }
 
-  if (nullptr != request_writer_handle)
-  {
+  if (nullptr != request_writer_handle) {
     DDS_SampleIdentity_t related_sample_identity;
     DDS_SampleInfo_get_related_sample_identity(
-              info, &related_sample_identity);
+      info, &related_sample_identity);
 
     // Convert instance handle to guid
     DDS_GUID_t writer_guid = DDS_GUID_DEFAULT;

@@ -1211,13 +1211,12 @@ rmw_connextdds_filter_sample(
   // DataReaderListener::on_before_sample_commit() callback.
   *accepted = true;
 
-  if (nullptr != request_writer_handle)
-  {
+  if (nullptr != request_writer_handle) {
     const RMW_Connext_RequestReplyMessage * const rr_msg =
-      reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(sample);
+      reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(sample);
     // Convert instance handle to guid
     DDS_GUID_t writer_guid = DDS_GUID_INITIALIZER,
-               related_writer_guid = DDS_GUID_INITIALIZER;
+      related_writer_guid = DDS_GUID_INITIALIZER;
     memcpy(
       writer_guid.value,
       request_writer_handle->octet,

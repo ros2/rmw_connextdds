@@ -3573,7 +3573,7 @@ RMW_Connext_Client::take_response(
 
   rmw_ret_t rc =
     this->reply_sub->take_message(
-      &rr_msg, &message_info, &taken_msg, &req_writer_handle);
+    &rr_msg, &message_info, &taken_msg, &req_writer_handle);
 
   if (RMW_RET_OK != rc) {
     return rc;

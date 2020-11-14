@@ -46,12 +46,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
 target_link_libraries(${PROJECT_NAME}
-  PUBLIC
     rmw_connextdds_common::rmw_connextdds_common_micro)
 
-# if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
-#   ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
-# endif()
+if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
+  ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
+endif()
 
 configure_rmw_library(${PROJECT_NAME})
 

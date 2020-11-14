@@ -49,9 +49,9 @@ target_link_libraries(${PROJECT_NAME}
   PUBLIC
     rmw_connextdds_common::rmw_connextdds_common_micro)
 
-if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
-  ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
-endif()
+# if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
+#   ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
+# endif()
 
 configure_rmw_library(${PROJECT_NAME})
 
@@ -70,6 +70,9 @@ if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     ament_lint_auto_find_test_dependencies()
 endif()
+
+ament_export_dependencies(
+  rmw_connextdds_common)
 
 ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"

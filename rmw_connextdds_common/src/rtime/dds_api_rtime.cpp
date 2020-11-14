@@ -1201,6 +1201,7 @@ rmw_connextdds_filter_sample(
   RMW_Connext_Subscriber * const sub,
   const void * const sample,
   const DDS_SampleInfo * const info,
+  const DDS_InstanceHandle_t * const request_writer_handle,
   bool * const accepted)
 {
   UNUSED_ARG(sub);
@@ -1209,6 +1210,23 @@ rmw_connextdds_filter_sample(
   // In this implementation, local samples are dropped by the
   // DataReaderListener::on_before_sample_commit() callback.
   *accepted = true;
+
+  if (nullptr != request_writer_handle)
+  {
+    const RMW_Connext_RequestReplyMessage * const rr_msg =
+      reinterpret_cast<const RMW_Connext_RequestReplyMessage*>(sample);
+    // Convert instance handle to guid
+    DDS_GUID_t writer_guid = DDS_GUID_INITIALIZER,
+               related_writer_guid = DDS_GUID_INITIALIZER;
+    memcpy(
+      writer_guid.value,
+      request_writer_handle->octet,
+      16);
+    rmw_connextdds_gid_to_guid(rr_msg->gid, related_writer_guid);
+    *accepted =
+      (DDS_GUID_compare(&writer_guid, &related_writer_guid) == 0);
+  }
+
   return RMW_RET_OK;
 }
 
@@ -1896,11 +1914,11 @@ rmw_connextdds_configure_subscriber_condition_listener(
   DDS_StatusMask * const listener_mask)
 {
   UNUSED_ARG(sub);
+  UNUSED_ARG(cond);
   UNUSED_ARG(listener_mask);
   if (sub->ignore_local()) {
     listener->on_before_sample_commit =
       RMW_Connext_DataReaderListener_before_sample_commit_drop_local;
-    cond->set_drop_handle(sub->instance_handle());
   }
 }
 

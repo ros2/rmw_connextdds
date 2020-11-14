@@ -587,6 +587,13 @@ public:
     return this->type_support;
   }
 
+  DDS_InstanceHandle_t
+  instance_handle()
+  {
+    return DDS_Entity_get_instance_handle(
+      DDS_DataWriter_as_entity(this->writer()));
+  }
+
   rmw_ret_t
   write(
     const void * const ros_message,
@@ -800,6 +807,13 @@ public:
 
   DDS_InstanceHandle_t
   instance_handle()
+  {
+    return DDS_Entity_get_instance_handle(
+      DDS_DataReader_as_entity(this->reader()));
+  }
+
+  DDS_InstanceHandle_t
+  participant_instance_handle()
   {
     return DDS_Entity_get_instance_handle(
       DDS_DomainParticipant_as_entity(

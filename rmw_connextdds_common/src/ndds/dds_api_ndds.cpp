@@ -550,21 +550,42 @@ rmw_connextdds_filter_sample(
   RMW_Connext_Subscriber * const sub,
   const void * const sample,
   const DDS_SampleInfo * const info,
+  const DDS_InstanceHandle_t * const request_writer_handle,
   bool * const accepted)
 {
   UNUSED_ARG(sub);
   UNUSED_ARG(sample);
   UNUSED_ARG(info);
 
+  *accepted = true;
+
   if (sub->ignore_local()) {
-    DDS_InstanceHandle_t reader_ih = sub->instance_handle();
+    DDS_InstanceHandle_t reader_ih = sub->participant_instance_handle();
 
     *accepted = (0 != memcmp(
         reader_ih.keyHash.value,
         info->original_publication_virtual_guid.value,
         12));
-  } else {
-    *accepted = true;
+  }
+
+  if (!*accepted)
+  {
+    return RMW_RET_OK;
+  }
+
+  if (nullptr != request_writer_handle)
+  {
+    DDS_SampleIdentity_t related_sample_identity;
+    DDS_SampleInfo_get_related_sample_identity(
+              info, &related_sample_identity);
+
+    // Convert instance handle to guid
+    DDS_GUID_t writer_guid = DDS_GUID_DEFAULT;
+    memcpy(writer_guid.value, request_writer_handle->keyHash.value, MIG_RTPS_KEY_HASH_MAX_LENGTH);
+
+    *accepted =
+      (DDS_GUID_compare(
+        &writer_guid, &related_sample_identity.writer_guid) == 0);
   }
 
   return RMW_RET_OK;

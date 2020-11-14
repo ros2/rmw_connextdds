@@ -138,6 +138,7 @@ rmw_connextdds_filter_sample(
   RMW_Connext_Subscriber * const sub,
   const void * const sample,
   const DDS_SampleInfo * const info,
+  const DDS_InstanceHandle_t * const request_writer_handle,
   bool * const accepted);
 
 RMW_Connext_MessageTypeSupport *

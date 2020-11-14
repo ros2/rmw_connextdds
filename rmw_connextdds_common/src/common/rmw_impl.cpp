@@ -2108,15 +2108,8 @@ RMW_Connext_Subscriber::take_next(
 
       if (info->valid_data) {
         bool accepted = false;
-        DDS_InstanceHandle_t reader_ih = this->instance_handle();
-        if (nullptr != request_writer_handle &&
-          !DDS_InstanceHandle_equals(request_writer_handle, &reader_ih))
-        {
-          // ignore response not for this client.
-          continue;
-        }
         if (RMW_RET_OK != rmw_connextdds_filter_sample(
-            this, data_buffer, info, &accepted))
+            this, data_buffer, info, request_writer_handle, &accepted))
         {
           RMW_CONNEXT_LOG_ERROR("failed to filter received sample")
           return RMW_RET_ERROR;
@@ -3575,8 +3568,12 @@ RMW_Connext_Client::take_response(
   rmw_message_info_t message_info;
   bool taken_msg = false;
 
+  DDS_InstanceHandle_t req_writer_handle =
+    this->request_pub->instance_handle();
+
   rmw_ret_t rc =
-    this->reply_sub->take_message(&rr_msg, &message_info, &taken_msg);
+    this->reply_sub->take_message(
+      &rr_msg, &message_info, &taken_msg, &req_writer_handle);
 
   if (RMW_RET_OK != rc) {
     return rc;
@@ -4498,7 +4495,7 @@ RMW_Connext_StdSubscriberStatusCondition::install(
 
 
   if (sub->ignore_local()) {
-    this->listener_drop_handle = sub->instance_handle();
+    this->listener_drop_handle = sub->participant_instance_handle();
   }
   listener.on_requested_deadline_missed =
     RMW_Connext_DataReaderListener_requested_deadline_missed;

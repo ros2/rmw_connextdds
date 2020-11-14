@@ -40,7 +40,7 @@ if(@RTIConnextDDSMicro_FOUND@)
     set(RTIME_FOUND             @RTIConnextDDSMicro_FOUND@
         CACHE INTERNAL
           "Whether RTI Connext DDS Micro was detected at build time")
-    
+
     set(RTIME_COMPONENTS        @RTIME_COMPONENTS@
         CACHE INTERNAL "Extra RTI Connext DDS Micro components to load")
 endif()
@@ -59,7 +59,7 @@ if(@RTIConnextDDS_FOUND@)
     set(CONNEXTDDS_FOUND        @RTIConnextDDS_FOUND@
         CACHE INTERNAL
           "Whether RTI Connext DDS Professional was detected at build time")
-    
+
     set(CONNEXTDDS_COMPONENTS   @CONNEXTDDS_COMPONENTS@
         CACHE INTERNAL "Extra RTI Connext DDS Professional components to load")
 endif()

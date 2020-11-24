@@ -66,6 +66,21 @@ rmw_connextdds_initialize_participant_qos_impl(
   DDS_DomainParticipantQos * const dp_qos);
 
 rmw_ret_t
+rmw_connextdds_create_contentfilteredtopic(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const dp,
+  DDS_Topic * const base_topic,
+  const char * const cft_name,
+  const char * const cft_filter,
+  DDS_TopicDescription ** const cft_out);
+
+rmw_ret_t
+rmw_connextdds_delete_contentfilteredtopic(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const dp,
+  DDS_TopicDescription * const cft_topic);
+
+rmw_ret_t
 rmw_connextdds_get_datawriter_qos(
   rmw_context_impl_t * const ctx,
   RMW_Connext_MessageTypeSupport * const type_support,
@@ -82,7 +97,7 @@ rmw_ret_t
 rmw_connextdds_get_datareader_qos(
   rmw_context_impl_t * const ctx,
   RMW_Connext_MessageTypeSupport * const type_support,
-  DDS_Topic * const topic,
+  DDS_TopicDescription * const topic_desc,
   DDS_DataReaderQos * const qos,
   const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
@@ -116,7 +131,7 @@ DDS_DataReader *
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
-  DDS_Topic * const topic,
+  DDS_TopicDescription * const topic_desc,
   DDS_DataReaderQos * const dr_qos);
 
 rmw_ret_t

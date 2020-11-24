@@ -1233,6 +1233,21 @@ RMW_Connext_Publisher::create(
     return nullptr;
   }
 
+  scope_exit_type_unregister.cancel();
+  scope_exit_topic_delete.cancel();
+  scope_exit_dds_writer_delete.cancel();
+
+  auto scope_exit_pub_delete =
+    rcpputils::make_scope_exit(
+    [rmw_pub_impl]()
+    {
+      if (RMW_RET_OK != rmw_pub_impl->finalize()) {
+        RMW_CONNEXT_LOG_ERROR(
+          "failed to finalize publisher implementation")
+      }
+      delete rmw_pub_impl;
+    });
+
   if (!internal) {
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_DataWriter_as_entity(dds_writer)))
@@ -1242,9 +1257,7 @@ RMW_Connext_Publisher::create(
     }
   }
 
-  scope_exit_type_unregister.cancel();
-  scope_exit_topic_delete.cancel();
-  scope_exit_dds_writer_delete.cancel();
+  scope_exit_pub_delete.cancel();
   return rmw_pub_impl;
 }
 
@@ -1582,10 +1595,12 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   DDS_Topic * const dds_topic,
   RMW_Connext_MessageTypeSupport * const type_support,
   const bool ignore_local,
-  const bool created_topic)
+  const bool created_topic,
+  DDS_TopicDescription * const dds_topic_cft)
 : ctx(ctx),
   dds_reader(dds_reader),
   dds_topic(dds_topic),
+  dds_topic_cft(dds_topic_cft),
   dds_condition(nullptr),
   type_support(type_support),
   opt_ignore_local(ignore_local),
@@ -1630,7 +1645,9 @@ RMW_Connext_Subscriber::create(
   const RMW_Connext_MessageType msg_type,
   const void * const intro_members,
   const bool intro_members_cpp,
-  std::string * const type_name)
+  std::string * const type_name,
+  const char * const cft_name,
+  const char * const cft_filter)
 {
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
   UNUSED_ARG(internal);
@@ -1681,6 +1698,7 @@ RMW_Connext_Subscriber::create(
   }
 
   DDS_Topic * topic = nullptr;
+  DDS_TopicDescription * cft_topic = nullptr;
   bool topic_created = false;
 
   if (RMW_RET_OK !=
@@ -1702,8 +1720,15 @@ RMW_Connext_Subscriber::create(
   }
 
   auto scope_exit_topic_delete = rcpputils::make_scope_exit(
-    [topic_created, dp, topic]()
+    [ctx, topic_created, dp, topic, cft_topic]()
     {
+      if (nullptr != cft_topic) {
+        if (RMW_RET_OK !=
+        rmw_connextdds_delete_contentfilteredtopic(ctx, dp, cft_topic))
+        {
+          RMW_CONNEXT_LOG_ERROR("failed to delete content-filtered topic")
+        }
+      }
       if (topic_created) {
         if (DDS_RETCODE_OK !=
         DDS_DomainParticipant_delete_topic(dp, topic))
@@ -1713,6 +1738,23 @@ RMW_Connext_Subscriber::create(
         }
       }
     });
+
+  DDS_TopicDescription * sub_topic = DDS_Topic_as_topicdescription(topic);
+
+  if (nullptr != cft_name) {
+    rmw_ret_t cft_rc =
+      rmw_connextdds_create_contentfilteredtopic(
+      ctx, dp, topic, cft_name, cft_filter, &cft_topic);
+
+    if (RMW_RET_OK != cft_rc) {
+      if (RMW_RET_UNSUPPORTED != cft_rc) {
+        return nullptr;
+      }
+    } else {
+      sub_topic = cft_topic;
+    }
+  }
+
   // The following initialization generates warnings when built
   // with RTI Connext DDS Professional 5.3.1
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
@@ -1743,7 +1785,7 @@ RMW_Connext_Subscriber::create(
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
     internal,
     type_support,
-    topic,
+    sub_topic,
     &dr_qos);
 
   if (nullptr == dds_reader) {
@@ -1787,12 +1829,27 @@ RMW_Connext_Subscriber::create(
 #else
     ignore_local_publications,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
-    topic_created);
+    topic_created,
+    cft_topic);
 
   if (nullptr == rmw_sub_impl) {
     RMW_CONNEXT_LOG_ERROR("failed to allocate RMW subscriber")
     return nullptr;
   }
+  scope_exit_type_unregister.cancel();
+  scope_exit_topic_delete.cancel();
+  scope_exit_dds_reader_delete.cancel();
+
+  auto scope_exit_sub_delete =
+    rcpputils::make_scope_exit(
+    [rmw_sub_impl]()
+    {
+      if (RMW_RET_OK != rmw_sub_impl->finalize()) {
+        RMW_CONNEXT_LOG_ERROR(
+          "failed to finalize subscription implementation")
+      }
+      delete rmw_sub_impl;
+    });
 
   if (!internal) {
     if (DDS_RETCODE_OK !=
@@ -1803,9 +1860,8 @@ RMW_Connext_Subscriber::create(
     }
   }
 
-  scope_exit_type_unregister.cancel();
-  scope_exit_topic_delete.cancel();
-  scope_exit_dds_reader_delete.cancel();
+  scope_exit_sub_delete.cancel();
+
   return rmw_sub_impl;
 }
 
@@ -1834,6 +1890,15 @@ RMW_Connext_Subscriber::finalize()
   }
 
   DDS_DomainParticipant * const participant = this->dds_participant();
+
+  if (nullptr != this->dds_topic_cft) {
+    rmw_ret_t cft_rc = rmw_connextdds_delete_contentfilteredtopic(
+      ctx, participant, this->dds_topic_cft);
+
+    if (RMW_RET_OK != cft_rc) {
+      return cft_rc;
+    }
+  }
 
   if (this->created_topic) {
     DDS_Topic * const topic = this->dds_topic;
@@ -3428,6 +3493,9 @@ RMW_Connext_Client::create(
   auto scope_exit_client_impl_delete = rcpputils::make_scope_exit(
     [client_impl]()
     {
+      if (RMW_RET_OK != client_impl->finalize()) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize client")
+      }
       delete client_impl;
     });
   bool svc_members_req_cpp = false,
@@ -3508,12 +3576,84 @@ RMW_Connext_Client::create(
     return nullptr;
   }
 
+  DDS_InstanceHandle_t writer_ih = client_impl->request_pub->instance_handle();
+  // TODO(asorbini) convert ih directly to guid
+  DDS_GUID_t writer_guid = DDS_GUID_INITIALIZER;
+  rmw_gid_t writer_gid;
+  rmw_connextdds_ih_to_gid(writer_ih, writer_gid);
+  rmw_connextdds_gid_to_guid(writer_gid, writer_guid);
+
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating reply subscriber: "
     "service=%s, "
     "topic=%s",
     svc_name,
     reply_topic.c_str())
+
+#define GUID_FMT \
+  "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
+
+#define GUID_FMT_ARGS(g_) \
+  (g_)->value[0], \
+  (g_)->value[1], \
+  (g_)->value[2], \
+  (g_)->value[3], \
+  (g_)->value[4], \
+  (g_)->value[5], \
+  (g_)->value[6], \
+  (g_)->value[7], \
+  (g_)->value[8], \
+  (g_)->value[9], \
+  (g_)->value[10], \
+  (g_)->value[11], \
+  (g_)->value[12], \
+  (g_)->value[13], \
+  (g_)->value[14], \
+  (g_)->value[15]
+
+  /* Create content-filtered topic expression for the reply reader */
+  static const int GUID_SIZE = 16;
+  static const char * GUID_FIELD_NAME =
+    "@related_sample_identity.writer_guid.value";
+  const size_t reply_topic_len = strlen(reply_topic.c_str());
+  const size_t cft_name_len = reply_topic_len + 1 + (GUID_SIZE * 2);
+  char * const cft_name = DDS_String_alloc(cft_name_len);
+  if (nullptr == cft_name) {
+    RMW_CONNEXT_LOG_ERROR("failed too allocate cft name")
+    return nullptr;
+  }
+  auto scope_exit_cft_name = rcpputils::make_scope_exit(
+    [cft_name]()
+    {
+      DDS_String_free(cft_name);
+    });
+
+  snprintf(
+    cft_name, cft_name_len + 1 /* \0 */,
+    "%s_" GUID_FMT,
+    reply_topic.c_str(),
+    GUID_FMT_ARGS(&writer_guid));
+
+  const size_t cft_filter_len =
+    strlen(GUID_FIELD_NAME) + strlen(" = &hex(") + (GUID_SIZE * 2) + 1;
+  char * const cft_filter = DDS_String_alloc(cft_filter_len);
+  if (nullptr == cft_filter) {
+    RMW_CONNEXT_LOG_ERROR("failed too allocate cft filter")
+    return nullptr;
+  }
+  auto scope_exit_cft_filter = rcpputils::make_scope_exit(
+    [cft_filter]()
+    {
+      DDS_String_free(cft_filter);
+    });
+
+  snprintf(
+    cft_filter, cft_filter_len + 1 /* \0 */, "%s = &hex(" GUID_FMT ")",
+    GUID_FIELD_NAME,
+    GUID_FMT_ARGS(&writer_guid));
+
+#undef GUID_FMT
+#undef GUID_FMT_ARGS
 
   client_impl->reply_sub =
     RMW_Connext_Subscriber::create(
@@ -3532,7 +3672,9 @@ RMW_Connext_Client::create(
     RMW_CONNEXT_MESSAGE_REPLY,
     svc_members_res,
     svc_members_res_cpp,
-    &reply_type);
+    &reply_type,
+    cft_name,
+    cft_filter);
 
   if (nullptr == client_impl->reply_sub) {
     RMW_CONNEXT_LOG_ERROR("failed to create client replier")
@@ -3641,19 +3783,22 @@ RMW_Connext_Client::send_request(
 rmw_ret_t
 RMW_Connext_Client::finalize()
 {
-  if (RMW_RET_OK != this->publisher()->finalize()) {
-    RMW_CONNEXT_LOG_ERROR("failed to finalize client publisher")
-    return RMW_RET_ERROR;
+  if (nullptr != this->request_pub) {
+    if (RMW_RET_OK != this->request_pub->finalize()) {
+      RMW_CONNEXT_LOG_ERROR("failed to finalize client publisher")
+      return RMW_RET_ERROR;
+    }
+    delete this->request_pub;
   }
 
-  delete this->publisher();
+  if (nullptr != this->reply_sub) {
+    if (RMW_RET_OK != this->reply_sub->finalize()) {
+      RMW_CONNEXT_LOG_ERROR("failed to finalize client subscriber")
+      return RMW_RET_ERROR;
+    }
 
-  if (RMW_RET_OK != this->subscriber()->finalize()) {
-    RMW_CONNEXT_LOG_ERROR("failed to finalize client subscriber")
-    return RMW_RET_ERROR;
+    delete this->reply_sub;
   }
-
-  delete this->subscriber();
 
   return RMW_RET_OK;
 }

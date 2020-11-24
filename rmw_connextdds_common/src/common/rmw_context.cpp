@@ -222,10 +222,6 @@ rmw_context_impl_t::initialize_node(
     return RMW_RET_ERROR;
   }
 
-  /* Create readers for DDS built-in topics for monitoring discovery */
-
-  /* TODO(asorbini): Micro doesn't provide access to Discovery endpoints */
-
   /* Create DDS publisher/subscriber objects that will be used for all DDS writers/readers
       to be created for RMW publishers/subscriptions. */
 

@@ -771,7 +771,9 @@ public:
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
     const bool intro_members_cpp = false,
-    std::string * const type_name = nullptr);
+    std::string * const type_name = nullptr,
+    const char * const cft_name = nullptr,
+    const char * const cft_filter = nullptr);
 
   rmw_ret_t
   finalize();
@@ -1011,6 +1013,7 @@ private:
   rmw_context_impl_t * ctx;
   DDS_DataReader * dds_reader;
   DDS_Topic * dds_topic;
+  DDS_TopicDescription * dds_topic_cft;
   DDS_Condition * dds_condition;
   RMW_Connext_MessageTypeSupport * type_support;
   rmw_gid_t ros_gid;
@@ -1031,7 +1034,8 @@ private:
     DDS_Topic * const dds_topic,
     RMW_Connext_MessageTypeSupport * const type_support,
     const bool ignore_local,
-    const bool created_topic);
+    const bool created_topic,
+    DDS_TopicDescription * const dds_topic_cft);
 
   DDS_Subscriber * dds_subscriber()
   {
@@ -1080,13 +1084,17 @@ class RMW_Connext_Client
 {
   RMW_Connext_Publisher * request_pub;
   RMW_Connext_Subscriber * reply_sub;
+  DDS_Topic * reply_topic;
+  DDS_Topic * reply_topic_cft;
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
   std::atomic_uint next_request_id;
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
 
   RMW_Connext_Client()
   : request_pub(nullptr),
-    reply_sub(nullptr)
+    reply_sub(nullptr),
+    reply_topic(nullptr),
+    reply_topic_cft(nullptr)
 #if RMW_CONNEXT_EMULATE_REQUESTREPLY
     ,
     next_request_id(1)

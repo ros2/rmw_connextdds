@@ -182,6 +182,61 @@ rmw_connextdds_initialize_participant_qos_impl(
   return RMW_RET_OK;
 }
 
+rmw_ret_t
+rmw_connextdds_create_contentfilteredtopic(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const dp,
+  DDS_Topic * const base_topic,
+  const char * const cft_name,
+  const char * const cft_filter,
+  DDS_TopicDescription ** const cft_out)
+{
+  UNUSED_ARG(ctx);
+  RMW_CONNEXT_ASSERT(nullptr != cft_name)
+  RMW_CONNEXT_ASSERT(nullptr != cft_filter)
+
+  struct DDS_StringSeq cft_parameters;
+  DDS_StringSeq_initialize(&cft_parameters);
+  DDS_StringSeq_ensure_length(&cft_parameters, 0, 0);
+
+  *cft_out = nullptr;
+
+  DDS_ContentFilteredTopic * cft_topic =
+    DDS_DomainParticipant_create_contentfilteredtopic(
+    dp, cft_name, base_topic, cft_filter, &cft_parameters);
+  if (nullptr == cft_topic) {
+    RMW_CONNEXT_LOG_ERROR_A(
+      "failed to create content-filtered topic: "
+      "name=%s, filter=%s", cft_name, cft_filter)
+    return RMW_RET_ERROR;
+  }
+
+  *cft_out = DDS_ContentFilteredTopic_as_topicdescription(cft_topic);
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_delete_contentfilteredtopic(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const dp,
+  DDS_TopicDescription * const cft_topicdesc)
+{
+  UNUSED_ARG(ctx);
+
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(cft_topicdesc);
+
+  if (DDS_RETCODE_OK !=
+    DDS_DomainParticipant_delete_contentfilteredtopic(dp, cft_topic))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to delete content-filtered topic")
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
 static
 rmw_ret_t
 rmw_connextdds_get_qos_policies(
@@ -282,7 +337,7 @@ rmw_ret_t
 rmw_connextdds_get_datareader_qos(
   rmw_context_impl_t * const ctx,
   RMW_Connext_MessageTypeSupport * const type_support,
-  DDS_Topic * const topic,
+  DDS_TopicDescription * const topic_desc,
   DDS_DataReaderQos * const qos,
   const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
@@ -291,7 +346,7 @@ rmw_connextdds_get_datareader_qos(
 )
 {
   UNUSED_ARG(ctx);
-  UNUSED_ARG(topic);
+  UNUSED_ARG(topic_desc);
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_readerwriter_qos(
@@ -376,7 +431,7 @@ rmw_connextdds_create_datareader(
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
-  DDS_Topic * const topic,
+  DDS_TopicDescription * const topic_desc,
   DDS_DataReaderQos * const dr_qos)
 {
   UNUSED_ARG(ctx);
@@ -385,7 +440,7 @@ rmw_connextdds_create_datareader(
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datareader_qos(
-      ctx, type_support, topic, dr_qos, qos_policies
+      ctx, type_support, topic_desc, dr_qos, qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS
       , subscriber_options
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
@@ -395,14 +450,8 @@ rmw_connextdds_create_datareader(
     return nullptr;
   }
 
-  DDS_DataReader * const reader =
-    DDS_Subscriber_create_datareader(
-    sub,
-    DDS_Topic_as_topicdescription(topic),
-    dr_qos,
-    NULL, DDS_STATUS_MASK_NONE);
-
-  return reader;
+  return DDS_Subscriber_create_datareader(
+    sub, topic_desc, dr_qos, NULL, DDS_STATUS_MASK_NONE);
 }
 
 rmw_ret_t

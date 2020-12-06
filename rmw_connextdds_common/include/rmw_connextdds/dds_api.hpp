@@ -16,7 +16,7 @@
 #define RMW_CONNEXTDDS__DDS_API_HPP_
 
 #include "rmw_connextdds/static_config.hpp"
-
+#include "rmw_connextdds/visibility_control.h"
 
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
 #include "rmw_connextdds/dds_api_rtime.hpp"
@@ -46,7 +46,7 @@ enum RMW_Connext_MessageType
   RMW_CONNEXT_MESSAGE_REPLY
 };
 
-extern const char * const RMW_CONNEXTDDS_ID;
+RMW_CONNEXTDDS_PUBLIC extern const char * const RMW_CONNEXTDDS_ID;
 extern const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT;
 
 rmw_ret_t

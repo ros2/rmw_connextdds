@@ -304,6 +304,13 @@ function(rti_find_connextmicro)
             INTERFACE_INCLUDE_DIRECTORIES
                 "${rtime_core_inc_dirs}")
 
+    if(RTIME_TARGET_NAME MATCHES "Win")
+      set_target_properties(RTIConnextDDSMicro::c_api
+        PROPERTIES
+            INTERFACE_COMPILE_DEFINITIONS
+                RTIME_DLL_VARIABLE)
+    endif()
+
     set(rtime_targets     RTIConnextDDSMicro::c_api)
 
     foreach(rtime_lib ${rtime_extra})

@@ -71,6 +71,10 @@ function(rtirmw_add_library)
             ${_rti_build_DEFINES}
     )
 
+    # Call configure_rmw_library() to set the appropriate build flags even
+    # though we are not building the full RMW library in this package
+    configure_rmw_library(${_rti_build_NAME})
+
     target_compile_definitions(${_rti_build_NAME}
         PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
 
@@ -85,7 +89,7 @@ function(rtirmw_add_library)
     # Causes the visibility macros to use dllexport rather than dllimport,
     # which is appropriate when building the dll but not consuming it.
     target_compile_definitions(${_rti_build_NAME}
-        PRIVATE "RMW_CONNEXT_BUILDING_LIBRARY")
+        PRIVATE "RMW_CONNEXTDDS_BUILDING_LIBRARY")
 
     install(
         TARGETS ${_rti_build_NAME}

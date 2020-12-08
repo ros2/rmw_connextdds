@@ -76,7 +76,7 @@ function(rtirmw_add_library)
     configure_rmw_library(${_rti_build_NAME})
 
     target_compile_definitions(${_rti_build_NAME}
-        PRIVATE RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
+        PUBLIC RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
 
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
         string(TOUPPER "${RMW_CONNEXT_LOG_MODE}" rmw_connext_log_mode)

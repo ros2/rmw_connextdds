@@ -18,7 +18,8 @@
  * Conditions & Waitset interface functions
  ******************************************************************************/
 
-extern "C" rmw_guard_condition_t * rmw_create_guard_condition(
+rmw_guard_condition_t *
+rmw_api_connextdds_create_guard_condition(
   rmw_context_t * context)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
@@ -37,7 +38,8 @@ extern "C" rmw_guard_condition_t * rmw_create_guard_condition(
   return ret;
 }
 
-extern "C" rmw_ret_t rmw_destroy_guard_condition(
+rmw_ret_t
+rmw_api_connextdds_destroy_guard_condition(
   rmw_guard_condition_t * guard_condition_handle)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(
@@ -54,7 +56,8 @@ extern "C" rmw_ret_t rmw_destroy_guard_condition(
   return rmw_connextdds_destroy_guard_condition(guard_condition_handle);
 }
 
-extern "C" rmw_ret_t rmw_trigger_guard_condition(
+rmw_ret_t
+rmw_api_connextdds_trigger_guard_condition(
   const rmw_guard_condition_t * guard_condition_handle)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(
@@ -72,7 +75,8 @@ extern "C" rmw_ret_t rmw_trigger_guard_condition(
   return rmw_connextdds_trigger_guard_condition(guard_condition_handle);
 }
 
-extern "C" rmw_wait_set_t * rmw_create_wait_set(
+rmw_wait_set_t *
+rmw_api_connextdds_create_wait_set(
   rmw_context_t * context,
   size_t max_conditions)
 {
@@ -92,7 +96,8 @@ extern "C" rmw_wait_set_t * rmw_create_wait_set(
   return ret;
 }
 
-extern "C" rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * rmw_ws)
+rmw_ret_t
+rmw_api_connextdds_destroy_wait_set(rmw_wait_set_t * rmw_ws)
 {
   // TODO(asorbini): Return RMW_RET_INVALID_ARGUMENT. We return RMW_RET_ERROR
   // because that's what's expected by test_rmw_implementation
@@ -108,7 +113,8 @@ extern "C" rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * rmw_ws)
   return rmw_connextdds_destroy_waitset(rmw_ws);
 }
 
-extern "C" rmw_ret_t rmw_wait(
+rmw_ret_t
+rmw_api_connextdds_wait(
   rmw_subscriptions_t * subs,
   rmw_guard_conditions_t * gcs,
   rmw_services_t * srvs,

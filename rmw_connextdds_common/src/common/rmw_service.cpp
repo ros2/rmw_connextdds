@@ -22,7 +22,9 @@
  ******************************************************************************/
 
 
-extern "C" rmw_ret_t rmw_take_response(
+
+rmw_ret_t
+rmw_api_connextdds_take_response(
   const rmw_client_t * client,
 #if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
@@ -60,7 +62,9 @@ extern "C" rmw_ret_t rmw_take_response(
 }
 
 
-extern "C" rmw_ret_t rmw_take_request(
+
+rmw_ret_t
+rmw_api_connextdds_take_request(
   const rmw_service_t * service,
 #if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
@@ -98,7 +102,9 @@ extern "C" rmw_ret_t rmw_take_request(
 }
 
 
-extern "C" rmw_ret_t rmw_send_response(
+
+rmw_ret_t
+rmw_api_connextdds_send_response(
   const rmw_service_t * service,
   rmw_request_id_t * request_id,
   void * ros_response)
@@ -118,7 +124,9 @@ extern "C" rmw_ret_t rmw_send_response(
   return svc_impl->send_response(request_id, ros_response);
 }
 
-extern "C" rmw_ret_t rmw_send_request(
+
+rmw_ret_t
+rmw_api_connextdds_send_request(
   const rmw_client_t * client,
   const void * ros_request,
   int64_t * sequence_id)
@@ -139,7 +147,9 @@ extern "C" rmw_ret_t rmw_send_request(
 }
 
 
-extern "C" rmw_client_t * rmw_create_client(
+
+rmw_client_t *
+rmw_api_connextdds_create_client(
   const rmw_node_t * node,
   const rosidl_service_type_support_t * type_supports,
   const char * service_name,
@@ -235,7 +245,9 @@ extern "C" rmw_client_t * rmw_create_client(
   return rmw_client;
 }
 
-extern "C" rmw_ret_t rmw_destroy_client(
+
+rmw_ret_t
+rmw_api_connextdds_destroy_client(
   rmw_node_t * node,
   rmw_client_t * client)
 {
@@ -277,7 +289,9 @@ extern "C" rmw_ret_t rmw_destroy_client(
 }
 
 
-extern "C" rmw_service_t * rmw_create_service(
+
+rmw_service_t *
+rmw_api_connextdds_create_service(
   const rmw_node_t * node,
   const rosidl_service_type_support_t * type_supports,
   const char * service_name,
@@ -373,7 +387,9 @@ extern "C" rmw_service_t * rmw_create_service(
   return rmw_service;
 }
 
-extern "C" rmw_ret_t rmw_destroy_service(
+
+rmw_ret_t
+rmw_api_connextdds_destroy_service(
   rmw_node_t * node,
   rmw_service_t * service)
 {

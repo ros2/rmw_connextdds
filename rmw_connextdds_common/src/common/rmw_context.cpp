@@ -491,23 +491,29 @@ rmw_context_impl_t::assert_topic(
 /******************************************************************************
  * Context interface functions
  ******************************************************************************/
-
-extern "C" const char * rmw_get_implementation_identifier()
+const char *
+rmw_api_connextdds_get_implementation_identifier()
 {
   return RMW_CONNEXTDDS_ID;
 }
 
-extern "C" const char * rmw_get_serialization_format()
+
+const char *
+rmw_api_connextdds_get_serialization_format()
 {
   return RMW_CONNEXTDDS_SERIALIZATION_FORMAT;
 }
 
-extern "C" rmw_ret_t rmw_set_log_severity(rmw_log_severity_t severity)
+
+rmw_ret_t
+rmw_api_connextdds_set_log_severity(rmw_log_severity_t severity)
 {
   return rmw_connextdds_set_log_verbosity(severity);
 }
 
-extern "C" rmw_ret_t rmw_init_options_init(
+
+rmw_ret_t
+rmw_api_connextdds_init_options_init(
   rmw_init_options_t * init_options,
   rcutils_allocator_t allocator)
 {
@@ -534,7 +540,9 @@ extern "C" rmw_ret_t rmw_init_options_init(
   return RMW_RET_OK;
 }
 
-extern "C" rmw_ret_t rmw_init_options_copy(
+
+rmw_ret_t
+rmw_api_connextdds_init_options_copy(
   const rmw_init_options_t * src,
   rmw_init_options_t * dst)
 {
@@ -579,7 +587,9 @@ extern "C" rmw_ret_t rmw_init_options_copy(
 }
 
 
-extern "C" rmw_ret_t rmw_init_options_fini(rmw_init_options_t * init_options)
+
+rmw_ret_t
+rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(init_options, RMW_RET_INVALID_ARGUMENT);
   if (nullptr == init_options->implementation_identifier) {
@@ -609,7 +619,9 @@ extern "C" rmw_ret_t rmw_init_options_fini(rmw_init_options_t * init_options)
 }
 
 
-extern "C" rmw_ret_t rmw_init(
+
+rmw_ret_t
+rmw_api_connextdds_init(
   const rmw_init_options_t * options,
   rmw_context_t * context)
 {
@@ -660,7 +672,7 @@ extern "C" rmw_ret_t rmw_init(
 #else
     (RMW_DEFAULT_DOMAIN_ID != options->domain_id) ?
     options->domain_id : RMW_CONNEXT_DEFAULT_DOMAIN;
-  ret = rmw_init_options_copy(options, &context->options);
+  ret = rmw_api_connextdds_init_options_copy(options, &context->options);
   if (RMW_RET_OK != ret) {
     RMW_CONNEXT_LOG_ERROR(
       "failed to allocate RMW context implementation")
@@ -671,7 +683,7 @@ extern "C" rmw_ret_t rmw_init(
     rcpputils::make_scope_exit(
     [context]()
     {
-      if (RMW_RET_OK != rmw_init_options_fini(&context->options)) {
+      if (RMW_RET_OK != rmw_api_connextdds_init_options_fini(&context->options)) {
         RMW_CONNEXT_LOG_ERROR(
           "failed to finalize init options")
       }
@@ -696,7 +708,9 @@ extern "C" rmw_ret_t rmw_init(
   return ret;
 }
 
-extern "C" rmw_ret_t rmw_shutdown(rmw_context_t * context)
+
+rmw_ret_t
+rmw_api_connextdds_shutdown(rmw_context_t * context)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(context, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_FOR_NULL_WITH_MSG(
@@ -713,7 +727,9 @@ extern "C" rmw_ret_t rmw_shutdown(rmw_context_t * context)
   return RMW_RET_OK;
 }
 
-extern "C" rmw_ret_t rmw_context_fini(rmw_context_t * context)
+
+rmw_ret_t
+rmw_api_connextdds_context_fini(rmw_context_t * context)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(context, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_FOR_NULL_WITH_MSG(
@@ -731,7 +747,7 @@ extern "C" rmw_ret_t rmw_context_fini(rmw_context_t * context)
     return RMW_RET_INVALID_ARGUMENT;
   }
 #if RMW_CONNEXT_HAVE_OPTIONS
-  rmw_ret_t ret = rmw_init_options_fini(&context->options);
+  rmw_ret_t ret = rmw_api_connextdds_init_options_fini(&context->options);
   if (RMW_RET_OK != ret) {
     return ret;
   }

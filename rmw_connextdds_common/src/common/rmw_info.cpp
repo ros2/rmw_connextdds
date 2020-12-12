@@ -16,16 +16,6 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-#include "rmw/topic_endpoint_info_array.h"
-#include "rmw/get_topic_endpoint_info.h"
-#else
-#include "rmw_connextdds/topic_endpoint_info_array.h"
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
-#include "rmw/names_and_types.h"
-#include "rmw/get_node_info_and_types.h"
-#include "rmw/get_service_names_and_types.h"
-#include "rmw/get_topic_names_and_types.h"
 #include "rmw/sanity_checks.h"
 #include "rmw/validate_full_topic_name.h"
 #include "rmw/validate_namespace.h"
@@ -38,7 +28,9 @@
  * Introspection functions
  ******************************************************************************/
 
-extern "C" rmw_ret_t rmw_get_node_names(
+
+rmw_ret_t
+rmw_api_connextdds_get_node_names(
   const rmw_node_t * node,
   rcutils_string_array_t * node_names,
   rcutils_string_array_t * node_namespaces)
@@ -83,7 +75,9 @@ extern "C" rmw_ret_t rmw_get_node_names(
   return rc;
 }
 
-extern "C" rmw_ret_t rmw_get_node_names_with_enclaves(
+
+rmw_ret_t
+rmw_api_connextdds_get_node_names_with_enclaves(
   const rmw_node_t * node,
   rcutils_string_array_t * node_names,
   rcutils_string_array_t * node_namespaces,
@@ -131,7 +125,9 @@ extern "C" rmw_ret_t rmw_get_node_names_with_enclaves(
   return rc;
 }
 
-extern "C" rmw_ret_t rmw_get_topic_names_and_types(
+
+rmw_ret_t
+rmw_api_connextdds_get_topic_names_and_types(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   bool no_demangle,
@@ -161,7 +157,9 @@ extern "C" rmw_ret_t rmw_get_topic_names_and_types(
     demangle_topic, demangle_type, allocator, tptyp);
 }
 
-extern "C" rmw_ret_t rmw_get_service_names_and_types(
+
+rmw_ret_t
+rmw_api_connextdds_get_service_names_and_types(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   rmw_names_and_types_t * sntyp)
@@ -183,7 +181,9 @@ extern "C" rmw_ret_t rmw_get_service_names_and_types(
     sntyp);
 }
 
-extern "C" rmw_ret_t rmw_service_server_is_available(
+
+rmw_ret_t
+rmw_api_connextdds_service_server_is_available(
   const rmw_node_t * node,
   const rmw_client_t * client,
   bool * is_available)
@@ -220,7 +220,9 @@ extern "C" rmw_ret_t rmw_service_server_is_available(
   return rc;
 }
 
-extern "C" rmw_ret_t rmw_count_publishers(
+
+rmw_ret_t
+rmw_api_connextdds_count_publishers(
   const rmw_node_t * node,
   const char * topic_name,
   size_t * count)
@@ -255,7 +257,9 @@ extern "C" rmw_ret_t rmw_count_publishers(
     mangled_topic_name, count);
 }
 
-extern "C" rmw_ret_t rmw_count_subscribers(
+
+rmw_ret_t
+rmw_api_connextdds_count_subscribers(
   const rmw_node_t * node,
   const char * topic_name,
   size_t * count)
@@ -415,7 +419,9 @@ static rmw_ret_t get_writer_names_and_types_by_node(
 }
 
 
-extern "C" rmw_ret_t rmw_get_subscriber_names_and_types_by_node(
+
+rmw_ret_t
+rmw_api_connextdds_get_subscriber_names_and_types_by_node(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   const char * node_name,
@@ -440,7 +446,9 @@ extern "C" rmw_ret_t rmw_get_subscriber_names_and_types_by_node(
     tptyp);
 }
 
-extern "C" rmw_ret_t rmw_get_publisher_names_and_types_by_node(
+
+rmw_ret_t
+rmw_api_connextdds_get_publisher_names_and_types_by_node(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   const char * node_name,
@@ -465,7 +473,9 @@ extern "C" rmw_ret_t rmw_get_publisher_names_and_types_by_node(
     tptyp);
 }
 
-extern "C" rmw_ret_t rmw_get_service_names_and_types_by_node(
+
+rmw_ret_t
+rmw_api_connextdds_get_service_names_and_types_by_node(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   const char * node_name,
@@ -484,7 +494,9 @@ extern "C" rmw_ret_t rmw_get_service_names_and_types_by_node(
     sntyp);
 }
 
-extern "C" rmw_ret_t rmw_get_client_names_and_types_by_node(
+
+rmw_ret_t
+rmw_api_connextdds_get_client_names_and_types_by_node(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   const char * node_name,
@@ -503,7 +515,9 @@ extern "C" rmw_ret_t rmw_get_client_names_and_types_by_node(
     sntyp);
 }
 
-extern "C" rmw_ret_t rmw_get_publishers_info_by_topic(
+
+rmw_ret_t
+rmw_api_connextdds_get_publishers_info_by_topic(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   const char * topic_name,
@@ -556,7 +570,9 @@ extern "C" rmw_ret_t rmw_get_publishers_info_by_topic(
     publishers_info);
 }
 
-extern "C" rmw_ret_t rmw_get_subscriptions_info_by_topic(
+
+rmw_ret_t
+rmw_api_connextdds_get_subscriptions_info_by_topic(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,
   const char * topic_name,

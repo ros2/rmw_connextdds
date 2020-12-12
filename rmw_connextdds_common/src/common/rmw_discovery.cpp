@@ -313,7 +313,7 @@ rmw_connextdds_discovery_thread_stop(rmw_context_impl_t * ctx)
 
   if (common_ctx->thread_is_running.exchange(false)) {
     rmw_ret_t rmw_ret =
-      rmw_trigger_guard_condition(common_ctx->listener_thread_gc);
+      rmw_api_connextdds_trigger_guard_condition(common_ctx->listener_thread_gc);
 
     if (RMW_RET_OK != rmw_ret) {
       return rmw_ret;

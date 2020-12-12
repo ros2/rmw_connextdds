@@ -26,6 +26,17 @@
 
 #include "rmw/error_handling.h"
 #include "rmw/impl/cpp/macros.hpp"
+#include "rmw/event.h"
+#include "rmw/names_and_types.h"
+#include "rmw/get_node_info_and_types.h"
+#include "rmw/get_service_names_and_types.h"
+#include "rmw/get_topic_names_and_types.h"
+#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
+#include "rmw/topic_endpoint_info_array.h"
+#include "rmw/get_topic_endpoint_info.h"
+#else
+#include "rmw_connextdds/topic_endpoint_info_array.h"
+#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
 #include "rmw_dds_common/context.hpp"
@@ -36,7 +47,6 @@
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #include "rcutils/strdup.h"
-
 
 #if RMW_CONNEXT_HAVE_SCOPE_EXIT
 #include "rcpputils/scope_exit.hpp"

@@ -40,7 +40,7 @@ if(NOT RTIConnextDDSMicro_FOUND)
 endif()
 
 add_library(${PROJECT_NAME} SHARED
-    src/rmw_context_rtime.cpp)
+    src/rmw_api_impl_rtime.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)

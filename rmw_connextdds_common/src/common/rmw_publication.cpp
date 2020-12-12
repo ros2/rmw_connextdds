@@ -22,7 +22,9 @@
  ******************************************************************************/
 
 
-extern "C" rmw_ret_t rmw_publish(
+
+rmw_ret_t
+rmw_api_connextdds_publish(
   const rmw_publisher_t * publisher,
   const void * ros_message,
   rmw_publisher_allocation_t * allocation)
@@ -47,7 +49,9 @@ extern "C" rmw_ret_t rmw_publish(
   return pub_impl->write(ros_message, false /* serialized */);
 }
 
-extern "C" rmw_ret_t rmw_publish_serialized_message(
+
+rmw_ret_t
+rmw_api_connextdds_publish_serialized_message(
   const rmw_publisher_t * publisher,
   const rmw_serialized_message_t * serialized_message,
   rmw_publisher_allocation_t * allocation)
@@ -72,7 +76,9 @@ extern "C" rmw_ret_t rmw_publish_serialized_message(
   return pub_impl->write(serialized_message, true /* serialized */);
 }
 
-extern "C" rmw_ret_t rmw_publish_loaned_message(
+
+rmw_ret_t
+rmw_api_connextdds_publish_loaned_message(
   const rmw_publisher_t * publisher,
   void * ros_message,
   rmw_publisher_allocation_t * allocation)
@@ -84,7 +90,9 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_ret_t rmw_init_publisher_allocation(
+
+rmw_ret_t
+rmw_api_connextdds_init_publisher_allocation(
   const rosidl_message_type_support_t * type_support,
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
   const rosidl_message_bounds_t * message_bounds,
@@ -100,7 +108,9 @@ extern "C" rmw_ret_t rmw_init_publisher_allocation(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_ret_t rmw_fini_publisher_allocation(
+
+rmw_ret_t
+rmw_api_connextdds_fini_publisher_allocation(
   rmw_publisher_allocation_t * allocation)
 {
   UNUSED_ARG(allocation);
@@ -108,7 +118,9 @@ extern "C" rmw_ret_t rmw_fini_publisher_allocation(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_publisher_t * rmw_create_publisher(
+
+rmw_publisher_t *
+rmw_api_connextdds_create_publisher(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,
@@ -187,7 +199,9 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
   return rmw_pub;
 }
 
-extern "C" rmw_ret_t rmw_get_gid_for_publisher(
+
+rmw_ret_t
+rmw_api_connextdds_get_gid_for_publisher(
   const rmw_publisher_t * publisher,
   rmw_gid_t * gid)
 {
@@ -207,7 +221,9 @@ extern "C" rmw_ret_t rmw_get_gid_for_publisher(
   return RMW_RET_OK;
 }
 
-extern "C" rmw_ret_t rmw_compare_gids_equal(
+
+rmw_ret_t
+rmw_api_connextdds_compare_gids_equal(
   const rmw_gid_t * gid1,
   const rmw_gid_t * gid2,
   bool * result)
@@ -233,7 +249,9 @@ extern "C" rmw_ret_t rmw_compare_gids_equal(
   return RMW_RET_OK;
 }
 
-extern "C" rmw_ret_t rmw_publisher_count_matched_subscriptions(
+
+rmw_ret_t
+rmw_api_connextdds_publisher_count_matched_subscriptions(
   const rmw_publisher_t * publisher,
   size_t * subscription_count)
 {
@@ -254,7 +272,9 @@ extern "C" rmw_ret_t rmw_publisher_count_matched_subscriptions(
   return RMW_RET_OK;
 }
 
-extern "C" rmw_ret_t rmw_publisher_assert_liveliness(
+
+rmw_ret_t
+rmw_api_connextdds_publisher_assert_liveliness(
   const rmw_publisher_t * publisher)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(publisher, RMW_RET_INVALID_ARGUMENT);
@@ -270,7 +290,9 @@ extern "C" rmw_ret_t rmw_publisher_assert_liveliness(
   return pub_impl->assert_liveliness();
 }
 
-extern "C" rmw_ret_t rmw_publisher_get_actual_qos(
+
+rmw_ret_t
+rmw_api_connextdds_publisher_get_actual_qos(
   const rmw_publisher_t * publisher,
   rmw_qos_profile_t * qos)
 {
@@ -289,7 +311,9 @@ extern "C" rmw_ret_t rmw_publisher_get_actual_qos(
   return pub_impl->qos(qos);
 }
 
-extern "C" rmw_ret_t rmw_borrow_loaned_message(
+
+rmw_ret_t
+rmw_api_connextdds_borrow_loaned_message(
   const rmw_publisher_t * publisher,
   const rosidl_message_type_support_t * type_support,
   void ** ros_message)
@@ -301,7 +325,9 @@ extern "C" rmw_ret_t rmw_borrow_loaned_message(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_ret_t rmw_return_loaned_message_from_publisher(
+
+rmw_ret_t
+rmw_api_connextdds_return_loaned_message_from_publisher(
   const rmw_publisher_t * publisher,
   void * loaned_message)
 {
@@ -311,7 +337,9 @@ extern "C" rmw_ret_t rmw_return_loaned_message_from_publisher(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_ret_t rmw_destroy_publisher(
+
+rmw_ret_t
+rmw_api_connextdds_destroy_publisher(
   rmw_node_t * node,
   rmw_publisher_t * publisher)
 {

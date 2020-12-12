@@ -17,6 +17,9 @@
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
+// Aliases for rmw.h functions referenced by rmw_dds_common inline functions
+#define rmw_publish     rmw_api_connextdds_publish
+
 rmw_ret_t
 rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 {
@@ -108,7 +111,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
   ctx->common.graph_cache.set_on_change_callback(
     [gcond = ctx->common.graph_guard_condition]()
     {
-      rmw_ret_t ret = rmw_trigger_guard_condition(gcond);
+      rmw_ret_t ret = rmw_api_connextdds_trigger_guard_condition(gcond);
       if (ret != RMW_RET_OK) {
         RMW_CONNEXT_LOG_ERROR(
           "failed to trigger graph cache on_change_callback")
@@ -571,7 +574,7 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
   rmw_dds_common::msg::ParticipantEntitiesInfo msg;
 
   do {
-    if (RMW_RET_OK != rmw_take(ctx->common.sub, &msg, &taken, nullptr)) {
+    if (RMW_RET_OK != rmw_api_connextdds_take(ctx->common.sub, &msg, &taken, nullptr)) {
       RMW_CONNEXT_LOG_ERROR("failed to take discovery sample")
       return RMW_RET_ERROR;
     }

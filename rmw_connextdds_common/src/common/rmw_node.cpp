@@ -23,7 +23,9 @@
  ******************************************************************************/
 
 
-extern "C" rmw_node_t * rmw_create_node(
+
+rmw_node_t *
+rmw_api_connextdds_create_node(
   rmw_context_t * context,
   const char * name,
   const char * ns
@@ -202,7 +204,9 @@ extern "C" rmw_node_t * rmw_create_node(
   return rmw_node;
 }
 
-extern "C" rmw_ret_t rmw_destroy_node(rmw_node_t * rmw_node)
+
+rmw_ret_t
+rmw_api_connextdds_destroy_node(rmw_node_t * rmw_node)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(rmw_node, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -237,8 +241,9 @@ extern "C" rmw_ret_t rmw_destroy_node(rmw_node_t * rmw_node)
   return RMW_RET_OK;
 }
 
-extern "C" const rmw_guard_condition_t *
-rmw_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
+
+const rmw_guard_condition_t *
+rmw_api_connextdds_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(rmw_node, nullptr);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -254,8 +259,9 @@ rmw_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
 }
 
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
-extern "C" rmw_ret_t
-rmw_node_assert_liveliness(const rmw_node_t * node)
+
+rmw_ret_t
+rmw_api_connextdds_node_assert_liveliness(const rmw_node_t * node)
 {
   UNUSED_ARG(node);
   return RMW_RET_UNSUPPORTED;

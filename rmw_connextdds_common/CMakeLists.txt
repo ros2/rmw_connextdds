@@ -73,7 +73,7 @@ function(rtirmw_add_library)
 
     # Call configure_rmw_library() to set the appropriate build flags even
     # though we are not building the full RMW library in this package
-    configure_rmw_library(${_rti_build_NAME})
+    # configure_rmw_library(${_rti_build_NAME})
 
     target_compile_definitions(${_rti_build_NAME}
         PUBLIC RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
@@ -174,6 +174,7 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
     include/rmw_connextdds/namespace_prefix.hpp
     include/rmw_connextdds/resource_limits.hpp
     include/rmw_connextdds/rmw_impl.hpp
+    include/rmw_connextdds/rmw_api_impl.hpp
     include/rmw_connextdds/scope_exit.hpp
     include/rmw_connextdds/static_config.hpp
     include/rmw_connextdds/type_support.hpp

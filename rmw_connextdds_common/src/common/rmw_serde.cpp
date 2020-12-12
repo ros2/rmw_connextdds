@@ -18,7 +18,9 @@
  * Serialization functions
  ******************************************************************************/
 
-extern "C" rmw_ret_t rmw_get_serialized_message_size(
+
+rmw_ret_t
+rmw_api_connextdds_get_serialized_message_size(
   const rosidl_message_type_support_t * type_supports,
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
   const rosidl_message_bounds_t * message_bounds,
@@ -34,7 +36,9 @@ extern "C" rmw_ret_t rmw_get_serialized_message_size(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_ret_t rmw_serialize(
+
+rmw_ret_t
+rmw_api_connextdds_serialize(
   const void * ros_message,
   const rosidl_message_type_support_t * type_supports,
   rmw_serialized_message_t * serialized_message)
@@ -65,7 +69,9 @@ extern "C" rmw_ret_t rmw_serialize(
   return RMW_RET_ERROR;
 }
 
-extern "C" rmw_ret_t rmw_deserialize(
+
+rmw_ret_t
+rmw_api_connextdds_deserialize(
   const rmw_serialized_message_t * serialized_message,
   const rosidl_message_type_support_t * type_supports,
   void * ros_message)

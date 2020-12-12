@@ -21,7 +21,9 @@
  * Subscription functions
  ******************************************************************************/
 
-extern "C" rmw_ret_t rmw_init_subscription_allocation(
+
+rmw_ret_t
+rmw_api_connextdds_init_subscription_allocation(
   const rosidl_message_type_support_t * type_support,
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
   const rosidl_message_bounds_t * message_bounds,
@@ -37,7 +39,9 @@ extern "C" rmw_ret_t rmw_init_subscription_allocation(
   return RMW_RET_ERROR;
 }
 
-extern "C" rmw_ret_t rmw_fini_subscription_allocation(
+
+rmw_ret_t
+rmw_api_connextdds_fini_subscription_allocation(
   rmw_subscription_allocation_t * allocation)
 {
   UNUSED_ARG(allocation);
@@ -46,7 +50,9 @@ extern "C" rmw_ret_t rmw_fini_subscription_allocation(
 }
 
 
-extern "C" rmw_subscription_t * rmw_create_subscription(
+
+rmw_subscription_t *
+rmw_api_connextdds_create_subscription(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,
@@ -128,7 +134,9 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
 }
 
 
-extern "C" rmw_ret_t rmw_subscription_count_matched_publishers(
+
+rmw_ret_t
+rmw_api_connextdds_subscription_count_matched_publishers(
   const rmw_subscription_t * subscription, size_t * publisher_count)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
@@ -148,7 +156,9 @@ extern "C" rmw_ret_t rmw_subscription_count_matched_publishers(
   return RMW_RET_OK;
 }
 
-extern "C" rmw_ret_t rmw_subscription_get_actual_qos(
+
+rmw_ret_t
+rmw_api_connextdds_subscription_get_actual_qos(
   const rmw_subscription_t * subscription,
   rmw_qos_profile_t * qos)
 {
@@ -167,7 +177,9 @@ extern "C" rmw_ret_t rmw_subscription_get_actual_qos(
   return sub_impl->qos(qos);
 }
 
-extern "C" rmw_ret_t rmw_destroy_subscription(
+
+rmw_ret_t
+rmw_api_connextdds_destroy_subscription(
   rmw_node_t * node,
   rmw_subscription_t * subscription)
 {
@@ -200,7 +212,9 @@ extern "C" rmw_ret_t rmw_destroy_subscription(
 }
 
 
-extern "C" rmw_ret_t rmw_take(
+
+rmw_ret_t
+rmw_api_connextdds_take(
   const rmw_subscription_t * subscription,
   void * ros_message,
   bool * taken,
@@ -225,7 +239,9 @@ extern "C" rmw_ret_t rmw_take(
   return rc;
 }
 
-extern "C" rmw_ret_t rmw_take_with_info(
+
+rmw_ret_t
+rmw_api_connextdds_take_with_info(
   const rmw_subscription_t * subscription,
   void * ros_message,
   bool * taken,
@@ -254,7 +270,9 @@ extern "C" rmw_ret_t rmw_take_with_info(
 
 #if RMW_CONNEXT_HAVE_TAKE_SEQ
 
-extern "C" rmw_ret_t rmw_take_sequence(
+
+rmw_ret_t
+rmw_api_connextdds_take_sequence(
   const rmw_subscription_t * subscription,
   size_t count,
   rmw_message_sequence_t * message_sequence,
@@ -286,7 +304,9 @@ extern "C" rmw_ret_t rmw_take_sequence(
 
 #endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
 
-extern "C" rmw_ret_t rmw_take_serialized_message(
+
+rmw_ret_t
+rmw_api_connextdds_take_serialized_message(
   const rmw_subscription_t * subscription,
   rmw_serialized_message_t * serialized_message,
   bool * taken,
@@ -309,7 +329,9 @@ extern "C" rmw_ret_t rmw_take_serialized_message(
   return sub_impl->take_serialized(serialized_message, nullptr, taken);
 }
 
-extern "C" rmw_ret_t rmw_take_serialized_message_with_info(
+
+rmw_ret_t
+rmw_api_connextdds_take_serialized_message_with_info(
   const rmw_subscription_t * subscription,
   rmw_serialized_message_t * serialized_message,
   bool * taken,
@@ -334,7 +356,9 @@ extern "C" rmw_ret_t rmw_take_serialized_message_with_info(
   return sub_impl->take_serialized(serialized_message, message_info, taken);
 }
 
-extern "C" rmw_ret_t rmw_take_loaned_message(
+
+rmw_ret_t
+rmw_api_connextdds_take_loaned_message(
   const rmw_subscription_t * subscription,
   void ** loaned_message,
   bool * taken,
@@ -348,7 +372,9 @@ extern "C" rmw_ret_t rmw_take_loaned_message(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_ret_t rmw_take_loaned_message_with_info(
+
+rmw_ret_t
+rmw_api_connextdds_take_loaned_message_with_info(
   const rmw_subscription_t * subscription,
   void ** loaned_message,
   bool * taken,
@@ -364,7 +390,9 @@ extern "C" rmw_ret_t rmw_take_loaned_message_with_info(
   return RMW_RET_UNSUPPORTED;
 }
 
-extern "C" rmw_ret_t rmw_return_loaned_message_from_subscription(
+
+rmw_ret_t
+rmw_api_connextdds_return_loaned_message_from_subscription(
   const rmw_subscription_t * subscription,
   void * loaned_message)
 {

@@ -20,12 +20,11 @@
 
 #include "rmw_connextdds/context.hpp"
 #include "rmw_connextdds/type_support.hpp"
-
 #include "rmw_connextdds/demangle.hpp"
 #include "rmw_connextdds/namespace_prefix.hpp"
+#include "rmw_connextdds/rmw_api_impl.hpp"
 
 #include "rcutils/types/uint8_array.h"
-#include "rmw/event.h"
 
 #if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
 

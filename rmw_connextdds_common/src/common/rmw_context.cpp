@@ -927,6 +927,8 @@ rmw_connextdds_configure_security(
   }
 #else
   // Security not supported by ROS release
+  UNUSED_ARG(ctx);
+  UNUSED_ARG(qos);
 #endif /* RMW_CONNEXT_HAVE_SECURITY */
   return RMW_RET_OK;
 }

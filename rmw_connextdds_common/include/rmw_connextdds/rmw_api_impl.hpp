@@ -499,6 +499,8 @@ rmw_api_connextdds_take_with_info(
   rmw_message_info_t * message_info,
   rmw_subscription_allocation_t * allocation);
 
+#if RMW_CONNEXT_HAVE_TAKE_SEQ
+
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
 rmw_api_connextdds_take_sequence(
@@ -508,6 +510,8 @@ rmw_api_connextdds_take_sequence(
   rmw_message_info_sequence_t * message_info_sequence,
   size_t * taken,
   rmw_subscription_allocation_t * allocation);
+
+#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
 
 
 RMW_CONNEXTDDS_PUBLIC

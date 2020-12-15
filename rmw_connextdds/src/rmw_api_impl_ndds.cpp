@@ -769,6 +769,7 @@ rmw_take_with_info(
     subscription, ros_message, taken, message_info, allocation);
 }
 
+#if RMW_CONNEXT_HAVE_TAKE_SEQ
 
 rmw_ret_t
 rmw_take_sequence(
@@ -783,6 +784,8 @@ rmw_take_sequence(
     subscription, count, message_sequence, message_info_sequence,
     taken, allocation);
 }
+
+#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
 
 
 

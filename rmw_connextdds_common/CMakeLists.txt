@@ -111,6 +111,8 @@ set(RMW_CONNEXT_DEPS
     rosidl_default_runtime
     rosidl_typesupport_fastrtps_c
     rosidl_typesupport_fastrtps_cpp
+    rosidl_typesupport_introspection_c
+    rosidl_typesupport_introspection_cpp
     rti_connext_dds_cmake_module)
 
 foreach(pkg_dep ${RMW_CONNEXT_DEPS})

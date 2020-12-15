@@ -667,6 +667,7 @@ RMW_Connext_TypePlugin_initialize(
   plugin->typeCode = type_code;
   plugin->languageKind = PRES_TYPEPLUGIN_NON_DDS_TYPE;
   plugin->endpointTypeName = type_name;
+  plugin->typeCodeName = type_name;
 
   /* Partcipant/endpoint events */
   plugin->onParticipantAttached =

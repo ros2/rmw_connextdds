@@ -231,6 +231,11 @@ rmw_api_connextdds_create_client(
     service_name,
     svc_name_len);
 
+  if (RMW_RET_OK != client_impl->enable()) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable client")
+    return nullptr;
+  }
+
   if (RMW_RET_OK !=
     rmw_connextdds_graph_on_client_created(ctx, node, client_impl))
   {
@@ -372,6 +377,11 @@ rmw_api_connextdds_create_service(
     const_cast<char *>(rmw_service->service_name),
     service_name,
     svc_name_len);
+
+  if (RMW_RET_OK != svc_impl->enable()) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable service")
+    return nullptr;
+  }
 
   if (RMW_RET_OK !=
     rmw_connextdds_graph_on_service_created(ctx, node, svc_impl))

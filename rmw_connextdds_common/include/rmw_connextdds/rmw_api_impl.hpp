@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RMW_CONNEXTDDS__RMW_IMPL_API_HPP_
-#define RMW_CONNEXTDDS__RMW_IMPL_API_HPP_
+#ifndef RMW_CONNEXTDDS__RMW_API_IMPL_HPP_
+#define RMW_CONNEXTDDS__RMW_API_IMPL_HPP_
 
 #include "rmw_connextdds/context.hpp"
 
@@ -257,7 +257,7 @@ rmw_api_connextdds_publish_loaned_message(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_init_publisher_allocation(
+  rmw_api_connextdds_init_publisher_allocation(
   const rosidl_message_type_support_t * type_support,
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
   const rosidl_message_bounds_t * message_bounds,
@@ -338,7 +338,7 @@ rmw_api_connextdds_destroy_publisher(
  *****************************************************************************/
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_get_serialized_message_size(
+  rmw_api_connextdds_get_serialized_message_size(
   const rosidl_message_type_support_t * type_supports,
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
   const rosidl_message_bounds_t * message_bounds,
@@ -366,7 +366,7 @@ rmw_api_connextdds_deserialize(
  *****************************************************************************/
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_take_response(
+  rmw_api_connextdds_take_response(
   const rmw_client_t * client,
 #if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
@@ -378,7 +378,7 @@ rmw_api_connextdds_take_response(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_take_request(
+  rmw_api_connextdds_take_request(
   const rmw_service_t * service,
 #if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
@@ -434,7 +434,7 @@ rmw_api_connextdds_destroy_service(
  *****************************************************************************/
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_init_subscription_allocation(
+  rmw_api_connextdds_init_subscription_allocation(
   const rosidl_message_type_support_t * type_support,
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
   const rosidl_message_bounds_t * message_bounds,
@@ -450,7 +450,7 @@ rmw_api_connextdds_fini_subscription_allocation(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_subscription_t *
-rmw_api_connextdds_create_subscription(
+  rmw_api_connextdds_create_subscription(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,
@@ -460,7 +460,7 @@ rmw_api_connextdds_create_subscription(
 #else
   bool ignore_local_publications
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
-);
+  );
 
 
 RMW_CONNEXTDDS_PUBLIC
@@ -600,5 +600,4 @@ rmw_api_connextdds_wait(
   const rmw_time_t * wait_timeout);
 
 
-
-#endif  // RMW_CONNEXTDDS__RMW_IMPL_API_HPP_
+#endif  // RMW_CONNEXTDDS__RMW_API_IMPL_HPP_

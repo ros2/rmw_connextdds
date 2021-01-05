@@ -131,6 +131,7 @@ rmw_connextdds_get_readerwriter_qos(
 {
   UNUSED_ARG(writer_qos);
   UNUSED_ARG(type_support);
+  UNUSED_ARG(publish_mode);
 #if RMW_CONNEXT_HAVE_OPTIONS
   UNUSED_ARG(pub_options);
   UNUSED_ARG(sub_options);
@@ -222,15 +223,15 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-  if (qos_policies->deadline.sec > 0 || qos_policies->deadline.nsec > 0) {
+  if (qos_policies->deadline.sec != 0 || qos_policies->deadline.nsec != 0) {
     deadline->period.sec =
       static_cast<DDS_Long>(qos_policies->deadline.sec);
     deadline->period.nanosec =
       static_cast<DDS_UnsignedLong>(qos_policies->deadline.nsec);
   }
 
-  if (qos_policies->liveliness_lease_duration.sec > 0 ||
-    qos_policies->liveliness_lease_duration.nsec > 0)
+  if (qos_policies->liveliness_lease_duration.sec != 0 &&
+    qos_policies->liveliness_lease_duration.nsec != 0)
   {
     liveliness->lease_duration.sec =
       static_cast<DDS_Long>(qos_policies->liveliness_lease_duration.sec);
@@ -275,9 +276,6 @@ rmw_connextdds_get_readerwriter_qos(
         resource_limits->max_samples_per_instance;
     }
   }
-
-  // TODO(asorbini): enable ASYNC publish_mode for both Pro and Micro
-  UNUSED_ARG(publish_mode);
 
   return RMW_RET_OK;
 }
@@ -1421,7 +1419,7 @@ RMW_Connext_Publisher::subscriptions_count()
     return 0;
   }
 
-  return status.total_count;
+  return status.current_count;
 }
 
 rmw_ret_t
@@ -1936,7 +1934,7 @@ RMW_Connext_Subscriber::publications_count()
     return 0;
   }
 
-  return status.total_count;
+  return status.current_count;
 }
 
 

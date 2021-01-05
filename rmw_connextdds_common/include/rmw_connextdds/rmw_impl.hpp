@@ -1140,6 +1140,9 @@ public:
   {
     return this->reply_sub;
   }
+
+  rmw_ret_t
+  enable();
 };
 
 class RMW_Connext_Service
@@ -1184,6 +1187,9 @@ public:
   {
     return this->request_sub;
   }
+
+  rmw_ret_t
+  enable();
 };
 
 

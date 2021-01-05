@@ -1235,27 +1235,6 @@ RMW_Connext_Publisher::create(
   scope_exit_topic_delete.cancel();
   scope_exit_dds_writer_delete.cancel();
 
-  auto scope_exit_pub_delete =
-    rcpputils::make_scope_exit(
-    [rmw_pub_impl]()
-    {
-      if (RMW_RET_OK != rmw_pub_impl->finalize()) {
-        RMW_CONNEXT_LOG_ERROR(
-          "failed to finalize publisher implementation")
-      }
-      delete rmw_pub_impl;
-    });
-
-  if (!internal) {
-    if (DDS_RETCODE_OK !=
-      DDS_Entity_enable(DDS_DataWriter_as_entity(dds_writer)))
-    {
-      RMW_CONNEXT_LOG_ERROR("failed to enable dds writer")
-      return nullptr;
-    }
-  }
-
-  scope_exit_pub_delete.cancel();
   return rmw_pub_impl;
 }
 
@@ -1537,15 +1516,16 @@ rmw_connextdds_create_publisher(
 #endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
 
   if (!internal) {
+    if (RMW_RET_OK != rmw_pub_impl->enable()) {
+      RMW_CONNEXT_LOG_ERROR("failed to enable publisher")
+      return nullptr;
+    }
+
     if (RMW_RET_OK !=
       rmw_connextdds_graph_on_publisher_created(
         ctx, node, rmw_pub_impl))
     {
       RMW_CONNEXT_LOG_ERROR("failed to update graph for publisher")
-      return nullptr;
-    }
-
-    if (RMW_RET_OK != rmw_pub_impl->enable()) {
       return nullptr;
     }
   }
@@ -1837,28 +1817,6 @@ RMW_Connext_Subscriber::create(
   scope_exit_type_unregister.cancel();
   scope_exit_topic_delete.cancel();
   scope_exit_dds_reader_delete.cancel();
-
-  auto scope_exit_sub_delete =
-    rcpputils::make_scope_exit(
-    [rmw_sub_impl]()
-    {
-      if (RMW_RET_OK != rmw_sub_impl->finalize()) {
-        RMW_CONNEXT_LOG_ERROR(
-          "failed to finalize subscription implementation")
-      }
-      delete rmw_sub_impl;
-    });
-
-  if (!internal) {
-    if (DDS_RETCODE_OK !=
-      DDS_Entity_enable(DDS_DataReader_as_entity(dds_reader)))
-    {
-      RMW_CONNEXT_LOG_ERROR("failed to enable dds reader")
-      return nullptr;
-    }
-  }
-
-  scope_exit_sub_delete.cancel();
 
   return rmw_sub_impl;
 }
@@ -2328,15 +2286,16 @@ rmw_connextdds_create_subscriber(
 #endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
 
   if (!internal) {
+    if (RMW_RET_OK != rmw_sub_impl->enable()) {
+      RMW_CONNEXT_LOG_ERROR("failed to enable subscription")
+      return nullptr;
+    }
+
     if (RMW_RET_OK !=
       rmw_connextdds_graph_on_subscriber_created(
         ctx, node, rmw_sub_impl))
     {
       RMW_CONNEXT_LOG_ERROR("failed to update graph for subscriber")
-      return nullptr;
-    }
-
-    if (RMW_RET_OK != rmw_sub_impl->enable()) {
       return nullptr;
     }
   }
@@ -3684,6 +3643,22 @@ RMW_Connext_Client::create(
 }
 
 rmw_ret_t
+RMW_Connext_Client::enable()
+{
+  rmw_ret_t rc = this->request_pub->enable();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable client's publisher")
+    return rc;
+  }
+  rc = this->reply_sub->enable();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable client's subscription")
+    return rc;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 RMW_Connext_Client::is_service_available(bool & available)
 {
   /* TODO(asorbini): check that we actually have at least one service matched by both
@@ -3936,6 +3911,22 @@ RMW_Connext_Service::create(
 
   scope_exit_svc_impl_delete.cancel();
   return svc_impl;
+}
+
+rmw_ret_t
+RMW_Connext_Service::enable()
+{
+  rmw_ret_t rc = this->reply_pub->enable();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable service's publisher")
+    return rc;
+  }
+  rc = this->request_sub->enable();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable service's subscription")
+    return rc;
+  }
+  return RMW_RET_OK;
 }
 
 rmw_ret_t

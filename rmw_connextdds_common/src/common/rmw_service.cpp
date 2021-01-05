@@ -207,6 +207,7 @@ rmw_api_connextdds_create_client(
   auto scope_exit_client_impl_delete = rcpputils::make_scope_exit(
     [client_impl]()
     {
+      client_impl->finalize();
       delete client_impl;
     });
 
@@ -222,7 +223,7 @@ rmw_api_connextdds_create_client(
   rmw_client->service_name =
     reinterpret_cast<const char *>(rmw_allocate(svc_name_len));
   if (nullptr == rmw_client->service_name) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate service name")
+    RMW_CONNEXT_LOG_ERROR("failed to allocate client name")
     return nullptr;
   }
   memcpy(
@@ -348,6 +349,7 @@ rmw_api_connextdds_create_service(
   auto scope_exit_svc_impl_delete = rcpputils::make_scope_exit(
     [svc_impl]()
     {
+      svc_impl->finalize();
       delete svc_impl;
     });
 

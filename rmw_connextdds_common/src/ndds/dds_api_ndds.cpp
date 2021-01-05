@@ -114,6 +114,13 @@ rmw_connextdds_initialize_participant_qos_impl(
   dp_qos->resource_limits.type_object_max_serialized_length = 0;
 #endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
+  // In order to reduce the time to cleanup a participant (Node),
+  // we use the advice from
+  // https://community.rti.com/static/documentation/connext-dds/5.3.1/doc/api/connext_dds/api_cpp/structDDS__DomainParticipantQos.html
+  // and reduce the shutdown_cleanup_period to 50 milliseconds.
+  dp_qos->database.shutdown_cleanup_period.sec = 0;
+  dp_qos->database.shutdown_cleanup_period.nanosec = 50000000;
+
   if (ctx->localhost_only) {
     if (DDS_RETCODE_OK !=
       DDS_PropertyQosPolicyHelper_assert_property(
@@ -122,10 +129,26 @@ rmw_connextdds_initialize_participant_qos_impl(
         "127.0.0.1",
         DDS_BOOLEAN_FALSE /* propagate */))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to assert property on participant")
+      RMW_CONNEXT_LOG_ERROR_A("failed to assert property on participant: %s",
+        "dds.transport.UDPv4.builtin.parent.allow_interfaces")
       return RMW_RET_ERROR;
     }
   }
+
+#if 0
+  // TODO(asorbini) Enable this property after reassessing all implications
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &dp_qos->property,
+      "dds.transport.UDPv4.builtin.ignore_loopback_interface",
+      "0",
+      DDS_BOOLEAN_FALSE /* propagate */))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to assert property on participant: %s",
+      "dds.transport.UDPv4.builtin.ignore_loopback_interface")
+    return RMW_RET_ERROR;
+  }
+#endif
 
 #if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
   const char * const user_data_fmt = "enclave=%s;";
@@ -173,8 +196,8 @@ rmw_connextdds_initialize_participant_qos_impl(
     dp_qos->resource_limits.contentfilter_property_max_length = 1024;
   }
 
+  // Configure enabled built-in transports
   dp_qos->transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
-
 #if RMW_CONNEXT_TRANSPORT_SHMEM
   dp_qos->transport_builtin.mask |= DDS_TRANSPORTBUILTIN_SHMEM;
 #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
@@ -306,6 +329,7 @@ rmw_connextdds_get_datawriter_qos(
       &qos->deadline,
       &qos->liveliness,
       &qos->resource_limits,
+      // TODO(asorbini) this value is not actually used, remove it 
       &qos->publish_mode,
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS

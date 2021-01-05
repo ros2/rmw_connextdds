@@ -22,7 +22,6 @@
  ******************************************************************************/
 
 
-
 rmw_ret_t
 rmw_api_connextdds_publish(
   const rmw_publisher_t * publisher,

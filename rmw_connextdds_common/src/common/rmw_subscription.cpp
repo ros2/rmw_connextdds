@@ -50,7 +50,6 @@ rmw_api_connextdds_fini_subscription_allocation(
 }
 
 
-
 rmw_subscription_t *
 rmw_api_connextdds_create_subscription(
   const rmw_node_t * node,
@@ -134,7 +133,6 @@ rmw_api_connextdds_create_subscription(
 }
 
 
-
 rmw_ret_t
 rmw_api_connextdds_subscription_count_matched_publishers(
   const rmw_subscription_t * subscription, size_t * publisher_count)
@@ -210,7 +208,6 @@ rmw_api_connextdds_destroy_subscription(
 
   return rmw_connextdds_destroy_subscriber(ctx, subscription);
 }
-
 
 
 rmw_ret_t

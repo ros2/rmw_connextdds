@@ -587,7 +587,6 @@ rmw_api_connextdds_init_options_copy(
 }
 
 
-
 rmw_ret_t
 rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
 {
@@ -617,7 +616,6 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
   *init_options = rmw_get_zero_initialized_init_options();
   return ret;
 }
-
 
 
 rmw_ret_t

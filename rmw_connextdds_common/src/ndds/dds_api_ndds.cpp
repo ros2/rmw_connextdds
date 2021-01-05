@@ -129,7 +129,8 @@ rmw_connextdds_initialize_participant_qos_impl(
         "127.0.0.1",
         DDS_BOOLEAN_FALSE /* propagate */))
     {
-      RMW_CONNEXT_LOG_ERROR_A("failed to assert property on participant: %s",
+      RMW_CONNEXT_LOG_ERROR_A(
+        "failed to assert property on participant: %s",
         "dds.transport.UDPv4.builtin.parent.allow_interfaces")
       return RMW_RET_ERROR;
     }
@@ -144,7 +145,8 @@ rmw_connextdds_initialize_participant_qos_impl(
       "0",
       DDS_BOOLEAN_FALSE /* propagate */))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to assert property on participant: %s",
+    RMW_CONNEXT_LOG_ERROR(
+      "failed to assert property on participant: %s",
       "dds.transport.UDPv4.builtin.ignore_loopback_interface")
     return RMW_RET_ERROR;
   }
@@ -329,7 +331,7 @@ rmw_connextdds_get_datawriter_qos(
       &qos->deadline,
       &qos->liveliness,
       &qos->resource_limits,
-      // TODO(asorbini) this value is not actually used, remove it 
+      // TODO(asorbini) this value is not actually used, remove it
       &qos->publish_mode,
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS

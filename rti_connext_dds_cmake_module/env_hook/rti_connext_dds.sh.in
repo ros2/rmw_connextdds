@@ -122,7 +122,7 @@ already added it to %s.\n" \
         return
     fi
 
-    if [! -d "${_CONNEXTDDS_DIR_ENV}" ]; then
+    if [ ! -d "${_CONNEXTDDS_DIR_ENV}" ]; then
         printf "[%s][%s] Invalid %s (%s). RTI Connext DDS will not be available unless you \
 already added it to %s.\n" \
             "@PROJECT_NAME@" \

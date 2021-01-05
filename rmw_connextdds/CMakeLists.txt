@@ -42,6 +42,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME}
     rmw_connextdds_common::rmw_connextdds_common_pro)
 
+# Unless we need to link the rmw_dds_common shim library generated
+# by rmw_connextdds_common (produced if RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
+# we don't need to call ament_target_dependencies() since we are already
+# linking library rmw_connextdds_common_pro above.
 if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
   ament_target_dependencies(${PROJECT_NAME} rmw_connextdds_common)
 endif()
@@ -64,8 +68,8 @@ install(
     RUNTIME DESTINATION bin
 )
 
-ament_export_dependencies(
-    rmw_connextdds_common)
+ament_export_libraries(${PROJECT_NAME})
+ament_export_dependencies(rmw_connextdds_common)
 
 ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"

@@ -419,7 +419,6 @@ static rmw_ret_t get_writer_names_and_types_by_node(
 }
 
 
-
 rmw_ret_t
 rmw_api_connextdds_get_subscriber_names_and_types_by_node(
   const rmw_node_t * node,

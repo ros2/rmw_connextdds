@@ -23,7 +23,6 @@
  ******************************************************************************/
 
 
-
 rmw_node_t *
 rmw_api_connextdds_create_node(
   rmw_context_t * context,

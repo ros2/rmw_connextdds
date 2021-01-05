@@ -22,7 +22,6 @@
  ******************************************************************************/
 
 
-
 rmw_ret_t
 rmw_api_connextdds_take_response(
   const rmw_client_t * client,
@@ -62,7 +61,6 @@ rmw_api_connextdds_take_response(
 }
 
 
-
 rmw_ret_t
 rmw_api_connextdds_take_request(
   const rmw_service_t * service,
@@ -100,7 +98,6 @@ rmw_api_connextdds_take_request(
   return RMW_RET_OK;
 #endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
 }
-
 
 
 rmw_ret_t
@@ -145,7 +142,6 @@ rmw_api_connextdds_send_request(
 
   return client_impl->send_request(ros_request, sequence_id);
 }
-
 
 
 rmw_client_t *
@@ -287,7 +283,6 @@ rmw_api_connextdds_destroy_client(
 
   return RMW_RET_OK;
 }
-
 
 
 rmw_service_t *

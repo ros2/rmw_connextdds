@@ -357,8 +357,7 @@ rmw_connextdds_graph_on_publisher_deleted(
     node->name,
     node->namespace_);
   rc = rmw_connextdds_graph_publish_update(ctx, reinterpret_cast<void *>(&msg));
-  if (RMW_RET_OK != rc)
-  {
+  if (RMW_RET_OK != rc) {
     return rc;
   }
   return RMW_RET_OK;
@@ -422,8 +421,7 @@ rmw_connextdds_graph_on_subscriber_deleted(
     node->name,
     node->namespace_);
   rc = rmw_connextdds_graph_publish_update(ctx, reinterpret_cast<void *>(&msg));
-  if (RMW_RET_OK != rc)
-  {
+  if (RMW_RET_OK != rc) {
     return rc;
   }
   return RMW_RET_OK;
@@ -714,8 +712,7 @@ rmw_connextdds_graph_remove_entity(
   rmw_gid_t endp_gid;
   rmw_connextdds_ih_to_gid(*instance, endp_gid);
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-  if (!ctx->common.graph_cache.remove_entity(endp_gid, is_reader))
-  {
+  if (!ctx->common.graph_cache.remove_entity(endp_gid, is_reader)) {
     RMW_CONNEXT_LOG_ERROR("failed to remove entity from cache")
     return RMW_RET_ERROR;
   }

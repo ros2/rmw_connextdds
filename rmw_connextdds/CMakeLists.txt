@@ -16,6 +16,11 @@ cmake_minimum_required(VERSION 3.5)
 
 project(rmw_connextdds)
 
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(rmw_connextdds_common REQUIRED)
 
@@ -53,8 +58,8 @@ endif()
 configure_rmw_library(${PROJECT_NAME})
 
 register_rmw_implementation(
-    "c:rosidl_typesupport_c:rosidl_typesupport_fastrtps_c:rosidl_typesupport_introspection_c"
-    "cpp:rosidl_typesupport_cpp:rosidl_typesupport_fastrtps_cpp:rosidl_typesupport_introspection_cpp")
+    "c:rosidl_typesupport_fastrtps_c:rosidl_typesupport_introspection_c"
+    "cpp:rosidl_typesupport_fastrtps_cpp:rosidl_typesupport_introspection_cpp")
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)

@@ -428,17 +428,19 @@ function(rti_find_connextpro)
           ${CONNEXTDDS_C_API_LIBRARIES_${release_type}_SHARED}
           ${CONNEXTDDS_EXTERNAL_LIBS})
       list(REMOVE_AT c_api_libs 0)
-      # remove "-D" from defines
-      string(REPLACE "-D" "" ndds_defines "${CONNEXTDDS_DEFINITIONS}")
-      # expand ndds_defines into a cmake list
-      string(REPLACE " " ";" ndds_defines "${ndds_defines}")
-      # Detect 64-bit build and remove flag from defines
-      list(FIND ndds_defines "-m64" ndds_64bit)
-      list(REMOVE_ITEM ndds_defines "-m64")
+      # Iterate over definitions list and detect any options not starting with
+      # -D. Conside these options, and not definitions.
       set(ndds_compile_opts)
-      if(${ndds_64bit} GREATER_EQUAL 0)
-        list(APPEND ndds_compile_opts "-m64")
-      endif()
+      set(ndds_defines)
+      string(REPLACE " " ";" CONNEXTDDS_DEFINITIONS "${CONNEXTDDS_DEFINITIONS}")
+      foreach(ndds_def ${CONNEXTDDS_DEFINITIONS})
+          if(ndds_def MATCHES "^-D" )
+            string(REGEX REPLACE "^-D" "" ndds_def "${ndds_def}")
+            list(APPEND ndds_defines "${ndds_def}")
+          else()
+            list(APPEND ndds_compile_opts "${ndds_def}")
+          endif()
+      endforeach()
       set_target_properties(RTIConnextDDS::c_api
               PROPERTIES
                 ${location_property}

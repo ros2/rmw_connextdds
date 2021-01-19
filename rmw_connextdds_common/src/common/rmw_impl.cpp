@@ -1173,8 +1173,18 @@ RMW_Connext_Publisher::create(
     });
 
   // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional 5.3.1
+  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
+  // DDS_DataWriterQos_initialize() for older versions.
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
+#else
+  DDS_DataWriterQos dw_qos;
+  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to initialize datawriter qos")
+    return nullptr;
+  }
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   DDS_DataWriterQos * const dw_qos_ptr = &dw_qos;
   auto scope_exit_dw_qos_delete =
@@ -1419,8 +1429,18 @@ rmw_ret_t
 RMW_Connext_Publisher::qos(rmw_qos_profile_t * const qos)
 {
   // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional 5.3.1
+  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
+  // DDS_DataWriterQos_initialize() for older versions.
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
+#else
+  DDS_DataWriterQos dw_qos;
+  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to initialize datawriter qos")
+    return RMW_RET_ERROR;
+  }
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(this->dds_writer, &dw_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to get DDS writer's qos")
@@ -1734,8 +1754,18 @@ RMW_Connext_Subscriber::create(
   }
 
   // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional 5.3.1
+  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
+  // DDS_DataWriterQos_initialize() for older versions.
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
+#else
+  DDS_DataReaderQos dr_qos;
+  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to initialize datareader qos")
+    return nullptr;
+  }
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   DDS_DataReaderQos * const dr_qos_ptr = &dr_qos;
   auto scope_exit_dr_qos_delete =
@@ -1900,8 +1930,18 @@ rmw_ret_t
 RMW_Connext_Subscriber::qos(rmw_qos_profile_t * const qos)
 {
   // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional 5.3.1
+  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
+  // DDS_DataWriterQos_initialize() for older versions.
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
+#else
+  DDS_DataReaderQos dr_qos;
+  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to initialize datareader qos")
+    return RMW_RET_ERROR;
+  }
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   if (DDS_RETCODE_OK != DDS_DataReader_get_qos(this->dds_reader, &dr_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to get DDS reader's qos")
@@ -4062,12 +4102,24 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
       {
         return DDS_OFFERED_INCOMPATIBLE_QOS_STATUS;
       }
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// the defined values for rmw_event_type_t. This #if and the one in
+// the `default` case, should be removed once support for releases
+// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
+#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
       {
         return DDS_SAMPLE_LOST_STATUS;
       }
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     default:
       {
+#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
+        if (RMW_EVENT_MESSAGE_LOST == ros) {
+          RMW_CONNEXT_LOG_WARNING(
+            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
+        }
+#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
         if (nullptr != invalid) {
           *invalid = true;
         }
@@ -4122,12 +4174,24 @@ ros_event_for_reader(const rmw_event_type_t ros)
     case RMW_EVENT_LIVELINESS_CHANGED:
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// the defined values for rmw_event_type_t. This #if and the one in
+// the `default` case, should be removed once support for releases
+// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
+#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
       {
         return true;
       }
     default:
       {
+#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
+        if (RMW_EVENT_MESSAGE_LOST == ros) {
+          RMW_CONNEXT_LOG_WARNING(
+            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
+        }
+#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
         return false;
       }
   }
@@ -4693,13 +4757,27 @@ RMW_Connext_StdSubscriberStatusCondition::has_status(
       {
         return this->triggered_qos;
       }
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// the defined values for rmw_event_type_t. This #if and the one in
+// the `default` case, should be removed once support for releases
+// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
+#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
       {
         return this->triggered_sample_lost;
       }
     default:
-      RMW_CONNEXT_ASSERT(0)
-      return false;
+      {
+#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
+        if (RMW_EVENT_MESSAGE_LOST == event_type) {
+          RMW_CONNEXT_LOG_WARNING(
+            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
+        }
+#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
+        RMW_CONNEXT_ASSERT(0)
+        return false;
+      }
   }
 }
 
@@ -4757,6 +4835,11 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
         this->triggered_qos = false;
         break;
       }
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// the defined values for rmw_event_type_t. This #if and the one in
+// the `default` case, should be removed once support for releases
+// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
+#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
       {
         rmw_message_lost_status_t * const status =
@@ -4770,9 +4853,18 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
         this->triggered_sample_lost = false;
         break;
       }
+#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     default:
-      RMW_CONNEXT_ASSERT(0)
-      return false;
+      {
+#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
+        if (RMW_EVENT_MESSAGE_LOST == event_type) {
+          RMW_CONNEXT_LOG_WARNING(
+            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
+        }
+#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
+        RMW_CONNEXT_ASSERT(0)
+        return false;
+      }
   }
 
   return true;

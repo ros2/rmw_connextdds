@@ -31,7 +31,7 @@ For any questions or feedback, feel free to reach out to robotics@rti.com.
     ```
 
 2. Configure RTI Connext DDS Professional and/or RTI Connext DDS Micro on your
-   system (see [Requirements](#requirements)). Make the installation(s)
+   system (see [Requirements](#rti-connext-dds-requirements)). Make the installation(s)
    available via environment variables, e.g. by using the provided
    `rtisetenv_<architecture>.bash` script (replace `~/rti_connext_dds-6.0.1` with
    the path of your Connext installation):

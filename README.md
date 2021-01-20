@@ -73,7 +73,21 @@ For any questions or feedback, feel free to reach out to robotics@rti.com.
     RMW_IMPLEMENTATION=rmw_connextddsmicro ros2 run demo_nodes_cpp talker
     ```
 
-## Requirements
+## Support for different ROS 2 Releases
+
+`rmw_connextdds`, and `rmw_connextddsmicro` support multiple versions of ROS 2.
+
+The following table summarizes which branch of the repository should be
+checked out in order to compile the RMW implementations for a specific ROS 2
+release:
+
+|ROS 2 Release|Branch|
+|-------------|------|
+|Rolling      |`master`|
+|Foxy         |`master`|
+|Dashing      |`dashing`|
+
+## RTI Connext DDS Requirements
 
 Both RMW packages require the appropriate version of RTI Connext DDS to be
 available on the build and target systems.

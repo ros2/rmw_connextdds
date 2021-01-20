@@ -35,11 +35,6 @@ struct RMW_Connext_RtimeTypePluginI
     this->_type_support = type_support;
   }
 
-  ~RMW_Connext_RtimeTypePluginI()
-  {
-    delete this->_type_support;
-  }
-
   static
   RMW_Connext_MessageTypeSupport *
   type_support(void * const self)
@@ -98,11 +93,10 @@ RMW_Connext_MemoryPlugin_delete_sample(
   struct DDS_TypePlugin * plugin,
   void * sample)
 {
-  auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
+  UNUSED_ARG(plugin);
+
   rcutils_uint8_array_t * data_buffer =
     reinterpret_cast<rcutils_uint8_array_t *>(sample);
-
-  UNUSED_ARG(type_support);
 
   if (RCUTILS_RET_OK != rcutils_uint8_array_fini(data_buffer)) {
     delete data_buffer;
@@ -143,9 +137,10 @@ RMW_Connext_EncapsulationPlugin_serialize(
   const void * void_sample,
   DDS_InstanceHandle_t * destination)
 {
-  auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
   const RMW_Connext_Message * const msg =
     reinterpret_cast<const RMW_Connext_Message *>(void_sample);
+  auto type_support = msg->type_support;
+  UNUSED_ARG(plugin);
   UNUSED_ARG(destination);
 
   DDS_TypePluginBuffer * const tbuf =
@@ -243,10 +238,8 @@ RMW_Connext_EncapsulationPlugin_deserialize(
   struct CDR_Stream_t * stream,
   DDS_InstanceHandle_t * source)
 {
-  auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
-
   UNUSED_ARG(source);
-  UNUSED_ARG(type_support);
+  UNUSED_ARG(plugin);
 
   rcutils_uint8_array_t * const data_buffer =
     reinterpret_cast<rcutils_uint8_array_t *>(void_sample);
@@ -877,11 +870,17 @@ rmw_connextdds_register_type_support(
     return nullptr;
   }
 
+  auto scope_exit_intf_delete_ts =
+    rcpputils::make_scope_exit(
+    [type_support]()
+    {
+      delete type_support;
+    });
+
   RMW_Connext_RtimeTypePluginI * type_plugin_intf =
     new (std::nothrow) RMW_Connext_RtimeTypePluginI(type_support);
 
   if (nullptr == type_plugin_intf) {
-    delete type_support;
     return nullptr;
   }
 
@@ -909,7 +908,10 @@ rmw_connextdds_register_type_support(
     scope_exit_intf_delete.cancel();
   }
 
-  return reinterpret_cast<RMW_Connext_RtimeTypePluginI *>(reg_intf)->_type_support;
+  scope_exit_intf_delete_ts.cancel();
+
+  // This type support object must be freed by the caller (via delete)
+  return type_support;
 }
 
 rmw_ret_t

@@ -51,14 +51,6 @@ struct RMW_Connext_RequestReplyMessage
   void * payload;
 };
 
-
-struct RMW_Connext_Message
-{
-  const void * user_data;
-  bool serialized;
-};
-
-
 class RMW_Connext_MessageTypeSupport
 {
   const rosidl_message_type_support_t * _type_support_fastrtps;
@@ -159,6 +151,12 @@ public:
     bool & empty);
 };
 
+struct RMW_Connext_Message
+{
+  const void * user_data;
+  bool serialized;
+  RMW_Connext_MessageTypeSupport * type_support;
+};
 
 class RMW_Connext_ServiceTypeSupportWrapper
 {

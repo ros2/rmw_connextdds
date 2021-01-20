@@ -80,13 +80,12 @@ struct RMW_Connext_NddsTypePluginI
   : wrapper(wrapper),
     type_code(this, tc, tc_cache),
     pool_samples(pool_samples),
-    attached_count(1)
+    attached_count(0)
   {}
 
   ~RMW_Connext_NddsTypePluginI()
   {
     REDAFastBufferPool_delete(this->pool_samples);
-    delete this->wrapper;
   }
 
   rcutils_uint8_array_t *
@@ -445,14 +444,9 @@ RMW_Connext_TypePlugin_serialize(
   RTIBool serialize_sample,
   void * endpoint_plugin_qos)
 {
+  UNUSED_ARG(endpoint_data);
   UNUSED_ARG(endpoint_plugin_qos);
   UNUSED_ARG(encapsulation_id);
-
-  PRESTypePluginDefaultEndpointData * const epd =
-    reinterpret_cast<PRESTypePluginDefaultEndpointData *>(endpoint_data);
-  RMW_Connext_MessageTypeSupport * const type_support =
-    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
-
 
   if (!serialize_encapsulation) {
     // currently not supported
@@ -475,7 +469,7 @@ RMW_Connext_TypePlugin_serialize(
   data_buffer.buffer_capacity = data_buffer.buffer_length;
 
   if (!msg->serialized) {
-    rmw_ret_t rc = type_support->serialize(msg->user_data, &data_buffer);
+    rmw_ret_t rc = msg->type_support->serialize(msg->user_data, &data_buffer);
     if (RMW_RET_OK != rc) {
       return RTI_FALSE;
     }
@@ -510,6 +504,7 @@ RMW_Connext_TypePlugin_deserialize(
   RTIBool deserialize_sample,
   void * endpoint_plugin_qos)
 {
+  UNUSED_ARG(endpoint_data);
   UNUSED_ARG(drop_sample);
   UNUSED_ARG(endpoint_plugin_qos);
 
@@ -521,12 +516,6 @@ RMW_Connext_TypePlugin_deserialize(
     // Currently not supported
     return RTI_FALSE;
   }
-
-  PRESTypePluginDefaultEndpointData * const epd =
-    reinterpret_cast<PRESTypePluginDefaultEndpointData *>(endpoint_data);
-  RMW_Connext_MessageTypeSupport * const type_support =
-    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
-  UNUSED_ARG(type_support);
 
   rcutils_uint8_array_t * const data_buffer =
     reinterpret_cast<rcutils_uint8_array_t *>(*sample);
@@ -614,11 +603,6 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     return 0;
   }
 
-  PRESTypePluginDefaultEndpointData * const epd =
-    reinterpret_cast<PRESTypePluginDefaultEndpointData *>(endpoint_data);
-  RMW_Connext_MessageTypeSupport * const type_support =
-    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
-
   const RMW_Connext_Message * const msg =
     reinterpret_cast<const RMW_Connext_Message *>(sample);
 
@@ -628,7 +612,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     current_alignment += serialized_msg->buffer_length;
   } else {
     current_alignment +=
-      type_support->serialized_size_max(
+      msg->type_support->serialized_size_max(
       msg->user_data, include_encapsulation);
   }
 
@@ -773,8 +757,6 @@ rmw_connextdds_register_type_support(
 
   registered = false;
 
-  RMW_Connext_MessageTypeSupport * type_support_res = nullptr;
-
   RMW_Connext_MessageTypeSupport * type_support = nullptr;
   try {
     type_support = new RMW_Connext_MessageTypeSupport(
@@ -798,7 +780,7 @@ rmw_connextdds_register_type_support(
      type plugin gets copied into the database record, so lookup the
      associated type code and retrieve the custom type plugin from it */
 
-  const RMW_Connext_NddsTypeCode * const tc =
+  const RMW_Connext_NddsTypeCode * tc =
     (const RMW_Connext_NddsTypeCode *)
     DDS_DomainParticipant_get_typecode(
     participant, type_support->type_name());
@@ -875,9 +857,9 @@ rmw_connextdds_register_type_support(
       return nullptr;
     }
 
+    // type_plugin's destructor will take of releasing these resources
     scope_exit_tc_cache_delete.cancel();
     scope_exit_dds_tc_delete.cancel();
-
     scope_exit_pool_samples_delete.cancel();
 
     auto scope_exit_intf_delete =
@@ -905,21 +887,32 @@ rmw_connextdds_register_type_support(
       return nullptr;
     }
 
+    // Type plugin is copied into the DP's database, but the cached type code
+    // object will store a pointer to this object, so we shouldn't free it.
+    scope_exit_intf_delete.cancel();
+
     RMW_CONNEXT_LOG_DEBUG_A(
       "registered type: "
       "name=%s, type_support=%p",
       type_support->type_name(), (void *)type_support)
 
-    scope_exit_intf_delete.cancel();
-
-    type_support_res = type_support;
-    scope_exit_support_delete.cancel();
-  } else {
-    tc->type_plugin->attached_count += 1;
-    type_support_res = tc->type_plugin->wrapper;
+    tc = (const RMW_Connext_NddsTypeCode *)
+      DDS_DomainParticipant_get_typecode(
+      participant, type_support->type_name());
+    // We use assert() here since this call should never fail, and adding
+    // a failure exit path would require the creation of another scope
+    // guard to revert DP::register_type().
+    RMW_CONNEXT_ASSERT(nullptr != tc)
+    RMW_CONNEXT_ASSERT(type_plugin == tc->type_plugin)
   }
 
-  return type_support_res;
+  // Increase reference count in the type code object cached inside the DP.
+  tc->type_plugin->attached_count += 1;
+
+  scope_exit_support_delete.cancel();
+
+  // This type support object must be freed by the caller (via delete)
+  return type_support;
 }
 
 rmw_ret_t
@@ -946,6 +939,8 @@ rmw_connextdds_unregister_type_support(
        by DDS_DomainParticipant_unregister_type() */
     std::string tname(type_name);
 
+    // The type plugin object allocated by register_type_support() will be
+    // deleted by the descructor of the participant data object.
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipant_unregister_type(
         participant, type_name))

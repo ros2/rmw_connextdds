@@ -1123,6 +1123,7 @@ RMW_Connext_Publisher::create(
             "failed to unregister type for writer")
         }
       }
+      delete type_support;
     });
 
   std::string fqtopic_name;
@@ -1179,8 +1180,7 @@ RMW_Connext_Publisher::create(
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
 #else
   DDS_DataWriterQos dw_qos;
-  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos))
-  {
+  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize datawriter qos")
     return nullptr;
   }
@@ -1284,8 +1284,17 @@ RMW_Connext_Publisher::finalize()
     }
   }
 
-  return RMW_Connext_MessageTypeSupport::unregister_type_support(
+  rmw_ret_t rc = RMW_Connext_MessageTypeSupport::unregister_type_support(
     this->ctx, participant, this->type_support->type_name());
+
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+
+  delete this->type_support;
+  this->type_support = nullptr;
+
+  return RMW_RET_OK;
 }
 
 #ifndef DDS_GUID_INITIALIZER
@@ -1330,6 +1339,7 @@ RMW_Connext_Publisher::write(
   RMW_Connext_Message user_msg;
   user_msg.user_data = ros_message;
   user_msg.serialized = serialized;
+  user_msg.type_support = this->type_support;
 
   return rmw_connextdds_write_message(this, &user_msg, sn_out);
 }
@@ -1435,8 +1445,7 @@ RMW_Connext_Publisher::qos(rmw_qos_profile_t * const qos)
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
 #else
   DDS_DataWriterQos dw_qos;
-  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos))
-  {
+  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize datawriter qos")
     return RMW_RET_ERROR;
   }
@@ -1760,8 +1769,7 @@ RMW_Connext_Subscriber::create(
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
 #else
   DDS_DataReaderQos dr_qos;
-  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos))
-  {
+  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize datareader qos")
     return nullptr;
   }
@@ -1903,8 +1911,17 @@ RMW_Connext_Subscriber::finalize()
     }
   }
 
-  return RMW_Connext_MessageTypeSupport::unregister_type_support(
+  rmw_ret_t rc = RMW_Connext_MessageTypeSupport::unregister_type_support(
     this->ctx, participant, this->type_support->type_name());
+
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+
+  delete this->type_support;
+  this->type_support = nullptr;
+
+  return RMW_RET_OK;
 }
 
 size_t
@@ -1936,8 +1953,7 @@ RMW_Connext_Subscriber::qos(rmw_qos_profile_t * const qos)
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
 #else
   DDS_DataReaderQos dr_qos;
-  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos))
-  {
+  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize datareader qos")
     return RMW_RET_ERROR;
   }
@@ -4102,7 +4118,7 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
       {
         return DDS_OFFERED_INCOMPATIBLE_QOS_STATUS;
       }
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
 // without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
@@ -4174,7 +4190,7 @@ ros_event_for_reader(const rmw_event_type_t ros)
     case RMW_EVENT_LIVELINESS_CHANGED:
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
 // without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
@@ -4757,7 +4773,7 @@ RMW_Connext_StdSubscriberStatusCondition::has_status(
       {
         return this->triggered_qos;
       }
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
 // without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
@@ -4835,7 +4851,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
         this->triggered_qos = false;
         break;
       }
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of 
+// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
 // without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).

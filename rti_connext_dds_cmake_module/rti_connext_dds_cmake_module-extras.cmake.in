@@ -27,7 +27,7 @@ include(${RTI_BUILD_HELPER})
 rti_init_env()
 
 if(@RTIConnextDDSMicro_FOUND@)
-    set(RTIMEHOME               @RTIMEHOME@
+    set(RTIMEHOME               "@RTIMEHOME@"
         CACHE INTERNAL "Installation directory for RTI Connext DDS Micro")
 
     set(RTIME_TARGET_NAME       @RTIME_TARGET_NAME@
@@ -46,7 +46,7 @@ if(@RTIConnextDDSMicro_FOUND@)
 endif()
 
 if(@RTIConnextDDS_FOUND@)
-    set(CONNEXTDDS_DIR          @CONNEXTDDS_DIR@
+    set(CONNEXTDDS_DIR          "@CONNEXTDDS_DIR@"
         CACHE INTERNAL
           "Installation directory for RTI Connext DDS Professional")
 

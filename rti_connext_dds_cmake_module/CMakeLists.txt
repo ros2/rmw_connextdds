@@ -24,8 +24,16 @@ rti_init_env()
 
 rti_find_connextpro()
 
+set(_env_hooks)
+
 if(RTIConnextDDS_FOUND)
     message(STATUS "RTI Connext DDS Professional (${CONNEXTDDS_VERSION}, ${CONNEXTDDS_ARCH}): '${CONNEXTDDS_DIR}'")
+    if(WIN32)
+        # TODO(asorbini): implement support for Windows
+        # list(APPEND _env_hooks env_hook/rti_connext_dds.bat.in)
+    else()
+        list(APPEND _env_hooks env_hook/rti_connext_dds.sh.in)
+    endif()
 else()
     message(STATUS "RTI Connext DDS Professional: NOT FOUND")
 endif()
@@ -49,16 +57,16 @@ else()
     else()
         message(STATUS "RTI Connext DDS Micro: '${RTIMEHOME}'")
     endif()
+    if(WIN32)
+        # TODO(asorbini): implement support for Windows
+        # list(APPEND _env_hooks env_hook/rti_connext_dds_micro.bat.in)
+    else()
+        list(APPEND _env_hooks env_hook/rti_connext_dds_micro.sh.in)
+    endif()
 endif()
 
-
-if(WIN32)
-    # TODO(asorbini): implement support for Windows
-    # ament_environment_hooks(env_hook/rti_connext_dds.bat.in)
-else()
-    ament_environment_hooks(
-        env_hook/rti_connext_dds.sh.in
-        env_hook/rti_connext_dds_micro.sh.in)
+if(_env_hooks)
+    ament_environment_hooks(${_env_hooks})
 endif()
 
 if(BUILD_TESTING)

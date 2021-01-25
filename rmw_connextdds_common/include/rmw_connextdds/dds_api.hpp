@@ -87,10 +87,10 @@ rmw_connextdds_get_datawriter_qos(
   DDS_Topic * const topic,
   DDS_DataWriterQos * const qos,
   const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   ,
   const rmw_publisher_options_t * const pub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 );
 
 rmw_ret_t
@@ -100,10 +100,10 @@ rmw_connextdds_get_datareader_qos(
   DDS_TopicDescription * const topic_desc,
   DDS_DataReaderQos * const qos,
   const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   ,
   const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 );
 
 DDS_DataWriter *
@@ -112,9 +112,9 @@ DDS_DataWriter *
   DDS_DomainParticipant * const participant,
   DDS_Publisher * const pub,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_Topic * const topic,
@@ -126,9 +126,9 @@ DDS_DataReader *
   DDS_DomainParticipant * const participant,
   DDS_Subscriber * const sub,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_subscription_options_t * const subscriber_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_TopicDescription * const topic_desc,

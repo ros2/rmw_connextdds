@@ -562,9 +562,9 @@ public:
     const rosidl_message_type_support_t * const type_supports,
     const char * const topic_name,
     const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     const bool internal = false,
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
@@ -735,9 +735,9 @@ rmw_publisher_t *
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal = false);
 
 rmw_ret_t
@@ -761,11 +761,11 @@ public:
     const rosidl_message_type_support_t * const type_supports,
     const char * const topic_name,
     const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     const rmw_subscription_options_t * const subscriber_options,
 #else
     const bool ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     const bool internal = false,
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
@@ -1058,11 +1058,11 @@ rmw_subscription_t *
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_subscription_options_t * const subscriber_options,
 #else
   const bool ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal = false);
 
 rmw_ret_t
@@ -1458,11 +1458,11 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
   const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   ,
   const rmw_publisher_options_t * const pub_options,
   const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 );
 
 rmw_ret_t

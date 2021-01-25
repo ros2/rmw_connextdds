@@ -122,20 +122,20 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
   const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   ,
   const rmw_publisher_options_t * const pub_options,
   const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 )
 {
   UNUSED_ARG(writer_qos);
   UNUSED_ARG(type_support);
   UNUSED_ARG(publish_mode);
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   UNUSED_ARG(pub_options);
   UNUSED_ARG(sub_options);
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
   switch (qos_policies->history) {
     case RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT:
@@ -1081,9 +1081,9 @@ RMW_Connext_Publisher::create(
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   const RMW_Connext_MessageType msg_type,
   const void * const intro_members,
@@ -1207,9 +1207,9 @@ RMW_Connext_Publisher::create(
     dp,
     pub,
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     internal,
     type_support,
     topic,
@@ -1471,9 +1471,9 @@ rmw_connextdds_create_publisher(
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal)
 {
   RMW_Connext_Publisher * rmw_pub_impl =
@@ -1484,9 +1484,9 @@ rmw_connextdds_create_publisher(
     type_supports,
     topic_name,
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     internal);
 
   if (nullptr == rmw_pub_impl) {
@@ -1537,9 +1537,9 @@ rmw_connextdds_create_publisher(
     const_cast<char *>(rmw_publisher->topic_name),
     topic_name,
     topic_name_len + 1);
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   rmw_publisher->options = *publisher_options;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 #if RMW_CONNEXT_HAVE_LOAN_MESSAGE
   rmw_publisher->can_loan_messages = false;
 #endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
@@ -1643,11 +1643,11 @@ RMW_Connext_Subscriber::create(
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_subscription_options_t * const subscriber_options,
 #else
   const bool ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   const RMW_Connext_MessageType msg_type,
   const void * const intro_members,
@@ -1796,9 +1796,9 @@ RMW_Connext_Subscriber::create(
     dp,
     sub,
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     subscriber_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     internal,
     type_support,
     sub_topic,
@@ -1840,11 +1840,11 @@ RMW_Connext_Subscriber::create(
     dds_reader,
     topic,
     type_support,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     subscriber_options->ignore_local_publications,
 #else
     ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     topic_created,
     cft_topic);
 
@@ -2263,11 +2263,11 @@ rmw_connextdds_create_subscriber(
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_subscription_options_t * const subscriber_options,
 #else
   const bool ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal)
 {
   UNUSED_ARG(internal);
@@ -2280,11 +2280,11 @@ rmw_connextdds_create_subscriber(
     type_supports,
     topic_name,
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     subscriber_options,
 #else
     ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     internal);
 
   if (nullptr == rmw_sub_impl) {
@@ -2334,9 +2334,9 @@ rmw_connextdds_create_subscriber(
     const_cast<char *>(rmw_subscriber->topic_name),
     topic_name,
     topic_name_len + 1);
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   rmw_subscriber->options = *subscriber_options;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 #if RMW_CONNEXT_HAVE_LOAN_MESSAGE
   rmw_subscriber->can_loan_messages = false;
 #endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
@@ -3553,11 +3553,11 @@ RMW_Connext_Client::create(
     RMW_Connext_ServiceTypeSupportWrapper::get_response_type_name(
     type_supports);
 
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   rmw_publisher_options_t pub_options = rmw_get_default_publisher_options();
   rmw_subscription_options_t sub_options =
     rmw_get_default_subscription_options();
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
 
   RMW_CONNEXT_LOG_DEBUG_A(
@@ -3575,9 +3575,9 @@ RMW_Connext_Client::create(
     type_support_req,
     request_topic.c_str(),
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     &pub_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     false /* internal */,
     RMW_CONNEXT_MESSAGE_REQUEST,
     svc_members_req,
@@ -3676,11 +3676,11 @@ RMW_Connext_Client::create(
     type_support_res,
     reply_topic.c_str(),
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     &sub_options,
 #else
     false /* ignore_local_publications */,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     false /* internal */,
     RMW_CONNEXT_MESSAGE_REPLY,
     svc_members_res,
@@ -3899,11 +3899,11 @@ RMW_Connext_Service::create(
     RMW_Connext_ServiceTypeSupportWrapper::get_response_type_name(
     type_supports);
 
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   rmw_publisher_options_t pub_options = rmw_get_default_publisher_options();
   rmw_subscription_options_t sub_options =
     rmw_get_default_subscription_options();
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating reply publisher: "
@@ -3920,9 +3920,9 @@ RMW_Connext_Service::create(
     type_support_res,
     reply_topic.c_str(),
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     &pub_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     false /* internal */,
     RMW_CONNEXT_MESSAGE_REPLY,
     svc_members_res,
@@ -3949,11 +3949,11 @@ RMW_Connext_Service::create(
     type_support_req,
     request_topic.c_str(),
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS
+#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     &sub_options,
 #else
     false /* ignore_local_publications */,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     false /* internal */,
     RMW_CONNEXT_MESSAGE_REQUEST,
     svc_members_req,

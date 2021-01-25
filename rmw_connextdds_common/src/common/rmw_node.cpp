@@ -32,6 +32,11 @@ rmw_api_connextdds_create_node(
   ,
   size_t domain_id,
   const rmw_node_security_options_t * security_options
+#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
+  ,
+  size_t domain_id,
+  const rmw_node_security_options_t * security_options,
+  bool localhost_only
 #elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
   ,
   size_t domain_id,
@@ -43,10 +48,10 @@ rmw_api_connextdds_create_node(
 
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
   UNUSED_ARG(security_options);
+#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
+  UNUSED_ARG(security_options);
+  node_localhost_only = localhost_only;
 #elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-  UNUSED_ARG(domain_id);
-  UNUSED_ARG(localhost_only);
-
   node_localhost_only = localhost_only;
 #endif /* RMW_CONNEXT_RELEASE */
   RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
@@ -257,7 +262,7 @@ rmw_api_connextdds_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
   return node_impl->graph_guard_condition();
 }
 
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
+#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
 
 rmw_ret_t
 rmw_api_connextdds_node_assert_liveliness(const rmw_node_t * node)
@@ -265,4 +270,4 @@ rmw_api_connextdds_node_assert_liveliness(const rmw_node_t * node)
   UNUSED_ARG(node);
   return RMW_RET_UNSUPPORTED;
 }
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING */
+#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */

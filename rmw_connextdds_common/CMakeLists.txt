@@ -71,10 +71,6 @@ function(rtirmw_add_library)
             ${_rti_build_DEFINES}
     )
 
-    # Call configure_rmw_library() to set the appropriate build flags even
-    # though we are not building the full RMW library in this package
-    # configure_rmw_library(${_rti_build_NAME})
-
     target_compile_definitions(${_rti_build_NAME}
         PUBLIC RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
 
@@ -108,11 +104,7 @@ set(RMW_CONNEXT_DEPS
     rcpputils
     rmw
     fastcdr
-    rosidl_default_runtime
-    rosidl_typesupport_fastrtps_c
-    rosidl_typesupport_fastrtps_cpp
-    rosidl_typesupport_introspection_c
-    rosidl_typesupport_introspection_cpp
+    rmw_connextdds_typesupport
     rti_connext_dds_cmake_module)
 
 foreach(pkg_dep ${RMW_CONNEXT_DEPS})
@@ -127,6 +119,8 @@ if(NOT DEFINED RMW_CONNEXT_RELEASE)
       set(RMW_CONNEXT_RELEASE       rolling)
   elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.2")
       set(RMW_CONNEXT_RELEASE       foxy)
+  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.1")
+      set(RMW_CONNEXT_RELEASE       eloquent)
   else()
       set(RMW_CONNEXT_RELEASE       dashing)
   endif()
@@ -135,8 +129,11 @@ endif()
 string(TOUPPER "${RMW_CONNEXT_RELEASE}" RMW_CONNEXT_RELEASE)
 set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}" CACHE INTERNAL "" FORCE)
 
+message(STATUS "-- Target ROS Release: ${RMW_CONNEXT_RELEASE}")
+
 set(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON      false)
-if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING")
+if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING"
+   OR "${RMW_CONNEXT_RELEASE}" STREQUAL "ELOQUENT")
   set(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON      true)
 endif()
 

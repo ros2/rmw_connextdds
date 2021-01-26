@@ -85,6 +85,7 @@ release:
 |-------------|------|
 |Rolling      |`master`|
 |Foxy         |`master`|
+|Eloquent     |`dashing`|
 |Dashing      |`dashing`|
 
 ## RTI Connext DDS Requirements

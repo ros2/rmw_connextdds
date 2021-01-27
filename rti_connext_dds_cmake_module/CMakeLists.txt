@@ -66,7 +66,10 @@ else()
 endif()
 
 if(_env_hooks)
+    message(STATUS "generating environment hook: ${_env_hooks}")
     ament_environment_hooks(${_env_hooks})
+else()
+    message(STATUS "no environment hook generated")
 endif()
 
 if(BUILD_TESTING)

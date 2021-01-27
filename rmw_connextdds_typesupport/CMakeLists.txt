@@ -25,7 +25,6 @@ set(RMW_CONNEXT_DEPS
     rmw
     rosidl_runtime_c
     rosidl_runtime_cpp
-    rosidl_default_runtime
     rosidl_typesupport_fastrtps_c
     rosidl_typesupport_fastrtps_cpp
     rosidl_typesupport_introspection_c

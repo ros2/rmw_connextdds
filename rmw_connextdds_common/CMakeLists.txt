@@ -105,7 +105,12 @@ set(RMW_CONNEXT_DEPS
     rmw
     rmw_dds_common
     fastcdr
-    rmw_connextdds_typesupport
+    rosidl_runtime_c
+    rosidl_runtime_cpp
+    rosidl_typesupport_fastrtps_c
+    rosidl_typesupport_fastrtps_cpp
+    rosidl_typesupport_introspection_c
+    rosidl_typesupport_introspection_cpp
     rti_connext_dds_cmake_module)
 
 foreach(pkg_dep ${RMW_CONNEXT_DEPS})
@@ -308,6 +313,13 @@ if(TARGET ${PROJECT_NAME}_pro OR TARGET ${PROJECT_NAME}_micro)
 endif()
 
 if(RMW_CONNEXT_BUILT AND RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
+  # Set STATIC_${type_support_type_uppercase} variables to explicitly request
+  # the generation of the required type supports (fastrtps, and introspection).
+  set(STATIC_ROSIDL_TYPESUPPORT_C rosidl_typesupport_fastrtps_c
+                                  rosidl_typesupport_introspection_c)
+  set(STATIC_ROSIDL_TYPESUPPORT_CPP rosidl_typesupport_fastrtps_cpp
+                                    rosidl_typesupport_introspection_cpp)
+
   rosidl_generate_interfaces(
     ${PROJECT_NAME}
     "msg/Gid.msg"

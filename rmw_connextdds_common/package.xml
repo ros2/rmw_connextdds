@@ -15,7 +15,12 @@
   <depend>rcpputils</depend>
   <depend>rmw</depend>
   <depend>rmw_dds_common</depend>
-  <depend>rmw_connextdds_typesupport</depend>
+  <depend>rosidl_runtime_c</depend>
+  <depend>rosidl_runtime_cpp</depend>
+  <depend>rosidl_typesupport_fastrtps_c</depend>
+  <depend>rosidl_typesupport_fastrtps_cpp</depend>
+  <depend>rosidl_typesupport_introspection_c</depend>
+  <depend>rosidl_typesupport_introspection_cpp</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

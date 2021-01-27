@@ -293,8 +293,18 @@ rmw_api_connextdds_take_sequence(
   RMW_Connext_Subscriber * const sub_impl =
     reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
 
+  // Reset length of output sequences
+  message_sequence->size = 0;
+  message_info_sequence->size = 0;
+
   rmw_ret_t rc = sub_impl->take(
     message_sequence, message_info_sequence, count, taken);
+
+  // Update length of output sequences if we received any data
+  if (*taken > 0) {
+    message_sequence->size = *taken;
+    message_info_sequence->size = *taken;
+  }
 
   return rc;
 }

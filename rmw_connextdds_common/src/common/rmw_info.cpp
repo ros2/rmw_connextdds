@@ -457,7 +457,7 @@ rmw_api_connextdds_get_publisher_names_and_types_by_node(
 {
   RMW_CONNEXT_LOG_DEBUG_A(
     "rmw_get_publisher_names_and_types_by_node: "
-    "node=%s::%s, demangle=%d",
+    "node=%s%s, demangle=%d",
     node_namespace, node_name, !no_demangle)
 
   return get_topic_names_and_types_by_node(
@@ -481,6 +481,9 @@ rmw_api_connextdds_get_service_names_and_types_by_node(
   const char * node_namespace,
   rmw_names_and_types_t * sntyp)
 {
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "rmw_get_service_names_and_types_by_node: "
+    "node=%s%s", node_namespace, node_name)
   return get_topic_names_and_types_by_node(
     node,
     allocator,
@@ -502,6 +505,9 @@ rmw_api_connextdds_get_client_names_and_types_by_node(
   const char * node_namespace,
   rmw_names_and_types_t * sntyp)
 {
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "rmw_get_client_names_and_types_by_node: "
+    "node=%s%s", node_namespace, node_name)
   return get_topic_names_and_types_by_node(
     node,
     allocator,

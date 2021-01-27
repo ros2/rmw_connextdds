@@ -58,7 +58,8 @@ rmw_connextdds_initialize_participant_factory(
 
 rmw_ret_t
 rmw_connextdds_finalize_participant_factory(
-  rmw_context_impl_t * const ctx);
+  rmw_context_impl_t * const ctx,
+  bool * const outstanding_participants);
 
 rmw_ret_t
 rmw_connextdds_initialize_participant_qos_impl(

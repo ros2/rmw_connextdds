@@ -94,9 +94,18 @@ rmw_connextdds_initialize_participant_factory(
 
 rmw_ret_t
 rmw_connextdds_finalize_participant_factory(
-  rmw_context_impl_t * const ctx)
+  rmw_context_impl_t * const ctx,
+  bool * const outstanding_participants)
 {
   UNUSED_ARG(ctx);
+  DDS_DomainParticipantSeq participants = DDS_SEQUENCE_INITIALIZER;
+  if (DDS_RETCODE_OK != DDS_DomainParticipantFactory_get_participants(
+      ctx->factory, &participants))
+  {
+    return RMW_RET_ERROR;
+  }
+  *outstanding_participants =
+    DDS_DomainParticipantSeq_get_length(&participants) > 0;
   return RMW_RET_OK;
 }
 
@@ -198,11 +207,31 @@ rmw_connextdds_initialize_participant_qos_impl(
     dp_qos->resource_limits.contentfilter_property_max_length = 1024;
   }
 
-  // Configure enabled built-in transports
-  dp_qos->transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
-#if RMW_CONNEXT_TRANSPORT_SHMEM
-  dp_qos->transport_builtin.mask |= DDS_TRANSPORTBUILTIN_SHMEM;
-#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+#if 0
+  // Apply Optimization.Discovery.Endpoint.Fast:
+  //
+  // QoS Snippet to optimize Endpoint Discovery to be faster. This
+  // is useful when using security, to prevent a noticeable delay.
+  //
+  // Modified QoS Parameters:
+  //     participant_qos.discovery_config.publication_writer
+  //     participant_qos.discovery_config.subscription_writer
+  dp_qos->discovery_config.publication_writer.fast_heartbeat_period.sec = 0;
+  dp_qos->discovery_config.publication_writer.fast_heartbeat_period.nanosec = 100000000;
+  dp_qos->discovery_config.publication_writer.late_joiner_heartbeat_period.sec = 0;
+  dp_qos->discovery_config.publication_writer.late_joiner_heartbeat_period.nanosec = 100000000;
+  dp_qos->discovery_config.publication_writer.max_heartbeat_retries = 300;
+
+  dp_qos->discovery_config.subscription_writer.fast_heartbeat_period.sec = 0;
+  dp_qos->discovery_config.subscription_writer.fast_heartbeat_period.nanosec = 100000000;
+  dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.sec = 0;
+  dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.nanosec = 100000000;
+  dp_qos->discovery_config.subscription_writer.max_heartbeat_retries = 300;
+#endif
+
+#if RMW_CONNEXT_DDS_API_PRO_LEGACY
+  dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;
+#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   return RMW_RET_OK;
 }
@@ -333,6 +362,9 @@ rmw_connextdds_get_datawriter_qos(
       &qos->resource_limits,
       // TODO(asorbini) this value is not actually used, remove it
       &qos->publish_mode,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+      &qos->lifespan,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
       ,
@@ -385,6 +417,9 @@ rmw_connextdds_get_datareader_qos(
       &qos->liveliness,
       &qos->resource_limits,
       nullptr /* publish_mode */,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+      nullptr /* Lifespan is a writer-only qos policy */,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
       ,
@@ -929,7 +964,9 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
       DDS_BuiltinTopicKey_to_guid(&data->key, &endp_guid);
       DDS_BuiltinTopicKey_to_guid(&data->participant_key, &dp_guid);
 
-      rmw_connextdds_graph_add_entity(
+      // Ignore return code since we can't do anything about a failure
+      // in this listener.
+      rmw_connextdds_graph_add_remote_entity(
         ctx,
         &endp_guid,
         &dp_guid,
@@ -939,6 +976,9 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+        &data->lifespan,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         false /* is_reader */);
     }
 
@@ -1009,7 +1049,9 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
       DDS_BuiltinTopicKey_to_guid(&data->key, &endp_guid);
       DDS_BuiltinTopicKey_to_guid(&data->participant_key, &dp_guid);
 
-      rmw_connextdds_graph_add_entity(
+      // Ignore return code since we can't do anything about a failure
+      // in this listener.
+      rmw_connextdds_graph_add_remote_entity(
         ctx,
         &endp_guid,
         &dp_guid,
@@ -1019,6 +1061,9 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+        nullptr /* Lifespan is a writer-only qos policy */,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         true /* is_reader */);
     }
 

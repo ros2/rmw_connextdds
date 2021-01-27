@@ -4191,6 +4191,7 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
       {
         return DDS_OFFERED_DEADLINE_MISSED_STATUS;
       }
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
       {
         return DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS;
@@ -4199,6 +4200,7 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
       {
         return DDS_OFFERED_INCOMPATIBLE_QOS_STATUS;
       }
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
 // Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
@@ -4270,7 +4272,9 @@ ros_event_for_reader(const rmw_event_type_t ros)
   switch (ros) {
     case RMW_EVENT_LIVELINESS_CHANGED:
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
 // Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
@@ -4871,10 +4875,12 @@ RMW_Connext_StdSubscriberStatusCondition::has_status(
       {
         return this->triggered_deadline;
       }
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
       {
         return this->triggered_qos;
       }
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
 // Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
@@ -4937,6 +4943,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
         this->triggered_deadline = false;
         break;
       }
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
       {
         rmw_requested_qos_incompatible_event_status_t * const status =
@@ -4953,6 +4960,7 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
         this->triggered_qos = false;
         break;
       }
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
 // Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
 // the defined values for rmw_event_type_t. This #if and the one in
 // the `default` case, should be removed once support for releases
@@ -5135,10 +5143,12 @@ RMW_Connext_StdPublisherStatusCondition::has_status(
       {
         return this->triggered_deadline;
       }
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
       {
         return this->triggered_qos;
       }
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
     default:
       RMW_CONNEXT_ASSERT(0)
       return false;
@@ -5178,6 +5188,7 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
         this->triggered_deadline = false;
         break;
       }
+#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
     case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
       {
         rmw_offered_qos_incompatible_event_status_t * const status =
@@ -5194,6 +5205,7 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
         this->triggered_qos = false;
         break;
       }
+#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
     default:
       RMW_CONNEXT_ASSERT(0)
       return false;

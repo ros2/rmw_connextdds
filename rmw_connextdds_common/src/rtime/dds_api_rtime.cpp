@@ -647,10 +647,14 @@ rmw_connextdds_initialize_participant_factory(
 
 rmw_ret_t
 rmw_connextdds_finalize_participant_factory(
-  rmw_context_impl_t * const ctx)
+  rmw_context_impl_t * const ctx,
+  bool * const outstanding_participants)
 {
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+
+  //TODO(asorbini) introduce API to query DPF for outstanding participants
+  *outstanding_participants = false;
 
   RT_Registry_T * registry =
     DDS_DomainParticipantFactory_get_registry(ctx->factory);
@@ -1005,6 +1009,9 @@ rmw_connextdds_get_datawriter_qos(
       &qos->liveliness,
       &qos->resource_limits,
       &qos->publish_mode,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+      nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
       ,
@@ -1064,6 +1071,9 @@ rmw_connextdds_get_datareader_qos(
       &qos->liveliness,
       &qos->resource_limits,
       nullptr /* publish_mode */,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+      nullptr /* Lifespan is a writer-only qos policy */,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
       ,
@@ -1339,37 +1349,6 @@ RMW_Connext_PublicationData::process_data_available(
           reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), i));
       DDS_SampleInfo * const info = DDS_SampleInfoSeq_get_reference(&info_seq, i);
 
-      // if (info->valid_data) {
-      //   DDS_GUID_t endp_guid;
-      //   DDS_GUID_t dp_guid;
-
-      //   DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid*>(&data->key));
-      //   DDS_GUID_from_rtps(
-      //     &dp_guid, reinterpret_cast<RTPS_Guid*>(&data->participant_key));
-
-      //   rmw_connextdds_graph_add_entity(
-      //     listener->ctx,
-      //     &endp_guid,
-      //     &dp_guid,
-      //     data->topic_name,
-      //     data->type_name,
-      //     &data->reliability,
-      //     &data->durability,
-      //     &data->deadline,
-      //     &data->liveliness,
-      //     false /* is_reader */);
-      // } else {
-      //   if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-      //       info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
-      //     if (RMW_RET_OK !=
-      //       rmw_connextdds_graph_remove_entity(
-      //         listener->ctx, &info->instance_handle, false /* is_reader */)) {
-      //       // TODO(asorbini) log without lock
-      //       continue;
-      //     }
-      //   }
-      // }
-
       listener->received_sample(data, info);
     }
 
@@ -1417,37 +1396,6 @@ RMW_Connext_SubscriptionData::process_data_available(
         DDS_UntypedSampleSeq_get_reference(
           reinterpret_cast<DDS_UntypedSampleSeq *>(&data_seq), i));
       DDS_SampleInfo * const info = DDS_SampleInfoSeq_get_reference(&info_seq, i);
-
-      // if (info->valid_data) {
-      //   DDS_GUID_t endp_guid;
-      //   DDS_GUID_t dp_guid;
-
-      //   DDS_GUID_from_rtps(&endp_guid, reinterpret_cast<RTPS_Guid*>(&data->key));
-      //   DDS_GUID_from_rtps(
-      //     &dp_guid, reinterpret_cast<RTPS_Guid*>(&data->participant_key));
-
-      //   rmw_connextdds_graph_add_entity(
-      //     listener->ctx,
-      //     &endp_guid,
-      //     &dp_guid,
-      //     data->topic_name,
-      //     data->type_name,
-      //     &data->reliability,
-      //     &data->durability,
-      //     &data->deadline,
-      //     &data->liveliness,
-      //     true /* is_reader */);
-      // } else {
-      //   if (info->instance_state == DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
-      //       info->instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
-      //     if (RMW_RET_OK !=
-      //       rmw_connextdds_graph_remove_entity(
-      //         listener->ctx, &info->instance_handle, true /* is_reader */)) {
-      //       // TODO(asorbini) log without lock
-      //       continue;
-      //     }
-      //   }
-      // }
 
       listener->received_sample(data, info);
     }
@@ -1808,7 +1756,9 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
       DDS_GUID_from_rtps(
         &dp_guid, reinterpret_cast<RTPS_Guid *>(&qdata.data.participant_key));
 
-      rmw_connextdds_graph_add_entity(
+      // Ignore return code since we can't do anything about a failure
+      // in this listener.
+      rmw_connextdds_graph_add_remote_entity(
         ctx,
         &endp_guid,
         &dp_guid,
@@ -1818,6 +1768,9 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &qdata.data.durability,
         &qdata.data.deadline,
         &qdata.data.liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+        nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         false /* is_reader */);
 
       RMW_Connext_PublicationData::finalize(&qdata.data);
@@ -1859,7 +1812,9 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
       DDS_GUID_from_rtps(
         &dp_guid, reinterpret_cast<RTPS_Guid *>(&qdata.data.participant_key));
 
-      rmw_connextdds_graph_add_entity(
+      // Ignore return code since we can't do anything about a failure
+      // in this listener.
+      rmw_connextdds_graph_add_remote_entity(
         ctx,
         &endp_guid,
         &dp_guid,
@@ -1869,6 +1824,9 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &qdata.data.durability,
         &qdata.data.deadline,
         &qdata.data.liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+        nullptr /* Lifespan is a writer-only qos policy */,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         true /* is_reader */);
 
       RMW_Connext_SubscriptionData::finalize(&qdata.data);

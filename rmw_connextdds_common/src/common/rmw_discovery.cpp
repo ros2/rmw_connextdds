@@ -71,7 +71,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
   DDS_Condition * cond_exit =
     DDS_GuardCondition_as_condition(gcond_exit->guard_condition());
 
-  DDS_Condition * cond_partinfo = sub_partinfo->condition(),
+  DDS_Condition * cond_partinfo = sub_partinfo->data_condition(),
     * cond_active = nullptr;
   bool attached_dcps_part = false,
     attached_dcps_sub = false,

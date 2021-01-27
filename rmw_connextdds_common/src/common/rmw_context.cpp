@@ -348,6 +348,17 @@ rmw_context_impl_t::clean_up()
   }
 
   if (nullptr != this->dds_pub) {
+    //If we are cleaning up after some RMW failure, it is possible for some
+    //DataWriter to not have been deleted.
+    //Call DDS_Publisher_delete_contained_entities() to make sure we can
+    //dispose the publisher.
+    if (DDS_RETCODE_OK !=
+      DDS_Publisher_delete_contained_entities(this->dds_pub))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to delete DDS publisher's entities")
+      return RMW_RET_ERROR;
+    }
+
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipant_delete_publisher(
         this->participant, this->dds_pub))
@@ -359,6 +370,18 @@ rmw_context_impl_t::clean_up()
   }
 
   if (nullptr != this->dds_sub) {
+    //If we are cleaning up after some RMW failure, it is possible for some
+    //DataReader to not have been deleted.
+    //Call DDS_Subscriber_delete_contained_entities() to make sure we can
+    //dispose the publisher.
+    if (DDS_RETCODE_OK !=
+      DDS_Subscriber_delete_contained_entities(this->dds_sub))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to delete DDS subscriber's entities")
+      return RMW_RET_ERROR;
+    }
+
+
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipant_delete_subscriber(
         this->participant, this->dds_sub))
@@ -370,6 +393,17 @@ rmw_context_impl_t::clean_up()
   }
 
   if (nullptr != this->participant) {
+    //If we are cleaning up after some RMW failure, it is possible for some
+    //DataWriter to not have been deleted.
+    //Call DDS_Publisher_delete_contained_entities() to make sure we can
+    //dispose the publisher.
+    if (DDS_RETCODE_OK !=
+      DDS_DomainParticipant_delete_contained_entities(this->participant))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to delete DDS participant's entities")
+      return RMW_RET_ERROR;
+    }
+
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipantFactory_delete_participant(
         this->factory, this->participant))
@@ -381,12 +415,22 @@ rmw_context_impl_t::clean_up()
   }
 
   if (nullptr != this->factory) {
-    if (RMW_RET_OK != rmw_connextdds_finalize_participant_factory(this)) {
+    bool outstanding_participants = false;
+
+    if (RMW_RET_OK != rmw_connextdds_finalize_participant_factory(
+        this, &outstanding_participants))
+    {
       RMW_CONNEXT_LOG_ERROR("failed to finalize participant factory")
       return RMW_RET_ERROR;
     }
 
-    DDS_DomainParticipantFactory_finalize_instance();
+    // There might be other participants in the factory, e.g. if the application
+    // created multiple contexts (like some rcl tests do), or if they created
+    // participants directly via the DDS API.
+    if (!outstanding_participants) {
+      DDS_DomainParticipantFactory_finalize_instance();
+    }
+
     this->factory = NULL;
   }
 
@@ -670,6 +714,7 @@ rmw_api_connextdds_init(
 #else
     (RMW_DEFAULT_DOMAIN_ID != options->domain_id) ?
     options->domain_id : RMW_CONNEXT_DEFAULT_DOMAIN;
+  context->actual_domain_id = actual_domain_id;
   ret = rmw_api_connextdds_init_options_copy(options, &context->options);
   if (RMW_RET_OK != ret) {
     RMW_CONNEXT_LOG_ERROR(
@@ -696,7 +741,8 @@ rmw_api_connextdds_init(
       "failed to allocate RMW context implementation")
     return RMW_RET_ERROR;
   }
-
+  //TODO(asorbini) get rid of context->impl->domain_id, and just use
+  //context->actual_domain_id in rmw_context_impl_t::initialize_node()
   context->impl->domain_id = actual_domain_id;
 
 #if RMW_CONNEXT_HAVE_OPTIONS

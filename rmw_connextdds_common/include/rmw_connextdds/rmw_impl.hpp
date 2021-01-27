@@ -451,16 +451,7 @@ public:
   }
 
   void
-  on_data()
-  {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-    this->triggered_data = true;
-
-    if (nullptr != this->waitset_condition) {
-      this->waitset_condition->notify_one();
-    }
-  }
+  on_data();
 
   void
   on_requested_deadline_missed(
@@ -692,21 +683,6 @@ public:
     DDS_SampleIdentity_t * const sample_identity,
     DDS_SampleIdentity_t * const related_sample_identity);
 
-private:
-  rmw_context_impl_t * ctx;
-  DDS_DataWriter * dds_writer;
-  DDS_Condition * dds_condition;
-  RMW_Connext_MessageTypeSupport * type_support;
-  const bool created_topic;
-  rmw_gid_t ros_gid;
-  RMW_Connext_StdPublisherStatusCondition std_condition;
-
-  RMW_Connext_Publisher(
-    rmw_context_impl_t * const ctx,
-    DDS_DataWriter * const dds_writer,
-    RMW_Connext_MessageTypeSupport * const type_support,
-    const bool created_topic);
-
   DDS_Topic * dds_topic()
   {
     return DDS_DataWriter_get_topic(this->dds_writer);
@@ -723,6 +699,21 @@ private:
 
     return DDS_Publisher_get_participant(pub);
   }
+
+private:
+  rmw_context_impl_t * ctx;
+  DDS_DataWriter * dds_writer;
+  DDS_Condition * dds_condition;
+  RMW_Connext_MessageTypeSupport * type_support;
+  const bool created_topic;
+  rmw_gid_t ros_gid;
+  RMW_Connext_StdPublisherStatusCondition std_condition;
+
+  RMW_Connext_Publisher(
+    rmw_context_impl_t * const ctx,
+    DDS_DataWriter * const dds_writer,
+    RMW_Connext_MessageTypeSupport * const type_support,
+    const bool created_topic);
 };
 
 
@@ -848,6 +839,13 @@ public:
     return this->dds_condition;
   }
 
+  DDS_Condition *
+  data_condition() const
+  {
+    return (nullptr != this->loan_guard_condition) ?
+           DDS_GuardCondition_as_condition(this->loan_guard_condition) : nullptr;
+  }
+
   const rmw_gid_t * gid() const
   {
     return &this->ros_gid;
@@ -894,15 +892,27 @@ public:
       if (this->loan_len > 0) {
         rc = this->return_messages();
         if (RMW_RET_OK != rc) {
-          goto done;
+          return rc;
         }
       }
       /* loan messages from reader */
       rc = this->loan_messages();
+      if (RMW_RET_OK != rc) {
+        return rc;
+      }
     }
 
-done:
-    return rc;
+    // Update loan guard condition's trigger value for internal endpoints
+    if (nullptr != this->loan_guard_condition) {
+      if (DDS_RETCODE_OK != DDS_GuardCondition_set_trigger_value(
+          this->loan_guard_condition, this->loan_len > 0))
+      {
+        RMW_CONNEXT_LOG_ERROR("failed to set internal reader condition's trigger")
+        return RMW_RET_ERROR;
+      }
+    }
+
+    return RMW_RET_OK;
   }
 
   void
@@ -970,12 +980,12 @@ done:
   {
     // check (and reset) flag for on_data_available callback
     const bool on_data_triggered = this->std_condition.on_data_triggered();
+    UNUSED_ARG(on_data_triggered);
 
     std::lock_guard<std::mutex> lock(this->loan_mutex);
 
-    if (on_data_triggered) {
-      this->loan_messages_if_needed();
-    }
+    this->loan_messages_if_needed();
+
     bool has_data = this->loan_len > 0;
     RMW_CONNEXT_ASSERT(!has_data || this->loan_next < this->loan_len)
 
@@ -1008,6 +1018,23 @@ done:
     return this->std_condition.detach();
   }
 
+  DDS_Subscriber * dds_subscriber()
+  {
+    return DDS_DataReader_get_subscriber(this->dds_reader);
+  }
+
+  DDS_DomainParticipant * dds_participant()
+  {
+    DDS_Subscriber * const sub = this->dds_subscriber();
+
+    return DDS_Subscriber_get_participant(sub);
+  }
+
+  DDS_Topic * topic()
+  {
+    return this->dds_topic;
+  }
+
 private:
   rmw_context_impl_t * ctx;
   DDS_DataReader * dds_reader;
@@ -1026,6 +1053,11 @@ private:
   std::mutex loan_mutex;
   std::condition_variable loan_condition;
   bool loan_active;
+  // This guard condition is only created by "internal" subscribers,
+  // The condition is managed by `loan_messages_if_needed()`, triggered whenever
+  // `loan_len > 0`, and reset whenever `loan_len == 0`
+  DDS_GuardCondition * loan_guard_condition;
+  bool internal;
 
   RMW_Connext_Subscriber(
     rmw_context_impl_t * const ctx,
@@ -1034,19 +1066,10 @@ private:
     RMW_Connext_MessageTypeSupport * const type_support,
     const bool ignore_local,
     const bool created_topic,
-    DDS_TopicDescription * const dds_topic_cft);
+    DDS_TopicDescription * const dds_topic_cft,
+    const bool internal);
 
-  DDS_Subscriber * dds_subscriber()
-  {
-    return DDS_DataReader_get_subscriber(this->dds_reader);
-  }
-
-  DDS_DomainParticipant * dds_participant()
-  {
-    DDS_Subscriber * const sub = this->dds_subscriber();
-
-    return DDS_Subscriber_get_participant(sub);
-  }
+  friend class RMW_Connext_StdSubscriberStatusCondition;
 };
 
 rmw_subscription_t *
@@ -1447,7 +1470,7 @@ rmw_connextdds_create_topic_name(
  ******************************************************************************/
 
 rmw_ret_t
-rmw_connextdds_get_readerwriter_qos(
+  rmw_connextdds_get_readerwriter_qos(
   const bool writer_qos,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_HistoryQosPolicy * const history,
@@ -1457,21 +1480,27 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_LivelinessQosPolicy * const liveliness,
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+  DDS_LifespanQosPolicy * const lifespan,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   ,
   const rmw_publisher_options_t * const pub_options,
   const rmw_subscription_options_t * const sub_options
 #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-);
+  );
 
 rmw_ret_t
-rmw_connextdds_readerwriter_qos_to_ros(
+  rmw_connextdds_readerwriter_qos_to_ros(
   const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+  const DDS_LifespanQosPolicy * const lifespan,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies);
 
 bool

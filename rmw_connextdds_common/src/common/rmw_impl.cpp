@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #include "rmw_connextdds/graph_cache.hpp"
 
@@ -121,6 +122,9 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_LivelinessQosPolicy * const liveliness,
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+  DDS_LifespanQosPolicy * const lifespan,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   ,
@@ -230,7 +234,7 @@ rmw_connextdds_get_readerwriter_qos(
       static_cast<DDS_UnsignedLong>(qos_policies->deadline.nsec);
   }
 
-  if (qos_policies->liveliness_lease_duration.sec != 0 &&
+  if (qos_policies->liveliness_lease_duration.sec != 0 ||
     qos_policies->liveliness_lease_duration.nsec != 0)
   {
     liveliness->lease_duration.sec =
@@ -262,6 +266,16 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+  if (nullptr != lifespan &&
+    (qos_policies->lifespan.sec != 0 || qos_policies->lifespan.nsec != 0))
+  {
+    lifespan->duration.sec = static_cast<DDS_Long>(qos_policies->lifespan.sec);
+    lifespan->duration.nanosec =
+      static_cast<DDS_UnsignedLong>(qos_policies->lifespan.nsec);
+  }
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
+
   // Make sure that resource limits are consistent with history qos
   // TODO(asorbini): do not overwrite if using non-default QoS
   if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
@@ -287,6 +301,9 @@ rmw_connextdds_readerwriter_qos_to_ros(
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+  const DDS_LifespanQosPolicy * const lifespan,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies)
 {
   if (nullptr != history) {
@@ -368,6 +385,13 @@ rmw_connextdds_readerwriter_qos_to_ros(
       }
   }
 
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+  if (nullptr != lifespan) {
+    qos_policies->lifespan.sec = lifespan->duration.sec;
+    qos_policies->lifespan.nsec = lifespan->duration.nanosec;
+  }
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
+
   return RMW_RET_OK;
 }
 
@@ -383,6 +407,9 @@ rmw_connextdds_datawriter_qos_to_ros(
     &qos->durability,
     &qos->deadline,
     &qos->liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+    &qos->lifespan,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     qos_policies);
 }
 
@@ -398,6 +425,9 @@ rmw_connextdds_datareader_qos_to_ros(
     &qos->durability,
     &qos->deadline,
     &qos->liveliness,
+#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+    nullptr /* Lifespan is a writer-only qos policy */,
+#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     qos_policies);
 }
 
@@ -1603,7 +1633,8 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   RMW_Connext_MessageTypeSupport * const type_support,
   const bool ignore_local,
   const bool created_topic,
-  DDS_TopicDescription * const dds_topic_cft)
+  DDS_TopicDescription * const dds_topic_cft,
+  const bool internal)
 : ctx(ctx),
   dds_reader(dds_reader),
   dds_topic(dds_topic),
@@ -1611,7 +1642,9 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   dds_condition(nullptr),
   type_support(type_support),
   opt_ignore_local(ignore_local),
-  created_topic(created_topic)
+  created_topic(created_topic),
+  loan_guard_condition(nullptr),
+  internal(internal)
 {
   rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
 
@@ -1631,7 +1664,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
 
   if (RMW_RET_OK != this->std_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on reader")
-    return;
+    throw std::runtime_error("failed to install condition on reader");
   }
 }
 
@@ -1657,7 +1690,6 @@ RMW_Connext_Subscriber::create(
   const char * const cft_filter)
 {
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-  UNUSED_ARG(internal);
 
   bool type_registered = false;
 
@@ -1846,7 +1878,8 @@ RMW_Connext_Subscriber::create(
     ignore_local_publications,
 #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     topic_created,
-    cft_topic);
+    cft_topic,
+    internal);
 
   if (nullptr == rmw_sub_impl) {
     RMW_CONNEXT_LOG_ERROR("failed to allocate RMW subscriber")
@@ -1855,6 +1888,19 @@ RMW_Connext_Subscriber::create(
   scope_exit_type_unregister.cancel();
   scope_exit_topic_delete.cancel();
   scope_exit_dds_reader_delete.cancel();
+
+  //TODO(asorbini) move this block to RMW_Connext_Subscriber().
+  //Do this after refactoring RMW_Connext_Subscriber::finalize() to be
+  //called automatically by ~RMW_Connext_Subscriber() (which doesn't exist yet).
+  if (rmw_sub_impl->internal) {
+    rmw_sub_impl->loan_guard_condition = DDS_GuardCondition_new();
+    if (nullptr == rmw_sub_impl->loan_guard_condition) {
+      RMW_CONNEXT_LOG_ERROR("failed to allocate internal reader condition ")
+      rmw_sub_impl->finalize();
+      delete rmw_sub_impl;
+      return nullptr;
+    }
+  }
 
   return rmw_sub_impl;
 }
@@ -1916,6 +1962,13 @@ RMW_Connext_Subscriber::finalize()
 
   if (RMW_RET_OK != rc) {
     return rc;
+  }
+
+  if (nullptr != this->loan_guard_condition) {
+    if (DDS_RETCODE_OK != DDS_GuardCondition_delete(this->loan_guard_condition)) {
+      RMW_CONNEXT_LOG_ERROR("failed to delete internal reader condition ")
+      return RMW_RET_ERROR;
+    }
   }
 
   delete this->type_support;
@@ -2110,6 +2163,10 @@ RMW_Connext_Subscriber::loan_messages()
 
   this->loan_len = DDS_UntypedSampleSeq_get_length(&this->loan_data);
 
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "[%s] loaned messages: %u",
+    this->type_support->type_name(), this->loan_len)
+
   return RMW_RET_OK;
 }
 
@@ -2118,6 +2175,10 @@ RMW_Connext_Subscriber::return_messages()
 {
   /* this function should be called only if a loan is available */
   RMW_CONNEXT_ASSERT(this->loan_len > 0)
+
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "[%s] return loaned messages: %u",
+    this->type_support->type_name(), this->loan_len)
 
   this->loan_len = 0;
   this->loan_next = 0;
@@ -2192,6 +2253,9 @@ RMW_Connext_Subscriber::take_next(
           return RMW_RET_ERROR;
         }
         if (!accepted) {
+          RMW_CONNEXT_LOG_DEBUG_A(
+            "[%s] DROPPED message",
+            this->type_support->type_name())
           continue;
         }
 
@@ -2241,11 +2305,15 @@ RMW_Connext_Subscriber::take_next(
           rmw_connextdds_message_info_from_dds(message_info, info);
         }
 
+
         *taken += 1;
         continue;
       }
     }
   }
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "[%s] taken messages: %lu",
+    this->type_support->type_name(), *taken)
 
   if (this->loan_len && this->loan_next >= this->loan_len) {
     rc = this->return_messages();
@@ -3806,7 +3874,20 @@ RMW_Connext_Client::send_request(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
 
-  return this->request_pub->write(&rr_msg, false /* serialized */, sequence_id);
+  rmw_ret_t rc = this->request_pub->write(&rr_msg, false /* serialized */, sequence_id);
+
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "[%s] SENT REQUEST: "
+    "gid=%08X.%08X.%08X.%08X, "
+    "sn=%lu",
+    this->request_pub->message_type_support()->type_name(),
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[0],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[1],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
+    reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
+    *sequence_id)
+
+  return rc;
 }
 
 rmw_ret_t
@@ -4319,7 +4400,7 @@ RMW_Connext_DataReaderListener_on_data_available(
 
   UNUSED_ARG(reader);
   RMW_CONNEXT_LOG_DEBUG_A(
-    "data available: condition=%p, reader=%p\n",
+    "data available: condition=%p, reader=%p",
     (void *)self, (void *)reader);
   self->on_data();
 }
@@ -4755,6 +4836,27 @@ RMW_Connext_StdSubscriberStatusCondition::RMW_Connext_StdSubscriberStatusConditi
   listener_drop_handle(DDS_HANDLE_NIL),
   sub(nullptr)
 {}
+
+void
+RMW_Connext_StdSubscriberStatusCondition::on_data()
+{
+  std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+  this->triggered_data = true;
+
+  if (nullptr != this->waitset_condition) {
+    this->waitset_condition->notify_one();
+  }
+
+  // Update loan guard condition's trigger value for internal endpoints
+  if (nullptr != this->sub && nullptr != this->sub->loan_guard_condition) {
+    if (DDS_RETCODE_OK != DDS_GuardCondition_set_trigger_value(
+        this->sub->loan_guard_condition, DDS_BOOLEAN_TRUE))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to set internal reader condition's trigger")
+    }
+  }
+}
 
 bool
 RMW_Connext_StdSubscriberStatusCondition::has_status(

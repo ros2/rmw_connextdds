@@ -35,4 +35,7 @@ typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
   (DDS_PropertySeq_assert_property(&(p_)->value, (n_), (v_), (pr_)) ? \
   DDS_RETCODE_OK : DDS_RETCODE_ERROR)
 
+// Forward declaration for DDS_LifespanQosPolicy, since it is not supported by Micro.
+struct DDS_LifespanQosPolicy;
+
 #endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

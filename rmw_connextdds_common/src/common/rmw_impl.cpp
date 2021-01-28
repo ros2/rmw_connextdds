@@ -270,9 +270,13 @@ rmw_connextdds_get_readerwriter_qos(
   if (nullptr != lifespan &&
     (qos_policies->lifespan.sec != 0 || qos_policies->lifespan.nsec != 0))
   {
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     lifespan->duration.sec = static_cast<DDS_Long>(qos_policies->lifespan.sec);
     lifespan->duration.nanosec =
       static_cast<DDS_UnsignedLong>(qos_policies->lifespan.nsec);
+#else
+    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
+#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   }
 #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
 
@@ -387,8 +391,12 @@ rmw_connextdds_readerwriter_qos_to_ros(
 
 #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
   if (nullptr != lifespan) {
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     qos_policies->lifespan.sec = lifespan->duration.sec;
     qos_policies->lifespan.nsec = lifespan->duration.nanosec;
+#else
+    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
+#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   }
 #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
 
@@ -408,7 +416,11 @@ rmw_connextdds_datawriter_qos_to_ros(
     &qos->deadline,
     &qos->liveliness,
 #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     &qos->lifespan,
+#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+    nullptr,
+#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     qos_policies);
 }

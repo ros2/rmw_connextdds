@@ -858,8 +858,8 @@ rmw_connextdds_graph_add_entityEA(
     "type=%s, "
     "reader=%d, "
     "local=%d",
-    (void *)ctx,
-    (void *)&ctx->common.graph_cache,
+    reinterpret_cast<void *>(ctx),
+    reinterpret_cast<void *>(&ctx->common.graph_cache),
     reinterpret_cast<const uint32_t *>(dp_guid->value)[0],
     reinterpret_cast<const uint32_t *>(dp_guid->value)[1],
     reinterpret_cast<const uint32_t *>(dp_guid->value)[2],

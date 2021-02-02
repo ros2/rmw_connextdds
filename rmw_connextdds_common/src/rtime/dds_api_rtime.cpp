@@ -653,7 +653,7 @@ rmw_connextdds_finalize_participant_factory(
   rmw_connextdds_api_micro * const ctx_api =
     reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
 
-  //TODO(asorbini) introduce API to query DPF for outstanding participants
+  // TODO(asorbini) introduce API to query DPF for outstanding participants
   *outstanding_participants = false;
 
   RT_Registry_T * registry =
@@ -1960,7 +1960,8 @@ rmw_connextdds_enable_security(
   if (!RT_ComponentFactoryId_set_name(
       &qos->trust.suite, SECCORE_DEFAULT_SUITE_NAME))
   {
-    RMW_CONNEXT_LOG_ERROR_SET("failed component name: %s", SECCORE_DEFAULT_SUITE_NAME)
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed component name: %s", SECCORE_DEFAULT_SUITE_NAME)
     return RMW_RET_ERROR;
   }
 

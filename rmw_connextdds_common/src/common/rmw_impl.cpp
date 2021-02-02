@@ -355,7 +355,7 @@ rmw_connextdds_readerwriter_qos_to_ros(
     default:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
-            "invalid DDS reliability kind: %d", reliability->kind)
+          "invalid DDS reliability kind: %d", reliability->kind)
         return RMW_RET_ERROR;
       }
   }
@@ -374,7 +374,7 @@ rmw_connextdds_readerwriter_qos_to_ros(
     default:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
-            "invalid DDS durability kind: %d", durability->kind)
+          "invalid DDS durability kind: %d", durability->kind)
         return RMW_RET_ERROR;
       }
   }
@@ -401,7 +401,7 @@ rmw_connextdds_readerwriter_qos_to_ros(
     default:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
-            "invalid DDS liveliness kind: %d", liveliness->kind)
+          "invalid DDS liveliness kind: %d", liveliness->kind)
         return RMW_RET_ERROR;
       }
   }
@@ -1250,8 +1250,7 @@ RMW_Connext_Publisher::create(
     rcpputils::make_scope_exit(
     [dw_qos_ptr]()
     {
-      if (DDS_RETCODE_OK != DDS_DataWriterQos_finalize(dw_qos_ptr))
-      {
+      if (DDS_RETCODE_OK != DDS_DataWriterQos_finalize(dw_qos_ptr)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataWriterQoS")
       }
     });
@@ -1922,9 +1921,9 @@ RMW_Connext_Subscriber::create(
   scope_exit_topic_delete.cancel();
   scope_exit_dds_reader_delete.cancel();
 
-  //TODO(asorbini) move this block to RMW_Connext_Subscriber().
-  //Do this after refactoring RMW_Connext_Subscriber::finalize() to be
-  //called automatically by ~RMW_Connext_Subscriber() (which doesn't exist yet).
+  // TODO(asorbini) move this block to RMW_Connext_Subscriber().
+  // Do this after refactoring RMW_Connext_Subscriber::finalize() to be
+  // called automatically by ~RMW_Connext_Subscriber() (which doesn't exist yet).
   if (rmw_sub_impl->internal) {
     rmw_sub_impl->loan_guard_condition = DDS_GuardCondition_new();
     if (nullptr == rmw_sub_impl->loan_guard_condition) {
@@ -4058,10 +4057,9 @@ RMW_Connext_StdWaitSet::wait(
   size_t active_conditions = 0;
   this->detach(subs, gcs, srvs, cls, evs, active_conditions);
 
-  //assert(active_conditions > 0 || timedout);
+  // assert(active_conditions > 0 || timedout);
 
-  if (timedout)
-  {
+  if (timedout) {
     rmw_reset_error();
     RMW_SET_ERROR_MSG("wait timed out");
     return RMW_RET_TIMEOUT;

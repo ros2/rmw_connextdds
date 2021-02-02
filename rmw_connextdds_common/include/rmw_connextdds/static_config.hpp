@@ -69,10 +69,12 @@
  * Log configuration.
  * This option controls the logging output of the RMW and which logging
  * calls will actually be compiled into the library:
- *   - NONE: disable all logging
- *   - DEFAULT: include INFO to ERROR log calls, log through rclutils
- *   - ALL: include all log calls, log through rclutils
+ *   - NONE: disable all logging output
+ *   - DEFAULT: include only INFO to ERROR log calls, log through rcutils
+ *   - ALL: include all log calls, log through rcutils
  *   - PRINTF: include all log calls, log through printf()
+ * Keep in mind that compiling all logging statements, including those at
+ * verbosity debug and higher,will likely cause some performance degradation.
  ******************************************************************************/
 #define RMW_CONNEXT_LOG_MODE_NONE       0
 #define RMW_CONNEXT_LOG_MODE_DEFAULT    1

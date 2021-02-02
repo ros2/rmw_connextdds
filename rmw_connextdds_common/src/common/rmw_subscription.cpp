@@ -81,7 +81,7 @@ rmw_api_connextdds_create_subscription(
     topic_name)
 
   if (0 == strlen(topic_name)) {
-    RMW_CONNEXT_LOG_ERROR("empty topic_name provided")
+    RMW_CONNEXT_LOG_ERROR_SET("empty topic_name provided")
     return nullptr;
   }
 
@@ -97,7 +97,7 @@ rmw_api_connextdds_create_subscription(
         rmw_full_topic_name_validation_result_string(
         validation_result);
       UNUSED_ARG(reason);
-      RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+      RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
       return nullptr;
     }
   }

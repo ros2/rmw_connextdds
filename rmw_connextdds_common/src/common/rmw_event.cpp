@@ -43,7 +43,7 @@ rmw_api_connextdds_publisher_event_init(
   RMW_CHECK_ARGUMENT_FOR_NULL(rmw_event, RMW_RET_INVALID_ARGUMENT);
 
   if (!is_event_supported(event_type)) {
-    RMW_CONNEXT_LOG_ERROR("unsupported publisher event")
+    RMW_CONNEXT_LOG_ERROR_SET("unsupported publisher event")
     return RMW_RET_UNSUPPORTED;
   }
 
@@ -79,7 +79,7 @@ rmw_api_connextdds_subscription_event_init(
   RMW_CHECK_ARGUMENT_FOR_NULL(rmw_event, RMW_RET_INVALID_ARGUMENT);
 
   if (!is_event_supported(event_type)) {
-    RMW_CONNEXT_LOG_ERROR("unsupported subscription event")
+    RMW_CONNEXT_LOG_ERROR_SET("unsupported subscription event")
     return RMW_RET_UNSUPPORTED;
   }
 
@@ -122,14 +122,14 @@ rmw_api_connextdds_take_event(
     if (!RMW_Connext_Event::subscriber(
         event_handle)->get_status(event_handle->event_type, event_info))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to get reader status")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to get reader status")
       return RMW_RET_ERROR;
     }
   } else {
     if (!RMW_Connext_Event::publisher(
         event_handle)->get_status(event_handle->event_type, event_info))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to get writer status")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to get writer status")
       return RMW_RET_ERROR;
     }
   }

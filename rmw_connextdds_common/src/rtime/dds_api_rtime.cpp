@@ -404,7 +404,7 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
       }
     default:
       {
-        RMW_CONNEXT_LOG_ERROR("invalid log level")
+        RMW_CONNEXT_LOG_ERROR_A_SET("invalid log level: %d", severity)
         return RMW_RET_INVALID_ARGUMENT;
       }
   }
@@ -436,27 +436,27 @@ rmw_connextdds_initialize_participant_factory(
       if (ctx_api) {
         if (ctx_api->rt_whsm) {
           if (!RT_Registry_unregister(registry, whsm_name, NULL, NULL)) {
-            RMW_CONNEXT_LOG_ERROR("failed to unregister whsm")
+            RMW_CONNEXT_LOG_ERROR_SET("failed to unregister whsm")
           }
         }
         if (ctx_api->rt_rhsm) {
           if (!RT_Registry_unregister(registry, rhsm_name, NULL, NULL)) {
-            RMW_CONNEXT_LOG_ERROR("failed to unregister rhsm")
+            RMW_CONNEXT_LOG_ERROR_SET("failed to unregister rhsm")
           }
         }
         if (ctx_api->rt_udp) {
           if (!RT_Registry_unregister(registry, udp_name, NULL, NULL)) {
-            RMW_CONNEXT_LOG_ERROR("failed to unregister udp")
+            RMW_CONNEXT_LOG_ERROR_SET("failed to unregister udp")
           }
         }
         if (ctx_api->rt_shmem) {
           if (!RT_Registry_unregister(registry, shmem_name, NULL, NULL)) {
-            RMW_CONNEXT_LOG_ERROR("failed to unregister shmem")
+            RMW_CONNEXT_LOG_ERROR_SET("failed to unregister shmem")
           }
         }
         if (ctx_api->rt_dpde) {
           if (!RT_Registry_unregister(registry, dpde_name, NULL, NULL)) {
-            RMW_CONNEXT_LOG_ERROR("failed to unregister dpde")
+            RMW_CONNEXT_LOG_ERROR_SET("failed to unregister dpde")
           }
         }
         if (nullptr != ctx_api->udp_property) {
@@ -476,7 +476,7 @@ rmw_connextdds_initialize_participant_factory(
 
   factory = DDS_DomainParticipantFactory_get_instance();
   if (nullptr == factory) {
-    RMW_CONNEXT_LOG_ERROR("failed to get DDS participant factory")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS participant factory")
     return RMW_RET_ERROR;
   }
 
@@ -487,7 +487,7 @@ rmw_connextdds_initialize_participant_factory(
 
   registry = DDS_DomainParticipantFactory_get_registry(factory);
   if (nullptr == registry) {
-    RMW_CONNEXT_LOG_ERROR("failed to get factory registry")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get factory registry")
     return RMW_RET_ERROR;
   }
 
@@ -497,7 +497,7 @@ rmw_connextdds_initialize_participant_factory(
       registry,
       whsm_name, WHSM_HistoryFactory_get_interface(), NULL, NULL))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to register Writer History plugin")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register Writer History plugin")
     return RMW_RET_ERROR;
   }
 
@@ -507,7 +507,7 @@ rmw_connextdds_initialize_participant_factory(
       registry,
       rhsm_name, RHSM_HistoryFactory_get_interface(), NULL, NULL))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to register Reader History plugin")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register Reader History plugin")
     return RMW_RET_ERROR;
   }
 
@@ -516,25 +516,25 @@ rmw_connextdds_initialize_participant_factory(
   /* Configure UDP Transport plugin */
 
   if (!RT_Registry_unregister(registry, udp_name, NULL, NULL)) {
-    RMW_CONNEXT_LOG_ERROR("failed to unregister udp")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to unregister udp")
     return RMW_RET_ERROR;
   }
 
   ctx_api->udp_property = new (std::nothrow) UDP_InterfaceFactoryProperty();
 
   if (nullptr == ctx_api->udp_property) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate UDP Transport property")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate UDP Transport property")
     return RMW_RET_ERROR;
   }
 
   *ctx_api->udp_property = UDP_INTERFACE_FACTORY_PROPERTY_DEFAULT;
 
   if (!DDS_StringSeq_set_maximum(&ctx_api->udp_property->allow_interface, 1)) {
-    RMW_CONNEXT_LOG_ERROR("failed to set allow_interface maximum")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set allow_interface maximum")
     return RMW_RET_ERROR;
   }
   if (!DDS_StringSeq_set_length(&ctx_api->udp_property->allow_interface, 1)) {
-    RMW_CONNEXT_LOG_ERROR("failed to set allow_interface length")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set allow_interface length")
     return RMW_RET_ERROR;
   }
 
@@ -544,7 +544,7 @@ rmw_connextdds_initialize_participant_factory(
     rcutils_get_env(RMW_CONNEXT_ENV_UDP_INTERFACE, &env_udp_intf);
 
   if (nullptr != lookup_rc || nullptr == env_udp_intf) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "
       "rc=%s ",
@@ -559,7 +559,7 @@ rmw_connextdds_initialize_participant_factory(
 
   char * udp_intf = DDS_String_dup(env_udp_intf);
   if (nullptr == udp_intf) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate udp interface name")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate udp interface name")
     return RMW_RET_ERROR;
   }
 
@@ -574,7 +574,7 @@ rmw_connextdds_initialize_participant_factory(
       UDP_InterfaceFactory_get_interface(),
       (struct RT_ComponentFactoryProperty *)ctx_api->udp_property, NULL))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to register UDP Transport plugin")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register UDP Transport plugin")
     return RMW_RET_ERROR;
   }
 
@@ -590,7 +590,7 @@ rmw_connextdds_initialize_participant_factory(
       NETIO_SHMEMInterfaceFactory_get_interface(),
       (struct RT_ComponentFactoryProperty *)&shmem_property, NULL))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to register SHMEM Transport plugin")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register SHMEM Transport plugin")
     return RMW_RET_ERROR;
   }
 
@@ -619,7 +619,7 @@ rmw_connextdds_initialize_participant_factory(
       &discovery_plugin_properties._parent,
       NULL))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to register DPDE Discovery plugin")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register DPDE Discovery plugin")
     return RMW_RET_ERROR;
   }
 
@@ -659,7 +659,7 @@ rmw_connextdds_finalize_participant_factory(
   RT_Registry_T * registry =
     DDS_DomainParticipantFactory_get_registry(ctx->factory);
   if (nullptr == registry) {
-    RMW_CONNEXT_LOG_ERROR("failed to get factory registry")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get factory registry")
     return RMW_RET_ERROR;
   }
 
@@ -669,7 +669,7 @@ rmw_connextdds_finalize_participant_factory(
         DDSHST_WRITER_DEFAULT_HISTORY_NAME,
         NULL, NULL))
     {
-      RMW_CONNEXT_LOG_ERROR(
+      RMW_CONNEXT_LOG_ERROR_SET(
         "failed to unregister Writer History plugin")
       return RMW_RET_ERROR;
     }
@@ -682,7 +682,7 @@ rmw_connextdds_finalize_participant_factory(
         DDSHST_READER_DEFAULT_HISTORY_NAME,
         NULL, NULL))
     {
-      RMW_CONNEXT_LOG_ERROR(
+      RMW_CONNEXT_LOG_ERROR_SET(
         "failed to unregister Reader History plugin")
       return RMW_RET_ERROR;
     }
@@ -695,7 +695,7 @@ rmw_connextdds_finalize_participant_factory(
         NETIO_DEFAULT_UDP_NAME,
         NULL, NULL))
     {
-      RMW_CONNEXT_LOG_ERROR(
+      RMW_CONNEXT_LOG_ERROR_SET(
         "failed to unregister UDP Transport plugin")
       return RMW_RET_ERROR;
     }
@@ -708,7 +708,7 @@ rmw_connextdds_finalize_participant_factory(
         NETIO_DEFAULT_SHMEM_NAME,
         NULL, NULL))
     {
-      RMW_CONNEXT_LOG_ERROR(
+      RMW_CONNEXT_LOG_ERROR_SET(
         "failed to unregister SHMEM Transport plugin")
       return RMW_RET_ERROR;
     }
@@ -717,7 +717,7 @@ rmw_connextdds_finalize_participant_factory(
 
   if (ctx_api->rt_dpde) {
     if (!RT_Registry_unregister(registry, "dpde", NULL, NULL)) {
-      RMW_CONNEXT_LOG_ERROR(
+      RMW_CONNEXT_LOG_ERROR_SET(
         "failed to unregister DPDE Discovery plugin")
       return RMW_RET_ERROR;
     }
@@ -755,17 +755,20 @@ rmw_connextdds_initialize_participant_qos_impl(
   if (!REDA_StringSeq_set_maximum(
       &dp_qos->transports.enabled_transports, max_transports))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set transports.enabled_transports maximum")
     return RMW_RET_ERROR;
   }
   if (!REDA_StringSeq_set_length(
       &dp_qos->transports.enabled_transports, max_transports))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set transports.enabled_transports length")
     return RMW_RET_ERROR;
   }
   char ** seq_ref =
     REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 0);
   *seq_ref = REDA_String_dup(NETIO_DEFAULT_UDP_NAME);
   if (nullptr == *seq_ref) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string for transports.enabled_transports")
     return RMW_RET_ERROR;
   }
 
@@ -774,6 +777,7 @@ rmw_connextdds_initialize_participant_qos_impl(
     REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 1);
   *seq_ref = REDA_String_dup(NETIO_DEFAULT_SHMEM_NAME);
   if (nullptr == *seq_ref) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get transports.enabled_transports reference")
     return RMW_RET_ERROR;
   }
 #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
@@ -781,11 +785,13 @@ rmw_connextdds_initialize_participant_qos_impl(
   if (!REDA_StringSeq_set_maximum(
       &dp_qos->user_traffic.enabled_transports, max_transports))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_traffic.enabled_transports maximum")
     return RMW_RET_ERROR;
   }
   if (!REDA_StringSeq_set_length(
       &dp_qos->user_traffic.enabled_transports, max_transports))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_traffic.enabled_transports length")
     return RMW_RET_ERROR;
   }
 
@@ -853,7 +859,7 @@ rmw_connextdds_initialize_participant_qos_impl(
   if (!RT_ComponentFactoryId_set_name(
       &dp_qos->discovery.discovery.name, "dpde"))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to set discovery plugin name")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set discovery plugin name")
     return RMW_RET_ERROR;
   }
 
@@ -1188,7 +1194,7 @@ rmw_connextdds_write_message(
   if (DDS_RETCODE_OK !=
     DDS_DataWriter_write(pub->writer(), message, &DDS_HANDLE_NIL))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to write message to DDS")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to write message to DDS")
     return RMW_RET_ERROR;
   }
 
@@ -1212,7 +1218,7 @@ rmw_connextdds_take_samples(
   if (DDS_RETCODE_NO_DATA == rc) {
     return RMW_RET_OK;
   } else if (DDS_RETCODE_OK != rc) {
-    RMW_CONNEXT_LOG_ERROR("failed to take data from DDS reader")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to take data from DDS reader")
     return RMW_RET_ERROR;
   }
 
@@ -1227,7 +1233,7 @@ rmw_connextdds_return_samples(
     DDS_DataReader_return_loan(
       sub->reader(), sub->data_seq(), sub->info_seq()))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to return data to DDS reader")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to return data to DDS reader")
     return RMW_RET_ERROR;
   }
   return RMW_RET_OK;
@@ -1586,7 +1592,7 @@ rmw_connextdds_dcps_participant_get_reader(
   DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
   if (nullptr == sub) {
-    RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to lookup builtin subscriber")
     return RMW_RET_ERROR;
   }
   DDS_DataReader * const reader =
@@ -1607,6 +1613,7 @@ rmw_connextdds_dcps_participant_get_reader(
   if (DDS_RETCODE_OK !=
     DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set DataReaderListener")
     return RMW_RET_ERROR;
   }
 
@@ -1626,7 +1633,7 @@ rmw_connextdds_dcps_publication_get_reader(
   DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
   if (nullptr == sub) {
-    RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to lookup builtin subscriber")
     return RMW_RET_ERROR;
   }
   DDS_DataReader * const reader =
@@ -1647,6 +1654,7 @@ rmw_connextdds_dcps_publication_get_reader(
   if (DDS_RETCODE_OK !=
     DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to lookup set DataReaderListener")
     return RMW_RET_ERROR;
   }
 
@@ -1666,7 +1674,7 @@ rmw_connextdds_dcps_subscription_get_reader(
   DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
   if (nullptr == sub) {
-    RMW_CONNEXT_LOG_ERROR("failed to lookup builtin subscriber")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to lookup builtin subscriber")
     return RMW_RET_ERROR;
   }
   DDS_DataReader * const reader =
@@ -1687,6 +1695,7 @@ rmw_connextdds_dcps_subscription_get_reader(
   if (DDS_RETCODE_OK !=
     DDS_DataReader_set_listener(reader, &dr_listener, DDS_STATUS_MASK_ALL))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set DataReaderListener")
     return RMW_RET_ERROR;
   }
 
@@ -1931,7 +1940,7 @@ rmw_connextdds_enable_security(
   RT_Registry_T * registry =
     DDS_DomainParticipantFactory_get_registry(ctx->factory);
   if (nullptr == registry) {
-    RMW_CONNEXT_LOG_ERROR("failed to get factory registry")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get factory registry")
     return RMW_RET_ERROR;
   }
 
@@ -1942,7 +1951,7 @@ rmw_connextdds_enable_security(
   if (!SECCORE_SecurePluginFactory_register(
       registry, SECCORE_DEFAULT_SUITE_NAME, &sec_plugin_prop))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to register DDS Security plugins")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register DDS Security plugins")
     return RMW_RET_ERROR;
   }
 
@@ -1951,6 +1960,7 @@ rmw_connextdds_enable_security(
   if (!RT_ComponentFactoryId_set_name(
       &qos->trust.suite, SECCORE_DEFAULT_SUITE_NAME))
   {
+    RMW_CONNEXT_LOG_ERROR_SET("failed component name: %s", SECCORE_DEFAULT_SUITE_NAME)
     return RMW_RET_ERROR;
   }
 
@@ -1958,7 +1968,7 @@ rmw_connextdds_enable_security(
 #else
   UNUSED_ARG(ctx);
   UNUSED_ARG(qos);
-  RMW_CONNEXT_LOG_ERROR_A(
+  RMW_CONNEXT_LOG_ERROR_A_SET(
     "DDS Security not available. "
     "Please rebuild %s with -DRMW_CONNEXT_ENABLE_SECURITY",
     RMW_CONNEXTDDS_ID)

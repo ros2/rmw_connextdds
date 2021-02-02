@@ -272,7 +272,7 @@ RMW_Connext_TypePlugin_destroy_data(void ** sample, void * user_data)
     reinterpret_cast<rcutils_uint8_array_t *>(*sample);
 
   if (RCUTILS_RET_OK != rcutils_uint8_array_fini(data_buffer)) {
-    RMW_CONNEXT_LOG_ERROR("failed to finalize array")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to finalize array")
   }
 
   delete data_buffer;
@@ -762,7 +762,7 @@ rmw_connextdds_register_type_support(
     type_support = new RMW_Connext_MessageTypeSupport(
       message_type, type_supports, type_name);
   } catch (const std::exception & e) {
-    RMW_CONNEXT_LOG_ERROR_A("failed to create type support: %s", e.what())
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to create type support: %s", e.what())
   }
 
   if (nullptr == type_support) {
@@ -851,7 +851,7 @@ rmw_connextdds_register_type_support(
       &tc_cache);
 
     if (nullptr == type_plugin) {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to allocate type plugin interface: %s",
         type_support->type_name())
       return nullptr;
@@ -881,7 +881,7 @@ rmw_connextdds_register_type_support(
         &type_plugin->base,
         NULL))
     {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to register type plugin: %s",
         type_support->type_name())
       return nullptr;
@@ -928,7 +928,7 @@ rmw_connextdds_unregister_type_support(
     DDS_DomainParticipant_get_typecode(participant, type_name);
 
   if (nullptr == tc) {
-    RMW_CONNEXT_LOG_ERROR_A("failed to lookup type: %s", type_name)
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to lookup type: %s", type_name)
     return RMW_RET_ERROR;
   }
 
@@ -945,7 +945,7 @@ rmw_connextdds_unregister_type_support(
       DDS_DomainParticipant_unregister_type(
         participant, type_name))
     {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to unregister type: %s", tname.c_str())
       return RMW_RET_ERROR;
     }

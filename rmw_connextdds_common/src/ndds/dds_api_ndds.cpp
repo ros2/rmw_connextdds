@@ -50,7 +50,7 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
       }
     default:
       {
-        RMW_CONNEXT_LOG_ERROR("invalid log level")
+        RMW_CONNEXT_LOG_ERROR_A_SET("invalid log level: %d", severity)
         return RMW_RET_INVALID_ARGUMENT;
       }
   }
@@ -70,7 +70,7 @@ rmw_connextdds_initialize_participant_factory(
 
   factory = DDS_DomainParticipantFactory_get_instance();
   if (nullptr == factory) {
-    RMW_CONNEXT_LOG_ERROR("failed to get DDS participant factory")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS participant factory")
     return RMW_RET_ERROR;
   }
 
@@ -138,7 +138,7 @@ rmw_connextdds_initialize_participant_qos_impl(
         "127.0.0.1",
         DDS_BOOLEAN_FALSE /* propagate */))
     {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to assert property on participant: %s",
         "dds.transport.UDPv4.builtin.parent.allow_interfaces")
       return RMW_RET_ERROR;
@@ -154,7 +154,7 @@ rmw_connextdds_initialize_participant_qos_impl(
       "0",
       DDS_BOOLEAN_FALSE /* propagate */))
   {
-    RMW_CONNEXT_LOG_ERROR(
+    RMW_CONNEXT_LOG_ERROR_SET(
       "failed to assert property on participant: %s",
       "dds.transport.UDPv4.builtin.ignore_loopback_interface")
     return RMW_RET_ERROR;
@@ -171,7 +171,7 @@ rmw_connextdds_initialize_participant_qos_impl(
   if (!DDS_OctetSeq_ensure_length(
       &dp_qos->user_data.value, user_data_len, user_data_len))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to set user_data length")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data length")
     return RMW_RET_ERROR;
   }
 
@@ -187,7 +187,7 @@ rmw_connextdds_initialize_participant_qos_impl(
     ctx->base->options.enclave);
 
   if (user_data_rc < 0 || user_data_rc != user_data_len - 1) {
-    RMW_CONNEXT_LOG_ERROR("failed to set user_data")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data")
     return RMW_RET_ERROR;
   }
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
@@ -259,7 +259,7 @@ rmw_connextdds_create_contentfilteredtopic(
     DDS_DomainParticipant_create_contentfilteredtopic(
     dp, cft_name, base_topic, cft_filter, &cft_parameters);
   if (nullptr == cft_topic) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create content-filtered topic: "
       "name=%s, filter=%s", cft_name, cft_filter)
     return RMW_RET_ERROR;
@@ -284,7 +284,7 @@ rmw_connextdds_delete_contentfilteredtopic(
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipant_delete_contentfilteredtopic(dp, cft_topic))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to delete content-filtered topic")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to delete content-filtered topic")
     return RMW_RET_ERROR;
   }
 
@@ -326,7 +326,7 @@ rmw_connextdds_get_qos_policies(
         property, property_name, "0",
         DDS_BOOLEAN_FALSE /* propagate */))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to set property qos on writer")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to set property qos on writer")
       return RMW_RET_ERROR;
     }
   }
@@ -551,7 +551,7 @@ rmw_connextdds_write_message(
       DDS_DataWriter_write_w_params_untypedI(
         pub->writer(), message, &write_params))
     {
-      RMW_CONNEXT_LOG_ERROR(
+      RMW_CONNEXT_LOG_ERROR_SET(
         "failed to write request/reply message to DDS")
       return RMW_RET_ERROR;
     }
@@ -576,7 +576,7 @@ rmw_connextdds_write_message(
     DDS_DataWriter_write_untypedI(
       pub->writer(), message, &DDS_HANDLE_NIL))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to write message to DDS")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to write message to DDS")
     return RMW_RET_ERROR;
   }
 
@@ -616,7 +616,7 @@ rmw_connextdds_take_samples(
     if (DDS_RETCODE_NO_DATA == rc) {
       return RMW_RET_OK;
     }
-    RMW_CONNEXT_LOG_ERROR("failed to take data from DDS reader")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to take data from DDS reader")
     return RMW_RET_ERROR;
   }
   RMW_CONNEXT_ASSERT(data_len > 0)(void) RMW_Connext_Uint8ArrayPtrSeq_loan_contiguous(
@@ -638,7 +638,7 @@ rmw_connextdds_return_samples(
     RMW_Connext_Uint8ArrayPtrSeq_get_length(sub->data_seq());
 
   if (!RMW_Connext_Uint8ArrayPtrSeq_unloan(sub->data_seq())) {
-    RMW_CONNEXT_LOG_ERROR("failed to unloan sample sequence")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to unloan sample sequence")
     return RMW_RET_ERROR;
   }
   if (DDS_RETCODE_OK !=
@@ -648,7 +648,7 @@ rmw_connextdds_return_samples(
       data_len,
       sub->info_seq()))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to return loan to DDS reader")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
     return RMW_RET_ERROR;
   }
   return RMW_RET_OK;
@@ -778,7 +778,7 @@ rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * const ctx)
   }
 
   if (DDS_RETCODE_OK != DDS_Entity_enable(DDS_Subscriber_as_entity(sub))) {
-    RMW_CONNEXT_LOG_ERROR("failed to enable builtin subscriber")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable builtin subscriber")
     return RMW_RET_ERROR;
   }
 
@@ -789,14 +789,14 @@ rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * const ctx)
           DDS_DataReader_get_topicdescription(
             ctx->dr_participants)))))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable builtin topic (participants)")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable builtin topic (participants)")
     return RMW_RET_ERROR;
   }
 
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(DDS_DataReader_as_entity(ctx->dr_participants)))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable builtin reader (participants)")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable builtin reader (participants)")
     return RMW_RET_ERROR;
   }
 
@@ -807,14 +807,14 @@ rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * const ctx)
           DDS_DataReader_get_topicdescription(
             ctx->dr_publications)))))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable builtin topic (publications)")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable builtin topic (publications)")
     return RMW_RET_ERROR;
   }
 
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(DDS_DataReader_as_entity(ctx->dr_publications)))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable builtin reader (publications)")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable builtin reader (publications)")
     return RMW_RET_ERROR;
   }
 
@@ -825,14 +825,14 @@ rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * const ctx)
           DDS_DataReader_get_topicdescription(
             ctx->dr_subscriptions)))))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable builtin topic (subscriptions)")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable builtin topic (subscriptions)")
     return RMW_RET_ERROR;
   }
 
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(DDS_DataReader_as_entity(ctx->dr_subscriptions)))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable builtin reader (subscriptions)")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable builtin reader (subscriptions)")
     return RMW_RET_ERROR;
   }
 
@@ -902,7 +902,7 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
       DDS_ParticipantBuiltinTopicDataDataReader_return_loan(
         reader, &data_seq, &info_seq))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to return loan to dds reader")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to dds reader")
       return RMW_RET_ERROR;
     }
   } while (DDS_RETCODE_OK == rc);
@@ -986,7 +986,7 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
       DDS_PublicationBuiltinTopicDataDataReader_return_loan(
         reader, &data_seq, &info_seq))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to return loan to dds reader")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to dds reader")
       return RMW_RET_ERROR;
     }
   } while (DDS_RETCODE_OK == rc);
@@ -1071,7 +1071,7 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
       DDS_SubscriptionBuiltinTopicDataDataReader_return_loan(
         reader, &data_seq, &info_seq))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to return loan to dds reader")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to dds reader")
       return RMW_RET_ERROR;
     }
   } while (DDS_RETCODE_OK == rc);

@@ -212,7 +212,7 @@ public:
     if (this->internal) {
       this->gcond = DDS_GuardCondition_new();
       if (nullptr == this->gcond) {
-        RMW_CONNEXT_LOG_ERROR("failed to allocate dds guard condition")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to allocate dds guard condition")
       }
     }
   }
@@ -250,7 +250,7 @@ public:
         DDS_GuardCondition_set_trigger_value(
           this->gcond, DDS_BOOLEAN_TRUE))
       {
-        RMW_CONNEXT_LOG_ERROR("failed to trigger guard condition")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to trigger guard condition")
         return;
       }
 
@@ -598,14 +598,14 @@ public:
         DDS_Topic_as_entity(
           DDS_DataWriter_get_topic(this->dds_writer))))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to enable dds writer's topic")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds writer's topic")
       return RMW_RET_ERROR;
     }
 
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_DataWriter_as_entity(this->dds_writer)))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to enable dds writer")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds writer")
       return RMW_RET_ERROR;
     }
 
@@ -819,14 +819,14 @@ public:
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_Topic_as_entity(this->dds_topic)))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to enable dds reader's topic")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds reader's topic")
       return RMW_RET_ERROR;
     }
 
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_DataReader_as_entity(this->dds_reader)))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to enable dds reader")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds reader")
       return RMW_RET_ERROR;
     }
 
@@ -907,7 +907,7 @@ public:
       if (DDS_RETCODE_OK != DDS_GuardCondition_set_trigger_value(
           this->loan_guard_condition, this->loan_len > 0))
       {
-        RMW_CONNEXT_LOG_ERROR("failed to set internal reader condition's trigger")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to set internal reader condition's trigger")
         return RMW_RET_ERROR;
       }
     }
@@ -1294,58 +1294,6 @@ rmw_connextdds_destroy_guard_condition(rmw_guard_condition_t * const gc);
 
 rmw_ret_t
 rmw_connextdds_trigger_guard_condition(const rmw_guard_condition_t * const gc);
-
-
-class RMW_Connext_WaitSet
-{
-  DDS_WaitSet * waitset;
-  std::mutex waiting_lock;
-  bool waiting;
-  std::vector<RMW_Connext_Subscriber *> attached_subscribers;
-  std::vector<DDS_GuardCondition *> attached_conditions;
-  std::vector<RMW_Connext_Client *> attached_clients;
-  std::vector<RMW_Connext_Service *> attached_services;
-  std::vector<rmw_event_t *> attached_events;
-  std::vector<RMW_Connext_Subscriber *> attached_event_subscribers;
-  std::vector<RMW_Connext_Publisher *> attached_event_publishers;
-
-  struct DDS_ConditionSeq active_conditions;
-
-  template<typename T>
-  bool
-  require_attach(
-    const std::vector<T *> & attached_els,
-    const size_t new_els_count,
-    void ** const new_els);
-
-  rmw_ret_t
-  attach(
-    rmw_subscriptions_t * subs,
-    rmw_guard_conditions_t * gcs,
-    rmw_services_t * srvs,
-    rmw_clients_t * cls,
-    rmw_events_t * evs);
-
-  rmw_ret_t
-  detach();
-
-public:
-  static
-  RMW_Connext_WaitSet *
-  create();
-
-  rmw_ret_t
-  finalize();
-
-  rmw_ret_t
-  wait(
-    rmw_subscriptions_t * subs,
-    rmw_guard_conditions_t * gcs,
-    rmw_services_t * srvs,
-    rmw_clients_t * cls,
-    rmw_events_t * evs,
-    const rmw_time_t * wait_timeout);
-};
 
 rmw_wait_set_t *
 rmw_connextdds_create_waitset(const size_t max_conditions);

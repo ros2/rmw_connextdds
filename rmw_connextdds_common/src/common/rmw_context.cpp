@@ -40,7 +40,7 @@ rmw_connextdds_initialize_participant_factory_qos(
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipantFactory_get_qos(factory, &qos))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to get participant factory qos")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get participant factory qos")
     return RMW_RET_ERROR;
   }
 
@@ -49,7 +49,7 @@ rmw_connextdds_initialize_participant_factory_qos(
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipantFactory_set_qos(factory, &qos))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to get participant factory qos")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get participant factory qos")
     DDS_DomainParticipantFactoryQos_finalize(&qos);
     return RMW_RET_ERROR;
   }
@@ -83,7 +83,7 @@ rmw_connextdds_initialize_participant_qos(
     rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEER, &initial_peer);
 
   if (nullptr != lookup_rc || nullptr == initial_peer) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "
       "rc=%s ",
@@ -95,16 +95,16 @@ rmw_connextdds_initialize_participant_qos(
   if (strlen(initial_peer) > 0) {
     char * peer = DDS_String_dup(initial_peer);
     if (nullptr == peer) {
-      RMW_CONNEXT_LOG_ERROR("failed to allocate peer name")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate peer name")
       return RMW_RET_ERROR;
     }
 
     if (!DDS_StringSeq_set_maximum(&dp_qos.discovery.initial_peers, 1)) {
-      RMW_CONNEXT_LOG_ERROR("failed to set initial peers maximum")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to set initial peers maximum")
       return RMW_RET_ERROR;
     }
     if (!DDS_StringSeq_set_length(&dp_qos.discovery.initial_peers, 1)) {
-      RMW_CONNEXT_LOG_ERROR("failed to set initial peers length");
+      RMW_CONNEXT_LOG_ERROR_SET("failed to set initial peers length");
       return RMW_RET_ERROR;
     }
     *DDS_StringSeq_get_reference(&dp_qos.discovery.initial_peers, 0) =
@@ -131,7 +131,7 @@ rmw_context_impl_t::initialize_node(
     if ((this->localhost_only && !localhost_only) ||
       (!this->localhost_only && localhost_only))
     {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "incompatible node for context:"
         "ctx.localhost_only=%d, node.localhost_only=%d",
         this->localhost_only, localhost_only)
@@ -161,7 +161,7 @@ rmw_context_impl_t::initialize_node(
     rcutils_get_env(RMW_CONNEXT_ENV_QOS_LIBRARY, &qos_library);
 
   if (nullptr != lookup_rc || nullptr == qos_library) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "
       "rc=%s ",
@@ -217,7 +217,7 @@ rmw_context_impl_t::initialize_node(
     nullptr,
     DDS_STATUS_MASK_NONE);
   if (nullptr == this->participant) {
-    RMW_CONNEXT_LOG_ERROR("failed to create DDS participant")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS participant")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -238,7 +238,7 @@ rmw_context_impl_t::initialize_node(
     DDS_DomainParticipant_get_default_publisher_qos(
       this->participant, &pub_qos))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to get default Publisher QoS")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get default Publisher QoS")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -254,7 +254,7 @@ rmw_context_impl_t::initialize_node(
     DDS_STATUS_MASK_NONE);
 
   if (nullptr == this->dds_pub) {
-    RMW_CONNEXT_LOG_ERROR("failed to create DDS publisher")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS publisher")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -272,7 +272,7 @@ rmw_context_impl_t::initialize_node(
     DDS_DomainParticipant_get_default_subscriber_qos(
       this->participant, &sub_qos))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to get default Subscriber QoS")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get default Subscriber QoS")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -288,7 +288,7 @@ rmw_context_impl_t::initialize_node(
     DDS_STATUS_MASK_NONE);
 
   if (nullptr == this->dds_sub) {
-    RMW_CONNEXT_LOG_ERROR("failed to create DDS subscriber")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS subscriber")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -305,7 +305,7 @@ rmw_context_impl_t::initialize_node(
     DDS_Entity_enable(
       DDS_DomainParticipant_as_entity(this->participant)))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable participant")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable participant")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -313,7 +313,7 @@ rmw_context_impl_t::initialize_node(
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(DDS_Subscriber_as_entity(this->dds_sub)))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable dds subscriber")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds subscriber")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -321,7 +321,7 @@ rmw_context_impl_t::initialize_node(
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(DDS_Publisher_as_entity(this->dds_pub)))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to enable dds subscriber")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds subscriber")
     this->clean_up();
     return RMW_RET_ERROR;
   }
@@ -355,7 +355,7 @@ rmw_context_impl_t::clean_up()
     if (DDS_RETCODE_OK !=
       DDS_Publisher_delete_contained_entities(this->dds_pub))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to delete DDS publisher's entities")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS publisher's entities")
       return RMW_RET_ERROR;
     }
 
@@ -363,7 +363,7 @@ rmw_context_impl_t::clean_up()
       DDS_DomainParticipant_delete_publisher(
         this->participant, this->dds_pub))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to delete DDS publisher")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS publisher")
       return RMW_RET_ERROR;
     }
     this->dds_pub = nullptr;
@@ -377,7 +377,7 @@ rmw_context_impl_t::clean_up()
     if (DDS_RETCODE_OK !=
       DDS_Subscriber_delete_contained_entities(this->dds_sub))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to delete DDS subscriber's entities")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS subscriber's entities")
       return RMW_RET_ERROR;
     }
 
@@ -386,7 +386,7 @@ rmw_context_impl_t::clean_up()
       DDS_DomainParticipant_delete_subscriber(
         this->participant, this->dds_sub))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to delete DDS subscriber")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS subscriber")
       return RMW_RET_ERROR;
     }
     this->dds_sub = nullptr;
@@ -400,7 +400,7 @@ rmw_context_impl_t::clean_up()
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipant_delete_contained_entities(this->participant))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to delete DDS participant's entities")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS participant's entities")
       return RMW_RET_ERROR;
     }
 
@@ -408,7 +408,7 @@ rmw_context_impl_t::clean_up()
       DDS_DomainParticipantFactory_delete_participant(
         this->factory, this->participant))
     {
-      RMW_CONNEXT_LOG_ERROR("failed to delete DDS participant")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS participant")
       return RMW_RET_ERROR;
     }
     this->participant = nullptr;
@@ -496,7 +496,7 @@ rmw_context_impl_t::assert_topic(
         DDS_TopicDescription_get_name(topic_existing),
         &DDS_DURATION_ZERO);
       if (nullptr == *topic) {
-        RMW_CONNEXT_LOG_ERROR("failed to find topic from description")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to find topic from description")
         return RMW_RET_ERROR;
       }
       created = true;
@@ -513,7 +513,7 @@ rmw_context_impl_t::assert_topic(
       nullptr,
       DDS_STATUS_MASK_NONE);
     if (nullptr == *topic) {
-      RMW_CONNEXT_LOG_ERROR("failed to create reader's topic")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to create reader's topic")
       return RMW_RET_ERROR;
     }
     created = true;
@@ -524,7 +524,7 @@ rmw_context_impl_t::assert_topic(
 
   if (!internal) {
     if (DDS_RETCODE_OK != DDS_Entity_enable(DDS_Topic_as_entity(*topic))) {
-      RMW_CONNEXT_LOG_ERROR("failed to enable topic")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to enable topic")
       return RMW_RET_ERROR;
     }
   }
@@ -564,7 +564,7 @@ rmw_api_connextdds_init_options_init(
   RMW_CHECK_ARGUMENT_FOR_NULL(init_options, RMW_RET_INVALID_ARGUMENT);
   RCUTILS_CHECK_ALLOCATOR(&allocator, return RMW_RET_INVALID_ARGUMENT);
   if (NULL != init_options->implementation_identifier) {
-    RMW_CONNEXT_LOG_ERROR("expected zero-initialized init_options")
+    RMW_CONNEXT_LOG_ERROR_SET("expected zero-initialized init_options")
     return RMW_RET_INVALID_ARGUMENT;
   }
   init_options->instance_id = 0;
@@ -593,7 +593,7 @@ rmw_api_connextdds_init_options_copy(
   RMW_CHECK_ARGUMENT_FOR_NULL(src, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(dst, RMW_RET_INVALID_ARGUMENT);
   if (nullptr == src->implementation_identifier) {
-    RMW_CONNEXT_LOG_ERROR("expected initialized src")
+    RMW_CONNEXT_LOG_ERROR_SET("expected initialized src")
     return RMW_RET_INVALID_ARGUMENT;
   }
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -602,7 +602,7 @@ rmw_api_connextdds_init_options_copy(
     RMW_CONNEXTDDS_ID,
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
   if (nullptr != dst->implementation_identifier) {
-    RMW_CONNEXT_LOG_ERROR("expected zero-initialized dst")
+    RMW_CONNEXT_LOG_ERROR_SET("expected zero-initialized dst")
     return RMW_RET_INVALID_ARGUMENT;
   }
 
@@ -636,7 +636,7 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(init_options, RMW_RET_INVALID_ARGUMENT);
   if (nullptr == init_options->implementation_identifier) {
-    RMW_CONNEXT_LOG_ERROR("expected initialized init_options")
+    RMW_CONNEXT_LOG_ERROR_SET("expected initialized init_options")
     return RMW_RET_INVALID_ARGUMENT;
   }
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -687,7 +687,7 @@ rmw_api_connextdds_init(
     return RMW_RET_INVALID_ARGUMENT);
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
   if (nullptr != context->implementation_identifier) {
-    RMW_CONNEXT_LOG_ERROR("expected a zero-initialized context")
+    RMW_CONNEXT_LOG_ERROR_SET("expected a zero-initialized context")
     return RMW_RET_INVALID_ARGUMENT;
   }
 
@@ -695,7 +695,7 @@ rmw_api_connextdds_init(
   if (options->domain_id >= UINT32_MAX &&
     options->domain_id != RMW_DEFAULT_DOMAIN_ID)
   {
-    RMW_CONNEXT_LOG_ERROR("domain id out of range")
+    RMW_CONNEXT_LOG_ERROR_SET("domain id out of range")
     return RMW_RET_INVALID_ARGUMENT;
   }
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
@@ -739,7 +739,7 @@ rmw_api_connextdds_init(
   /* The context object will be initialized upon creation of the first node */
   context->impl = new (std::nothrow) rmw_context_impl_t(context);
   if (nullptr == context->impl) {
-    RMW_CONNEXT_LOG_ERROR(
+    RMW_CONNEXT_LOG_ERROR_SET(
       "failed to allocate RMW context implementation")
     return RMW_RET_ERROR;
   }
@@ -789,7 +789,7 @@ rmw_api_connextdds_context_fini(rmw_context_t * context)
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
   if (!context->impl->is_shutdown) {
-    RMW_CONNEXT_LOG_ERROR("context has not been shutdown")
+    RMW_CONNEXT_LOG_ERROR_SET("context has not been shutdown")
     return RMW_RET_INVALID_ARGUMENT;
   }
 #if RMW_CONNEXT_HAVE_OPTIONS

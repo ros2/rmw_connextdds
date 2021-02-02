@@ -162,7 +162,7 @@ rmw_api_connextdds_create_client(
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
 
   if (strlen(service_name) == 0) {
-    RMW_CONNEXT_LOG_ERROR("invalid service name")
+    RMW_CONNEXT_LOG_ERROR_SET("invalid service name")
     return nullptr;
   }
 
@@ -176,7 +176,7 @@ rmw_api_connextdds_create_client(
     if (RMW_TOPIC_VALID != validation_result) {
       const char * reason =
         rmw_full_topic_name_validation_result_string(validation_result);
-      RMW_CONNEXT_LOG_ERROR_A("invalid service name: %s", reason)
+      RMW_CONNEXT_LOG_ERROR_A_SET("invalid service name: %s", reason)
       return nullptr;
     }
   }
@@ -213,7 +213,7 @@ rmw_api_connextdds_create_client(
 
   rmw_client_t * rmw_client = rmw_client_allocate();
   if (nullptr == rmw_client) {
-    RMW_CONNEXT_LOG_ERROR("failed to create RMW client")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create RMW client")
     return nullptr;
   }
 
@@ -223,7 +223,7 @@ rmw_api_connextdds_create_client(
   rmw_client->service_name =
     reinterpret_cast<const char *>(rmw_allocate(svc_name_len));
   if (nullptr == rmw_client->service_name) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate client name")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate client name")
     return nullptr;
   }
   memcpy(
@@ -309,7 +309,7 @@ rmw_api_connextdds_create_service(
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
 
   if (strlen(service_name) == 0) {
-    RMW_CONNEXT_LOG_ERROR("invalid service name")
+    RMW_CONNEXT_LOG_ERROR_SET("invalid service name")
     return nullptr;
   }
 
@@ -323,7 +323,7 @@ rmw_api_connextdds_create_service(
     if (RMW_TOPIC_VALID != validation_result) {
       const char * reason =
         rmw_full_topic_name_validation_result_string(validation_result);
-      RMW_CONNEXT_LOG_ERROR_A("invalid service name: %s", reason)
+      RMW_CONNEXT_LOG_ERROR_A_SET("invalid service name: %s", reason)
       return nullptr;
     }
   }
@@ -360,7 +360,7 @@ rmw_api_connextdds_create_service(
 
   rmw_service_t * rmw_service = rmw_service_allocate();
   if (nullptr == rmw_service) {
-    RMW_CONNEXT_LOG_ERROR("failed to create RMW service")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create RMW service")
     return nullptr;
   }
 
@@ -370,7 +370,7 @@ rmw_api_connextdds_create_service(
   rmw_service->service_name =
     reinterpret_cast<const char *>(rmw_allocate(svc_name_len));
   if (nullptr == rmw_service->service_name) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate service name")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate service name")
     return nullptr;
   }
   memcpy(

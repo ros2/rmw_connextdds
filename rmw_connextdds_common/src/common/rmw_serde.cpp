@@ -51,7 +51,7 @@ rmw_api_connextdds_serialize(
     rmw_ret_t ret =
       rmw_serialized_message_resize(serialized_message, ser_size);
     if (RMW_RET_OK != ret) {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to allocate serialized message buffer: type=%s, size=%u",
         type_support.type_name(), ser_size)
       return ret;
@@ -59,11 +59,10 @@ rmw_api_connextdds_serialize(
 
     return type_support.serialize(ros_message, serialized_message);
   } catch (const std::exception & exc) {
-    RMW_CONNEXT_LOG_ERROR("failed to serialize message to buffer")
-    RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-      "failed to serialize message to buffer: error=%s", exc.what());
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to serialize message to buffer: error=%s", exc.what())
   } catch (...) {
-    RMW_CONNEXT_LOG_ERROR("failed to serialize message to buffer")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to serialize message to buffer")
   }
 
   return RMW_RET_ERROR;
@@ -86,11 +85,10 @@ rmw_api_connextdds_deserialize(
     UNUSED_ARG(deserialized_size);
     return ret;
   } catch (const std::exception & exc) {
-    RMW_CONNEXT_LOG_ERROR("failed to deserialize message from buffer")
-    RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-      "failed to deserialize message from buffer: error=%s", exc.what());
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to deserialize message from buffer: error=%s", exc.what())
   } catch (...) {
-    RMW_CONNEXT_LOG_ERROR("failed to deserialize message from buffer")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to deserialize message from buffer")
   }
 
   return RMW_RET_ERROR;

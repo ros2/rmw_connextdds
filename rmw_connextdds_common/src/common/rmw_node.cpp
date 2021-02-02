@@ -70,7 +70,7 @@ rmw_api_connextdds_create_node(
   rmw_context_impl_t * ctx = context->impl;
 
   if (ctx->is_shutdown) {
-    RMW_CONNEXT_LOG_ERROR("context already shutdown")
+    RMW_CONNEXT_LOG_ERROR_SET("context already shutdown")
     return nullptr;
   }
 
@@ -78,29 +78,25 @@ rmw_api_connextdds_create_node(
   int validation_result = RMW_NODE_NAME_VALID;
   rmw_ret_t ret = rmw_validate_node_name(name, &validation_result, nullptr);
   if (RMW_RET_OK != ret) {
-    RMW_CONNEXT_LOG_ERROR("failed to validate node name")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to validate node name")
     return nullptr;
   }
   if (RMW_NODE_NAME_VALID != validation_result) {
     const char * reason =
       rmw_node_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR("invalid node name")
-    RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-      "invalid node name: %s", reason);
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid node name: %s", reason)
     return nullptr;
   }
   validation_result = RMW_NAMESPACE_VALID;
   ret = rmw_validate_namespace(ns, &validation_result, nullptr);
   if (RMW_RET_OK != ret) {
-    RMW_CONNEXT_LOG_ERROR("failed to validate node namespace")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to validate node namespace")
     return nullptr;
   }
   if (RMW_NAMESPACE_VALID != validation_result) {
     const char * reason =
       rmw_node_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR("invalid node namespace")
-    RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-      "invalid node namespace: %s", reason);
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid node namespace: %s", reason)
     return nullptr;
   }
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
@@ -109,7 +105,7 @@ rmw_api_connextdds_create_node(
     if (0u == ctx->node_count) {
       ctx->domain_id = domain_id;
     } else if ((size_t)ctx->domain_id != domain_id) {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "invalid domain id: context=%d, node=%ld\n",
         ctx->domain_id, domain_id)
       return nullptr;
@@ -150,7 +146,7 @@ rmw_api_connextdds_create_node(
 
   rmw_node_t * rmw_node = rmw_node_allocate();
   if (nullptr == rmw_node) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate RMW node")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate RMW node")
     return nullptr;
   }
   rmw_node->name = nullptr;
@@ -173,7 +169,7 @@ rmw_api_connextdds_create_node(
     static_cast<const char *>(
     rmw_allocate(sizeof(char) * name_len));
   if (nullptr == rmw_node->name) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate node name")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate node name")
     return nullptr;
   }
   memcpy(const_cast<char *>(rmw_node->name), name, name_len);
@@ -183,7 +179,7 @@ rmw_api_connextdds_create_node(
     static_cast<const char *>(
     rmw_allocate(sizeof(char) * ns_len));
   if (nullptr == rmw_node->namespace_) {
-    RMW_CONNEXT_LOG_ERROR("failed to allocate node namespace")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate node namespace")
     return nullptr;
   }
   memcpy(const_cast<char *>(rmw_node->namespace_), ns, ns_len);

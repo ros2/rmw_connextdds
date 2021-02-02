@@ -245,7 +245,7 @@ rmw_api_connextdds_count_publishers(
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
       rmw_full_topic_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
 
@@ -282,7 +282,7 @@ rmw_api_connextdds_count_subscribers(
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
       rmw_full_topic_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
 
@@ -333,7 +333,7 @@ static rmw_ret_t get_topic_names_and_types_by_node(
   }
   if (RMW_NODE_NAME_VALID != validation_result) {
     const char * reason = rmw_node_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A("invalid node name: %s", reason)
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid node name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
   validation_result = RMW_NAMESPACE_VALID;
@@ -343,7 +343,7 @@ static rmw_ret_t get_topic_names_and_types_by_node(
   }
   if (RMW_NAMESPACE_VALID != validation_result) {
     const char * reason = rmw_namespace_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A("invalid node namespace: %s", reason)
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid node namespace: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
 
@@ -548,7 +548,7 @@ rmw_api_connextdds_get_publishers_info_by_topic(
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
       rmw_full_topic_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
 
@@ -603,7 +603,7 @@ rmw_api_connextdds_get_subscriptions_info_by_topic(
   if (RMW_TOPIC_VALID != validation_result) {
     const char * reason =
       rmw_full_topic_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A("invalid topic name: %s", reason)
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
     return RMW_RET_INVALID_ARGUMENT;
   }
 

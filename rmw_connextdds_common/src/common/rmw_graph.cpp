@@ -150,10 +150,10 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     [dw_qos_ptr, dr_qos_ptr]()
     {
       if (DDS_RETCODE_OK != DDS_DataReaderQos_finalize(dr_qos_ptr)) {
-        RMW_CONNEXT_LOG_ERROR("failed to finalize DataReaderQos")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataReaderQos")
       }
       if (DDS_RETCODE_OK != DDS_DataWriterQos_finalize(dw_qos_ptr)) {
-        RMW_CONNEXT_LOG_ERROR("failed to finalize DataWriterQos")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataWriterQos")
       }
     });
 
@@ -938,6 +938,7 @@ rmw_connextdds_graph_add_local_publisherEA(
     DDS_Topic_as_topicdescription(pub->dds_topic()));
 
   if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize DataWriterQos")
     return RMW_RET_ERROR;
   }
 
@@ -945,11 +946,12 @@ rmw_connextdds_graph_add_local_publisherEA(
     [dw_qos_ptr]()
     {
       if (DDS_RETCODE_OK != DDS_DataWriterQos_finalize(dw_qos_ptr)) {
-        RMW_CONNEXT_LOG_ERROR("failed to finalize DataWriterQos")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataWriterQos")
       }
     });
 
   if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(pub->writer(), &dw_qos)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get DataWriter's qos")
     return RMW_RET_ERROR;
   }
 
@@ -1008,6 +1010,7 @@ rmw_connextdds_graph_add_local_subscriberEA(
     DDS_Topic_as_topicdescription(sub->topic()));
 
   if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize DataReaderQos")
     return RMW_RET_ERROR;
   }
 
@@ -1015,11 +1018,12 @@ rmw_connextdds_graph_add_local_subscriberEA(
     [dr_qos_ptr]()
     {
       if (DDS_RETCODE_OK != DDS_DataReaderQos_finalize(dr_qos_ptr)) {
-
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataReaderQos")
       }
     });
 
   if (DDS_RETCODE_OK != DDS_DataReader_get_qos(sub->reader(), &dr_qos)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get DataReader's qos")
     return RMW_RET_ERROR;
   }
 
@@ -1115,7 +1119,7 @@ rmw_connextdds_graph_remove_entityEA(
   rmw_gid_t endp_gid;
   rmw_connextdds_ih_to_gid(*instance, endp_gid);
   if (!ctx->common.graph_cache.remove_entity(endp_gid, is_reader)) {
-    RMW_CONNEXT_LOG_ERROR("failed to remove entity from cache")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to remove entity from cache")
     return RMW_RET_ERROR;
   }
   return RMW_RET_OK;

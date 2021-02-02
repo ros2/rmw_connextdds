@@ -35,12 +35,12 @@ rmw_connextdds_attach_reader_to_waitset(
     DDS_StatusCondition_set_enabled_statuses(
       status_cond, DDS_DATA_AVAILABLE_STATUS))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to set datareader condition mask")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set datareader condition mask")
     return nullptr;
   }
 
   if (DDS_RETCODE_OK != DDS_WaitSet_attach_condition(waitset, cond)) {
-    RMW_CONNEXT_LOG_ERROR(
+    RMW_CONNEXT_LOG_ERROR_SET(
       "failed to attach status condition to waitset")
     return nullptr;
   }
@@ -85,7 +85,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
 
   DDS_WaitSet * waitset = DDS_WaitSet_new();
   if (nullptr == waitset) {
-    RMW_CONNEXT_LOG_ERROR(
+    RMW_CONNEXT_LOG_ERROR_SET(
       "failed to create waitset for discovery thread")
     return;
   }
@@ -124,7 +124,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
   if (DDS_RETCODE_OK !=
     DDS_WaitSet_attach_condition(waitset, cond_exit))
   {
-    RMW_CONNEXT_LOG_ERROR(
+    RMW_CONNEXT_LOG_ERROR_SET(
       "failed to attach exit condition to discovery thread waitset")
     goto cleanup;
   }
@@ -132,7 +132,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
   attached_conditions += 1;
 
   if (DDS_RETCODE_OK != DDS_WaitSet_attach_condition(waitset, cond_partinfo)) {
-    RMW_CONNEXT_LOG_ERROR(
+    RMW_CONNEXT_LOG_ERROR_SET(
       "failed to attach participant info condition to "
       "discovery thread waitset")
     goto cleanup;
@@ -141,7 +141,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
   attached_conditions += 1;
 
   if (!DDS_ConditionSeq_set_maximum(&active_conditions, attached_conditions)) {
-    RMW_CONNEXT_LOG_ERROR("failed to set condition seq maximum")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set condition seq maximum")
     goto cleanup;
   }
 
@@ -153,7 +153,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
       waitset, &active_conditions, &DDS_DURATION_INFINITE);
 
     if (DDS_RETCODE_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("wait failed for discovery thread")
+      RMW_CONNEXT_LOG_ERROR_SET("wait failed for discovery thread")
       goto cleanup;
     }
 
@@ -186,7 +186,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
           "[discovery thread] dcps-subscriptions active")
         rmw_connextdds_dcps_subscription_on_data(ctx);
       } else {
-        RMW_CONNEXT_LOG_ERROR("unexpected active condition")
+        RMW_CONNEXT_LOG_ERROR_SET("unexpected active condition")
         goto cleanup;
       }
     }
@@ -205,7 +205,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
       if (DDS_RETCODE_OK !=
         DDS_WaitSet_detach_condition(waitset, cond_exit))
       {
-        RMW_CONNEXT_LOG_ERROR(
+        RMW_CONNEXT_LOG_ERROR_SET(
           "failed to detach graph condition from "
           "discovery thread waitset")
         return;
@@ -215,7 +215,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
       if (DDS_RETCODE_OK !=
         DDS_WaitSet_detach_condition(waitset, cond_partinfo))
       {
-        RMW_CONNEXT_LOG_ERROR(
+        RMW_CONNEXT_LOG_ERROR_SET(
           "failed to detach participant info condition from "
           "discovery thread waitset")
         return;
@@ -225,7 +225,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
       if (DDS_RETCODE_OK !=
         DDS_WaitSet_detach_condition(waitset, cond_dcps_part))
       {
-        RMW_CONNEXT_LOG_ERROR(
+        RMW_CONNEXT_LOG_ERROR_SET(
           "failed to detach DCPS Participant condition from "
           "discovery thread waitset")
         return;
@@ -235,7 +235,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
       if (DDS_RETCODE_OK !=
         DDS_WaitSet_detach_condition(waitset, cond_dcps_sub))
       {
-        RMW_CONNEXT_LOG_ERROR(
+        RMW_CONNEXT_LOG_ERROR_SET(
           "failed to detach DCPS Subscription condition from "
           "discovery thread waitset")
         return;
@@ -245,7 +245,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
       if (DDS_RETCODE_OK !=
         DDS_WaitSet_detach_condition(waitset, cond_dcps_pub))
       {
-        RMW_CONNEXT_LOG_ERROR(
+        RMW_CONNEXT_LOG_ERROR_SET(
           "failed to detach DCPS Publication condition from "
           "discovery thread waitset")
         return;
@@ -283,11 +283,9 @@ rmw_connextdds_discovery_thread_start(rmw_context_impl_t * ctx)
 
     return RMW_RET_OK;
   } catch (const std::exception & exc) {
-    RMW_CONNEXT_LOG_ERROR("Failed to create std::thread")
-    RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-      "Failed to create std::thread: %s", exc.what());
+    RMW_CONNEXT_LOG_ERROR_A_SET("Failed to create std::thread: %s", exc.what())
   } catch (...) {
-    RMW_CONNEXT_LOG_ERROR("Failed to create std::thread")
+    RMW_CONNEXT_LOG_ERROR_SET("Failed to create std::thread")
   }
 
   /* We'll get here only on error, so clean up things accordingly */
@@ -322,12 +320,10 @@ rmw_connextdds_discovery_thread_stop(rmw_context_impl_t * ctx)
     try {
       common_ctx->listener_thread.join();
     } catch (const std::exception & exc) {
-      RMW_CONNEXT_LOG_ERROR("Failed to join std::thread")
-      RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-        "Failed to join std::thread: %s", exc.what());
+      RMW_CONNEXT_LOG_ERROR_A_SET("Failed to join std::thread: %s", exc.what())
       return RMW_RET_ERROR;
     } catch (...) {
-      RMW_CONNEXT_LOG_ERROR("Failed to join std::thread")
+      RMW_CONNEXT_LOG_ERROR_SET("Failed to join std::thread")
       return RMW_RET_ERROR;
     }
 

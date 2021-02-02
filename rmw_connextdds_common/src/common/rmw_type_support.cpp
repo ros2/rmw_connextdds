@@ -144,12 +144,11 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
           return RMW_RET_ERROR;
         }
       } catch (const std::exception & exc) {
-        RMW_CONNEXT_LOG_ERROR("Failed to serialize data")
-        RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-          "Failed to serialize data: %s", exc.what());
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "Failed to serialize data: %s", exc.what())
         return RMW_RET_ERROR;
       } catch (...) {
-        RMW_CONNEXT_LOG_ERROR("Failed to serialize data")
+        RMW_CONNEXT_LOG_ERROR_SET("Failed to serialize data")
         return RMW_RET_ERROR;
       }
     } else {
@@ -157,11 +156,11 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
       cdr_stream << (uint8_t)0;
     }
   } catch (const std::exception & exc) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "Failed to serialize ROS message: %s", exc.what())
     return RMW_RET_ERROR;
   } catch (...) {
-    RMW_CONNEXT_LOG_ERROR("Failed to serialize ROS message")
+    RMW_CONNEXT_LOG_ERROR_SET("Failed to serialize ROS message")
     return RMW_RET_ERROR;
   }
 
@@ -236,12 +235,11 @@ RMW_Connext_MessageTypeSupport::deserialize(
           return RMW_RET_ERROR;
         }
       } catch (const std::exception & exc) {
-        RMW_CONNEXT_LOG_ERROR("Failed to deserialize data")
-        RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
-          "Failed to deserialize data: %s", exc.what());
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "Failed to deserialize data: %s", exc.what())
         return RMW_RET_ERROR;
       } catch (...) {
-        RMW_CONNEXT_LOG_ERROR("Failed to deserialize data")
+        RMW_CONNEXT_LOG_ERROR_SET("Failed to deserialize data")
         return RMW_RET_ERROR;
       }
     } else {
@@ -251,11 +249,11 @@ RMW_Connext_MessageTypeSupport::deserialize(
       (void)dummy;
     }
   } catch (const std::exception & exc) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "Failed to deserialize ROS message: %s", exc.what())
     return RMW_RET_ERROR;
   } catch (...) {
-    RMW_CONNEXT_LOG_ERROR("Failed to deserialize ROS message")
+    RMW_CONNEXT_LOG_ERROR_SET("Failed to deserialize ROS message")
     return RMW_RET_ERROR;
   }
 

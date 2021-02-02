@@ -252,7 +252,7 @@ rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
       }
     default:
       {
-        RMW_CONNEXT_LOG_ERROR_A("unknown ROS type id: %d", ros_type_id)
+        RMW_CONNEXT_LOG_ERROR_A_SET("unknown ROS type id: %d", ros_type_id)
         return DDS_TK_NULL;
       }
   }
@@ -342,7 +342,7 @@ rmw_connextdds_convert_type_member(
           RMW_Connext_MessageTypeSupport::get_type_support_intro(
           member->members_, cpp_version);
         if (nullptr == type_support_intro) {
-          RMW_CONNEXT_LOG_ERROR_A(
+          RMW_CONNEXT_LOG_ERROR_A_SET(
             "introspection type support not found for member: %s",
             member->name_)
           return nullptr;
@@ -373,7 +373,7 @@ rmw_connextdds_convert_type_member(
   }
 
   if (nullptr == el_tc) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to convert member to type code: %s",
       member->name_)
     return nullptr;
@@ -503,7 +503,7 @@ rmw_connextdds_create_typecode(
       type_supports, cpp_version);
 
     if (nullptr == intro_ts) {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "introspection type support not found for %s",
         type_name)
       return nullptr;
@@ -519,7 +519,7 @@ rmw_connextdds_create_typecode(
 
   DDS_TypeCodeFactory * const tc_factory = DDS_TypeCodeFactory_get_instance();
   if (nullptr == tc_factory) {
-    RMW_CONNEXT_LOG_ERROR("failed to get DDS_TypeCodeFactory")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS_TypeCodeFactory")
     return nullptr;
   }
 
@@ -551,7 +551,7 @@ rmw_connextdds_create_typecode(
       rmw_connextdds_convert_type_members(
         tc_factory, members, &tc_members, tc_cache_ptr))
     {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to convert members for %s",
         type_name)
       return nullptr;
@@ -565,7 +565,7 @@ rmw_connextdds_create_typecode(
       rmw_connextdds_convert_type_members(
         tc_factory, members, &tc_members, tc_cache_ptr))
     {
-      RMW_CONNEXT_LOG_ERROR_A(
+      RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to convert members for %s",
         type_name)
       return nullptr;
@@ -582,7 +582,7 @@ rmw_connextdds_create_typecode(
     DDS_TypeCodeFactory_create_struct_tc(
     tc_factory, type_name, &tc_members, &ex);
   if (nullptr == tc) {
-    RMW_CONNEXT_LOG_ERROR_A(
+    RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create type code for %s",
       type_name)
     return nullptr;
@@ -596,13 +596,13 @@ rmw_connextdds_delete_typecode(DDS_TypeCode * const tc)
 {
   DDS_TypeCodeFactory * const tc_factory = DDS_TypeCodeFactory_get_instance();
   if (nullptr == tc_factory) {
-    RMW_CONNEXT_LOG_ERROR("failed to get DDS_TypeCodeFactory")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS_TypeCodeFactory")
     return;
   }
   DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
   DDS_TypeCodeFactory_delete_tc(tc_factory, tc, &ex);
   if (DDS_NO_EXCEPTION_CODE != ex) {
-    RMW_CONNEXT_LOG_WARNING("failed to delete type code")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to delete type code")
   }
 }
 

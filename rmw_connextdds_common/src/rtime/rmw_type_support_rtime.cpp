@@ -820,7 +820,7 @@ rmw_connextdds_delete_type_if_unused(
     DDS_DomainParticipant_is_type_in_use(
       participant, type_name, &in_use))
   {
-    RMW_CONNEXT_LOG_ERROR("failed to check type status")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to check type status")
     return RMW_RET_ERROR;
   }
 
@@ -829,7 +829,7 @@ rmw_connextdds_delete_type_if_unused(
       DDS_DomainParticipant_unregister_type(participant, type_name);
 
     if (nullptr == reg_intf) {
-      RMW_CONNEXT_LOG_ERROR("failed to unregister type")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to unregister type")
       return RMW_RET_ERROR;
     }
 
@@ -863,7 +863,7 @@ rmw_connextdds_register_type_support(
     type_support = new RMW_Connext_MessageTypeSupport(
       message_type, type_supports, type_name);
   } catch (const std::exception & e) {
-    RMW_CONNEXT_LOG_ERROR_A("failed to create type support: %s", e.what())
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to create type support: %s", e.what())
   }
 
   if (nullptr == type_support) {

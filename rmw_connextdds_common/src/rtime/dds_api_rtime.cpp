@@ -301,7 +301,7 @@ public:
       H::finalize(&first.data);
     }
     this->data_queue.erase(this->data_queue.begin());
-    return (RMW_RET_OK == rc)? true : false;
+    return (RMW_RET_OK == rc) ? true : false;
   }
 
   virtual

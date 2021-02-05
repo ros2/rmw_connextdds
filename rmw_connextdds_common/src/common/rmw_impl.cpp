@@ -3803,9 +3803,10 @@ RMW_Connext_WaitSet::wait(
     this->attached_clients.size() +
     this->attached_services.size() +
     this->attached_events.size();
-  
+
   if (!DDS_ConditionSeq_ensure_length(
-    &this->active_conditions, attached_count, attached_count)) {
+      &this->active_conditions, attached_count, attached_count))
+  {
     RMW_CONNEXT_LOG_ERROR("failed to resize conditions sequence")
     return RMW_RET_ERROR;
   }

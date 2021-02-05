@@ -192,7 +192,7 @@
 
 #define RMW_CONNEXT_LOG_ERROR_A_SET(fmt_, ...) \
   rmw_reset_error(); \
-  RMW_CONNEXT_LOG_ERROR_A((fmt_), __VA_ARGS__) \
+  RMW_CONNEXT_LOG_ERROR_A(fmt_, __VA_ARGS__) \
   RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(fmt_, __VA_ARGS__);
 
 #endif  // RMW_CONNEXTDDS__LOG_HPP_

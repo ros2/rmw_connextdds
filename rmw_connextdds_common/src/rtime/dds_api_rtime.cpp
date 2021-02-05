@@ -291,17 +291,17 @@ public:
       return false;
     }
     auto first = this->data_queue[0];
+    qdata.valid_data = first.valid_data;
     qdata.instance_state = first.instance_state;
     qdata.instance_handle = first.instance_handle;
-    H::initialize(&qdata.data);
-    rmw_ret_t rc = H::copy(&qdata.data, &first.data);
-    this->data_queue.erase(this->data_queue.begin());
-    H::finalize(&first.data);
-    if (RMW_RET_OK != rc) {
-      H::finalize(&qdata.data);
-      return false;
+    rmw_ret_t rc = RMW_RET_OK;
+    if (qdata.valid_data) {
+      H::initialize(&qdata.data);
+      rc = H::copy(&qdata.data, &first.data);
+      H::finalize(&first.data);
     }
-    return true;
+    this->data_queue.erase(this->data_queue.begin());
+    return (RMW_RET_OK == rc)? true : false;
   }
 
   virtual
@@ -1887,11 +1887,11 @@ RMW_Connext_DataReaderListener_before_sample_commit_drop_local(
   UNUSED_ARG(reader);
   UNUSED_ARG(sample);
 
-  RMW_Connext_StdSubscriberStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition *>(listener_data);
+  RMW_Connext_SubscriberStatusCondition * const self =
+    reinterpret_cast<RMW_Connext_SubscriberStatusCondition *>(listener_data);
 
   *dropped = memcmp(
-    self->drop_handle().octet,
+    self->participant_handle.octet,
     sample_info->publication_handle.octet,
     12) == 0 ?
     DDS_BOOLEAN_TRUE : DDS_BOOLEAN_FALSE;
@@ -1901,15 +1901,13 @@ RMW_Connext_DataReaderListener_before_sample_commit_drop_local(
 
 void
 rmw_connextdds_configure_subscriber_condition_listener(
-  RMW_Connext_Subscriber * const sub,
-  RMW_Connext_StdSubscriberStatusCondition * cond,
+  RMW_Connext_SubscriberStatusCondition * cond,
   DDS_DataReaderListener * const listener,
   DDS_StatusMask * const listener_mask)
 {
-  UNUSED_ARG(sub);
   UNUSED_ARG(cond);
   UNUSED_ARG(listener_mask);
-  if (sub->ignore_local()) {
+  if (cond->ignore_local) {
     listener->on_before_sample_commit =
       RMW_Connext_DataReaderListener_before_sample_commit_drop_local;
   }

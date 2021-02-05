@@ -65,14 +65,11 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
   bool attached_exit = false,
     attached_partinfo = false;
 
-  RMW_Connext_StdGuardCondition * const gcond_exit =
-    reinterpret_cast<RMW_Connext_StdGuardCondition *>(
+  RMW_Connext_GuardCondition * const gcond_exit =
+    reinterpret_cast<RMW_Connext_GuardCondition *>(
     ctx->common.listener_thread_gc->data);
-  DDS_Condition * cond_exit =
-    DDS_GuardCondition_as_condition(gcond_exit->guard_condition());
 
-  DDS_Condition * cond_partinfo = sub_partinfo->data_condition(),
-    * cond_active = nullptr;
+  DDS_Condition * cond_active = nullptr;
   bool attached_dcps_part = false,
     attached_dcps_sub = false,
     attached_dcps_pub = false;
@@ -82,6 +79,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
     * cond_dcps_sub = nullptr;
 
   size_t attached_conditions = 0;
+  bool active = false;
 
   DDS_WaitSet * waitset = DDS_WaitSet_new();
   if (nullptr == waitset) {
@@ -121,23 +119,28 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
     attached_conditions += 1;
   }
 
-  if (DDS_RETCODE_OK !=
-    DDS_WaitSet_attach_condition(waitset, cond_exit))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET(
-      "failed to attach exit condition to discovery thread waitset")
+  if (RMW_RET_OK != sub_partinfo->condition()->reset()) {
+    RMW_CONNEXT_LOG_ERROR("failed to reset participant info condition")
     goto cleanup;
   }
-  attached_exit = true;
-  attached_conditions += 1;
 
-  if (DDS_RETCODE_OK != DDS_WaitSet_attach_condition(waitset, cond_partinfo)) {
+  if (RMW_RET_OK !=
+    sub_partinfo->condition()->attach(waitset, DDS_DATA_AVAILABLE_STATUS))
+  {
     RMW_CONNEXT_LOG_ERROR_SET(
       "failed to attach participant info condition to "
       "discovery thread waitset")
     goto cleanup;
   }
   attached_partinfo = true;
+  attached_conditions += 1;
+
+  if (RMW_RET_OK != gcond_exit->attach(waitset)) {
+    RMW_CONNEXT_LOG_ERROR_SET(
+      "failed to attach exit condition to discovery thread waitset")
+    goto cleanup;
+  }
+  attached_exit = true;
   attached_conditions += 1;
 
   if (!DDS_ConditionSeq_set_maximum(&active_conditions, attached_conditions)) {
@@ -147,7 +150,13 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
 
   RMW_CONNEXT_LOG_DEBUG("[discovery thread] main loop")
 
-  while (ctx->common.thread_is_running.load()) {
+  active = ctx->common.thread_is_running.load();
+
+  do {
+    // Just in case we were killed before we event got a chance to run
+    if (!active) {
+      continue;
+    }
     RMW_CONNEXT_LOG_TRACE("[discovery thread] waiting...")
     rc = DDS_WaitSet_wait(
       waitset, &active_conditions, &DDS_DURATION_INFINITE);
@@ -162,14 +171,23 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
     RMW_CONNEXT_LOG_TRACE_A(
       "[discovery thread] active=%u", active_len)
 
-    for (i = 0; i < active_len; i++) {
+    // First scan list of active conditions to check if we should terminate
+    for (i = 0; i < active_len && active; i++) {
       cond_active =
         *DDS_ConditionSeq_get_reference(&active_conditions, i);
-      if (cond_exit == cond_active) {
-        /* nothing to do */
+      if (gcond_exit->owns(cond_active)) {
         RMW_CONNEXT_LOG_DEBUG(
           "[discovery thread] exit condition active")
-      } else if (cond_partinfo == cond_active) {
+        /* exit without processing any further */
+        active = false;
+        continue;
+      }
+    }
+
+    for (i = 0; i < active_len && active; i++) {
+      cond_active =
+        *DDS_ConditionSeq_get_reference(&active_conditions, i);
+      if (sub_partinfo->condition()->owns(cond_active)) {
         RMW_CONNEXT_LOG_DEBUG(
           "[discovery thread] participant-info active")
         rmw_connextdds_graph_on_participant_info(ctx);
@@ -190,7 +208,9 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
         goto cleanup;
       }
     }
-  }
+
+    active = active && ctx->common.thread_is_running.load();
+  } while (active);
 
   RMW_CONNEXT_LOG_DEBUG("[discovery thread] main loop terminated")
 
@@ -202,9 +222,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
 
   if (nullptr != waitset) {
     if (attached_exit) {
-      if (DDS_RETCODE_OK !=
-        DDS_WaitSet_detach_condition(waitset, cond_exit))
-      {
+      if (RMW_RET_OK != gcond_exit->detach(waitset)) {
         RMW_CONNEXT_LOG_ERROR_SET(
           "failed to detach graph condition from "
           "discovery thread waitset")
@@ -212,9 +230,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
       }
     }
     if (attached_partinfo) {
-      if (DDS_RETCODE_OK !=
-        DDS_WaitSet_detach_condition(waitset, cond_partinfo))
-      {
+      if (RMW_RET_OK != sub_partinfo->condition()->detach(waitset)) {
         RMW_CONNEXT_LOG_ERROR_SET(
           "failed to detach participant info condition from "
           "discovery thread waitset")
@@ -264,9 +280,7 @@ rmw_connextdds_discovery_thread_start(rmw_context_impl_t * ctx)
 
   RMW_CONNEXT_LOG_DEBUG("starting discovery thread...")
 
-  common_ctx->listener_thread_gc =
-    rmw_connextdds_create_guard_condition(true /* internal */);
-
+  common_ctx->listener_thread_gc = rmw_connextdds_create_guard_condition();
   if (nullptr == common_ctx->listener_thread_gc) {
     RMW_CONNEXT_LOG_ERROR(
       "failed to create discovery thread condition")

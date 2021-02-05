@@ -58,6 +58,11 @@ rmw_connextdds_graph_add_local_subscriberEA(
 rmw_ret_t
 rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 {
+  if (ctx->graph_initialized) {
+    RMW_CONNEXT_LOG_ERROR_SET("graph subsystem already initialized")
+    return RMW_RET_ERROR;
+  }
+
   rmw_qos_profile_t pubsub_qos = rmw_qos_profile_default;
   pubsub_qos.avoid_ros_namespace_conventions = true;
   pubsub_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
@@ -107,7 +112,6 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     return RMW_RET_ERROR;
   }
 
-
   pubsub_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_ALL;
 
   RMW_CONNEXT_LOG_DEBUG("creating discovery subscriber")
@@ -133,80 +137,9 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     return RMW_RET_ERROR;
   }
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-  // Since the endpoints are marked as "internal", they are not automatically
-  // enabled by the rmw_connextdds_create_*() calls, and we still have a chance
-  // to customize QoS parameters further.
-  DDS_DataReaderQos dr_qos;
-  DDS_DataReaderQos * const dr_qos_ptr = &dr_qos;
-  DDS_DataWriterQos dw_qos;
-  DDS_DataWriterQos * const dw_qos_ptr = &dw_qos;
-  DDS_DataReader * const reader =
-    reinterpret_cast<RMW_Connext_Subscriber *>(ctx->common.sub->data)->reader();
-  DDS_DataWriter * const writer =
-    reinterpret_cast<RMW_Connext_Publisher *>(ctx->common.pub->data)->writer();
-
-  auto scope_exit_qos_reset = rcpputils::make_scope_exit(
-    [dw_qos_ptr, dr_qos_ptr]()
-    {
-      if (DDS_RETCODE_OK != DDS_DataReaderQos_finalize(dr_qos_ptr)) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataReaderQos")
-      }
-      if (DDS_RETCODE_OK != DDS_DataWriterQos_finalize(dw_qos_ptr)) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataWriterQos")
-      }
-    });
-
-  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
-    return RMW_RET_ERROR;
-  }
-  if (DDS_RETCODE_OK != DDS_DataReader_get_qos(reader, &dr_qos)) {
-    return RMW_RET_ERROR;
-  }
-
-  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
-    return RMW_RET_ERROR;
-  }
-  if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(writer, &dw_qos)) {
-    return RMW_RET_ERROR;
-  }
-
-#if 0
-  // Apply qos settings from:
-  // - Optimization.ReliabilityProtocol.LowLatency
-  // - Optimization.ReliabilityProtocol.Common
-  dr_qos.protocol.rtps_reliable_reader.heartbeat_suppression_duration = DDS_DURATION_ZERO;
-
-  dr_qos.protocol.rtps_reliable_reader.min_heartbeat_response_delay = DDS_DURATION_ZERO;
-  dr_qos.protocol.rtps_reliable_reader.max_heartbeat_response_delay = DDS_DURATION_ZERO;
-
-  dw_qos.protocol.rtps_reliable_writer.max_send_window_size = 40;
-  dw_qos.protocol.rtps_reliable_writer.min_send_window_size = 40;
-  dw_qos.protocol.rtps_reliable_writer.heartbeats_per_max_samples = 40;
-
-  dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
-  dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec = 200000000;
-  dw_qos.protocol.rtps_reliable_writer.fast_heartbeat_period.sec = 0;
-  dw_qos.protocol.rtps_reliable_writer.fast_heartbeat_period.nanosec = 200000000;
-  dw_qos.protocol.rtps_reliable_writer.late_joiner_heartbeat_period.sec = 0;
-  dw_qos.protocol.rtps_reliable_writer.late_joiner_heartbeat_period.nanosec = 200000000;
-  dw_qos.protocol.rtps_reliable_writer.high_watermark = 25;
-  dw_qos.protocol.rtps_reliable_writer.low_watermark = 10;
-  dw_qos.protocol.rtps_reliable_writer.max_heartbeat_retries = 500;
-#endif
-
-  if (DDS_RETCODE_OK != DDS_DataReader_set_qos(reader, &dr_qos)) {
-    return RMW_RET_ERROR;
-  }
-  if (DDS_RETCODE_OK != DDS_DataWriter_set_qos(writer, &dw_qos)) {
-    return RMW_RET_ERROR;
-  }
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-
   RMW_CONNEXT_LOG_DEBUG("configuring discovery")
 
-  ctx->common.graph_guard_condition =
-    rmw_connextdds_create_guard_condition();
+  ctx->common.graph_guard_condition = rmw_connextdds_create_guard_condition();
   if (nullptr == ctx->common.graph_guard_condition) {
     RMW_CONNEXT_LOG_ERROR(
       "failed to create graph guard condition")
@@ -254,6 +187,8 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     return RMW_RET_ERROR;
   }
 
+  ctx->graph_initialized = true;
+
   return RMW_RET_OK;
 }
 
@@ -286,6 +221,10 @@ rmw_connextdds_graph_enable(rmw_context_impl_t * const ctx)
 rmw_ret_t
 rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx)
 {
+  if (!ctx->graph_initialized) {
+    return RMW_RET_OK;
+  }
+
   if (RMW_RET_OK != rmw_connextdds_discovery_thread_stop(ctx)) {
     RMW_CONNEXT_LOG_ERROR("failed to stop discovery thread")
     return RMW_RET_ERROR;
@@ -324,6 +263,8 @@ rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx)
     }
     ctx->common.pub = nullptr;
   }
+
+  ctx->graph_initialized = false;
 
   return RMW_RET_OK;
 }

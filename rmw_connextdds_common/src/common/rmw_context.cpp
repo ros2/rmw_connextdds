@@ -24,6 +24,18 @@
 #include "rcutils/filesystem.h"
 
 /******************************************************************************
+ * Global reference to the Domain Participant Factory.
+ * The first context to be initialized will set this reference, and the first
+ * context to be finalized while all nodes have been deleted from all created
+ * contexts will reset it (to signal others that the DPF has been finalized).
+ * Note that because access to this variable is not synchronized, creation of
+ * RMW contexts is not thread safe (TODO(asorbini) verify that this is true in
+ * the rcl/rclcpp API too).
+ ******************************************************************************/
+DDS_DomainParticipantFactory * RMW_Connext_fv_DomainParticipantFactory = nullptr;
+
+
+/******************************************************************************
  * Context Implementation
  ******************************************************************************/
 
@@ -176,6 +188,14 @@ rmw_context_impl_t::initialize_node(
     RMW_CONNEXT_LOG_ERROR(
       "failed to initialize DDS DomainParticipantFactory")
     // no need to call this->clean_up()
+    return RMW_RET_ERROR;
+  }
+
+  if (nullptr == RMW_Connext_fv_DomainParticipantFactory) {
+    RMW_Connext_fv_DomainParticipantFactory = this->factory;
+  } else if (this->factory != RMW_Connext_fv_DomainParticipantFactory) {
+    RMW_CONNEXT_LOG_ERROR("unexpected domain participant factory")
+    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -338,7 +358,7 @@ rmw_context_impl_t::initialize_node(
 }
 
 rmw_ret_t
-rmw_context_impl_t::clean_up()
+rmw_context_impl_t::clean_up(const bool finalize_factory)
 {
   RMW_CONNEXT_LOG_DEBUG("cleaning up RMW context")
 
@@ -414,24 +434,32 @@ rmw_context_impl_t::clean_up()
     this->participant = nullptr;
   }
 
-  if (nullptr != this->factory) {
-    bool outstanding_participants = false;
+  if (finalize_factory && nullptr != this->factory) {
+    // If RMW_Connext_fv_DomainParticipantFactory is null, then some other
+    // context already finalized the DPF, and we have nothing to do
+    if (nullptr != RMW_Connext_fv_DomainParticipantFactory) {
+      bool outstanding_participants = false;
 
-    if (RMW_RET_OK != rmw_connextdds_finalize_participant_factory(
-        this, &outstanding_participants))
-    {
-      RMW_CONNEXT_LOG_ERROR("failed to finalize participant factory")
-      return RMW_RET_ERROR;
+      if (RMW_RET_OK != rmw_connextdds_finalize_participant_factory(
+          this, &outstanding_participants))
+      {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize participant factory")
+        return RMW_RET_ERROR;
+      }
+
+      // There might be other participants in the factory, e.g. if the application
+      // created multiple contexts (like some rcl tests do), or if they created
+      // participants directly via the DDS API.
+      if (!outstanding_participants) {
+        if (DDS_RETCODE_OK != DDS_DomainParticipantFactory_finalize_instance()) {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to finalize domain participant factory")
+          return RMW_RET_ERROR;
+        }
+        RMW_Connext_fv_DomainParticipantFactory = nullptr;
+      }
     }
 
-    // There might be other participants in the factory, e.g. if the application
-    // created multiple contexts (like some rcl tests do), or if they created
-    // participants directly via the DDS API.
-    if (!outstanding_participants) {
-      DDS_DomainParticipantFactory_finalize_instance();
-    }
-
-    this->factory = NULL;
+    this->factory = nullptr;
   }
 
   RMW_CONNEXT_LOG_DEBUG("RMW context finalized")
@@ -453,7 +481,11 @@ rmw_context_impl_t::finalize_node()
     return RMW_RET_OK;
   }
   RMW_CONNEXT_LOG_DEBUG("all nodes finalized")
-  return this->clean_up();
+  // Don't finalize the DomainParticipantFactory yet, since there might still
+  // be some guard conditions/waitsets pending, and finalizing the DPF would
+  // invalidate them unexpectedly (and could lead to SIGSEGV if user tries to
+  // trigger them). The DPF will be finalized later during rmw_shutdown().
+  return this->clean_up(false /* finalize_factory */);
 }
 
 uint32_t
@@ -792,6 +824,21 @@ rmw_api_connextdds_context_fini(rmw_context_t * context)
     RMW_CONNEXT_LOG_ERROR_SET("context has not been shutdown")
     return RMW_RET_INVALID_ARGUMENT;
   }
+
+  if (0u != context->impl->node_count) {
+    RMW_CONNEXT_LOG_ERROR_A(
+      "not all nodes finalized: %lu", context->impl->node_count)
+  }
+
+  // TODO(asorbini) keep track of created GuardConditions/WaitSets and make
+  // sure that all of them have been cleaned up.
+
+  rmw_ret_t rc = context->impl->clean_up();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to finalize DDS participant factory")
+    return rc;
+  }
+
 #if RMW_CONNEXT_HAVE_OPTIONS
   rmw_ret_t ret = rmw_api_connextdds_init_options_fini(&context->options);
   if (RMW_RET_OK != ret) {

@@ -235,7 +235,9 @@ public:
     DDS_WaitSet * const waitset,
     DDS_Condition * const dds_condition)
   {
-    if (DDS_RETCODE_OK != DDS_WaitSet_detach_condition(waitset, dds_condition)) {
+    // detach_condition() returns BAD_PARAMETER if the condition is not attached
+    DDS_ReturnCode_t rc = DDS_WaitSet_detach_condition(waitset, dds_condition);
+    if (DDS_RETCODE_OK != rc && DDS_RETCODE_BAD_PARAMETER != rc) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to detach condition from waitset")
       return RMW_RET_ERROR;
     }

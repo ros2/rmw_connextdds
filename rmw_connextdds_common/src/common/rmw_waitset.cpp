@@ -34,7 +34,9 @@ rmw_api_connextdds_create_guard_condition(
     return nullptr);
   rmw_guard_condition_t * const ret =
     rmw_connextdds_create_guard_condition();
-  RMW_CONNEXT_LOG_DEBUG_A("new guard condition: %p", (void *)ret->data)
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "new guard condition: %p",
+    (ret != nullptr) ? reinterpret_cast<void *>(ret->data) : nullptr)
   return ret;
 }
 
@@ -52,7 +54,7 @@ rmw_api_connextdds_destroy_guard_condition(
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "destroying guard condition: %p",
-    (void *)guard_condition_handle->data)
+    reinterpret_cast<void *>(guard_condition_handle->data))
   return rmw_connextdds_destroy_guard_condition(guard_condition_handle);
 }
 
@@ -70,7 +72,7 @@ rmw_api_connextdds_trigger_guard_condition(
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "triggering guard condition: %p",
-    (void *)guard_condition_handle)
+    reinterpret_cast<void *>(guard_condition_handle->data))
 
   return rmw_connextdds_trigger_guard_condition(guard_condition_handle);
 }
@@ -130,8 +132,8 @@ rmw_api_connextdds_wait(
     RMW_CONNEXTDDS_ID,
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-  RMW_Connext_StdWaitSet * const ws_impl =
-    reinterpret_cast<RMW_Connext_StdWaitSet *>(wait_set->data);
+  RMW_Connext_WaitSet * const ws_impl =
+    reinterpret_cast<RMW_Connext_WaitSet *>(wait_set->data);
 
   return ws_impl->wait(subs, gcs, srvs, cls, evs, wait_timeout);
 }

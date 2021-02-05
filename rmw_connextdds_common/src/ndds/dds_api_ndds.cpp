@@ -669,7 +669,7 @@ rmw_connextdds_filter_sample(
 
   *accepted = true;
 
-  if (sub->ignore_local()) {
+  if (sub->condition()->ignore_local) {
     DDS_InstanceHandle_t reader_ih = sub->participant_instance_handle();
 
     *accepted = (0 != memcmp(
@@ -1093,12 +1093,10 @@ rmw_connextdds_ih_to_gid(const DDS_InstanceHandle_t & ih, rmw_gid_t & gid)
 
 void
 rmw_connextdds_configure_subscriber_condition_listener(
-  RMW_Connext_Subscriber * const sub,
-  RMW_Connext_StdSubscriberStatusCondition * cond,
+  RMW_Connext_SubscriberStatusCondition * cond,
   DDS_DataReaderListener * const listener,
   DDS_StatusMask * const listener_mask)
 {
-  UNUSED_ARG(sub);
   UNUSED_ARG(cond);
   UNUSED_ARG(listener_mask);
   UNUSED_ARG(listener);

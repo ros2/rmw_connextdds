@@ -90,6 +90,9 @@ struct rmw_context_impl_t
   /* Shutdown flag */
   bool is_shutdown{false};
 
+  /* Keep track of ROS graph subsystem's initialization */
+  bool graph_initialized{false};
+
   /* suffix for GUIDs to construct unique client/service ids
      (protected by initialization_mutex) */
   uint32_t client_service_id{0};
@@ -133,7 +136,7 @@ struct rmw_context_impl_t
   ~rmw_context_impl_t()
   {
     if (0u != this->node_count) {
-      RMW_CONNEXT_LOG_ERROR("not all nodes finalized")
+      RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
     }
   }
 
@@ -149,9 +152,8 @@ struct rmw_context_impl_t
     DDS_Topic ** const topic,
     bool & created);
 
-private:
   rmw_ret_t
-  clean_up();
+  clean_up(const bool finalize_factory = true);
 };
 
 rmw_ret_t

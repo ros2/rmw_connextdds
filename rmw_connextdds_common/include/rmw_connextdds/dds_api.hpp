@@ -36,7 +36,7 @@
 class RMW_Connext_MessageTypeSupport;
 class RMW_Connext_Publisher;
 class RMW_Connext_Subscriber;
-class RMW_Connext_StdSubscriberStatusCondition;
+class RMW_Connext_SubscriberStatusCondition;
 struct RMW_Connext_Message;
 
 enum RMW_Connext_MessageType
@@ -207,8 +207,7 @@ rmw_connextdds_ih_to_gid(
 
 void
 rmw_connextdds_configure_subscriber_condition_listener(
-  RMW_Connext_Subscriber * const sub,
-  RMW_Connext_StdSubscriberStatusCondition * cond,
+  RMW_Connext_SubscriberStatusCondition * cond,
   DDS_DataReaderListener * const listener,
   DDS_StatusMask * const listener_mask);
 

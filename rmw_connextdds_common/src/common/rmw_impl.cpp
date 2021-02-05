@@ -21,14 +21,12 @@
 
 #include "rmw_connextdds/graph_cache.hpp"
 
-
-#define ROS_TOPIC_PREFIX_STR             "rt"
 #define ROS_SERVICE_REQUESTER_PREFIX_STR "rq"
 #define ROS_SERVICE_RESPONSE_PREFIX_STR  "rr"
 
 const char * const ROS_TOPIC_PREFIX = "rt";
-const char * const ROS_SERVICE_REQUESTER_PREFIX = "rq";
-const char * const ROS_SERVICE_RESPONSE_PREFIX = "rr";
+const char * const ROS_SERVICE_REQUESTER_PREFIX = ROS_SERVICE_REQUESTER_PREFIX_STR;
+const char * const ROS_SERVICE_RESPONSE_PREFIX = ROS_SERVICE_RESPONSE_PREFIX_STR;
 
 
 std::string
@@ -1115,21 +1113,11 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
   const bool created_topic)
 : ctx(ctx),
   dds_writer(dds_writer),
-  dds_condition(nullptr),
   type_support(type_support),
-  created_topic(created_topic)
+  created_topic(created_topic),
+  status_condition(dds_writer)
 {
   rmw_connextdds_get_entity_gid(this->dds_writer, this->ros_gid);
-
-  DDS_StatusCondition * const status_cond =
-    DDS_Entity_get_statuscondition(
-    DDS_DataWriter_as_entity(this->dds_writer));
-
-  this->dds_condition = DDS_StatusCondition_as_condition(status_cond);
-
-  if (RMW_RET_OK != this->std_condition.install(this)) {
-    RMW_CONNEXT_LOG_ERROR("failed to install condition on writer")
-  }
 }
 
 RMW_Connext_Publisher *
@@ -1406,64 +1394,6 @@ RMW_Connext_Publisher::write(
 }
 
 
-bool
-RMW_Connext_Publisher::has_status(const DDS_StatusMask status_mask)
-{
-  const DDS_StatusMask changes =
-    DDS_Entity_get_status_changes(
-    DDS_DataWriter_as_entity(this->dds_writer));
-
-  return changes & status_mask;
-}
-
-
-rmw_ret_t
-RMW_Connext_Publisher::enable_status(const DDS_StatusMask status_mask)
-{
-  DDS_StatusCondition * const status_cond =
-    DDS_Entity_get_statuscondition(
-    DDS_DataWriter_as_entity(this->dds_writer));
-
-  DDS_StatusMask enabled_statuses =
-    DDS_StatusCondition_get_enabled_statuses(status_cond);
-
-  enabled_statuses |= status_mask;
-
-  if (DDS_RETCODE_OK !=
-    DDS_StatusCondition_set_enabled_statuses(
-      status_cond, enabled_statuses))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to enable statuses on condition")
-    return RMW_RET_ERROR;
-  }
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-RMW_Connext_Publisher::disable_status(const DDS_StatusMask status_mask)
-{
-  DDS_StatusCondition * const status_cond =
-    DDS_Entity_get_statuscondition(
-    DDS_DataWriter_as_entity(this->dds_writer));
-
-  DDS_StatusMask enabled_statuses =
-    DDS_StatusCondition_get_enabled_statuses(status_cond);
-
-  enabled_statuses &= ~status_mask;
-
-  if (DDS_RETCODE_OK !=
-    DDS_StatusCondition_set_enabled_statuses(
-      status_cond, enabled_statuses))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to disable statuses on condition")
-    return RMW_RET_ERROR;
-  }
-
-  return RMW_RET_OK;
-}
-
-
 size_t
 RMW_Connext_Publisher::subscriptions_count()
 {
@@ -1671,20 +1601,12 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   dds_reader(dds_reader),
   dds_topic(dds_topic),
   dds_topic_cft(dds_topic_cft),
-  dds_condition(nullptr),
   type_support(type_support),
-  opt_ignore_local(ignore_local),
   created_topic(created_topic),
-  loan_guard_condition(nullptr),
+  status_condition(dds_reader, ignore_local),
   internal(internal)
 {
   rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
-
-  DDS_StatusCondition * const status_cond =
-    DDS_Entity_get_statuscondition(
-    DDS_DataReader_as_entity(this->dds_reader));
-
-  this->dds_condition = DDS_StatusCondition_as_condition(status_cond);
 
   RMW_Connext_UntypedSampleSeq def_data_seq =
     RMW_Connext_UntypedSampleSeq_INITIALIZER;
@@ -1693,11 +1615,6 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   this->loan_info = def_info_seq;
   this->loan_len = 0;
   this->loan_next = 0;
-
-  if (RMW_RET_OK != this->std_condition.install(this)) {
-    RMW_CONNEXT_LOG_ERROR("failed to install condition on reader")
-    throw std::runtime_error("failed to install condition on reader");
-  }
 }
 
 RMW_Connext_Subscriber *
@@ -1885,19 +1802,6 @@ RMW_Connext_Subscriber::create(
       }
     });
 
-  DDS_StatusCondition * const status_cond =
-    DDS_Entity_get_statuscondition(
-    DDS_DataReader_as_entity(dds_reader));
-
-  if (DDS_RETCODE_OK !=
-    DDS_StatusCondition_set_enabled_statuses(
-      status_cond, DDS_DATA_AVAILABLE_STATUS))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET(
-      "failed to set reader's condition statuses")
-    return nullptr;
-  }
-
   RMW_Connext_Subscriber * rmw_sub_impl =
     new (std::nothrow) RMW_Connext_Subscriber(
     ctx,
@@ -1920,19 +1824,6 @@ RMW_Connext_Subscriber::create(
   scope_exit_type_unregister.cancel();
   scope_exit_topic_delete.cancel();
   scope_exit_dds_reader_delete.cancel();
-
-  // TODO(asorbini) move this block to RMW_Connext_Subscriber().
-  // Do this after refactoring RMW_Connext_Subscriber::finalize() to be
-  // called automatically by ~RMW_Connext_Subscriber() (which doesn't exist yet).
-  if (rmw_sub_impl->internal) {
-    rmw_sub_impl->loan_guard_condition = DDS_GuardCondition_new();
-    if (nullptr == rmw_sub_impl->loan_guard_condition) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate internal reader condition ")
-      rmw_sub_impl->finalize();
-      delete rmw_sub_impl;
-      return nullptr;
-    }
-  }
 
   return rmw_sub_impl;
 }
@@ -1994,13 +1885,6 @@ RMW_Connext_Subscriber::finalize()
 
   if (RMW_RET_OK != rc) {
     return rc;
-  }
-
-  if (nullptr != this->loan_guard_condition) {
-    if (DDS_RETCODE_OK != DDS_GuardCondition_delete(this->loan_guard_condition)) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to delete internal reader condition ")
-      return RMW_RET_ERROR;
-    }
   }
 
   delete this->type_support;
@@ -2124,63 +2008,6 @@ RMW_Connext_Subscriber::take_serialized(
   return rc;
 }
 
-bool
-RMW_Connext_Subscriber::has_status(const DDS_StatusMask status_mask)
-{
-  const DDS_StatusMask changes =
-    DDS_Entity_get_status_changes(
-    DDS_DataReader_as_entity(this->dds_reader));
-
-  return changes & status_mask;
-}
-
-
-rmw_ret_t
-RMW_Connext_Subscriber::enable_status(const DDS_StatusMask status_mask)
-{
-  DDS_StatusCondition * const status_cond =
-    DDS_Entity_get_statuscondition(
-    DDS_DataReader_as_entity(this->dds_reader));
-
-  DDS_StatusMask enabled_statuses =
-    DDS_StatusCondition_get_enabled_statuses(status_cond);
-
-  enabled_statuses |= status_mask;
-
-  if (DDS_RETCODE_OK !=
-    DDS_StatusCondition_set_enabled_statuses(
-      status_cond, enabled_statuses))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to enable statuses on condition")
-    return RMW_RET_ERROR;
-  }
-
-  return RMW_RET_OK;
-}
-
-rmw_ret_t
-RMW_Connext_Subscriber::disable_status(const DDS_StatusMask status_mask)
-{
-  DDS_StatusCondition * const status_cond =
-    DDS_Entity_get_statuscondition(
-    DDS_DataReader_as_entity(this->dds_reader));
-
-  DDS_StatusMask enabled_statuses =
-    DDS_StatusCondition_get_enabled_statuses(status_cond);
-
-  enabled_statuses &= ~status_mask;
-
-  if (DDS_RETCODE_OK !=
-    DDS_StatusCondition_set_enabled_statuses(
-      status_cond, enabled_statuses))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to disable statuses on condition")
-    return RMW_RET_ERROR;
-  }
-
-  return RMW_RET_OK;
-}
-
 rmw_ret_t
 RMW_Connext_Subscriber::loan_messages()
 {
@@ -2196,10 +2023,10 @@ RMW_Connext_Subscriber::loan_messages()
   this->loan_len = DDS_UntypedSampleSeq_get_length(&this->loan_data);
 
   RMW_CONNEXT_LOG_DEBUG_A(
-    "[%s] loaned messages: %u",
+    "[%s] loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
-  return RMW_RET_OK;
+  return this->status_condition.set_data_available(this->loan_len > 0);
 }
 
 rmw_ret_t
@@ -2209,13 +2036,24 @@ RMW_Connext_Subscriber::return_messages()
   RMW_CONNEXT_ASSERT(this->loan_len > 0)
 
   RMW_CONNEXT_LOG_DEBUG_A(
-    "[%s] return loaned messages: %u",
+    "[%s] return loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
   this->loan_len = 0;
   this->loan_next = 0;
 
-  return rmw_connextdds_return_samples(this);
+  rmw_ret_t rc_result = RMW_RET_OK;
+  rmw_ret_t rc = rmw_connextdds_return_samples(this);
+  if (RMW_RET_OK != rc) {
+    rc_result = rc;
+  }
+
+  rc = this->status_condition.set_data_available(false);
+  if (RMW_RET_OK != rc) {
+    rc_result = rc;
+  }
+
+  return rc_result;
 }
 
 void
@@ -2336,7 +2174,6 @@ RMW_Connext_Subscriber::take_next(
           rmw_message_info_t * message_info = &message_infos[*taken];
           rmw_connextdds_message_info_from_dds(message_info, info);
         }
-
 
         *taken += 1;
         continue;
@@ -2511,10 +2348,10 @@ rmw_connextdds_message_info_from_dds(
  ******************************************************************************/
 
 rmw_guard_condition_t *
-rmw_connextdds_create_guard_condition(const bool internal)
+rmw_connextdds_create_guard_condition()
 {
-  RMW_Connext_StdGuardCondition * const gcond =
-    new (std::nothrow) RMW_Connext_StdGuardCondition(internal);
+  RMW_Connext_GuardCondition * const gcond =
+    new (std::nothrow) RMW_Connext_GuardCondition();
 
   if (nullptr == gcond) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to create guard condition")
@@ -2537,8 +2374,8 @@ rmw_ret_t
 rmw_connextdds_destroy_guard_condition(
   rmw_guard_condition_t * const gcond_handle)
 {
-  RMW_Connext_StdGuardCondition * const gcond =
-    reinterpret_cast<RMW_Connext_StdGuardCondition *>(gcond_handle->data);
+  RMW_Connext_GuardCondition * const gcond =
+    reinterpret_cast<RMW_Connext_GuardCondition *>(gcond_handle->data);
 
   delete gcond;
 
@@ -2551,12 +2388,10 @@ rmw_ret_t
 rmw_connextdds_trigger_guard_condition(
   const rmw_guard_condition_t * const gcond_handle)
 {
-  RMW_Connext_StdGuardCondition * const gcond =
-    reinterpret_cast<RMW_Connext_StdGuardCondition *>(gcond_handle->data);
+  RMW_Connext_GuardCondition * const gcond =
+    reinterpret_cast<RMW_Connext_GuardCondition *>(gcond_handle->data);
 
-  gcond->trigger();
-
-  return RMW_RET_OK;
+  return gcond->trigger();
 }
 
 rmw_wait_set_t *
@@ -2575,8 +2410,8 @@ rmw_connextdds_create_waitset(const size_t max_conditions)
       rmw_wait_set_free(rmw_ws);
     });
 
-  RMW_Connext_StdWaitSet * const ws_impl =
-    new (std::nothrow) RMW_Connext_StdWaitSet();
+  RMW_Connext_WaitSet * const ws_impl =
+    new (std::nothrow) RMW_Connext_WaitSet();
 
 
   if (nullptr == ws_impl) {
@@ -2594,8 +2429,8 @@ rmw_connextdds_create_waitset(const size_t max_conditions)
 rmw_ret_t
 rmw_connextdds_destroy_waitset(rmw_wait_set_t * const rmw_ws)
 {
-  RMW_Connext_StdWaitSet * const ws_impl =
-    reinterpret_cast<RMW_Connext_StdWaitSet *>(rmw_ws->data);
+  RMW_Connext_WaitSet * const ws_impl =
+    reinterpret_cast<RMW_Connext_WaitSet *>(rmw_ws->data);
 
   delete ws_impl;
 
@@ -2621,8 +2456,8 @@ rmw_connextdds_waitset_wait(
     RMW_CONNEXTDDS_ID,
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-  RMW_Connext_StdWaitSet * const ws_impl =
-    reinterpret_cast<RMW_Connext_StdWaitSet *>(rmw_ws->data);
+  RMW_Connext_WaitSet * const ws_impl =
+    reinterpret_cast<RMW_Connext_WaitSet *>(rmw_ws->data);
 
   return ws_impl->wait(subs, gcs, srvs, cls, evs, wait_timeout);
 }
@@ -3575,175 +3410,184 @@ ros_event_for_reader(const rmw_event_type_t ros)
   }
 }
 
-rmw_ret_t
-RMW_Connext_Event::enable(rmw_event_t * const event)
-{
-  if (RMW_Connext_Event::reader_event(event)) {
-    return RMW_Connext_Event::subscriber(event)->enable_status(
-      ros_event_to_dds(event->event_type, nullptr));
-  } else {
-    return RMW_Connext_Event::publisher(event)->enable_status(
-      ros_event_to_dds(event->event_type, nullptr));
-  }
-}
-
-rmw_ret_t
-RMW_Connext_Event::disable(rmw_event_t * const event)
-{
-  if (RMW_Connext_Event::reader_event(event)) {
-    return RMW_Connext_Event::subscriber(event)->disable_status(
-      ros_event_to_dds(event->event_type, nullptr));
-  } else {
-    return RMW_Connext_Event::publisher(event)->disable_status(
-      ros_event_to_dds(event->event_type, nullptr));
-  }
-}
-
-bool
-RMW_Connext_Event::active(rmw_event_t * const event)
-{
-  if (RMW_Connext_Event::reader_event(event)) {
-    return RMW_Connext_Event::subscriber(event)->has_status(
-      ros_event_to_dds(event->event_type, nullptr));
-  } else {
-    return RMW_Connext_Event::publisher(event)->has_status(
-      ros_event_to_dds(event->event_type, nullptr));
-  }
-}
-
 /******************************************************************************
  * StdWaitSet
  ******************************************************************************/
 
-void
-RMW_Connext_DataReaderListener_requested_deadline_missed(
-  void * listener_data,
-  DDS_DataReader * reader,
-  const struct DDS_RequestedDeadlineMissedStatus * status)
-{
-  RMW_Connext_StdSubscriberStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition *>(listener_data);
-
-  UNUSED_ARG(reader);
-
-  self->on_requested_deadline_missed(status);
-}
-
-void
-RMW_Connext_DataReaderListener_requested_incompatible_qos(
-  void * listener_data,
-  DDS_DataReader * reader,
-  const struct DDS_RequestedIncompatibleQosStatus * status)
-{
-  RMW_Connext_StdSubscriberStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition *>(listener_data);
-
-  UNUSED_ARG(reader);
-
-  self->on_requested_incompatible_qos(status);
-}
-
-void
-RMW_Connext_DataReaderListener_liveliness_changed(
-  void * listener_data,
-  DDS_DataReader * reader,
-  const struct DDS_LivelinessChangedStatus * status)
-{
-  RMW_Connext_StdSubscriberStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition *>(listener_data);
-
-  UNUSED_ARG(reader);
-
-  self->on_liveliness_changed(status);
-}
-
-void
-RMW_Connext_DataReaderListener_sample_lost(
-  void * listener_data,
-  DDS_DataReader * reader,
-  const struct DDS_SampleLostStatus * status)
-{
-  RMW_Connext_StdSubscriberStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition *>(listener_data);
-
-  UNUSED_ARG(reader);
-
-  self->on_sample_lost(status);
-}
-
-void
-RMW_Connext_DataReaderListener_on_data_available(
-  void * listener_data,
-  DDS_DataReader * reader)
-{
-  RMW_Connext_StdSubscriberStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdSubscriberStatusCondition *>(listener_data);
-
-  UNUSED_ARG(reader);
-  RMW_CONNEXT_LOG_DEBUG_A(
-    "data available: condition=%p, reader=%p",
-    (void *)self, (void *)reader);
-  self->on_data();
-}
-
-void
-RMW_Connext_DataWriterListener_offered_deadline_missed(
-  void * listener_data,
-  DDS_DataWriter * writer,
-  const struct DDS_OfferedDeadlineMissedStatus * status)
-{
-  RMW_Connext_StdPublisherStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdPublisherStatusCondition *>(listener_data);
-
-  UNUSED_ARG(writer);
-
-  self->on_offered_deadline_missed(status);
-}
-
-void
-RMW_Connext_DataWriterListener_offered_incompatible_qos(
-  void * listener_data,
-  DDS_DataWriter * writer,
-  const struct DDS_OfferedIncompatibleQosStatus * status)
-{
-  RMW_Connext_StdPublisherStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdPublisherStatusCondition *>(listener_data);
-
-  UNUSED_ARG(writer);
-
-  self->on_offered_incompatible_qos(status);
-}
-
-void
-RMW_Connext_DataWriterListener_liveliness_lost(
-  void * listener_data,
-  DDS_DataWriter * writer,
-  const struct DDS_LivelinessLostStatus * status)
-{
-  RMW_Connext_StdPublisherStatusCondition * const self =
-    reinterpret_cast<RMW_Connext_StdPublisherStatusCondition *>(listener_data);
-
-  UNUSED_ARG(writer);
-
-  self->on_liveliness_lost(status);
-}
-
-
+template<typename T>
 bool
-RMW_Connext_StdWaitSet::on_condition_active(
+RMW_Connext_WaitSet::require_attach(
+  const std::vector<T *> & attached_els,
+  const size_t new_els_count,
+  void ** const new_els)
+{
+  if (nullptr == new_els || 0 == new_els_count) {
+    return attached_els.size() > 0;
+  } else if (new_els_count != attached_els.size()) {
+    return true;
+  } else {
+    const void * const attached_data =
+      static_cast<const void *>(attached_els.data());
+    void * const new_els_data = static_cast<void *>(new_els);
+
+    const size_t cmp_size = new_els_count * sizeof(void *);
+
+    return memcmp(attached_data, new_els_data, cmp_size) != 0;
+  }
+}
+
+rmw_ret_t
+RMW_Connext_WaitSet::detach()
+{
+  bool failed = false;
+
+  for (auto && sub : this->attached_subscribers) {
+    RMW_Connext_StatusCondition * const cond = sub->condition();
+    rmw_ret_t rc = cond->detach(this->waitset);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to detach subscriber's condition")
+      failed = true;
+    }
+  }
+  this->attached_subscribers.clear();
+
+  for (auto && gc : this->attached_conditions) {
+    rmw_ret_t rc = gc->detach(this->waitset);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to detach guard condition")
+      failed = true;
+    }
+  }
+  this->attached_conditions.clear();
+
+  for (auto && client : this->attached_clients) {
+    RMW_Connext_StatusCondition * const cond = client->subscriber()->condition();
+    rmw_ret_t rc = cond->detach(this->waitset);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to detach client's condition")
+      failed = true;
+    }
+  }
+  this->attached_clients.clear();
+
+  for (auto && service : this->attached_services) {
+    RMW_Connext_StatusCondition * const cond = service->subscriber()->condition();
+    rmw_ret_t rc = cond->detach(this->waitset);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to detach service's condition")
+      failed = true;
+    }
+  }
+  this->attached_services.clear();
+
+  for (auto && e : this->attached_events) {
+    RMW_Connext_StatusCondition * const cond = RMW_Connext_Event::condition(e);
+    rmw_ret_t rc = cond->detach(this->waitset);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to detach event's condition")
+      failed = true;
+    }
+  }
+  this->attached_events.clear();
+
+  return failed ? RMW_RET_ERROR : RMW_RET_OK;
+}
+
+
+rmw_ret_t
+RMW_Connext_WaitSet::attach(
   rmw_subscriptions_t * const subs,
   rmw_guard_conditions_t * const gcs,
   rmw_services_t * const srvs,
   rmw_clients_t * const cls,
   rmw_events_t * const evs)
 {
+  const bool refresh_attach_subs =
+    this->require_attach(
+    this->attached_subscribers,
+    (nullptr != subs) ? subs->subscriber_count : 0,
+    (nullptr != subs) ? subs->subscribers : nullptr),
+    refresh_attach_gcs =
+    this->require_attach(
+    this->attached_conditions,
+    (nullptr != gcs) ? gcs->guard_condition_count : 0,
+    (nullptr != gcs) ? gcs->guard_conditions : nullptr),
+    refresh_attach_srvs =
+    this->require_attach(
+    this->attached_services,
+    (nullptr != srvs) ? srvs->service_count : 0,
+    (nullptr != srvs) ? srvs->services : nullptr),
+    refresh_attach_cls =
+    this->require_attach(
+    this->attached_clients,
+    (nullptr != cls) ? cls->client_count : 0,
+    (nullptr != cls) ? cls->clients : nullptr),
+    refresh_attach_evs =
+    this->require_attach(
+    this->attached_events,
+    (nullptr != evs) ? evs->event_count : 0,
+    (nullptr != evs) ? evs->events : nullptr);
+  const bool refresh_attach =
+    refresh_attach_subs ||
+    refresh_attach_gcs ||
+    refresh_attach_evs ||
+    refresh_attach_srvs ||
+    refresh_attach_cls;
+
+  if (!refresh_attach) {
+    // nothing to do since lists of attached elements didn't change
+    return RMW_RET_OK;
+  }
+
+  rmw_ret_t rc = this->detach();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to detach conditions from waitset")
+    return rc;
+  }
+
+  RMW_Connext_WaitSet * const ws = this;
+  auto scope_exit_detach = rcpputils::make_scope_exit(
+    [ws]()
+    {
+      if (RMW_RET_OK != ws->detach()) {
+        RMW_CONNEXT_LOG_ERROR("failed to detach conditions from waitset")
+      }
+    });
+  // First iterate over events, and reset the "enabled statuses" of the
+  // target entity's status condition. We could skip any subscriber that is
+  // also passed in for data (since the "enabled statuses" will be reset to
+  // DATA_AVAILABLE only for these subscribers), but we reset them anyway to
+  // avoid having to search the subscriber's list for each one.
+  if (nullptr != evs) {
+    for (size_t i = 0; i < evs->event_count; ++i) {
+      rmw_event_t * const event =
+        reinterpret_cast<rmw_event_t *>(evs->events[i]);
+      RMW_Connext_StatusCondition * const cond =
+        RMW_Connext_Event::condition(event);
+      rmw_ret_t rc = cond->reset();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to reset event's condition")
+        return rc;
+      }
+    }
+  }
+
   if (nullptr != subs) {
     for (size_t i = 0; i < subs->subscriber_count; ++i) {
       RMW_Connext_Subscriber * const sub =
         reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
-      if (sub->has_data()) {
-        return true;
+      RMW_Connext_StatusCondition * const cond = sub->condition();
+      rmw_ret_t rc = cond->reset();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
+        return rc;
       }
+      rc = cond->attach(this->waitset, DDS_DATA_AVAILABLE_STATUS);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to attach subscriber's condition")
+        return rc;
+      }
+      this->attached_subscribers.push_back(sub);
     }
   }
 
@@ -3751,9 +3595,18 @@ RMW_Connext_StdWaitSet::on_condition_active(
     for (size_t i = 0; i < cls->client_count; ++i) {
       RMW_Connext_Client * const client =
         reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
-      if (client->subscriber()->has_data()) {
-        return true;
+      RMW_Connext_StatusCondition * const cond = client->subscriber()->condition();
+      rmw_ret_t rc = cond->reset();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
+        return rc;
       }
+      rc = cond->attach(this->waitset, DDS_DATA_AVAILABLE_STATUS);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to attach client's condition")
+        return rc;
+      }
+      this->attached_clients.push_back(client);
     }
   }
 
@@ -3761,9 +3614,18 @@ RMW_Connext_StdWaitSet::on_condition_active(
     for (size_t i = 0; i < srvs->service_count; ++i) {
       RMW_Connext_Service * const svc =
         reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
-      if (svc->subscriber()->has_data()) {
-        return true;
+      RMW_Connext_StatusCondition * const cond = svc->subscriber()->condition();
+      rmw_ret_t rc = cond->reset();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
+        return rc;
       }
+      rc = cond->attach(this->waitset, DDS_DATA_AVAILABLE_STATUS);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to attach service's condition")
+        return rc;
+      }
+      this->attached_services.push_back(svc);
     }
   }
 
@@ -3771,116 +3633,51 @@ RMW_Connext_StdWaitSet::on_condition_active(
     for (size_t i = 0; i < evs->event_count; ++i) {
       rmw_event_t * const event =
         reinterpret_cast<rmw_event_t *>(evs->events[i]);
-      if (RMW_Connext_Event::reader_event(event)) {
-        auto sub = RMW_Connext_Event::subscriber(event);
-        if (sub->has_status(event->event_type)) {
-          return true;
-        }
-      } else {
-        auto pub = RMW_Connext_Event::publisher(event);
-        if (pub->has_status(event->event_type)) {
-          return true;
-        }
+      RMW_Connext_StatusCondition * const cond =
+        RMW_Connext_Event::condition(event);
+      const DDS_StatusKind evt = ros_event_to_dds(event->event_type, nullptr);
+      rmw_ret_t rc = cond->attach(this->waitset, evt);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to attach event's condition")
+        return rc;
       }
+      this->attached_events.push_back(event);
     }
   }
 
   if (nullptr != gcs) {
     for (size_t i = 0; i < gcs->guard_condition_count; ++i) {
-      RMW_Connext_StdGuardCondition * const gcond =
-        reinterpret_cast<RMW_Connext_StdGuardCondition *>(gcs->guard_conditions[i]);
-      if (gcond->has_triggered()) {
-        return true;
+      RMW_Connext_GuardCondition * const gcond =
+        reinterpret_cast<RMW_Connext_GuardCondition *>(gcs->guard_conditions[i]);
+      rmw_ret_t rc = gcond->attach(this->waitset);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to attach guard condition")
+        return rc;
       }
+      this->attached_conditions.push_back(gcond);
     }
   }
-
-  return false;
+  scope_exit_detach.cancel();
+  return RMW_RET_OK;
 }
 
-
-void
-RMW_Connext_StdWaitSet::attach(
-  rmw_subscriptions_t * const subs,
-  rmw_guard_conditions_t * const gcs,
-  rmw_services_t * const srvs,
-  rmw_clients_t * const cls,
-  rmw_events_t * const evs,
-  bool & wait_active)
+bool
+RMW_Connext_WaitSet::active_condition(RMW_Connext_Condition * const cond)
 {
-  if (nullptr != subs) {
-    for (size_t i = 0; i < subs->subscriber_count; ++i) {
-      RMW_Connext_Subscriber * const sub =
-        reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
-      if (sub->has_data()) {
-        wait_active = true;
-        return;
-      }
-      sub->attach(&this->condition_mutex, &this->condition);
-    }
+  size_t active_len = DDS_ConditionSeq_get_length(&this->active_conditions);
+  bool active = false;
+
+  for (size_t i = 0; i < active_len && !active; i++) {
+    DDS_Condition * const acond =
+      *DDS_ConditionSeq_get_reference(&this->active_conditions, i);
+    active = cond->owns(acond);
   }
 
-  if (nullptr != cls) {
-    for (size_t i = 0; i < cls->client_count; ++i) {
-      RMW_Connext_Client * const client =
-        reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
-      if (client->subscriber()->has_data()) {
-        wait_active = true;
-        return;
-      }
-      client->subscriber()->attach(&this->condition_mutex, &this->condition);
-    }
-  }
-
-  if (nullptr != srvs) {
-    for (size_t i = 0; i < srvs->service_count; ++i) {
-      RMW_Connext_Service * const svc =
-        reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
-      if (svc->subscriber()->has_data()) {
-        wait_active = true;
-        return;
-      }
-      svc->subscriber()->attach(&this->condition_mutex, &this->condition);
-    }
-  }
-
-  if (nullptr != evs) {
-    for (size_t i = 0; i < evs->event_count; ++i) {
-      rmw_event_t * const event =
-        reinterpret_cast<rmw_event_t *>(evs->events[i]);
-      if (RMW_Connext_Event::reader_event(event)) {
-        auto sub = RMW_Connext_Event::subscriber(event);
-        if (sub->has_status(event->event_type)) {
-          wait_active = true;
-          return;
-        }
-        sub->attach(&this->condition_mutex, &this->condition);
-      } else {
-        auto pub = RMW_Connext_Event::publisher(event);
-        if (pub->has_status(event->event_type)) {
-          wait_active = true;
-          return;
-        }
-        pub->attach(&this->condition_mutex, &this->condition);
-      }
-    }
-  }
-
-  if (nullptr != gcs) {
-    for (size_t i = 0; i < gcs->guard_condition_count; ++i) {
-      RMW_Connext_StdGuardCondition * const gcond =
-        reinterpret_cast<RMW_Connext_StdGuardCondition *>(gcs->guard_conditions[i]);
-      if (gcond->has_triggered()) {
-        wait_active = true;
-        return;
-      }
-      gcond->attach(&this->condition_mutex, &this->condition);
-    }
-  }
+  return active;
 }
 
-void
-RMW_Connext_StdWaitSet::detach(
+rmw_ret_t
+RMW_Connext_WaitSet::process_wait(
   rmw_subscriptions_t * const subs,
   rmw_guard_conditions_t * const gcs,
   rmw_services_t * const srvs,
@@ -3888,103 +3685,84 @@ RMW_Connext_StdWaitSet::detach(
   rmw_events_t * const evs,
   size_t & active_conditions)
 {
-  if (nullptr != subs) {
-    for (size_t i = 0; i < subs->subscriber_count; ++i) {
-      RMW_Connext_Subscriber * const sub =
-        reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
-      sub->detach();
-      if (!sub->has_data()) {
-        subs->subscribers[i] = nullptr;
-      } else {
-        RMW_CONNEXT_LOG_DEBUG_A(
-          "[wait] active subscriber: sub=%p\n",
-          reinterpret_cast<void *>(sub))
-        active_conditions += 1;
-      }
+  bool failed = false;
+  size_t i = 0;
+
+  i = 0;
+  for (auto && sub : this->attached_subscribers) {
+    // Check if the subscriber has some data already cached from the DataReader,
+    // or check the DataReader's cache and loan samples if needed. If empty,
+    // remove subscriber from returned list.
+    if (!sub->has_data()) {
+      subs->subscribers[i] = nullptr;
+    } else {
+      active_conditions += 1;
     }
+    i += 1;
   }
 
-  if (nullptr != cls) {
-    for (size_t i = 0; i < cls->client_count; ++i) {
-      RMW_Connext_Client * const client =
-        reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
-      client->subscriber()->detach();
-      if (!client->subscriber()->has_data()) {
-        cls->clients[i] = nullptr;
-      } else {
-        RMW_CONNEXT_LOG_DEBUG_A(
-          "[wait] active client: "
-          "client=%p", (void *)client)
-        active_conditions += 1;
+  i = 0;
+  for (auto && gc : this->attached_conditions) {
+    // Scan active conditions returned by wait() looking for this guard condition
+    if (!this->active_condition(gc)) {
+      gcs->guard_conditions[i] = nullptr;
+    } else {
+      // reset conditions's trigger value. There is a risk of "race condition"
+      // here since resetting the trigger value might overwrite a positive
+      // trigger set by the upstream. In general, the DDS API expects guard
+      // conditions to be fully managed by the application, exactly to avoid
+      // this type of (pretty much unsolvable) issue (hence why
+      // DDS_WaitSet_wait() will not automatically reset the trigger value of
+      // an attached guard conditions).
+      // As of this writing (02/04/2021) all Tier 1 RMW implementations do this
+      // and are likely subjected to the same race condition:
+      // rmw_fastrtps_cpp: https://github.com/ros2/rmw_fastrtps/blob/master/rmw_fastrtps_shared_cpp/src/rmw_wait.cpp#L245
+      // rmw_cyclonedds_cpp: https://github.com/ros2/rmw_cyclonedds/blob/master/rmw_cyclonedds_cpp/src/rmw_node.cpp#L3417
+      // rmw_connext-cpp: https://github.com/ros2/rmw_connext/blob/master/rmw_connext_shared_cpp/include/rmw_connext_shared_cpp/wait.hpp#L389
+      if (RMW_RET_OK != gc->reset()) {
+        failed = true;
       }
+      active_conditions += 1;
     }
+    i += 1;
   }
 
-  if (nullptr != srvs) {
-    for (size_t i = 0; i < srvs->service_count; ++i) {
-      RMW_Connext_Service * const svc =
-        reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
-      svc->subscriber()->detach();
-      if (!svc->subscriber()->has_data()) {
-        srvs->services[i] = nullptr;
-      } else {
-        RMW_CONNEXT_LOG_DEBUG_A(
-          "[wait] active service: "
-          "svc=%p", (void *)svc)
-        active_conditions += 1;
-      }
+  i = 0;
+  for (auto && client : this->attached_clients) {
+    if (!client->subscriber()->has_data()) {
+      cls->clients[i] = nullptr;
+    } else {
+      active_conditions += 1;
     }
+    i += 1;
   }
 
-  if (nullptr != evs) {
-    for (size_t i = 0; i < evs->event_count; ++i) {
-      rmw_event_t * const event =
-        reinterpret_cast<rmw_event_t *>(evs->events[i]);
-      if (RMW_Connext_Event::reader_event(event)) {
-        auto sub = RMW_Connext_Event::subscriber(event);
-        sub->detach();
-        if (!sub->has_status(event->event_type)) {
-          evs->events[i] = nullptr;
-        } else {
-          RMW_CONNEXT_LOG_DEBUG_A(
-            "[wait] active subscriber event: "
-            "event=%p", (void *)event)
-          active_conditions += 1;
-        }
-      } else {
-        auto pub = RMW_Connext_Event::publisher(event);
-        pub->detach();
-        if (!pub->has_status(event->event_type)) {
-          evs->events[i] = nullptr;
-        } else {
-          RMW_CONNEXT_LOG_DEBUG_A(
-            "[wait] active publisher event: "
-            "event=%p", (void *)event)
-          active_conditions += 1;
-        }
-      }
+  i = 0;
+  for (auto && service : this->attached_services) {
+    if (!service->subscriber()->has_data()) {
+      srvs->services[i] = nullptr;
+    } else {
+      active_conditions += 1;
     }
+    i += 1;
   }
 
-  if (nullptr != gcs) {
-    for (size_t i = 0; i < gcs->guard_condition_count; ++i) {
-      RMW_Connext_StdGuardCondition * const gcond =
-        reinterpret_cast<RMW_Connext_StdGuardCondition *>(gcs->guard_conditions[i]);
-      gcond->detach();
-      if (!gcond->trigger_check()) {
-        gcs->guard_conditions[i] = nullptr;
-      } else {
-        RMW_CONNEXT_LOG_DEBUG_A(
-          "[wait] active guard condition: "
-          "condition=%p", (void *)gcond)
-        active_conditions += 1;
-      }
+  i = 0;
+  for (auto && e : this->attached_events) {
+    // Check if associated DDS status is active on the associated entity
+    if (!RMW_Connext_Event::active(e)) {
+      evs->events[i] = nullptr;
+    } else {
+      active_conditions += 1;
     }
+    i += 1;
   }
+
+  return failed ? RMW_RET_ERROR : RMW_RET_OK;
 }
 
 rmw_ret_t
-RMW_Connext_StdWaitSet::wait(
+RMW_Connext_WaitSet::wait(
   rmw_subscriptions_t * const subs,
   rmw_guard_conditions_t * const gcs,
   rmw_services_t * const srvs,
@@ -3992,7 +3770,6 @@ RMW_Connext_StdWaitSet::wait(
   rmw_events_t * const evs,
   const rmw_time_t * const wait_timeout)
 {
-#if 1
   {
     std::lock_guard<std::mutex> lock(this->mutex_internal);
     if (this->waiting) {
@@ -4003,65 +3780,68 @@ RMW_Connext_StdWaitSet::wait(
     this->waiting = true;
   }
 
-  RMW_Connext_StdWaitSet * const ws = this;
+  RMW_Connext_WaitSet * const ws = this;
   auto scope_exit = rcpputils::make_scope_exit(
     [ws]()
     {
       std::lock_guard<std::mutex> lock(ws->mutex_internal);
       ws->waiting = false;
     });
-#endif
 
-  bool already_active = false;
+  rmw_ret_t rc = this->attach(subs, gcs, srvs, cls, evs);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
 
-  this->attach(subs, gcs, srvs, cls, evs, already_active);
+  auto scope_exit_detach = rcpputils::make_scope_exit(
+    [ws]()
+    {
+      if (RMW_RET_OK != ws->detach()) {
+        RMW_CONNEXT_LOG_ERROR("failed to detach conditions from waitset")
+      }
+    });
 
-  bool timedout = false;
+  const size_t attached_count =
+    this->attached_subscribers.size() +
+    this->attached_conditions.size() +
+    this->attached_clients.size() +
+    this->attached_services.size() +
+    this->attached_events.size();
+  
+  if (!DDS_ConditionSeq_ensure_length(
+    &this->active_conditions, attached_count, attached_count)) {
+    RMW_CONNEXT_LOG_ERROR("failed to resize conditions sequence")
+    return RMW_RET_ERROR;
+  }
 
-  if (!already_active) {
-    RMW_CONNEXT_LOG_DEBUG_A(
-      "[wait] waiting on: "
-      "waitset=%p, "
-      "subs=%lu, "
-      "gcs=%lu, "
-      "srvs=%lu, "
-      "cls=%lu, "
-      "evs=%lu\n",
-      reinterpret_cast<void *>(this),
-      (nullptr != subs) ? subs->subscriber_count : 0,
-      (nullptr != gcs) ? gcs->guard_condition_count : 0,
-      (nullptr != srvs) ? srvs->service_count : 0,
-      (nullptr != cls) ? cls->client_count : 0,
-      (nullptr != evs) ? evs->event_count : 0);
+  DDS_Duration_t wait_duration = DDS_DURATION_INFINITE;
+  if (nullptr != wait_timeout) {
+    // TODO(asorbini) perform checked conversion from uint64_t to DDS_Long
+    wait_duration.sec = (DDS_Long) wait_timeout->sec;
+    wait_duration.nanosec = wait_timeout->nsec;
+  }
+  const DDS_ReturnCode_t wait_rc =
+    DDS_WaitSet_wait(this->waitset, &this->active_conditions, &wait_duration);
 
-    std::unique_lock<std::mutex> lock(this->condition_mutex);
-
-    auto on_condition_active =
-      [self = this, subs, gcs, srvs, cls, evs]()
-      {
-        return self->on_condition_active(subs, gcs, srvs, cls, evs);
-      };
-
-    if (nullptr == wait_timeout) {
-      this->condition.wait(lock, on_condition_active);
-    } else if (wait_timeout->sec > 0 || wait_timeout->nsec > 0) {
-      auto n = std::chrono::duration_cast<std::chrono::nanoseconds>(
-        std::chrono::seconds(wait_timeout->sec));
-      n += std::chrono::nanoseconds(wait_timeout->nsec);
-      timedout = !this->condition.wait_for(lock, n, on_condition_active);
-    } else {
-      timedout = true;
-    }
+  if (DDS_RETCODE_OK != wait_rc && DDS_RETCODE_TIMEOUT != wait_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("DDS wait failed: %d", wait_rc)
+    return RMW_RET_ERROR;
   }
 
   size_t active_conditions = 0;
-  this->detach(subs, gcs, srvs, cls, evs, active_conditions);
+  rc = this->process_wait(subs, gcs, srvs, cls, evs, active_conditions);
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to process wait result")
+    return rc;
+  }
 
-  // assert(active_conditions > 0 || timedout);
+  scope_exit_detach.cancel();
 
-  if (timedout) {
+  RMW_CONNEXT_ASSERT(active_conditions > 0 || DDS_RETCODE_TIMEOUT == wait_rc)
+
+  if (DDS_RETCODE_TIMEOUT == wait_rc) {
     rmw_reset_error();
-    RMW_SET_ERROR_MSG("wait timed out");
+    RMW_SET_ERROR_MSG("DDS wait timed out");
     return RMW_RET_TIMEOUT;
   }
 
@@ -4069,161 +3849,69 @@ RMW_Connext_StdWaitSet::wait(
 }
 
 rmw_ret_t
-RMW_Connext_StdSubscriberStatusCondition::install(
-  RMW_Connext_Subscriber * const sub)
+RMW_Connext_SubscriberStatusCondition::install()
 {
   DDS_DataReaderListener listener = DDS_DataReaderListener_INITIALIZER;
   DDS_StatusMask listener_mask = DDS_STATUS_MASK_NONE;
 
-
-  if (sub->ignore_local()) {
-    this->listener_drop_handle = sub->participant_instance_handle();
-  }
-  listener.on_requested_deadline_missed =
-    RMW_Connext_DataReaderListener_requested_deadline_missed;
-  listener.on_requested_incompatible_qos =
-    RMW_Connext_DataReaderListener_requested_incompatible_qos;
-  listener.on_liveliness_changed =
-    RMW_Connext_DataReaderListener_liveliness_changed;
-  listener.on_sample_lost =
-    RMW_Connext_DataReaderListener_sample_lost;
-  listener.on_data_available =
-    RMW_Connext_DataReaderListener_on_data_available;
   listener.as_listener.listener_data = this;
 
-  listener_mask =
-    DDS_REQUESTED_DEADLINE_MISSED_STATUS |
-    DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS |
-    DDS_LIVELINESS_CHANGED_STATUS |
-    DDS_SAMPLE_LOST_STATUS |
-    DDS_DATA_AVAILABLE_STATUS;
-
   rmw_connextdds_configure_subscriber_condition_listener(
-    sub, this, &listener, &listener_mask);
+    this, &listener, &listener_mask);
 
+  // TODO(asorbini) only call set_listener() if actually setting something?
   if (DDS_RETCODE_OK !=
-    DDS_DataReader_set_listener(
-      sub->reader(), &listener, listener_mask))
+    DDS_DataReader_set_listener(this->reader, &listener, listener_mask))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to configure reader listener")
     return RMW_RET_ERROR;
   }
 
-  this->sub = sub;
-
   return RMW_RET_OK;
 }
 
-RMW_Connext_StdSubscriberStatusCondition::RMW_Connext_StdSubscriberStatusCondition()
-: triggered_deadline(false),
-  triggered_liveliness(false),
-  triggered_qos(false),
-  triggered_sample_lost(false),
-  triggered_data(false),
-  listener_drop_handle(DDS_HANDLE_NIL),
-  sub(nullptr)
-{}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::on_data()
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->triggered_data = true;
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-
-  // Update loan guard condition's trigger value for internal endpoints
-  if (nullptr != this->sub && nullptr != this->sub->loan_guard_condition) {
-    if (DDS_RETCODE_OK != DDS_GuardCondition_set_trigger_value(
-        this->sub->loan_guard_condition, DDS_BOOLEAN_TRUE))
-    {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to set internal reader condition's trigger")
-    }
-  }
-}
-
-bool
-RMW_Connext_StdSubscriberStatusCondition::has_status(
-  const rmw_event_type_t event_type)
-{
-  switch (event_type) {
-    case RMW_EVENT_LIVELINESS_CHANGED:
-      {
-        return this->triggered_liveliness;
-      }
-    case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
-      {
-        return this->triggered_deadline;
-      }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-    case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-      {
-        return this->triggered_qos;
-      }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
-// the defined values for rmw_event_type_t. This #if and the one in
-// the `default` case, should be removed once support for releases
-// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-    case RMW_EVENT_MESSAGE_LOST:
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
-      {
-        return this->triggered_sample_lost;
-      }
-    default:
-      {
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
-        if (RMW_EVENT_MESSAGE_LOST == event_type) {
-          RMW_CONNEXT_LOG_WARNING(
-            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
-        }
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
-        RMW_CONNEXT_ASSERT(0)
-        return false;
-      }
-  }
-}
-
-bool
-RMW_Connext_StdSubscriberStatusCondition::get_status(
+rmw_ret_t
+RMW_Connext_SubscriberStatusCondition::get_status(
   const rmw_event_type_t event_type, void * const event_info)
 {
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
   switch (event_type) {
     case RMW_EVENT_LIVELINESS_CHANGED:
       {
         rmw_liveliness_changed_status_t * status =
           reinterpret_cast<rmw_liveliness_changed_status_t *>(event_info);
+        DDS_LivelinessChangedStatus dds_status = DDS_LivelinessChangedStatus_INITIALIZER;
 
-        status->alive_count = this->status_liveliness.alive_count;
-        status->alive_count_change =
-          this->status_liveliness.alive_count_change;
-        status->not_alive_count =
-          this->status_liveliness.not_alive_count;
-        status->not_alive_count_change =
-          this->status_liveliness.not_alive_count_change;
+        if (DDS_RETCODE_OK !=
+          DDS_DataReader_get_liveliness_changed_status(this->reader, &dds_status))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get liveliness changed status")
+          return RMW_RET_ERROR;
+        }
 
-        this->status_liveliness.alive_count_change = 0;
-        this->status_liveliness.not_alive_count_change = 0;
-        this->triggered_liveliness = false;
+        status->alive_count = dds_status.alive_count;
+        status->alive_count_change = dds_status.alive_count_change;
+        status->not_alive_count = dds_status.not_alive_count;
+        status->not_alive_count_change = dds_status.not_alive_count_change;
+
         break;
       }
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
       {
         rmw_requested_deadline_missed_status_t * status =
           reinterpret_cast<rmw_requested_deadline_missed_status_t *>(event_info);
+        DDS_RequestedDeadlineMissedStatus dds_status =
+          DDS_RequestedDeadlineMissedStatus_INITIALIZER;
 
-        status->total_count = this->status_deadline.total_count;
-        status->total_count_change =
-          this->status_deadline.total_count_change;
+        if (DDS_RETCODE_OK !=
+          DDS_DataReader_get_requested_deadline_missed_status(this->reader, &dds_status))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get requested deadline missed status")
+          return RMW_RET_ERROR;
+        }
 
-        this->status_deadline.total_count_change = 0;
-        this->triggered_deadline = false;
+        status->total_count = dds_status.total_count;
+        status->total_count_change = dds_status.total_count_change;
+
         break;
       }
 #if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
@@ -4231,16 +3919,20 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
       {
         rmw_requested_qos_incompatible_event_status_t * const status =
           reinterpret_cast<rmw_requested_qos_incompatible_event_status_t *>(event_info);
+        DDS_RequestedIncompatibleQosStatus dds_status =
+          DDS_RequestedIncompatibleQosStatus_INITIALIZER;
 
-        status->total_count = this->status_qos.total_count;
-        status->total_count_change =
-          this->status_qos.total_count_change;
+        if (DDS_RETCODE_OK !=
+          DDS_DataReader_get_requested_incompatible_qos_status(this->reader, &dds_status))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get requested incompatible qos status")
+          return RMW_RET_ERROR;
+        }
+
+        status->total_count = dds_status.total_count;
+        status->total_count_change = dds_status.total_count_change;
         status->last_policy_kind =
-          dds_qos_policy_to_rmw_qos_policy(
-          this->status_qos.last_policy_id);
-
-        this->status_qos.total_count_change = 0;
-        this->triggered_qos = false;
+          dds_qos_policy_to_rmw_qos_policy(dds_status.last_policy_id);
         break;
       }
 #endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
@@ -4253,222 +3945,70 @@ RMW_Connext_StdSubscriberStatusCondition::get_status(
       {
         rmw_message_lost_status_t * const status =
           reinterpret_cast<rmw_message_lost_status_t *>(event_info);
+        DDS_SampleLostStatus dds_status = DDS_SampleLostStatus_INITIALIZER;
 
-        status->total_count = this->status_sample_lost.total_count;
-        status->total_count_change =
-          this->status_sample_lost.total_count_change;
+        if (DDS_RETCODE_OK !=
+          DDS_DataReader_get_sample_lost_status(this->reader, &dds_status))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get sample lost status")
+          return RMW_RET_ERROR;
+        }
 
-        this->status_sample_lost.total_count_change = 0;
-        this->triggered_sample_lost = false;
+        status->total_count = dds_status.total_count;
+        status->total_count_change = dds_status.total_count_change;
+
         break;
       }
 #endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     default:
       {
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
-        if (RMW_EVENT_MESSAGE_LOST == event_type) {
-          RMW_CONNEXT_LOG_WARNING(
-            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
-        }
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "unsupported subscriber qos: %d", event_type)
         RMW_CONNEXT_ASSERT(0)
-        return false;
+        return RMW_RET_ERROR;
       }
   }
-
-  return true;
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::on_requested_deadline_missed(
-  const DDS_RequestedDeadlineMissedStatus * const status)
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->update_status_deadline(status);
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::on_requested_incompatible_qos(
-  const DDS_RequestedIncompatibleQosStatus * const status)
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->update_status_qos(status);
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::on_liveliness_changed(
-  const DDS_LivelinessChangedStatus * const status)
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->update_status_liveliness(status);
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::on_sample_lost(
-  const DDS_SampleLostStatus * const status)
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->update_status_sample_lost(status);
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::update_status_deadline(
-  const DDS_RequestedDeadlineMissedStatus * const status)
-{
-  this->status_deadline = *status;
-  this->triggered_deadline = true;
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::update_status_liveliness(
-  const DDS_LivelinessChangedStatus * const status)
-{
-  this->status_liveliness = *status;
-  this->triggered_liveliness = true;
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::update_status_qos(
-  const DDS_RequestedIncompatibleQosStatus * const status)
-{
-  this->status_qos = *status;
-  this->triggered_qos = true;
-}
-
-void
-RMW_Connext_StdSubscriberStatusCondition::update_status_sample_lost(
-  const DDS_SampleLostStatus * const status)
-{
-  this->status_sample_lost = *status;
-  this->triggered_sample_lost = true;
-}
-
-rmw_ret_t
-RMW_Connext_StdPublisherStatusCondition::install(
-  RMW_Connext_Publisher * const pub)
-{
-  DDS_DataWriterListener listener = DDS_DataWriterListener_INITIALIZER;
-  DDS_StatusMask listener_mask = DDS_STATUS_MASK_NONE;
-
-  listener.on_offered_deadline_missed =
-    RMW_Connext_DataWriterListener_offered_deadline_missed;
-  listener.on_offered_incompatible_qos =
-    RMW_Connext_DataWriterListener_offered_incompatible_qos;
-  listener.on_liveliness_lost =
-    RMW_Connext_DataWriterListener_liveliness_lost;
-  listener.as_listener.listener_data = this;
-
-  listener_mask =
-    DDS_OFFERED_DEADLINE_MISSED_STATUS |
-    DDS_OFFERED_INCOMPATIBLE_QOS_STATUS |
-    DDS_LIVELINESS_LOST_STATUS;
-
-  if (DDS_RETCODE_OK !=
-    DDS_DataWriter_set_listener(
-      pub->writer(), &listener, listener_mask))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to configure writer listener")
-    return RMW_RET_ERROR;
-  }
-
-  this->pub = pub;
 
   return RMW_RET_OK;
 }
 
-RMW_Connext_StdPublisherStatusCondition::RMW_Connext_StdPublisherStatusCondition()
-: triggered_deadline(false),
-  triggered_liveliness(false),
-  triggered_qos(false)
-{
-  const DDS_OfferedDeadlineMissedStatus def_status_deadline =
-    DDS_OfferedDeadlineMissedStatus_INITIALIZER;
-  const DDS_OfferedIncompatibleQosStatus def_status_qos =
-    DDS_OfferedIncompatibleQosStatus_INITIALIZER;
-  const DDS_LivelinessLostStatus def_status_liveliness =
-    DDS_LivelinessLostStatus_INITIALIZER;
-
-  this->status_deadline = def_status_deadline;
-  this->status_liveliness = def_status_liveliness;
-  this->status_qos = def_status_qos;
-}
-
-bool
-RMW_Connext_StdPublisherStatusCondition::has_status(
-  const rmw_event_type_t event_type)
-{
-  switch (event_type) {
-    case RMW_EVENT_LIVELINESS_LOST:
-      {
-        return this->triggered_liveliness;
-      }
-    case RMW_EVENT_OFFERED_DEADLINE_MISSED:
-      {
-        return this->triggered_deadline;
-      }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-    case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
-      {
-        return this->triggered_qos;
-      }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-    default:
-      RMW_CONNEXT_ASSERT(0)
-      return false;
-  }
-}
-
-bool
-RMW_Connext_StdPublisherStatusCondition::get_status(
+rmw_ret_t
+RMW_Connext_PublisherStatusCondition::get_status(
   const rmw_event_type_t event_type, void * const event_info)
 {
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
   switch (event_type) {
     case RMW_EVENT_LIVELINESS_LOST:
       {
         rmw_liveliness_lost_status_t * status =
           reinterpret_cast<rmw_liveliness_lost_status_t *>(event_info);
+        DDS_LivelinessLostStatus dds_status = DDS_LivelinessLostStatus_INITIALIZER;
 
-        status->total_count = this->status_liveliness.total_count;
-        status->total_count_change =
-          this->status_liveliness.total_count_change;
+        if (DDS_RETCODE_OK !=
+          DDS_DataWriter_get_liveliness_lost_status(this->writer, &dds_status))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get liveliness lost status")
+          return RMW_RET_ERROR;
+        }
 
-        this->status_liveliness.total_count_change = 0;
-        this->triggered_liveliness = false;
+        status->total_count = dds_status.total_count;
+        status->total_count_change = dds_status.total_count_change;
         break;
       }
     case RMW_EVENT_OFFERED_DEADLINE_MISSED:
       {
         rmw_offered_deadline_missed_status_t * status =
           reinterpret_cast<rmw_offered_deadline_missed_status_t *>(event_info);
+        DDS_OfferedDeadlineMissedStatus dds_status = DDS_OfferedDeadlineMissedStatus_INITIALIZER;
 
-        status->total_count = this->status_deadline.total_count;
-        status->total_count_change =
-          this->status_deadline.total_count_change;
+        if (DDS_RETCODE_OK !=
+          DDS_DataWriter_get_offered_deadline_missed_status(this->writer, &dds_status))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get offered deadline missed status")
+          return RMW_RET_ERROR;
+        }
 
-        this->status_deadline.total_count_change = 0;
-        this->triggered_deadline = false;
+        status->total_count = dds_status.total_count;
+        status->total_count_change = dds_status.total_count_change;
         break;
       }
 #if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
@@ -4476,86 +4016,30 @@ RMW_Connext_StdPublisherStatusCondition::get_status(
       {
         rmw_offered_qos_incompatible_event_status_t * const status =
           reinterpret_cast<rmw_offered_qos_incompatible_event_status_t *>(event_info);
+        DDS_OfferedIncompatibleQosStatus dds_status =
+          DDS_OfferedIncompatibleQosStatus_INITIALIZER;
 
-        status->total_count = this->status_qos.total_count;
-        status->total_count_change =
-          this->status_qos.total_count_change;
+        if (DDS_RETCODE_OK !=
+          DDS_DataWriter_get_offered_incompatible_qos_status(this->writer, &dds_status))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get offered incompatible qos status")
+          return RMW_RET_ERROR;
+        }
+
+        status->total_count = dds_status.total_count;
+        status->total_count_change = dds_status.total_count_change;
         status->last_policy_kind =
-          dds_qos_policy_to_rmw_qos_policy(
-          this->status_qos.last_policy_id);
-
-        this->status_qos.total_count_change = 0;
-        this->triggered_qos = false;
+          dds_qos_policy_to_rmw_qos_policy(dds_status.last_policy_id);
         break;
       }
 #endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
     default:
-      RMW_CONNEXT_ASSERT(0)
-      return false;
+      {
+        RMW_CONNEXT_LOG_ERROR_A_SET("unsupported publisher qos: %d", event_type)
+        RMW_CONNEXT_ASSERT(0)
+        return RMW_RET_ERROR;
+      }
   }
 
-  return true;
-}
-
-void
-RMW_Connext_StdPublisherStatusCondition::on_offered_deadline_missed(
-  const DDS_OfferedDeadlineMissedStatus * const status)
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->update_status_deadline(status);
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-}
-
-void
-RMW_Connext_StdPublisherStatusCondition::on_offered_incompatible_qos(
-  const DDS_OfferedIncompatibleQosStatus * const status)
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->update_status_qos(status);
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-}
-
-void
-RMW_Connext_StdPublisherStatusCondition::on_liveliness_lost(
-  const DDS_LivelinessLostStatus * const status)
-{
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-  this->update_status_liveliness(status);
-
-  if (nullptr != this->waitset_condition) {
-    this->waitset_condition->notify_one();
-  }
-}
-
-void
-RMW_Connext_StdPublisherStatusCondition::update_status_deadline(
-  const DDS_OfferedDeadlineMissedStatus * const status)
-{
-  this->status_deadline = *status;
-  this->triggered_deadline = true;
-}
-
-void
-RMW_Connext_StdPublisherStatusCondition::update_status_liveliness(
-  const DDS_LivelinessLostStatus * const status)
-{
-  this->status_liveliness = *status;
-  this->triggered_liveliness = true;
-}
-
-void
-RMW_Connext_StdPublisherStatusCondition::update_status_qos(
-  const DDS_OfferedIncompatibleQosStatus * const status)
-{
-  this->status_qos = *status;
-  this->triggered_qos = true;
+  return RMW_RET_OK;
 }

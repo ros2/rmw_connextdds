@@ -395,7 +395,7 @@ function(rti_find_connextpro)
     else()
         list(APPEND CMAKE_MODULE_PATH
             "${CONNEXTDDS_DIR}/resource/cmake")
-
+        set(BUILD_SHARED_LIBS true)
         set(CONNEXTDDS_VERSION      "5.3.1")
         find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
             COMPONENTS     core ${extra_components})

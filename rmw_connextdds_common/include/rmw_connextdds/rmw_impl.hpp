@@ -17,6 +17,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
@@ -128,12 +129,24 @@ class RMW_Connext_Client;
 class RMW_Connext_Service;
 class RMW_Connext_Condition;
 class RMW_Connext_GuardCondition;
+class RMW_Connext_StatusCondition;
+class RMW_Connext_SubscriberStatusCondition;
+class RMW_Connext_PublisherStatusCondition;
+
+enum RMW_Connext_WaitSetState
+{
+  RMW_CONNEXT_WAITSET_FREE,
+  RMW_CONNEXT_WAITSET_ACQUIRING,
+  RMW_CONNEXT_WAITSET_BLOCKED,
+  RMW_CONNEXT_WAITSET_RELEASING,
+  RMW_CONNEXT_WAITSET_INVALIDATING
+};
 
 class RMW_Connext_WaitSet
 {
 public:
   RMW_Connext_WaitSet()
-  : waiting(false),
+  : state(RMW_CONNEXT_WAITSET_FREE),
     waitset(nullptr)
   {
     if (!DDS_ConditionSeq_initialize(&this->active_conditions)) {
@@ -141,19 +154,45 @@ public:
       throw std::runtime_error("failed to initialize condition sequence");
     }
 
+    RMW_Connext_WaitSet * const ws = this;
+    auto scope_exit = rcpputils::make_scope_exit(
+      [ws]()
+      {
+        if (DDS_RETCODE_OK != DDS_ConditionSeq_finalize(&ws->active_conditions)) {
+          RMW_CONNEXT_LOG_ERROR("failed to finalize condition sequence")
+        }
+        if (nullptr != ws->waitset &&
+        DDS_RETCODE_OK != DDS_WaitSet_delete(ws->waitset))
+        {
+          RMW_CONNEXT_LOG_ERROR("failed to finalize waitset")
+        }
+      });
+
     this->waitset = DDS_WaitSet_new();
     if (nullptr == this->waitset) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS waitset")
       throw std::runtime_error("failed to create DDS waitset");
     }
+
+    scope_exit.cancel();
   }
 
   ~RMW_Connext_WaitSet()
   {
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      // the waiset should be accessed while being deleted, otherwise
+      // bad things(tm) will happen.
+      if (RMW_CONNEXT_WAITSET_FREE != this->state) {
+        RMW_CONNEXT_LOG_ERROR_SET("deleting a waitset while waiting on it")
+      }
+      if (RMW_RET_OK != this->detach()) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to detach conditions from deleted waitset")
+      }
+    }
     if (!DDS_ConditionSeq_finalize(&this->active_conditions)) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to finalize condition sequence")
     }
-
     if (nullptr != this->waitset) {
       if (DDS_RETCODE_OK != DDS_WaitSet_delete(this->waitset)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DDS waitset")
@@ -170,7 +209,13 @@ public:
     rmw_events_t * const evs,
     const rmw_time_t * const wait_timeout);
 
+  rmw_ret_t
+  invalidate(RMW_Connext_Condition * const condition);
+
 protected:
+  bool
+  is_attached(RMW_Connext_Condition * const condition);
+
   rmw_ret_t
   attach(
     rmw_subscriptions_t * const subs,
@@ -202,7 +247,8 @@ protected:
   active_condition(RMW_Connext_Condition * const cond);
 
   std::mutex mutex_internal;
-  bool waiting;
+  std::condition_variable state_cond;
+  RMW_Connext_WaitSetState state;
   DDS_WaitSet * waitset;
   DDS_ConditionSeq active_conditions;
 
@@ -211,11 +257,42 @@ protected:
   std::vector<RMW_Connext_Client *> attached_clients;
   std::vector<RMW_Connext_Service *> attached_services;
   std::vector<rmw_event_t *> attached_events;
+  std::map<rmw_event_t *, rmw_event_t> attached_events_cache;
+
+  friend class RMW_Connext_Condition;
+  friend class RMW_Connext_GuardCondition;
+  friend class RMW_Connext_StatusCondition;
+  friend class RMW_Connext_SubscriberStatusCondition;
+  friend class RMW_Connext_PublisherStatusCondition;
 };
 
 class RMW_Connext_Condition
 {
 public:
+  RMW_Connext_Condition()
+  : attached_waitset(nullptr),
+    deleted(false)
+  {}
+
+  void
+  invalidate()
+  {
+    RMW_Connext_WaitSet * attached_waitset = nullptr;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      // This function might have already been called by a derived class
+      if (this->deleted) {
+        return;
+      }
+      this->deleted = true;
+      attached_waitset = this->attached_waitset;
+    }
+    if (nullptr != this->attached_waitset) {
+      attached_waitset->invalidate(this);
+    }
+  }
+
+protected:
   static
   rmw_ret_t
   attach(
@@ -237,14 +314,73 @@ public:
   {
     // detach_condition() returns BAD_PARAMETER if the condition is not attached
     DDS_ReturnCode_t rc = DDS_WaitSet_detach_condition(waitset, dds_condition);
-    if (DDS_RETCODE_OK != rc && DDS_RETCODE_BAD_PARAMETER != rc) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to detach condition from waitset")
+    if (DDS_RETCODE_OK != rc &&
+      DDS_RETCODE_BAD_PARAMETER != rc &&
+      DDS_RETCODE_PRECONDITION_NOT_MET != rc)
+    {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to detach condition from waitset: %d", rc)
       return RMW_RET_ERROR;
     }
     return RMW_RET_OK;
   }
 
   virtual bool owns(DDS_Condition * const cond) = 0;
+
+  rmw_ret_t
+  attach(RMW_Connext_WaitSet * const waitset)
+  {
+    // refuse to attach
+    if (this->deleted) {
+      return RMW_RET_ERROR;
+    }
+
+    rmw_ret_t rc = RMW_RET_ERROR;
+
+    if (nullptr != this->attached_waitset) {
+      if (waitset != this->attached_waitset) {
+        rc = this->detach();
+        if (RMW_RET_OK != rc) {
+          return rc;
+        }
+      } else {
+        // condition is already attached to this waitset, nothing to do
+        return RMW_RET_OK;
+      }
+    }
+    rc = this->_attach(waitset->waitset);
+    if (RMW_RET_OK != rc) {
+      return rc;
+    }
+    this->attached_waitset = waitset;
+    return RMW_RET_OK;
+  }
+
+  rmw_ret_t
+  detach()
+  {
+    rmw_ret_t rc = RMW_RET_ERROR;
+
+    if (nullptr == this->attached_waitset) {
+      // condition is already detached, nothing to do
+      return RMW_RET_OK;
+    }
+    rc = this->_detach(this->attached_waitset->waitset);
+    if (RMW_RET_OK != rc) {
+      return rc;
+    }
+    this->attached_waitset = nullptr;
+    return RMW_RET_OK;
+  }
+
+  virtual rmw_ret_t _attach(DDS_WaitSet * const waitset) = 0;
+  virtual rmw_ret_t _detach(DDS_WaitSet * const waitset) = 0;
+
+  RMW_Connext_WaitSet * attached_waitset;
+  bool deleted;
+  std::mutex mutex_internal;
+
+  friend class RMW_Connext_WaitSet;
 };
 
 class RMW_Connext_GuardCondition : public RMW_Connext_Condition
@@ -261,6 +397,7 @@ public:
 
   virtual ~RMW_Connext_GuardCondition()
   {
+    this->invalidate();
     if (nullptr != this->gcond) {
       if (DDS_RETCODE_OK != DDS_GuardCondition_delete(this->gcond)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DDS guard condition")
@@ -287,7 +424,7 @@ public:
   }
 
   rmw_ret_t
-  reset()
+  reset_trigger()
   {
     if (DDS_RETCODE_OK !=
       DDS_GuardCondition_set_trigger_value(this->gcond, DDS_BOOLEAN_FALSE))
@@ -298,15 +435,12 @@ public:
     return RMW_RET_OK;
   }
 
-  rmw_ret_t
-  attach(DDS_WaitSet * const waitset)
+  virtual rmw_ret_t _attach(DDS_WaitSet * const waitset)
   {
     return RMW_Connext_Condition::attach(
       waitset, DDS_GuardCondition_as_condition(this->gcond));
   }
-
-  rmw_ret_t
-  detach(DDS_WaitSet * const waitset)
+  virtual rmw_ret_t _detach(DDS_WaitSet * const waitset)
   {
     return RMW_Connext_Condition::detach(
       waitset, DDS_GuardCondition_as_condition(this->gcond));
@@ -336,8 +470,13 @@ public:
     }
   }
 
+  ~RMW_Connext_StatusCondition()
+  {
+    this->invalidate();
+  }
+
   rmw_ret_t
-  reset()
+  reset_statuses()
   {
     if (DDS_RETCODE_OK !=
       DDS_StatusCondition_set_enabled_statuses(
@@ -349,8 +488,8 @@ public:
     return RMW_RET_OK;
   }
 
-  virtual rmw_ret_t
-  attach(DDS_WaitSet * const waitset, const DDS_StatusMask statuses)
+  rmw_ret_t
+  enable_statuses(const DDS_StatusMask statuses)
   {
     DDS_StatusMask current_statuses =
       DDS_StatusCondition_get_enabled_statuses(this->scond);
@@ -361,16 +500,7 @@ public:
       RMW_CONNEXT_LOG_ERROR_SET("failed to set status condition's statuses")
       return RMW_RET_ERROR;
     }
-
-    return RMW_Connext_Condition::attach(
-      waitset, DDS_StatusCondition_as_condition(this->scond));
-  }
-
-  virtual rmw_ret_t
-  detach(DDS_WaitSet * const waitset)
-  {
-    return RMW_Connext_Condition::detach(
-      waitset, DDS_StatusCondition_as_condition(this->scond));
+    return RMW_RET_OK;
   }
 
   virtual bool
@@ -389,6 +519,17 @@ public:
   virtual rmw_ret_t
   get_status(const rmw_event_type_t event_type, void * const event_info) = 0;
 
+  virtual rmw_ret_t _attach(DDS_WaitSet * const waitset)
+  {
+    return RMW_Connext_Condition::attach(
+      waitset, DDS_StatusCondition_as_condition(this->scond));
+  }
+  virtual rmw_ret_t _detach(DDS_WaitSet * const waitset)
+  {
+    return RMW_Connext_Condition::detach(
+      waitset, DDS_StatusCondition_as_condition(this->scond));
+  }
+
 protected:
   DDS_Entity * entity;
   DDS_StatusCondition * scond;
@@ -401,6 +542,11 @@ public:
   : RMW_Connext_StatusCondition(DDS_DataWriter_as_entity(writer)),
     writer(writer)
   {}
+
+  ~RMW_Connext_PublisherStatusCondition()
+  {
+    this->invalidate();
+  }
 
   virtual rmw_ret_t
   get_status(const rmw_event_type_t event_type, void * const event_info);
@@ -423,7 +569,8 @@ public:
           DDS_Subscriber_get_participant(
             DDS_DataReader_get_subscriber(reader))))),
     reader(reader),
-    dcond(nullptr)
+    dcond(nullptr),
+    attached_waitset_dcond(nullptr)
   {
     this->dcond = DDS_GuardCondition_new();
     if (nullptr == this->dcond) {
@@ -439,6 +586,7 @@ public:
 
   virtual ~RMW_Connext_SubscriberStatusCondition()
   {
+    this->invalidate();
     if (nullptr != this->dcond) {
       if (DDS_RETCODE_OK != DDS_GuardCondition_delete(this->dcond)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to delete reader's data condition")
@@ -456,29 +604,36 @@ public:
            cond == DDS_GuardCondition_as_condition(this->dcond);
   }
 
-  virtual rmw_ret_t
-  attach(DDS_WaitSet * const waitset, const DDS_StatusMask statuses)
+  rmw_ret_t
+  attach_data()
   {
-    rmw_ret_t rc = RMW_Connext_StatusCondition::attach(waitset, statuses);
+    if (nullptr == this->attached_waitset) {
+      RMW_CONNEXT_LOG_ERROR("condition must be already attached")
+      return RMW_RET_ERROR;
+    }
+    rmw_ret_t rc = RMW_Connext_Condition::attach(
+      this->attached_waitset->waitset,
+      DDS_GuardCondition_as_condition(this->dcond));
     if (RMW_RET_OK != rc) {
       return rc;
     }
-    if (statuses & DDS_DATA_AVAILABLE_STATUS) {
-      return RMW_Connext_Condition::attach(
-        waitset, DDS_GuardCondition_as_condition(this->dcond));
-    }
+    this->attached_waitset_dcond = this->attached_waitset;
     return RMW_RET_OK;
   }
 
   virtual rmw_ret_t
-  detach(DDS_WaitSet * const waitset)
+  detach()
   {
-    rmw_ret_t rc = RMW_Connext_StatusCondition::detach(waitset);
+    rmw_ret_t rc = RMW_Connext_Condition::detach();
     if (RMW_RET_OK != rc) {
       return rc;
     }
-    return RMW_Connext_Condition::detach(
-      waitset, DDS_GuardCondition_as_condition(this->dcond));
+    if (nullptr != this->attached_waitset_dcond) {
+      return RMW_Connext_Condition::detach(
+        this->attached_waitset_dcond->waitset,
+        DDS_GuardCondition_as_condition(this->dcond));
+    }
+    return RMW_RET_OK;
   }
 
   rmw_ret_t
@@ -502,6 +657,7 @@ protected:
 
   DDS_DataReader * const reader;
   DDS_GuardCondition * dcond;
+  RMW_Connext_WaitSet * attached_waitset_dcond;
 };
 
 /******************************************************************************

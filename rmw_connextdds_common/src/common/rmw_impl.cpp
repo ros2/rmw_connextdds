@@ -1306,6 +1306,9 @@ RMW_Connext_Publisher::finalize()
     "finalizing publisher: pub=%p, type=%s",
     (void *)this, this->type_support->type_name())
 
+  // Make sure publisher's condition is detached from any waitset
+  this->status_condition.invalidate();
+
   if (DDS_RETCODE_OK !=
     DDS_Publisher_delete_datawriter(
       this->dds_publisher(), this->dds_writer))
@@ -1836,6 +1839,9 @@ RMW_Connext_Subscriber::finalize()
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing subscriber: sub=%p, type=%s",
     (void *)this, this->type_support->type_name())
+
+  // Make sure subscriber's condition is detached from any waitset
+  this->status_condition.invalidate();
 
   if (this->loan_len > 0) {
     this->loan_next = this->loan_len;
@@ -3443,52 +3449,69 @@ RMW_Connext_WaitSet::detach()
 
   for (auto && sub : this->attached_subscribers) {
     RMW_Connext_StatusCondition * const cond = sub->condition();
-    rmw_ret_t rc = cond->detach(this->waitset);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to detach subscriber's condition")
-      failed = true;
+    {
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      rmw_ret_t rc = cond->detach();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to detach subscriber's condition")
+        failed = true;
+      }
     }
   }
   this->attached_subscribers.clear();
 
   for (auto && gc : this->attached_conditions) {
-    rmw_ret_t rc = gc->detach(this->waitset);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to detach guard condition")
-      failed = true;
+    {
+      std::lock_guard<std::mutex> lock(gc->mutex_internal);
+      rmw_ret_t rc = gc->detach();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to detach guard condition")
+        failed = true;
+      }
     }
   }
   this->attached_conditions.clear();
 
   for (auto && client : this->attached_clients) {
     RMW_Connext_StatusCondition * const cond = client->subscriber()->condition();
-    rmw_ret_t rc = cond->detach(this->waitset);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to detach client's condition")
-      failed = true;
+    {
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      rmw_ret_t rc = cond->detach();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to detach client's condition")
+        failed = true;
+      }
     }
   }
   this->attached_clients.clear();
 
   for (auto && service : this->attached_services) {
     RMW_Connext_StatusCondition * const cond = service->subscriber()->condition();
-    rmw_ret_t rc = cond->detach(this->waitset);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to detach service's condition")
-      failed = true;
+    {
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      rmw_ret_t rc = cond->detach();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to detach service's condition")
+        failed = true;
+      }
     }
   }
   this->attached_services.clear();
 
   for (auto && e : this->attached_events) {
-    RMW_Connext_StatusCondition * const cond = RMW_Connext_Event::condition(e);
-    rmw_ret_t rc = cond->detach(this->waitset);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to detach event's condition")
-      failed = true;
+    auto e_cached = this->attached_events_cache[e];
+    RMW_Connext_StatusCondition * const cond = RMW_Connext_Event::condition(&e_cached);
+    {
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      rmw_ret_t rc = cond->detach();
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to detach event's condition")
+        failed = true;
+      }
     }
   }
   this->attached_events.clear();
+  this->attached_events_cache.clear();
 
   return failed ? RMW_RET_ERROR : RMW_RET_OK;
 }
@@ -3545,14 +3568,6 @@ RMW_Connext_WaitSet::attach(
     return rc;
   }
 
-  RMW_Connext_WaitSet * const ws = this;
-  auto scope_exit_detach = rcpputils::make_scope_exit(
-    [ws]()
-    {
-      if (RMW_RET_OK != ws->detach()) {
-        RMW_CONNEXT_LOG_ERROR("failed to detach conditions from waitset")
-      }
-    });
   // First iterate over events, and reset the "enabled statuses" of the
   // target entity's status condition. We could skip any subscriber that is
   // also passed in for data (since the "enabled statuses" will be reset to
@@ -3564,10 +3579,16 @@ RMW_Connext_WaitSet::attach(
         reinterpret_cast<rmw_event_t *>(evs->events[i]);
       RMW_Connext_StatusCondition * const cond =
         RMW_Connext_Event::condition(event);
-      rmw_ret_t rc = cond->reset();
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to reset event's condition")
-        return rc;
+      {
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        if (cond->deleted) {
+          return RMW_RET_ERROR;
+        }
+        rmw_ret_t rc = cond->reset_statuses();
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to reset event's condition")
+          return rc;
+        }
       }
     }
   }
@@ -3576,16 +3597,32 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < subs->subscriber_count; ++i) {
       RMW_Connext_Subscriber * const sub =
         reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
-      RMW_Connext_StatusCondition * const cond = sub->condition();
-      rmw_ret_t rc = cond->reset();
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
-        return rc;
-      }
-      rc = cond->attach(this->waitset, DDS_DATA_AVAILABLE_STATUS);
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to attach subscriber's condition")
-        return rc;
+      RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
+      {
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        if (cond->deleted) {
+          return RMW_RET_ERROR;
+        }
+        rmw_ret_t rc = cond->reset_statuses();
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
+          return rc;
+        }
+        rc = cond->enable_statuses(DDS_DATA_AVAILABLE_STATUS);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to enable subscriber's condition")
+          return rc;
+        }
+        rc = cond->attach(this);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach subscriber's condition")
+          return rc;
+        }
+        rc = cond->attach_data();
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach subscriber's data condition")
+          return rc;
+        }
       }
       this->attached_subscribers.push_back(sub);
     }
@@ -3595,16 +3632,32 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < cls->client_count; ++i) {
       RMW_Connext_Client * const client =
         reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
-      RMW_Connext_StatusCondition * const cond = client->subscriber()->condition();
-      rmw_ret_t rc = cond->reset();
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
-        return rc;
-      }
-      rc = cond->attach(this->waitset, DDS_DATA_AVAILABLE_STATUS);
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to attach client's condition")
-        return rc;
+      RMW_Connext_SubscriberStatusCondition * const cond = client->subscriber()->condition();
+      {
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        if (cond->deleted) {
+          return RMW_RET_ERROR;
+        }
+        rmw_ret_t rc = cond->reset_statuses();
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
+          return rc;
+        }
+        rc = cond->enable_statuses(DDS_DATA_AVAILABLE_STATUS);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to enable client's condition")
+          return rc;
+        }
+        rc = cond->attach(this);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach client's condition")
+          return rc;
+        }
+        rc = cond->attach_data();
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach client's data condition")
+          return rc;
+        }
       }
       this->attached_clients.push_back(client);
     }
@@ -3614,16 +3667,32 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < srvs->service_count; ++i) {
       RMW_Connext_Service * const svc =
         reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
-      RMW_Connext_StatusCondition * const cond = svc->subscriber()->condition();
-      rmw_ret_t rc = cond->reset();
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
-        return rc;
-      }
-      rc = cond->attach(this->waitset, DDS_DATA_AVAILABLE_STATUS);
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to attach service's condition")
-        return rc;
+      RMW_Connext_SubscriberStatusCondition * const cond = svc->subscriber()->condition();
+      {
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        if (cond->deleted) {
+          return RMW_RET_ERROR;
+        }
+        rmw_ret_t rc = cond->reset_statuses();
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to reset subscriber's condition")
+          return rc;
+        }
+        rc = cond->enable_statuses(DDS_DATA_AVAILABLE_STATUS);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to enable service's condition")
+          return rc;
+        }
+        rc = cond->attach(this);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach service's condition")
+          return rc;
+        }
+        rc = cond->attach_data();
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach service's data condition")
+          return rc;
+        }
       }
       this->attached_services.push_back(svc);
     }
@@ -3635,13 +3704,28 @@ RMW_Connext_WaitSet::attach(
         reinterpret_cast<rmw_event_t *>(evs->events[i]);
       RMW_Connext_StatusCondition * const cond =
         RMW_Connext_Event::condition(event);
-      const DDS_StatusKind evt = ros_event_to_dds(event->event_type, nullptr);
-      rmw_ret_t rc = cond->attach(this->waitset, evt);
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to attach event's condition")
-        return rc;
+      {
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        if (cond->deleted) {
+          return RMW_RET_ERROR;
+        }
+        const DDS_StatusKind evt = ros_event_to_dds(event->event_type, nullptr);
+        rmw_ret_t rc = cond->enable_statuses(evt);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to enable event's condition")
+          return rc;
+        }
+        rc = cond->attach(this);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach event's condition")
+          return rc;
+        }
       }
       this->attached_events.push_back(event);
+      // Cache a shallow copy of the rmw_event_t structure so that we may
+      // access it safely during detach(), even if the original event has been
+      // deleted already by that time.
+      this->attached_events_cache.emplace(event, *event);
     }
   }
 
@@ -3649,15 +3733,20 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < gcs->guard_condition_count; ++i) {
       RMW_Connext_GuardCondition * const gcond =
         reinterpret_cast<RMW_Connext_GuardCondition *>(gcs->guard_conditions[i]);
-      rmw_ret_t rc = gcond->attach(this->waitset);
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to attach guard condition")
-        return rc;
+      {
+        std::lock_guard<std::mutex> lock(gcond->mutex_internal);
+        if (gcond->deleted) {
+          return RMW_RET_ERROR;
+        }
+        rmw_ret_t rc = gcond->attach(this);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to attach guard condition")
+          return rc;
+        }
       }
       this->attached_conditions.push_back(gcond);
     }
   }
-  scope_exit_detach.cancel();
   return RMW_RET_OK;
 }
 
@@ -3676,6 +3765,43 @@ RMW_Connext_WaitSet::active_condition(RMW_Connext_Condition * const cond)
   return active;
 }
 
+bool
+RMW_Connext_WaitSet::is_attached(RMW_Connext_Condition * const cond)
+{
+  for (auto && sub : this->attached_subscribers) {
+    if (sub->condition() == cond) {
+      return true;
+    }
+  }
+
+  for (auto && gc : this->attached_conditions) {
+    if (gc == cond) {
+      return true;
+    }
+  }
+
+  for (auto && client : this->attached_clients) {
+    if (client->subscriber()->condition() == cond) {
+      return true;
+    }
+  }
+
+  for (auto && service : this->attached_services) {
+    if (service->subscriber()->condition() == cond) {
+      return true;
+    }
+  }
+
+  for (auto && e : this->attached_events) {
+    auto e_cached = this->attached_events_cache[e];
+    if (RMW_Connext_Event::condition(&e_cached) == cond) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 rmw_ret_t
 RMW_Connext_WaitSet::process_wait(
   rmw_subscriptions_t * const subs,
@@ -3688,6 +3814,12 @@ RMW_Connext_WaitSet::process_wait(
   bool failed = false;
   size_t i = 0;
 
+  // If any of the attached conditions has become "invalid" while we were
+  // waiting, we will finish processing the results, and detach all existing
+  // conditions at the end, to make sure that no stale references is stored by
+  // the waitset after returning from the wait() call.
+  bool valid = true;
+
   i = 0;
   for (auto && sub : this->attached_subscribers) {
     // Check if the subscriber has some data already cached from the DataReader,
@@ -3699,6 +3831,7 @@ RMW_Connext_WaitSet::process_wait(
       active_conditions += 1;
     }
     i += 1;
+    valid = valid && !sub->condition()->deleted;
   }
 
   i = 0;
@@ -3714,17 +3847,13 @@ RMW_Connext_WaitSet::process_wait(
       // this type of (pretty much unsolvable) issue (hence why
       // DDS_WaitSet_wait() will not automatically reset the trigger value of
       // an attached guard conditions).
-      // As of this writing (02/04/2021) all Tier 1 RMW implementations do this
-      // and are likely subjected to the same race condition:
-      // rmw_fastrtps_cpp: https://github.com/ros2/rmw_fastrtps/blob/master/rmw_fastrtps_shared_cpp/src/rmw_wait.cpp#L245
-      // rmw_cyclonedds_cpp: https://github.com/ros2/rmw_cyclonedds/blob/master/rmw_cyclonedds_cpp/src/rmw_node.cpp#L3417
-      // rmw_connext-cpp: https://github.com/ros2/rmw_connext/blob/master/rmw_connext_shared_cpp/include/rmw_connext_shared_cpp/wait.hpp#L389
-      if (RMW_RET_OK != gc->reset()) {
+      if (RMW_RET_OK != gc->reset_trigger()) {
         failed = true;
       }
       active_conditions += 1;
     }
     i += 1;
+    valid = valid && !gc->deleted;
   }
 
   i = 0;
@@ -3735,6 +3864,7 @@ RMW_Connext_WaitSet::process_wait(
       active_conditions += 1;
     }
     i += 1;
+    valid = valid && !client->subscriber()->condition()->deleted;
   }
 
   i = 0;
@@ -3749,16 +3879,22 @@ RMW_Connext_WaitSet::process_wait(
 
   i = 0;
   for (auto && e : this->attached_events) {
+    auto e_cached = this->attached_events_cache[e];
     // Check if associated DDS status is active on the associated entity
-    if (!RMW_Connext_Event::active(e)) {
+    if (!RMW_Connext_Event::active(&e_cached)) {
       evs->events[i] = nullptr;
     } else {
       active_conditions += 1;
     }
     i += 1;
+    valid = valid && !RMW_Connext_Event::condition(&e_cached)->deleted;
   }
 
-  return failed ? RMW_RET_ERROR : RMW_RET_OK;
+  if (!failed && valid) {
+    return RMW_RET_OK;
+  }
+
+  return RMW_RET_ERROR;
 }
 
 rmw_ret_t
@@ -3771,28 +3907,42 @@ RMW_Connext_WaitSet::wait(
   const rmw_time_t * const wait_timeout)
 {
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
-    if (this->waiting) {
+    std::unique_lock<std::mutex> lock(this->mutex_internal);
+    bool already_taken = false;
+    switch (this->state) {
+      case RMW_CONNEXT_WAITSET_FREE:
+        {
+          // waitset is available
+          break;
+        }
+      case RMW_CONNEXT_WAITSET_INVALIDATING:
+        {
+          // waitset is currently being invalidated, wait for other thread to
+          // complete.
+          this->state_cond.wait(lock);
+          already_taken = (RMW_CONNEXT_WAITSET_FREE != this->state);
+          break;
+        }
+      default:
+        {
+          already_taken = true;
+          break;
+        }
+    }
+    if (already_taken) {
+      // waitset is owned by another thread
       RMW_CONNEXT_LOG_ERROR_SET(
         "multiple concurrent wait()s not supported");
       return RMW_RET_ERROR;
     }
-    this->waiting = true;
+    this->state = RMW_CONNEXT_WAITSET_ACQUIRING;
   }
+  // Notify condition variable of state transition
+  this->state_cond.notify_all();
 
   RMW_Connext_WaitSet * const ws = this;
-  auto scope_exit = rcpputils::make_scope_exit(
-    [ws]()
-    {
-      std::lock_guard<std::mutex> lock(ws->mutex_internal);
-      ws->waiting = false;
-    });
-
-  rmw_ret_t rc = this->attach(subs, gcs, srvs, cls, evs);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
-
+  // If we return with an error, then try to detach all conditions to leave
+  // the waitset in a "clean" state.
   auto scope_exit_detach = rcpputils::make_scope_exit(
     [ws]()
     {
@@ -3800,6 +3950,25 @@ RMW_Connext_WaitSet::wait(
         RMW_CONNEXT_LOG_ERROR("failed to detach conditions from waitset")
       }
     });
+
+  // After handling a possible error condition (i.e. clearing the waitset),
+  // transition back to "FREE" state.
+  auto scope_exit = rcpputils::make_scope_exit(
+    [ws]()
+    {
+      // transition waitset back to FREE state on exit
+      {
+        std::lock_guard<std::mutex> lock(ws->mutex_internal);
+        ws->state = RMW_CONNEXT_WAITSET_FREE;
+      }
+      // Notify condition variable of state transition
+      ws->state_cond.notify_all();
+    });
+
+  rmw_ret_t rc = this->attach(subs, gcs, srvs, cls, evs);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
 
   const size_t attached_count =
     this->attached_subscribers.size() +
@@ -3821,6 +3990,15 @@ RMW_Connext_WaitSet::wait(
     wait_duration.sec = (DDS_Long) wait_timeout->sec;
     wait_duration.nanosec = wait_timeout->nsec;
   }
+
+  // transition to state BLOCKED
+  {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    this->state = RMW_CONNEXT_WAITSET_BLOCKED;
+  }
+  // Notify condition variable of state transition
+  this->state_cond.notify_all();
+
   const DDS_ReturnCode_t wait_rc =
     DDS_WaitSet_wait(this->waitset, &this->active_conditions, &wait_duration);
 
@@ -3828,6 +4006,14 @@ RMW_Connext_WaitSet::wait(
     RMW_CONNEXT_LOG_ERROR_A_SET("DDS wait failed: %d", wait_rc)
     return RMW_RET_ERROR;
   }
+
+  // transition to state RELEASING
+  {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    this->state = RMW_CONNEXT_WAITSET_RELEASING;
+  }
+  // Notify condition variable of state transition
+  this->state_cond.notify_all();
 
   size_t active_conditions = 0;
   rc = this->process_wait(subs, gcs, srvs, cls, evs, active_conditions);
@@ -3844,6 +4030,58 @@ RMW_Connext_WaitSet::wait(
     rmw_reset_error();
     RMW_SET_ERROR_MSG("DDS wait timed out");
     return RMW_RET_TIMEOUT;
+  }
+
+  return RMW_RET_OK;
+}
+
+
+rmw_ret_t
+RMW_Connext_WaitSet::invalidate(RMW_Connext_Condition * const condition)
+{
+  std::unique_lock<std::mutex> lock(this->mutex_internal);
+
+  // Scan attached elements to see if condition is still attached.
+  // If the invalidated condition is not attached, then there's nothing to do,
+  // since the waitset is already free from potential stale references.
+  if (!this->is_attached(condition)) {
+    return RMW_RET_OK;
+  }
+
+  // If the waitset is "FREE" then we can just mark it as "INVALIDATING",
+  // do the clean up, and release it. A wait()'ing thread will detect the
+  // "INVALIDATING" state and block until notified.
+  if (this->state == RMW_CONNEXT_WAITSET_FREE) {
+    this->state = RMW_CONNEXT_WAITSET_INVALIDATING;
+    lock.unlock();
+
+    rmw_ret_t rc = this->detach();
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to detach conditions on invalidate")
+    }
+
+    lock.lock();
+    this->state = RMW_CONNEXT_WAITSET_FREE;
+    lock.unlock();
+    this->state_cond.notify_all();
+    return rc;
+  }
+
+  // Waitset is currently inside a wait() call. If the state is not "ACQUIRING"
+  // then it means the user is trying to delete a condition while simultaneously
+  // waiting on it. This is an error.
+  if (this->state != RMW_CONNEXT_WAITSET_ACQUIRING) {
+    RMW_CONNEXT_LOG_ERROR_SET("cannot delete and wait on the same object")
+    return RMW_RET_ERROR;
+  }
+
+  // Block on state_cond and wait for the next state transition, at which
+  // point the condition must have been detached, or we can return an error.
+  this->state_cond.wait(lock);
+
+  if (this->is_attached(condition)) {
+    RMW_CONNEXT_LOG_ERROR_SET("deleted condition not detached")
+    return RMW_RET_ERROR;
   }
 
   return RMW_RET_OK;

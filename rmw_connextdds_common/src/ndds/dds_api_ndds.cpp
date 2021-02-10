@@ -634,7 +634,7 @@ rmw_connextdds_return_samples(
 {
   void ** data_buffer = reinterpret_cast<void **>(
     RMW_Connext_Uint8ArrayPtrSeq_get_contiguous_buffer(sub->data_seq()));
-  const size_t data_len =
+  const DDS_Long data_len =
     RMW_Connext_Uint8ArrayPtrSeq_get_length(sub->data_seq());
 
   if (!RMW_Connext_Uint8ArrayPtrSeq_unloan(sub->data_seq())) {
@@ -862,9 +862,9 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
       continue;
     }
 
-    const size_t data_len =
+    const DDS_Long data_len =
       DDS_ParticipantBuiltinTopicDataSeq_get_length(&data_seq);
-    for (size_t i = 0; i < data_len; i++) {
+    for (DDS_Long i = 0; i < data_len; i++) {
       DDS_ParticipantBuiltinTopicData * const data =
         DDS_ParticipantBuiltinTopicDataSeq_get_reference(&data_seq, i);
       DDS_SampleInfo * const info =
@@ -933,9 +933,9 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
       continue;
     }
 
-    const size_t data_len =
+    const DDS_Long data_len =
       DDS_PublicationBuiltinTopicDataSeq_get_length(&data_seq);
-    for (size_t i = 0; i < data_len; i++) {
+    for (DDS_Long i = 0; i < data_len; i++) {
       DDS_PublicationBuiltinTopicData * const data =
         DDS_PublicationBuiltinTopicDataSeq_get_reference(&data_seq, i);
       DDS_SampleInfo * const info =
@@ -1018,9 +1018,9 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
       continue;
     }
 
-    const size_t data_len =
+    const DDS_Long data_len =
       DDS_SubscriptionBuiltinTopicDataSeq_get_length(&data_seq);
-    for (size_t i = 0; i < data_len; i++) {
+    for (DDS_Long i = 0; i < data_len; i++) {
       DDS_SubscriptionBuiltinTopicData * const data =
         DDS_SubscriptionBuiltinTopicDataSeq_get_reference(&data_seq, i);
       DDS_SampleInfo * const info =

@@ -363,7 +363,7 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
   epd->userData = pdata->type_plugin->wrapper;
 
   if (endpoint_info->endpointKind == PRES_TYPEPLUGIN_ENDPOINT_WRITER) {
-    const size_t serialized_sample_max_size =
+    const unsigned int serialized_sample_max_size =
       RMW_Connext_TypePlugin_get_serialized_sample_max_size(
       epd, RTI_FALSE, RTI_CDR_ENCAPSULATION_ID_CDR_BE, 0);
 
@@ -609,7 +609,8 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
   if (msg->serialized) {
     const rcutils_uint8_array_t * const serialized_msg =
       reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
-    current_alignment += serialized_msg->buffer_length;
+    RMW_CONNEXT_ASSERT(serialized_msg->buffer_length <= UINT32_MAX - current_alignment)
+    current_alignment += static_cast<unsigned int>(serialized_msg->buffer_length);
   } else {
     current_alignment +=
       msg->type_support->serialized_size_max(

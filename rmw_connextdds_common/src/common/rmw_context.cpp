@@ -724,7 +724,7 @@ rmw_api_connextdds_init(
   }
 
 #if RMW_CONNEXT_HAVE_OPTIONS
-  if (options->domain_id >= UINT32_MAX &&
+  if (options->domain_id >= INT32_MAX &&
     options->domain_id != RMW_DEFAULT_DOMAIN_ID)
   {
     RMW_CONNEXT_LOG_ERROR_SET("domain id out of range")
@@ -745,7 +745,7 @@ rmw_api_connextdds_init(
     RMW_CONNEXT_DEFAULT_DOMAIN;
 #else
     (RMW_DEFAULT_DOMAIN_ID != options->domain_id) ?
-    options->domain_id : RMW_CONNEXT_DEFAULT_DOMAIN;
+    static_cast<DDS_DomainId_t>(options->domain_id) : RMW_CONNEXT_DEFAULT_DOMAIN;
 #if RMW_CONNEXT_HAVE_GET_DOMAIN
   context->actual_domain_id = actual_domain_id;
 #endif /* RMW_CONNEXT_HAVE_GET_DOMAIN */

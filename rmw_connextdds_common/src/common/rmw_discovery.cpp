@@ -78,7 +78,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
     * cond_dcps_pub = nullptr,
     * cond_dcps_sub = nullptr;
 
-  size_t attached_conditions = 0;
+  DDS_Long attached_conditions = 0;
   bool active = false;
 
   DDS_WaitSet * waitset = DDS_WaitSet_new();

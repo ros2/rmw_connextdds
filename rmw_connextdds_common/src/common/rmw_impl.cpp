@@ -28,6 +28,20 @@ const char * const ROS_TOPIC_PREFIX = "rt";
 const char * const ROS_SERVICE_REQUESTER_PREFIX = ROS_SERVICE_REQUESTER_PREFIX_STR;
 const char * const ROS_SERVICE_RESPONSE_PREFIX = ROS_SERVICE_RESPONSE_PREFIX_STR;
 
+static
+rmw_ret_t
+rmw_connextdds_duration_from_ros_time(
+  DDS_Duration_t * const duration,
+  const rmw_time_t * const ros_time)
+{
+  if (ros_time->sec > INT32_MAX || ros_time->nsec > UINT32_MAX) {
+    RMW_CONNEXT_LOG_ERROR("duration overflow detected")
+    return RMW_RET_ERROR;
+  }
+  duration->sec = static_cast<DDS_Long>(ros_time->sec);
+  duration->nanosec = static_cast<DDS_UnsignedLong>(ros_time->nsec);
+  return RMW_RET_OK;
+}
 
 std::string
 rmw_connextdds_create_topic_name(
@@ -463,8 +477,8 @@ rmw_connextdds_find_string_in_list(
   const DDS_StringSeq * const profile_names,
   const char * const profile)
 {
-  const size_t profiles_len = DDS_StringSeq_get_length(profile_names);
-  for (size_t i = 0; i < profiles_len; i++) {
+  const DDS_Long profiles_len = DDS_StringSeq_get_length(profile_names);
+  for (DDS_Long i = 0; i < profiles_len; i++) {
     const char * const profile_str =
       *DDS_StringSeq_get_reference(profile_names, i);
 
@@ -547,6 +561,7 @@ rmw_connextdds_list_context_qos_profiles(
     ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << RMW_CONNEXT_QOS_TAG_NODE;
     profiles.push_back(ss.str());
   } catch (const std::exception & e) {
+    UNUSED_ARG(e);
     return RMW_RET_ERROR;
   }
 
@@ -694,6 +709,7 @@ rmw_connextdds_list_pubsub_qos_profiles(
     ss << RMW_CONNEXT_DEFAULT_QOS_LIBRARY << "::" << type_tag;
     profiles.push_back(ss.str());
   } catch (const std::exception & e) {
+    UNUSED_ARG(e);
     return RMW_RET_ERROR;
   }
 
@@ -1048,6 +1064,7 @@ rmw_connextdds_list_clientservice_qos_profiles(
     req_profiles.push_back(ss.str());
     rep_profiles.push_back(ss.str());
   } catch (const std::exception & e) {
+    UNUSED_ARG(e);
     return RMW_RET_ERROR;
   }
 
@@ -2115,10 +2132,10 @@ RMW_Connext_Subscriber::take_next(
       rcutils_uint8_array_t * data_buffer =
         reinterpret_cast<rcutils_uint8_array_t *>(
         DDS_UntypedSampleSeq_get_reference(
-          &this->loan_data, this->loan_next));
+          &this->loan_data, static_cast<DDS_Long>(this->loan_next)));
       DDS_SampleInfo * info =
         DDS_SampleInfoSeq_get_reference(
-        &this->loan_info, this->loan_next);
+        &this->loan_info, static_cast<DDS_Long>(this->loan_next));
 
       if (info->valid_data) {
         bool accepted = false;
@@ -3749,10 +3766,10 @@ RMW_Connext_WaitSet::attach(
 bool
 RMW_Connext_WaitSet::active_condition(RMW_Connext_Condition * const cond)
 {
-  size_t active_len = DDS_ConditionSeq_get_length(&this->active_conditions);
+  DDS_Long active_len = DDS_ConditionSeq_get_length(&this->active_conditions);
   bool active = false;
 
-  for (size_t i = 0; i < active_len && !active; i++) {
+  for (DDS_Long i = 0; i < active_len && !active; i++) {
     DDS_Condition * const acond =
       *DDS_ConditionSeq_get_reference(&this->active_conditions, i);
     active = cond->owns(acond);
@@ -3973,8 +3990,15 @@ RMW_Connext_WaitSet::wait(
     this->attached_services.size() +
     this->attached_events.size();
 
+  if (attached_count > INT32_MAX) {
+    RMW_CONNEXT_LOG_ERROR("too many conditions attached to waitset")
+    return RMW_RET_ERROR;
+  }
+
   if (!DDS_ConditionSeq_ensure_length(
-      &this->active_conditions, attached_count, attached_count))
+      &this->active_conditions,
+      static_cast<DDS_Long>(attached_count),
+      static_cast<DDS_Long>(attached_count)))
   {
     RMW_CONNEXT_LOG_ERROR("failed to resize conditions sequence")
     return RMW_RET_ERROR;
@@ -3982,9 +4006,10 @@ RMW_Connext_WaitSet::wait(
 
   DDS_Duration_t wait_duration = DDS_DURATION_INFINITE;
   if (nullptr != wait_timeout) {
-    // TODO(asorbini) perform checked conversion from uint64_t to DDS_Long
-    wait_duration.sec = (DDS_Long) wait_timeout->sec;
-    wait_duration.nanosec = wait_timeout->nsec;
+    rc = rmw_connextdds_duration_from_ros_time(&wait_duration, wait_timeout);
+    if (RMW_RET_OK != rc) {
+      return rc;
+    }
   }
 
   // transition to state BLOCKED

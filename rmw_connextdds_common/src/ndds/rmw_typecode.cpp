@@ -59,8 +59,8 @@ RMW_Connext_TypeCodePtrSeq_lookup_by_name(
   RMW_Connext_TypeCodePtrSeq * const self,
   const char * const name)
 {
-  const size_t seq_len = RMW_Connext_TypeCodePtrSeq_get_length(self);
-  for (size_t i = 0; i < seq_len; i++) {
+  const DDS_Long seq_len = RMW_Connext_TypeCodePtrSeq_get_length(self);
+  for (DDS_Long i = 0; i < seq_len; i++) {
     DDS_TypeCode * const tc =
       *RMW_Connext_TypeCodePtrSeq_get_reference(self, i);
     if (nullptr == tc) {
@@ -84,10 +84,10 @@ static
 RTIBool
 RMW_Connext_TypeCodePtrSeq_assert_empty_slot(
   RMW_Connext_TypeCodePtrSeq * const self,
-  size_t * const slot_i)
+  DDS_Long * const slot_i)
 {
-  const size_t seq_len = RMW_Connext_TypeCodePtrSeq_get_length(self);
-  for (size_t i = 0; i < seq_len; i++) {
+  const DDS_Long seq_len = RMW_Connext_TypeCodePtrSeq_get_length(self);
+  for (DDS_Long i = 0; i < seq_len; i++) {
     DDS_TypeCode * const tc =
       *RMW_Connext_TypeCodePtrSeq_get_reference(self, i);
     if (nullptr == tc) {
@@ -109,7 +109,7 @@ RMW_Connext_TypeCodePtrSeq_append(
   RMW_Connext_TypeCodePtrSeq * const self,
   DDS_TypeCode * const tc)
 {
-  size_t slot_i = 0;
+  DDS_Long slot_i = 0;
 
   if (!RMW_Connext_TypeCodePtrSeq_assert_empty_slot(self, &slot_i)) {
     return RTI_FALSE;
@@ -174,8 +174,8 @@ void
 RMW_Connext_TypeCodePtrSeq_finalize_elements(
   struct RMW_Connext_TypeCodePtrSeq * const self)
 {
-  const size_t seq_len = RMW_Connext_TypeCodePtrSeq_get_length(self);
-  for (size_t i = 0; i < seq_len; i++) {
+  const DDS_Long seq_len = RMW_Connext_TypeCodePtrSeq_get_length(self);
+  for (DDS_Long i = 0; i < seq_len; i++) {
     DDS_TypeCode ** const tc =
       RMW_Connext_TypeCodePtrSeq_get_reference(self, i);
     if (nullptr == *tc) {
@@ -302,7 +302,8 @@ rmw_connextdds_convert_type_member(
           DDS_TypeCodeFactory_create_string_tc(
           tc_factory,
           (member->string_upper_bound_ > 0) ?
-          member->string_upper_bound_ : length_unbound,
+          // TODO(asorbini) checked conversion of member->string_upper_bound_
+          static_cast<DDS_UnsignedLong>(member->string_upper_bound_) : length_unbound,
           &ex);
 
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
@@ -322,7 +323,8 @@ rmw_connextdds_convert_type_member(
           DDS_TypeCodeFactory_create_wstring_tc(
           tc_factory,
           (member->string_upper_bound_ > 0) ?
-          member->string_upper_bound_ : length_unbound,
+          // TODO(asorbini) checked conversion of member->string_upper_bound_
+          static_cast<DDS_UnsignedLong>(member->string_upper_bound_) : length_unbound,
           &ex);
 
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
@@ -388,7 +390,9 @@ rmw_connextdds_convert_type_member(
       if (!DDS_UnsignedLongSeq_ensure_length(&dimensions, 1, 1)) {
         return nullptr;
       }
-      *DDS_UnsignedLongSeq_get_reference(&dimensions, 0) = member->array_size_;
+      // TODO(asorbini) checked conversion of member->array_size_
+      *DDS_UnsignedLongSeq_get_reference(&dimensions, 0) =
+        static_cast<DDS_UnsignedLong>(member->array_size_);
       DDS_TypeCode * const tc_array =
         DDS_TypeCodeFactory_create_array_tc(
         tc_factory, &dimensions, el_tc, &ex);
@@ -529,9 +533,9 @@ rmw_connextdds_create_typecode(
     rcpputils::make_scope_exit(
     [tc_members_ptr]()
     {
-      const size_t seq_len =
+      const DDS_Long seq_len =
       DDS_StructMemberSeq_get_length(tc_members_ptr);
-      for (size_t i = 0; i < seq_len; i++) {
+      for (DDS_Long i = 0; i < seq_len; i++) {
         DDS_StructMember * const tc_member =
         DDS_StructMemberSeq_get_reference(tc_members_ptr, i);
         DDS_String_free(tc_member->name);

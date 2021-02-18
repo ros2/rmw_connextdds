@@ -158,13 +158,8 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   rmw_connextdds_get_entity_gid(ctx->participant, ctx->common.gid);
 
-  std::string dp_enclave;
-
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-  dp_enclave = ctx->base->options.enclave;
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
-
-  ctx->common.graph_cache.add_participant(ctx->common.gid, dp_enclave);
+  ctx->common.graph_cache.add_participant(
+    ctx->common.gid, ctx->base->options.enclave);
 
   if (RMW_RET_OK !=
     rmw_connextdds_dcps_participant_get_reader(
@@ -708,6 +703,7 @@ rmw_connextdds_graph_on_participant_info(rmw_context_impl_t * ctx)
   return RMW_RET_OK;
 }
 
+
 rmw_ret_t
 rmw_connextdds_graph_add_participant(
   rmw_context_impl_t * const ctx,
@@ -727,18 +723,19 @@ rmw_connextdds_graph_add_participant(
   }
 
   std::string enclave_str;
-
   if (nullptr != enclave) {
     enclave_str = enclave;
   }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[discovery thread] assert participant: "
-    "gid=0x%08X.0x%08X.0x%08X.0x%08X",
+    "gid=0x%08X.0x%08X.0x%08X.0x%08X, "
+    "enclave=%s",
     reinterpret_cast<const uint32_t *>(dp_guid.value)[0],
     reinterpret_cast<const uint32_t *>(dp_guid.value)[1],
     reinterpret_cast<const uint32_t *>(dp_guid.value)[2],
-    reinterpret_cast<const uint32_t *>(dp_guid.value)[3])
+    reinterpret_cast<const uint32_t *>(dp_guid.value)[3],
+    enclave_str.c_str())
 
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
   ctx->common.graph_cache.add_participant(gid, enclave_str);

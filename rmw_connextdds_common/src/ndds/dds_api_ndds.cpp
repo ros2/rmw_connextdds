@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rmw/impl/cpp/key_value.hpp"
+
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
@@ -119,9 +121,6 @@ rmw_connextdds_initialize_participant_qos_impl(
 
   // Only propagate type object
   dp_qos->resource_limits.type_code_max_serialized_length = 0;
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-  dp_qos->resource_limits.type_object_max_serialized_length = 0;
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
   // In order to reduce the time to cleanup a participant (Node),
   // we use the advice from
@@ -161,7 +160,6 @@ rmw_connextdds_initialize_participant_qos_impl(
   }
 #endif
 
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
   const char * const user_data_fmt = "enclave=%s;";
 
   const int user_data_len =
@@ -190,7 +188,8 @@ rmw_connextdds_initialize_participant_qos_impl(
     RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data")
     return RMW_RET_ERROR;
   }
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
+
+  RMW_CONNEXT_LOG_DEBUG_A("stored ENCLAVE in USER_DATA: '%s'", user_data_ptr)
 
   // According to the RTPS spec, ContentFilterProperty_t has the following fields:
   // -contentFilteredTopicName (max length 256)
@@ -839,6 +838,41 @@ rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * const ctx)
   return RMW_RET_OK;
 }
 
+
+static std::map<std::string, std::vector<uint8_t>>
+rmw_connextdds_parse_map(uint8_t * const data, const DDS_Long data_len)
+{
+  std::vector<uint8_t> data_vec(data, data + data_len);
+  std::map<std::string, std::vector<uint8_t>> map =
+    rmw::impl::cpp::parse_key_value(data_vec);
+  return map;
+}
+
+static rmw_ret_t
+rmw_connextdds_get_user_data_key(
+  const DDS_ParticipantBuiltinTopicData * const data,
+  const std::string key,
+  std::string & value,
+  bool & found)
+{
+  found = false;
+  uint8_t * const user_data =
+    reinterpret_cast<uint8_t *>(
+    DDS_OctetSeq_get_contiguous_buffer(&data->user_data.value));
+  const DDS_Long user_data_len =
+    DDS_OctetSeq_get_length(&data->user_data.value);
+  if (nullptr == user_data || user_data_len == 0) {
+    return RMW_RET_OK;
+  }
+  auto map = rmw_connextdds_parse_map(user_data, user_data_len);
+  auto name_found = map.find(key);
+  if (name_found != map.end()) {
+    value = std::string(name_found->second.begin(), name_found->second.end());
+    found = true;
+  }
+  return RMW_RET_OK;
+}
+
 rmw_ret_t
 rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
 {
@@ -891,7 +925,23 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
         continue;
       }
 
-      if (RMW_RET_OK != rmw_connextdds_graph_add_participant(ctx, data)) {
+      std::string enclave_str;
+      bool enclave_found;
+
+      rmw_ret_t rc = rmw_connextdds_get_user_data_key(
+        data, "enclave", enclave_str, enclave_found);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to parse user data for enclave")
+        continue;
+      }
+      const char * enclave = nullptr;
+      if (enclave_found) {
+        enclave = enclave_str.c_str();
+      }
+
+      if (RMW_RET_OK !=
+        rmw_connextdds_graph_add_participant(ctx, data, enclave))
+      {
         RMW_CONNEXT_LOG_ERROR(
           "failed to asser remote participant in graph")
         continue;

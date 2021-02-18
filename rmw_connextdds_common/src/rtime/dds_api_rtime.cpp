@@ -1722,7 +1722,7 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
 
     if (qdata.valid_data) {
       if (RMW_RET_OK !=
-        rmw_connextdds_graph_add_participant(ctx, &qdata.data))
+        rmw_connextdds_graph_add_participant(ctx, &qdata.data, nullptr))
       {
         rc = RMW_RET_ERROR;
       }

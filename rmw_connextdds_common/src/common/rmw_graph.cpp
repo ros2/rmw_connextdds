@@ -158,8 +158,13 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   rmw_connextdds_get_entity_gid(ctx->participant, ctx->common.gid);
 
-  ctx->common.graph_cache.add_participant(
-    ctx->common.gid, ctx->base->options.enclave);
+  std::string dp_enclave;
+
+#if RMW_CONNEXT_HAVE_OPTIONS
+  dp_enclave = ctx->base->options.enclave;
+#endif /* RMW_CONNEXT_HAVE_OPTIONS*/
+
+  ctx->common.graph_cache.add_participant(ctx->common.gid, dp_enclave);
 
   if (RMW_RET_OK !=
     rmw_connextdds_dcps_participant_get_reader(

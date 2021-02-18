@@ -160,6 +160,7 @@ rmw_connextdds_initialize_participant_qos_impl(
   }
 #endif
 
+#if RMW_CONNEXT_HAVE_OPTIONS
   const char * const user_data_fmt = "enclave=%s;";
 
   const int user_data_len =
@@ -188,8 +189,7 @@ rmw_connextdds_initialize_participant_qos_impl(
     RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data")
     return RMW_RET_ERROR;
   }
-
-  RMW_CONNEXT_LOG_DEBUG_A("stored ENCLAVE in USER_DATA: '%s'", user_data_ptr)
+#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
   // According to the RTPS spec, ContentFilterProperty_t has the following fields:
   // -contentFilteredTopicName (max length 256)

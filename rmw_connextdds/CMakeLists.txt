@@ -79,3 +79,6 @@ ament_export_dependencies(rmw_connextdds_common)
 ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
 )
+
+ament_index_register_resource("rmw_output_prefixes"
+  CONTENT "RTI Data Distribution Service\nExpires on")

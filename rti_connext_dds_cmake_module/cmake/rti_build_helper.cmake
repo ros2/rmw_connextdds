@@ -397,6 +397,9 @@ function(rti_find_connextpro)
             "${CONNEXTDDS_DIR}/resource/cmake")
         set(BUILD_SHARED_LIBS true)
         set(CONNEXTDDS_VERSION      "5.3.1")
+        # Set RTICODEGEN_DIR to suppress warnings from FindRTIConnextDDS.cmake
+        # in case the installation of Connext only contains runtime libraries.
+        set(RTICODEGEN_DIR "${CONNEXTDDS_DIR}/bin")
         find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
             COMPONENTS     core ${extra_components})
     endif()

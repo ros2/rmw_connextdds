@@ -870,7 +870,12 @@ rmw_connextdds_configure_security(
   rcutils_allocator_t * const allocator_ptr = &allocator;
   std::ostringstream ss;
   std::string prop_uri;
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   static const char * const uri_prefix = "file:";
+#else
+  // Connext Pro 5.3.1 does not support the "file:" prefix
+  static const char * const uri_prefix = "";
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   char * const prop_identity_ca =
     rcutils_join_path(

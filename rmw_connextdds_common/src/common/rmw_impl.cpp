@@ -3596,10 +3596,19 @@ RMW_Connext_WaitSet::attach(
         reinterpret_cast<rmw_event_t *>(evs->events[i]);
       RMW_Connext_StatusCondition * const cond =
         RMW_Connext_Event::condition(event);
+      RMW_Connext_WaitSet * const otherws = cond->attached_waitset;
+      bool detached = false;
+      if (nullptr != otherws && this != otherws) {
+        otherws->invalidate(cond);
+        detached = true;
+      }
       {
         std::lock_guard<std::mutex> lock(cond->mutex_internal);
         if (cond->deleted) {
           return RMW_RET_ERROR;
+        }
+        if (detached) {
+          cond->attached_waitset = nullptr;
         }
         rmw_ret_t rc = cond->reset_statuses();
         if (RMW_RET_OK != rc) {
@@ -3615,10 +3624,19 @@ RMW_Connext_WaitSet::attach(
       RMW_Connext_Subscriber * const sub =
         reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
       RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
+      RMW_Connext_WaitSet * const otherws = cond->attached_waitset;
+      bool detached = false;
+      if (nullptr != otherws && this != otherws) {
+        otherws->invalidate(cond);
+        detached = true;
+      }
       {
         std::lock_guard<std::mutex> lock(cond->mutex_internal);
         if (cond->deleted) {
           return RMW_RET_ERROR;
+        }
+        if (detached) {
+          cond->attached_waitset = nullptr;
         }
         rmw_ret_t rc = cond->reset_statuses();
         if (RMW_RET_OK != rc) {
@@ -3650,10 +3668,19 @@ RMW_Connext_WaitSet::attach(
       RMW_Connext_Client * const client =
         reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
       RMW_Connext_SubscriberStatusCondition * const cond = client->subscriber()->condition();
+      RMW_Connext_WaitSet * const otherws = cond->attached_waitset;
+      bool detached = false;
+      if (nullptr != otherws && this != otherws) {
+        otherws->invalidate(cond);
+        detached = true;
+      }
       {
         std::lock_guard<std::mutex> lock(cond->mutex_internal);
         if (cond->deleted) {
           return RMW_RET_ERROR;
+        }
+        if (detached) {
+          cond->attached_waitset = nullptr;
         }
         rmw_ret_t rc = cond->reset_statuses();
         if (RMW_RET_OK != rc) {
@@ -3685,10 +3712,19 @@ RMW_Connext_WaitSet::attach(
       RMW_Connext_Service * const svc =
         reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
       RMW_Connext_SubscriberStatusCondition * const cond = svc->subscriber()->condition();
+      RMW_Connext_WaitSet * const otherws = cond->attached_waitset;
+      bool detached = false;
+      if (nullptr != otherws && this != otherws) {
+        otherws->invalidate(cond);
+        detached = true;
+      }
       {
         std::lock_guard<std::mutex> lock(cond->mutex_internal);
         if (cond->deleted) {
           return RMW_RET_ERROR;
+        }
+        if (detached) {
+          cond->attached_waitset = nullptr;
         }
         rmw_ret_t rc = cond->reset_statuses();
         if (RMW_RET_OK != rc) {
@@ -3750,10 +3786,19 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < gcs->guard_condition_count; ++i) {
       RMW_Connext_GuardCondition * const gcond =
         reinterpret_cast<RMW_Connext_GuardCondition *>(gcs->guard_conditions[i]);
+      RMW_Connext_WaitSet * const otherws = gcond->attached_waitset;
+      bool detached = false;
+      if (nullptr != otherws && this != otherws) {
+        otherws->invalidate(gcond);
+        detached = true;
+      }
       {
         std::lock_guard<std::mutex> lock(gcond->mutex_internal);
         if (gcond->deleted) {
           return RMW_RET_ERROR;
+        }
+        if (detached) {
+          gcond->attached_waitset = nullptr;
         }
         rmw_ret_t rc = gcond->attach(this);
         if (RMW_RET_OK != rc) {

@@ -184,6 +184,25 @@ rmw_context_impl_t::initialize_node(
 
   this->qos_library = qos_library;
 
+  /* Lookup name of custom QoS library */
+  const char * do_not_override_publish_mode_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE, &do_not_override_publish_mode_env);
+
+  if (nullptr != lookup_rc || nullptr == qos_library) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  // All publishers will use asynchronous publish mode if
+  // RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE is empty.
+  this->override_publish_mode = '\0' == do_not_override_publish_mode_env[0];
+
   if (RMW_RET_OK != rmw_connextdds_initialize_participant_factory(this)) {
     RMW_CONNEXT_LOG_ERROR(
       "failed to initialize DDS DomainParticipantFactory")

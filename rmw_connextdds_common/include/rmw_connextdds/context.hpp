@@ -82,6 +82,7 @@ struct rmw_context_impl_t
   std::string qos_library;
   std::string qos_ctx_name;
   std::string qos_ctx_namespace;
+  bool override_publish_mode;
 
   /* Participant reference count*/
   size_t node_count{0};

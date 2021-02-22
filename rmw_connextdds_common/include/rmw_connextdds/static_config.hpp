@@ -45,6 +45,10 @@
 #define RMW_CONNEXT_ENV_QOS_LIBRARY     "RMW_CONNEXT_QOS_LIBRARY"
 #endif /* RMW_CONNEXT_ENV_QOS_LIBRARY */
 
+#ifndef RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE
+#define RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE     "RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE"
+#endif /* RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE */
+
 /******************************************************************************
  * DDS Implementation
  * Select the DDS implementation used to build the RMW library.

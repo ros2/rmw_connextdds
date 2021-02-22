@@ -350,7 +350,6 @@ rmw_connextdds_get_datawriter_qos(
 #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 )
 {
-  UNUSED_ARG(ctx);
   UNUSED_ARG(topic);
 
   if (RMW_RET_OK !=
@@ -379,7 +378,9 @@ rmw_connextdds_get_datawriter_qos(
     return RMW_RET_ERROR;
   }
 
-  qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+  if (ctx->override_publish_mode) {
+    qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+  }
 
   return rmw_connextdds_get_qos_policies(
     true /* writer_qos */,

@@ -54,6 +54,8 @@
 #include "scope_exit.hpp"
 #endif /* RMW_CONNEXT_HAVE_SCOPE_EXIT */
 
+extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
+
 struct rmw_context_impl_t
 {
   rmw_dds_common::Context common;

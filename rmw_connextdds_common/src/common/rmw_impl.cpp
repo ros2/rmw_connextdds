@@ -2360,11 +2360,16 @@ rmw_connextdds_message_info_from_dds(
   const DDS_SampleInfo * const from)
 {
   rmw_connextdds_ih_to_gid(from->publication_handle, to->publisher_gid);
+#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
 // Message timestamps are disabled on Windows because RTI Connext DDS
 // does not support a high enough clock resolution by default (see: _ftime()).
-#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS && !RTI_WIN32
+#if !RTI_WIN32
   to->source_timestamp = dds_time_to_u64(&from->source_timestamp);
   to->received_timestamp = dds_time_to_u64(&from->reception_timestamp);
+#else
+  to->source_timestamp = 0;
+  to->received_timestamp = 0;
+#endif /* !RTI_WIN32 */
 #endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
 }
 
@@ -2961,9 +2966,7 @@ RMW_Connext_Client::take_response(
       request_header->request_id.writer_guid,
       rr_msg.gid.data,
       16);
-// Message timestamps are disabled on Windows because RTI Connext DDS
-// does not support a high enough clock resolution by default (see: _ftime()).
-#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS && !RTI_WIN32
+#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
     request_header->source_timestamp = message_info.source_timestamp;
     request_header->received_timestamp = message_info.received_timestamp;
 #endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
@@ -3235,9 +3238,7 @@ RMW_Connext_Service::take_request(
       request_header->request_id.writer_guid,
       rr_msg.gid.data,
       16);
-// Message timestamps are disabled on Windows because RTI Connext DDS
-// does not support a high enough clock resolution by default (see: _ftime()).
-#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS && !RTI_WIN32
+#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
     request_header->source_timestamp = message_info.source_timestamp;
     request_header->received_timestamp = message_info.received_timestamp;
 #endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */

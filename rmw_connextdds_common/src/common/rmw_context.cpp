@@ -32,7 +32,7 @@
  * RMW contexts is not thread safe (TODO(asorbini) verify that this is true in
  * the rcl/rclcpp API too).
  ******************************************************************************/
-DDS_DomainParticipantFactory * RMW_Connext_fv_DomainParticipantFactory = nullptr;
+DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory = nullptr;
 
 
 /******************************************************************************
@@ -191,9 +191,9 @@ rmw_context_impl_t::initialize_node(
     return RMW_RET_ERROR;
   }
 
-  if (nullptr == RMW_Connext_fv_DomainParticipantFactory) {
-    RMW_Connext_fv_DomainParticipantFactory = this->factory;
-  } else if (this->factory != RMW_Connext_fv_DomainParticipantFactory) {
+  if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
+    RMW_Connext_gv_DomainParticipantFactory = this->factory;
+  } else if (this->factory != RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_ERROR("unexpected domain participant factory")
     this->clean_up();
     return RMW_RET_ERROR;
@@ -435,9 +435,9 @@ rmw_context_impl_t::clean_up(const bool finalize_factory)
   }
 
   if (finalize_factory && nullptr != this->factory) {
-    // If RMW_Connext_fv_DomainParticipantFactory is null, then some other
+    // If RMW_Connext_gv_DomainParticipantFactory is null, then some other
     // context already finalized the DPF, and we have nothing to do
-    if (nullptr != RMW_Connext_fv_DomainParticipantFactory) {
+    if (nullptr != RMW_Connext_gv_DomainParticipantFactory) {
       bool outstanding_participants = false;
 
       if (RMW_RET_OK != rmw_connextdds_finalize_participant_factory(
@@ -455,7 +455,7 @@ rmw_context_impl_t::clean_up(const bool finalize_factory)
           RMW_CONNEXT_LOG_ERROR_SET("failed to finalize domain participant factory")
           return RMW_RET_ERROR;
         }
-        RMW_Connext_fv_DomainParticipantFactory = nullptr;
+        RMW_Connext_gv_DomainParticipantFactory = nullptr;
       }
     }
 

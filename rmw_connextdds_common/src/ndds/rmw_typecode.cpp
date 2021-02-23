@@ -413,7 +413,7 @@ rmw_connextdds_convert_type_member(
       }
       DDS_TypeCode * const tc_seq =
         DDS_TypeCodeFactory_create_sequence_tc(
-          tc_factory, tc_seq_len, el_tc, &ex);
+        tc_factory, tc_seq_len, el_tc, &ex);
 
       tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
         tc_cache,

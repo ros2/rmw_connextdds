@@ -1617,14 +1617,14 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   const bool created_topic,
   DDS_TopicDescription * const dds_topic_cft,
   const bool internal)
-: ctx(ctx),
+: internal(internal),
+  ctx(ctx),
   dds_reader(dds_reader),
   dds_topic(dds_topic),
   dds_topic_cft(dds_topic_cft),
   type_support(type_support),
   created_topic(created_topic),
-  status_condition(dds_reader, ignore_local),
-  internal(internal)
+  status_condition(dds_reader, ignore_local)
 {
   rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
 

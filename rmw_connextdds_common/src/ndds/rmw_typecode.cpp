@@ -385,7 +385,7 @@ rmw_connextdds_convert_type_member(
 
   if (member->is_array_) {
     DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
-    if (member->array_size_ > 0) {
+    if (member->array_size_ > 0 && !member->is_upper_bound_) {
       struct DDS_UnsignedLongSeq dimensions = DDS_SEQUENCE_INITIALIZER;
       if (!DDS_UnsignedLongSeq_ensure_length(&dimensions, 1, 1)) {
         return nullptr;
@@ -407,9 +407,13 @@ rmw_connextdds_convert_type_member(
         return nullptr;
       }
     } else {
+      DDS_Long tc_seq_len = length_unbound;
+      if (member->is_upper_bound_) {
+        tc_seq_len = member->array_size_;
+      }
       DDS_TypeCode * const tc_seq =
         DDS_TypeCodeFactory_create_sequence_tc(
-        tc_factory, length_unbound, el_tc, &ex);
+          tc_factory, tc_seq_len, el_tc, &ex);
 
       tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
         tc_cache,

@@ -1046,6 +1046,8 @@ public:
     return this->dds_topic;
   }
 
+  const bool internal;
+
 private:
   rmw_context_impl_t * ctx;
   DDS_DataReader * dds_reader;
@@ -1060,7 +1062,6 @@ private:
   size_t loan_len;
   size_t loan_next;
   std::mutex loan_mutex;
-  bool internal;
 
   RMW_Connext_Subscriber(
     rmw_context_impl_t * const ctx,

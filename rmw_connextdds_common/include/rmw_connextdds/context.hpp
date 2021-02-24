@@ -55,6 +55,7 @@
 #endif /* RMW_CONNEXT_HAVE_SCOPE_EXIT */
 
 extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
+extern size_t RMW_Connext_gv_ContextCount;
 
 struct rmw_context_impl_t
 {
@@ -62,8 +63,6 @@ struct rmw_context_impl_t
   rmw_context_t * base;
 
   DDS_DomainParticipantFactory * factory;
-
-  void * api;
 
   DDS_DomainId_t domain_id;
   DDS_DomainParticipant * participant;
@@ -93,9 +92,6 @@ struct rmw_context_impl_t
   /* Shutdown flag */
   bool is_shutdown{false};
 
-  /* Keep track of ROS graph subsystem's initialization */
-  bool graph_initialized{false};
-
   /* suffix for GUIDs to construct unique client/service ids
      (protected by initialization_mutex) */
   uint32_t client_service_id{0};
@@ -124,6 +120,13 @@ struct rmw_context_impl_t
     common.sub = nullptr;
   }
 
+  ~rmw_context_impl_t()
+  {
+    if (0u != this->node_count) {
+      RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
+    }
+  }
+
   // Initializes the participant, if it wasn't done already.
   // node_count is increased
   rmw_ret_t
@@ -136,12 +139,17 @@ struct rmw_context_impl_t
   rmw_ret_t
   finalize_node();
 
-  ~rmw_context_impl_t()
-  {
-    if (0u != this->node_count) {
-      RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
-    }
-  }
+  // Initialize the DomainParticipant associated with the context.
+  rmw_ret_t
+  initialize_participant(const bool localhost_only);
+
+  // Enable the DomainParticipant associated with the context.
+  rmw_ret_t
+  enable_participant();
+
+  // Finalize the DomainParticipant associated with the context.
+  rmw_ret_t
+  finalize_participant();
 
   uint32_t
   next_client_id();
@@ -156,13 +164,12 @@ struct rmw_context_impl_t
     bool & created);
 
   rmw_ret_t
-  clean_up(const bool finalize_factory = true);
+  finalize();
 };
 
 rmw_ret_t
 rmw_connextdds_initialize_participant_factory_qos(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantFactory * const factory);
+  rmw_context_impl_t * const ctx);
 
 rmw_ret_t
 rmw_connextdds_configure_security(

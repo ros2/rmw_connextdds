@@ -66,52 +66,20 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
 }
 
 rmw_ret_t
-rmw_connextdds_initialize_participant_factory(
+rmw_connextdds_initialize_participant_factory_context(
   rmw_context_impl_t * const ctx)
 {
+  RMW_CONNEXT_ASSERT(RMW_Connext_gv_DomainParticipantFactory == nullptr)
   UNUSED_ARG(ctx);
-  DDS_DomainParticipantFactory * factory = NULL;
-
-  RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")
-
-  factory = DDS_DomainParticipantFactory_get_instance();
-  if (nullptr == factory) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS participant factory")
-    return RMW_RET_ERROR;
-  }
-
-  auto scope_exit_factory_finalize = rcpputils::make_scope_exit(
-    []() {DDS_DomainParticipantFactory_finalize_instance();});
-
-  if (RMW_RET_OK !=
-    rmw_connextdds_initialize_participant_factory_qos(ctx, factory))
-  {
-    return RMW_RET_ERROR;
-  }
-
-  scope_exit_factory_finalize.cancel();
-
-  RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipantFactory initialized")
-
-  ctx->factory = factory;
-
+  // Nothing to do
   return RMW_RET_OK;
 }
 
 rmw_ret_t
-rmw_connextdds_finalize_participant_factory(
-  rmw_context_impl_t * const ctx,
-  bool * const outstanding_participants)
+rmw_connextdds_finalize_participant_factory_context(
+  rmw_context_impl_t * const ctx)
 {
   UNUSED_ARG(ctx);
-  DDS_DomainParticipantSeq participants = DDS_SEQUENCE_INITIALIZER;
-  if (DDS_RETCODE_OK != DDS_DomainParticipantFactory_get_participants(
-      ctx->factory, &participants))
-  {
-    return RMW_RET_ERROR;
-  }
-  *outstanding_participants =
-    DDS_DomainParticipantSeq_get_length(&participants) > 0;
   return RMW_RET_OK;
 }
 

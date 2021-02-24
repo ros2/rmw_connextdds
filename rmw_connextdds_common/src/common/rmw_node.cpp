@@ -53,6 +53,8 @@ rmw_api_connextdds_create_node(
   node_localhost_only = localhost_only;
 #elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
   node_localhost_only = localhost_only;
+#else
+  node_localhost_only = context->options.localhost_only;
 #endif /* RMW_CONNEXT_RELEASE */
   RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -68,7 +70,10 @@ rmw_api_connextdds_create_node(
   RMW_CONNEXT_LOG_DEBUG_A("creating new node: name=%s, ns=%s", name, ns)
 
   rmw_context_impl_t * ctx = context->impl;
+  std::lock_guard<std::mutex> guard(ctx->initialization_mutex);
 
+  // TODO(asorbini): should other (public) APIs also check whether
+  // the context has already been shutdown (and fail, if so)?
   if (ctx->is_shutdown) {
     RMW_CONNEXT_LOG_ERROR_SET("context already shutdown")
     return nullptr;
@@ -100,16 +105,13 @@ rmw_api_connextdds_create_node(
     return nullptr;
   }
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-  {
-    std::lock_guard<std::mutex> guard(ctx->initialization_mutex);
-    if (0u == ctx->node_count) {
-      ctx->domain_id = domain_id;
-    } else if ((size_t)ctx->domain_id != domain_id) {
-      RMW_CONNEXT_LOG_ERROR_A_SET(
-        "invalid domain id: context=%d, node=%ld\n",
-        ctx->domain_id, domain_id)
-      return nullptr;
-    }
+  if (0u == ctx->node_count) {
+    ctx->domain_id = domain_id;
+  } else if ((size_t)ctx->domain_id != domain_id) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "invalid domain id: context=%d, node=%ld\n",
+      ctx->domain_id, domain_id)
+    return nullptr;
   }
 #endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY */
 
@@ -218,6 +220,8 @@ rmw_api_connextdds_destroy_node(rmw_node_t * rmw_node)
   RMW_CONNEXT_LOG_DEBUG_A("destroying node: %p", (void *)rmw_node)
 
   rmw_context_impl_t * ctx = rmw_node->context->impl;
+  std::lock_guard<std::mutex> guard(ctx->initialization_mutex);
+
   RMW_Connext_Node * const node_impl =
     reinterpret_cast<RMW_Connext_Node *>(rmw_node->data);
 

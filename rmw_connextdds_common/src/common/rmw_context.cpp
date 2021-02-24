@@ -33,7 +33,7 @@
  * the rcl/rclcpp API too).
  ******************************************************************************/
 DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory = nullptr;
-
+size_t RMW_Connext_gv_ContextCount = 0;
 
 /******************************************************************************
  * Context Implementation
@@ -41,8 +41,7 @@ DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory = nullptr
 
 rmw_ret_t
 rmw_connextdds_initialize_participant_factory_qos(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantFactory * const factory)
+  rmw_context_impl_t * const ctx)
 {
   UNUSED_ARG(ctx);
 
@@ -50,7 +49,8 @@ rmw_connextdds_initialize_participant_factory_qos(
     DDS_DomainParticipantFactoryQos_INITIALIZER;
 
   if (DDS_RETCODE_OK !=
-    DDS_DomainParticipantFactory_get_qos(factory, &qos))
+    DDS_DomainParticipantFactory_get_qos(
+      RMW_Connext_gv_DomainParticipantFactory, &qos))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get participant factory qos")
     return RMW_RET_ERROR;
@@ -59,7 +59,8 @@ rmw_connextdds_initialize_participant_factory_qos(
   qos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
 
   if (DDS_RETCODE_OK !=
-    DDS_DomainParticipantFactory_set_qos(factory, &qos))
+    DDS_DomainParticipantFactory_set_qos(
+      RMW_Connext_gv_DomainParticipantFactory, &qos))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get participant factory qos")
     DDS_DomainParticipantFactoryQos_finalize(&qos);
@@ -76,9 +77,10 @@ rmw_connextdds_initialize_participant_qos(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos & dp_qos)
 {
+  RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_gv_DomainParticipantFactory)
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipantFactory_get_default_participant_qos(
-      ctx->factory, &dp_qos))
+      RMW_Connext_gv_DomainParticipantFactory, &dp_qos))
   {
     return RMW_RET_ERROR;
   }
@@ -134,11 +136,13 @@ rmw_context_impl_t::initialize_node(
   const char * const node_namespace,
   const bool localhost_only)
 {
+  UNUSED_ARG(node_name);
+  UNUSED_ARG(node_namespace);
+
   RMW_CONNEXT_LOG_DEBUG_A(
     "initializing new node: total=%lu, localhost=%d",
     this->node_count, localhost_only)
 
-  std::lock_guard<std::mutex> guard(this->initialization_mutex);
   if (0u != this->node_count) {
     if ((this->localhost_only && !localhost_only) ||
       (!this->localhost_only && localhost_only))
@@ -156,67 +160,38 @@ rmw_context_impl_t::initialize_node(
     return RMW_RET_OK;
   }
 
-  RMW_CONNEXT_LOG_DEBUG("initializing RMW context")
-
-  this->localhost_only = localhost_only;
-
-  std::ostringstream ss;
-  ss << node_namespace;
-  this->qos_ctx_namespace = ss.str();
-  ss.str("");
-  ss << node_name;
-  this->qos_ctx_name = ss.str();
-
-  /* Lookup name of custom QoS library */
-  const char * qos_library = nullptr;
-  const char * lookup_rc =
-    rcutils_get_env(RMW_CONNEXT_ENV_QOS_LIBRARY, &qos_library);
-
-  if (nullptr != lookup_rc || nullptr == qos_library) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_QOS_LIBRARY,
-      lookup_rc)
-    return RMW_RET_ERROR;
+  rmw_ret_t rc = this->initialize_participant(localhost_only);
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to initialize DomainParticipant")
+    return rc;
   }
 
-  this->qos_library = qos_library;
-
-  /* Lookup name of custom QoS library */
-  const char * do_not_override_publish_mode_env = nullptr;
-  lookup_rc = rcutils_get_env(
-    RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE, &do_not_override_publish_mode_env);
-
-  if (nullptr != lookup_rc || nullptr == qos_library) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE,
-      lookup_rc)
-    return RMW_RET_ERROR;
+  rc = this->enable_participant();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable DomainParticipant")
+    if (RMW_RET_OK != this->finalize_participant()) {
+      RMW_CONNEXT_LOG_ERROR("failed to finalize participant on error")
+    }
+    return rc;
   }
 
-  // All publishers will use asynchronous publish mode if
-  // RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE is empty.
-  this->override_publish_mode = '\0' == do_not_override_publish_mode_env[0];
+  this->node_count = 1;
 
-  if (RMW_RET_OK != rmw_connextdds_initialize_participant_factory(this)) {
-    RMW_CONNEXT_LOG_ERROR(
-      "failed to initialize DDS DomainParticipantFactory")
-    // no need to call this->clean_up()
-    return RMW_RET_ERROR;
-  }
+  return RMW_RET_OK;
+}
+
+
+rmw_ret_t
+rmw_context_impl_t::initialize_participant(const bool localhost_only)
+{
+  RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipant")
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
-    RMW_Connext_gv_DomainParticipantFactory = this->factory;
-  } else if (this->factory != RMW_Connext_gv_DomainParticipantFactory) {
-    RMW_CONNEXT_LOG_ERROR("unexpected domain participant factory")
-    this->clean_up();
+    RMW_CONNEXT_LOG_ERROR("DDS DomainParticipantFactory not initialized")
     return RMW_RET_ERROR;
   }
+
+  this->localhost_only = localhost_only;
 
   DDS_DomainId_t domain_id =
     static_cast<DDS_DomainId_t>(this->domain_id);
@@ -227,21 +202,28 @@ rmw_context_impl_t::initialize_node(
   std::unique_ptr<DDS_DomainParticipantQos, std::function<void(DDS_DomainParticipantQos *)>>
   dp_qos_guard(&dp_qos, &DDS_DomainParticipantQos_finalize);
   if (nullptr == dp_qos_guard) {
-    this->clean_up();
     return RMW_RET_ERROR;
   }
+
+  rmw_context_impl_t * const ctx = this;
+  auto scope_exit_dp_finalize = rcpputils::make_scope_exit(
+    [ctx]()
+    {
+      if (RMW_RET_OK != ctx->finalize_participant()) {
+        RMW_CONNEXT_LOG_ERROR(
+          "failed to finalize participant on error")
+      }
+    });
 
   if (RMW_RET_OK !=
     rmw_connextdds_initialize_participant_qos(this, dp_qos))
   {
     RMW_CONNEXT_LOG_ERROR("failed to initialize participant qos")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
   if (RMW_RET_OK != rmw_connextdds_configure_security(this, &dp_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to configure DDS Security")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -250,26 +232,24 @@ rmw_context_impl_t::initialize_node(
     "domain=%d", domain_id)
 
   this->participant = DDS_DomainParticipantFactory_create_participant(
-    this->factory,
+    RMW_Connext_gv_DomainParticipantFactory,
     domain_id,
     &dp_qos,
     nullptr,
     DDS_STATUS_MASK_NONE);
   if (nullptr == this->participant) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS participant")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
-  /* Create DDS publisher/subscriber objects that will be used for all DDS writers/readers
-      to be created for RMW publishers/subscriptions. */
+  /* Create DDS publisher/subscriber objects that will be used for all DDS
+     writers/readers created to support RMW publishers/subscriptions. */
 
   DDS_PublisherQos pub_qos = DDS_PublisherQos_INITIALIZER;
 
   std::unique_ptr<DDS_PublisherQos, std::function<void(DDS_PublisherQos *)>>
   pub_qos_guard(&pub_qos, &DDS_PublisherQos_finalize);
   if (nullptr == pub_qos_guard) {
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -278,7 +258,6 @@ rmw_context_impl_t::initialize_node(
       this->participant, &pub_qos))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get default Publisher QoS")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -294,7 +273,6 @@ rmw_context_impl_t::initialize_node(
 
   if (nullptr == this->dds_pub) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS publisher")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -303,7 +281,6 @@ rmw_context_impl_t::initialize_node(
   std::unique_ptr<DDS_SubscriberQos, std::function<void(DDS_SubscriberQos *)>>
   sub_qos_guard(&sub_qos, &DDS_SubscriberQos_finalize);
   if (nullptr == sub_qos_guard) {
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -312,7 +289,6 @@ rmw_context_impl_t::initialize_node(
       this->participant, &sub_qos))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get default Subscriber QoS")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -328,24 +304,29 @@ rmw_context_impl_t::initialize_node(
 
   if (nullptr == this->dds_sub) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS subscriber")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
   if (RMW_RET_OK != rmw_connextdds_graph_initialize(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize graph cache")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
-  this->node_count = 1;
+  scope_exit_dp_finalize.cancel();
 
+  RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipant initialized")
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_context_impl_t::enable_participant()
+{
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(
       DDS_DomainParticipant_as_entity(this->participant)))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to enable participant")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -353,7 +334,6 @@ rmw_context_impl_t::initialize_node(
     DDS_Entity_enable(DDS_Subscriber_as_entity(this->dds_sub)))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds subscriber")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
@@ -361,25 +341,21 @@ rmw_context_impl_t::initialize_node(
     DDS_Entity_enable(DDS_Publisher_as_entity(this->dds_pub)))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds subscriber")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
 
   if (RMW_RET_OK != rmw_connextdds_graph_enable(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to enable graph cache")
-    this->clean_up();
     return RMW_RET_ERROR;
   }
-
-  RMW_CONNEXT_LOG_DEBUG("RMW context initialized")
 
   return RMW_RET_OK;
 }
 
 rmw_ret_t
-rmw_context_impl_t::clean_up(const bool finalize_factory)
+rmw_context_impl_t::finalize_participant()
 {
-  RMW_CONNEXT_LOG_DEBUG("cleaning up RMW context")
+  RMW_CONNEXT_LOG_DEBUG("finalizing DDS DomainParticipant")
 
   if (RMW_RET_OK != rmw_connextdds_graph_finalize(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to finalize graph cache")
@@ -445,7 +421,7 @@ rmw_context_impl_t::clean_up(const bool finalize_factory)
 
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipantFactory_delete_participant(
-        this->factory, this->participant))
+        RMW_Connext_gv_DomainParticipantFactory, this->participant))
     {
       RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS participant")
       return RMW_RET_ERROR;
@@ -453,43 +429,45 @@ rmw_context_impl_t::clean_up(const bool finalize_factory)
     this->participant = nullptr;
   }
 
-  if (finalize_factory && nullptr != this->factory) {
-    // If RMW_Connext_gv_DomainParticipantFactory is null, then some other
-    // context already finalized the DPF, and we have nothing to do
-    if (nullptr != RMW_Connext_gv_DomainParticipantFactory) {
-      bool outstanding_participants = false;
+  RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipant finalized")
+  return RMW_RET_OK;
+}
 
-      if (RMW_RET_OK != rmw_connextdds_finalize_participant_factory(
-          this, &outstanding_participants))
-      {
-        RMW_CONNEXT_LOG_ERROR("failed to finalize participant factory")
-        return RMW_RET_ERROR;
-      }
+rmw_ret_t
+rmw_context_impl_t::finalize()
+{
+  rmw_ret_t rc_exit = RMW_RET_OK;
 
-      // There might be other participants in the factory, e.g. if the application
-      // created multiple contexts (like some rcl tests do), or if they created
-      // participants directly via the DDS API.
-      if (!outstanding_participants) {
-        if (DDS_RETCODE_OK != DDS_DomainParticipantFactory_finalize_instance()) {
-          RMW_CONNEXT_LOG_ERROR_SET("failed to finalize domain participant factory")
-          return RMW_RET_ERROR;
-        }
-        RMW_Connext_gv_DomainParticipantFactory = nullptr;
-      }
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "finalizing RMW context: %p",
+    reinterpret_cast<void *>(this))
+
+  RMW_CONNEXT_ASSERT(RMW_Connext_gv_ContextCount > 0)
+  RMW_Connext_gv_ContextCount -= 1;
+
+  if (0 == RMW_Connext_gv_ContextCount) {
+    if (RMW_RET_OK != rmw_connextdds_finalize_participant_factory_context(this)) {
+      RMW_CONNEXT_LOG_ERROR("failed to finalize participant factory")
+      rc_exit = RMW_RET_ERROR;
     }
 
-    this->factory = nullptr;
+    if (DDS_RETCODE_OK != DDS_DomainParticipantFactory_finalize_instance()) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to finalize domain participant factory")
+      rc_exit = RMW_RET_ERROR;
+    }
+    RMW_Connext_gv_DomainParticipantFactory = nullptr;
   }
 
-  RMW_CONNEXT_LOG_DEBUG("RMW context finalized")
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "RMW context finalized: %p",
+    reinterpret_cast<void *>(this))
 
-  return RMW_RET_OK;
+  return rc_exit;
 }
 
 rmw_ret_t
 rmw_context_impl_t::finalize_node()
 {
-  std::lock_guard<std::mutex> guard(initialization_mutex);
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing node: total=%lu", this->node_count)
   this->node_count -= 1;
@@ -499,18 +477,13 @@ rmw_context_impl_t::finalize_node()
       "finalized node: total=%lu", this->node_count)
     return RMW_RET_OK;
   }
-  RMW_CONNEXT_LOG_DEBUG("all nodes finalized")
-  // Don't finalize the DomainParticipantFactory yet, since there might still
-  // be some guard conditions/waitsets pending, and finalizing the DPF would
-  // invalidate them unexpectedly (and could lead to SIGSEGV if user tries to
-  // trigger them). The DPF will be finalized later during rmw_shutdown().
-  return this->clean_up(false /* finalize_factory */);
+
+  return this->finalize_participant();
 }
 
 uint32_t
 rmw_context_impl_t::next_client_id()
 {
-  std::lock_guard<std::mutex> guard(this->initialization_mutex);
   const uint32_t res = this->client_service_id;
   this->client_service_id += 1;
   if (0 == this->client_service_id) {
@@ -718,8 +691,6 @@ rmw_api_connextdds_init(
   const rmw_init_options_t * options,
   rmw_context_t * context)
 {
-  rmw_ret_t ret = RMW_RET_OK;
-
   RCUTILS_CHECK_ARGUMENT_FOR_NULL(options, RMW_RET_INVALID_ARGUMENT);
   RCUTILS_CHECK_ARGUMENT_FOR_NULL(context, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_FOR_NULL_WITH_MSG(
@@ -768,41 +739,124 @@ rmw_api_connextdds_init(
 #if RMW_CONNEXT_HAVE_GET_DOMAIN
   context->actual_domain_id = actual_domain_id;
 #endif /* RMW_CONNEXT_HAVE_GET_DOMAIN */
-  ret = rmw_api_connextdds_init_options_copy(options, &context->options);
-  if (RMW_RET_OK != ret) {
-    RMW_CONNEXT_LOG_ERROR(
-      "failed to allocate RMW context implementation")
-    return ret;
+  rmw_ret_t rc = rmw_api_connextdds_init_options_copy(options, &context->options);
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to copy RMW context options")
+    return rc;
   }
 
-  auto scope_exit_context_finalize =
+  auto scope_exit_context_opts_finalize =
     rcpputils::make_scope_exit(
     [context]()
     {
       if (RMW_RET_OK != rmw_api_connextdds_init_options_fini(&context->options)) {
-        RMW_CONNEXT_LOG_ERROR(
-          "failed to finalize init options")
+        RMW_CONNEXT_LOG_ERROR("failed to finalize RMW context options")
       }
     });
 
 #endif /* RMW_CONNEXT_HAVE_OPTIONS*/
 
   /* The context object will be initialized upon creation of the first node */
-  context->impl = new (std::nothrow) rmw_context_impl_t(context);
-  if (nullptr == context->impl) {
+
+
+  rmw_context_impl_t * const ctx = new (std::nothrow) rmw_context_impl_t(context);
+  if (nullptr == ctx) {
     RMW_CONNEXT_LOG_ERROR_SET(
       "failed to allocate RMW context implementation")
     return RMW_RET_ERROR;
   }
+  context->impl = ctx;
+
+  // Increment the count early, since context->finalize() expects it
+  // to have been already incremented.
+  RMW_Connext_gv_ContextCount += 1;
+
+  auto scope_exit_context_finalize =
+    rcpputils::make_scope_exit(
+    [ctx]()
+    {
+      if (RMW_RET_OK != ctx->finalize()) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize RMW context")
+      }
+    });
+
   // TODO(asorbini) get rid of context->impl->domain_id, and just use
   // context->actual_domain_id in rmw_context_impl_t::initialize_node()
-  context->impl->domain_id = actual_domain_id;
+  ctx->domain_id = actual_domain_id;
 
-#if RMW_CONNEXT_HAVE_OPTIONS
+  /* Lookup name of custom QoS library - NOT USED FOR ANYTHING YET */
+  const char * qos_library = nullptr;
+  const char * lookup_rc =
+    rcutils_get_env(RMW_CONNEXT_ENV_QOS_LIBRARY, &qos_library);
+
+  if (nullptr != lookup_rc || nullptr == qos_library) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_QOS_LIBRARY,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  ctx->qos_library = qos_library;
+
+  /* Lookup name of custom QoS library */
+  const char * do_not_override_publish_mode_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE, &do_not_override_publish_mode_env);
+
+  if (nullptr != lookup_rc || nullptr == do_not_override_publish_mode_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  // All publishers will use asynchronous publish mode if
+  // RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE is empty.
+  ctx->override_publish_mode = '\0' == do_not_override_publish_mode_env[0];
+
+  if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
+    RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")
+
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_participant_factory_context(ctx))
+    {
+      RMW_CONNEXT_LOG_ERROR(
+        "failed to initialize DDS DomainParticipantFactory context")
+      return RMW_RET_ERROR;
+    }
+
+    RMW_Connext_gv_DomainParticipantFactory =
+      DDS_DomainParticipantFactory_get_instance();
+    if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS participant factory")
+      return RMW_RET_ERROR;
+    }
+
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_participant_factory_qos(ctx))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to set DDS participant factory QoS")
+      return RMW_RET_ERROR;
+    }
+
+    RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipantFactory initialized")
+  }
+  RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_gv_DomainParticipantFactory)
+  RMW_CONNEXT_ASSERT(1 == RMW_Connext_gv_ContextCount)
+
   scope_exit_context_finalize.cancel();
+#if RMW_CONNEXT_HAVE_OPTIONS
+  scope_exit_context_opts_finalize.cancel();
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
   scope_exit_context_reset.cancel();
-  return ret;
+
+  return RMW_RET_OK;
 }
 
 
@@ -852,21 +906,25 @@ rmw_api_connextdds_context_fini(rmw_context_t * context)
   // TODO(asorbini) keep track of created GuardConditions/WaitSets and make
   // sure that all of them have been cleaned up.
 
-  rmw_ret_t rc = context->impl->clean_up();
+  // From now on, continue even if an error occurs, to satisfy
+  // rmw_context_fini()'s contract.
+  rmw_ret_t rc_exit = RMW_RET_OK;
+  rmw_ret_t rc = context->impl->finalize();
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to finalize DDS participant factory")
-    return rc;
+    rc_exit = rc;
   }
 
 #if RMW_CONNEXT_HAVE_OPTIONS
-  rmw_ret_t ret = rmw_api_connextdds_init_options_fini(&context->options);
-  if (RMW_RET_OK != ret) {
-    return ret;
+  rc = rmw_api_connextdds_init_options_fini(&context->options);
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to finalize RMW context options")
+    rc_exit = rc;
   }
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
   delete context->impl;
   *context = rmw_get_zero_initialized_context();
-  return RMW_RET_OK;
+  return rc_exit;
 }
 
 rmw_ret_t

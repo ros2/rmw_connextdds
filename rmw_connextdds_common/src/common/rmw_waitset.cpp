@@ -32,6 +32,10 @@ rmw_api_connextdds_create_guard_condition(
     context->implementation_identifier,
     RMW_CONNEXTDDS_ID,
     return nullptr);
+  if (context->impl->is_shutdown) {
+    RMW_CONNEXT_LOG_ERROR_SET("RMW context already shutdown")
+    return nullptr;
+  }
   rmw_guard_condition_t * const ret =
     rmw_connextdds_create_guard_condition();
   RMW_CONNEXT_LOG_DEBUG_A(

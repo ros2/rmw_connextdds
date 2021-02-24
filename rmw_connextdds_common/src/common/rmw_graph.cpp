@@ -58,11 +58,6 @@ rmw_connextdds_graph_add_local_subscriberEA(
 rmw_ret_t
 rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 {
-  if (ctx->graph_initialized) {
-    RMW_CONNEXT_LOG_ERROR_SET("graph subsystem already initialized")
-    return RMW_RET_ERROR;
-  }
-
   rmw_qos_profile_t pubsub_qos = rmw_qos_profile_default;
   pubsub_qos.avoid_ros_namespace_conventions = true;
   pubsub_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
@@ -187,8 +182,6 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     return RMW_RET_ERROR;
   }
 
-  ctx->graph_initialized = true;
-
   return RMW_RET_OK;
 }
 
@@ -221,10 +214,6 @@ rmw_connextdds_graph_enable(rmw_context_impl_t * const ctx)
 rmw_ret_t
 rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx)
 {
-  if (!ctx->graph_initialized) {
-    return RMW_RET_OK;
-  }
-
   if (RMW_RET_OK != rmw_connextdds_discovery_thread_stop(ctx)) {
     RMW_CONNEXT_LOG_ERROR("failed to stop discovery thread")
     return RMW_RET_ERROR;
@@ -263,8 +252,6 @@ rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx)
     }
     ctx->common.pub = nullptr;
   }
-
-  ctx->graph_initialized = false;
 
   return RMW_RET_OK;
 }

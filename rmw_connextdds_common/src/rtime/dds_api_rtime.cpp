@@ -376,6 +376,8 @@ struct rmw_connextdds_api_micro
   {}
 };
 
+rmw_connextdds_api_micro * RMW_Connext_fv_FactoryContext = nullptr;
+
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 
@@ -414,9 +416,12 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
 }
 
 rmw_ret_t
-rmw_connextdds_initialize_participant_factory(
+rmw_connextdds_initialize_participant_factory_context(
   rmw_context_impl_t * const ctx)
 {
+  RMW_CONNEXT_ASSERT(RMW_Connext_fv_FactoryContext == nullptr)
+  RMW_CONNEXT_ASSERT(RMW_Connext_gv_DomainParticipantFactory == nullptr)
+
   DDS_DomainParticipantFactory * factory = NULL;
   RT_Registry_T * registry = NULL;
 
@@ -625,39 +630,28 @@ rmw_connextdds_initialize_participant_factory(
 
   ctx_api->rt_dpde = true;
 
-  /* We do this here instead of rmw_context_impl_t::initialize_node
-     because we can clean up the participant factory upon error */
-  if (RMW_RET_OK !=
-    rmw_connextdds_initialize_participant_factory_qos(ctx, factory))
-  {
-    RMW_CONNEXT_LOG_ERROR(
-      "failed to initialize DDS DomainParticipantFactory QoS")
-    return RMW_RET_ERROR;
-  }
-
   scope_exit_api_delete.cancel();
 
   RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipantFactory initialized")
 
-  ctx->factory = factory;
-  ctx->api = ctx_api;
+  RMW_Connext_fv_FactoryContext = ctx_api;
+  RMW_Connext_gv_DomainParticipantFactory = factory;
 
   return RMW_RET_OK;
 }
 
 rmw_ret_t
-rmw_connextdds_finalize_participant_factory(
-  rmw_context_impl_t * const ctx,
-  bool * const outstanding_participants)
+rmw_connextdds_finalize_participant_factory_context(
+  rmw_context_impl_t * const ctx)
 {
-  rmw_connextdds_api_micro * const ctx_api =
-    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+  UNUSED_ARG(ctx);
 
-  // TODO(asorbini) introduce API to query DPF for outstanding participants
-  *outstanding_participants = false;
+  RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_fv_FactoryContext)
+  rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
 
   RT_Registry_T * registry =
-    DDS_DomainParticipantFactory_get_registry(ctx->factory);
+    DDS_DomainParticipantFactory_get_registry(
+    RMW_Connext_gv_DomainParticipantFactory);
   if (nullptr == registry) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get factory registry")
     return RMW_RET_ERROR;
@@ -1586,8 +1580,11 @@ rmw_connextdds_dcps_participant_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
-  rmw_connextdds_api_micro * const ctx_api =
-    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+  rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
+
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
 
   DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
@@ -1627,8 +1624,11 @@ rmw_connextdds_dcps_publication_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
-  rmw_connextdds_api_micro * const ctx_api =
-    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+  rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
+
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
 
   DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
@@ -1668,8 +1668,11 @@ rmw_connextdds_dcps_subscription_get_reader(
   rmw_context_impl_t * const ctx,
   DDS_DataReader ** const reader_out)
 {
-  rmw_connextdds_api_micro * const ctx_api =
-    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+  rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
+
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
 
   DDS_Subscriber * const sub =
     DDS_DomainParticipant_get_builtin_subscriber(ctx->participant);
@@ -1714,8 +1717,12 @@ rmw_connextdds_enable_builtin_readers(rmw_context_impl_t * const ctx)
 rmw_ret_t
 rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
 {
-  rmw_connextdds_api_micro * const ctx_api =
-    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+  rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
+
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
+
   RMW_Connext_CachedBuiltinData<DDS_ParticipantBuiltinTopicData> qdata;
   while (ctx_api->discovery_dp_listener.next_data(qdata)) {
     rmw_ret_t rc = RMW_RET_OK;
@@ -1751,8 +1758,12 @@ rmw_connextdds_dcps_participant_on_data(rmw_context_impl_t * const ctx)
 rmw_ret_t
 rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
 {
-  rmw_connextdds_api_micro * const ctx_api =
-    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+  rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
+
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
+
   RMW_Connext_CachedBuiltinData<DDS_PublicationBuiltinTopicData> qdata;
   while (ctx_api->discovery_pub_listener.next_data(qdata)) {
     rmw_ret_t rc = RMW_RET_OK;
@@ -1807,8 +1818,12 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
 rmw_ret_t
 rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
 {
-  rmw_connextdds_api_micro * const ctx_api =
-    reinterpret_cast<rmw_connextdds_api_micro *>(ctx->api);
+  rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
+
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
+
   RMW_Connext_CachedBuiltinData<DDS_SubscriptionBuiltinTopicData> qdata;
   while (ctx_api->discovery_sub_listener.next_data(qdata)) {
     rmw_ret_t rc = RMW_RET_OK;
@@ -1935,8 +1950,11 @@ rmw_connextdds_enable_security(
   DDS_DomainParticipantQos * const qos)
 {
 #if RMW_CONNEXT_ENABLE_SECURITY
+  // TODO(asorbini) Don't try to initialize security plugins more than once.
+
   RT_Registry_T * registry =
-    DDS_DomainParticipantFactory_get_registry(ctx->factory);
+    DDS_DomainParticipantFactory_get_registry(
+    RMW_Connext_gv_DomainParticipantFactory);
   if (nullptr == registry) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get factory registry")
     return RMW_RET_ERROR;

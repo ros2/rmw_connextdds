@@ -189,7 +189,7 @@ rmw_context_impl_t::initialize_node(
   lookup_rc = rcutils_get_env(
     RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE, &do_not_override_publish_mode_env);
 
-  if (nullptr != lookup_rc || nullptr == qos_library) {
+  if (nullptr != lookup_rc || nullptr == do_not_override_publish_mode_env) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "

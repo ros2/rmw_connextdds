@@ -225,8 +225,7 @@ rmw_connextdds_create_contentfilteredtopic(
   RMW_CONNEXT_ASSERT(nullptr != cft_name)
   RMW_CONNEXT_ASSERT(nullptr != cft_filter)
 
-  struct DDS_StringSeq cft_parameters;
-  DDS_StringSeq_initialize(&cft_parameters);
+  struct DDS_StringSeq cft_parameters = DDS_SEQUENCE_INITIALIZER;
   DDS_StringSeq_ensure_length(&cft_parameters, 0, 0);
 
   *cft_out = nullptr;
@@ -325,30 +324,41 @@ rmw_connextdds_get_datawriter_qos(
 {
   UNUSED_ARG(topic);
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_get_readerwriter_qos(
-      true /* writer_qos */,
-      type_support,
-      &qos->history,
-      &qos->reliability,
-      &qos->durability,
-      &qos->deadline,
-      &qos->liveliness,
-      &qos->resource_limits,
-      // TODO(asorbini) this value is not actually used, remove it
-      &qos->publish_mode,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-      &qos->lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
-      qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-      ,
-      pub_options,
-      nullptr           /* sub_options */
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  ))
-  {
-    return RMW_RET_ERROR;
+  bool ignore_ros_profile = (
+    ctx->qos_profile_loading_policy ==
+    rmw_context_impl_t::qos_profile_loading_policy_t::Never);
+
+  const char * topic_name = DDS_TopicDescription_get_name(DDS_Topic_as_topicdescription(topic));
+  ignore_ros_profile = ignore_ros_profile || (ctx->qos_profile_loading_policy ==
+    rmw_context_impl_t::qos_profile_loading_policy_t::DDSTopics &&
+    std::regex_match(topic_name, ctx->dds_topics_regex));
+
+  if (!ignore_ros_profile) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_get_readerwriter_qos(
+        true /* writer_qos */,
+        type_support,
+        &qos->history,
+        &qos->reliability,
+        &qos->durability,
+        &qos->deadline,
+        &qos->liveliness,
+        &qos->resource_limits,
+        // TODO(asorbini) this value is not actually used, remove it
+        &qos->publish_mode,
+  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+        &qos->lifespan,
+  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
+        qos_policies
+  #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
+        ,
+        pub_options,
+        nullptr           /* sub_options */
+  #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
+    ))
+    {
+      return RMW_RET_ERROR;
+    }
   }
 
   if (!ctx->use_default_publish_mode) {
@@ -383,29 +393,40 @@ rmw_connextdds_get_datareader_qos(
   UNUSED_ARG(ctx);
   UNUSED_ARG(topic_desc);
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_get_readerwriter_qos(
-      false /* writer_qos */,
-      type_support,
-      &qos->history,
-      &qos->reliability,
-      &qos->durability,
-      &qos->deadline,
-      &qos->liveliness,
-      &qos->resource_limits,
-      nullptr /* publish_mode */,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-      nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
-      qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-      ,
-      nullptr /* pub_options */,
-      sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  ))
-  {
-    return RMW_RET_ERROR;
+  bool ignore_ros_profile = (
+    ctx->qos_profile_loading_policy ==
+    rmw_context_impl_t::qos_profile_loading_policy_t::Never);
+
+  const char * topic_name = DDS_TopicDescription_get_name(topic_desc);
+  ignore_ros_profile = ignore_ros_profile || (ctx->qos_profile_loading_policy ==
+    rmw_context_impl_t::qos_profile_loading_policy_t::DDSTopics &&
+    std::regex_match(topic_name, ctx->dds_topics_regex));
+
+  if (!ignore_ros_profile) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_get_readerwriter_qos(
+        false /* writer_qos */,
+        type_support,
+        &qos->history,
+        &qos->reliability,
+        &qos->durability,
+        &qos->deadline,
+        &qos->liveliness,
+        &qos->resource_limits,
+        nullptr /* publish_mode */,
+  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
+        nullptr /* Lifespan is a writer-only qos policy */,
+  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
+        qos_policies
+  #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
+        ,
+        nullptr /* pub_options */,
+        sub_options
+  #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
+    ))
+    {
+      return RMW_RET_ERROR;
+    }
   }
   return rmw_connextdds_get_qos_policies(
     false /* writer_qos */,

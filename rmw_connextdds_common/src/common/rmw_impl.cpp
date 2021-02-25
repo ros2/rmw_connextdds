@@ -1383,7 +1383,7 @@ RMW_Connext_Publisher::create(
     });
 
   if (DDS_RETCODE_OK !=
-    DDS_Publisher_get_default_datawriter_qos(pub, &dw_qos))
+    DDS_Publisher_get_default_datawriter_qos_w_topic_name(pub, &dw_qos, fqtopic_name.c_str()))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get default writer QoS")
     return nullptr;
@@ -1901,7 +1901,7 @@ RMW_Connext_Subscriber::create(
     });
 
   if (DDS_RETCODE_OK !=
-    DDS_Subscriber_get_default_datareader_qos(sub, &dr_qos))
+    DDS_Subscriber_get_default_datareader_qos_w_topic_name(sub, &dr_qos, fqtopic_name.c_str()))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get default reader QoS")
     return nullptr;

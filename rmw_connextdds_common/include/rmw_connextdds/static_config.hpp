@@ -87,6 +87,11 @@
 #define RMW_CONNEXT_ENV_SECURITY_LOG_VERBOSITY     "ROS_SECURITY_LOG_VERBOSITY"
 #endif /* RMW_CONNEXT_ENV_SECURITY_LOG_VERBOSITY */
 
+#ifndef RMW_CONNEXT_ENV_OVERRIDE_ENDPOINT_QOS_POLICY
+#define RMW_CONNEXT_ENV_OVERRIDE_ENDPOINT_QOS_POLICY     "RMW_CONNEXT_OVERRIDE_ENDPOINT_QOS_POLICY"
+#endif /* RMW_CONNEXT_ENV_ALLOW_TOPIC_QOS_PROFILES */
+
+
 /******************************************************************************
  * DDS Implementation
  * Select the DDS implementation used to build the RMW library.

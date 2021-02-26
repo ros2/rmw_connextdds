@@ -44,6 +44,17 @@ rmw_api_connextdds_create_node(
 #endif /* RMW_CONNEXT_RELEASE */
 )
 {
+  RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    context,
+    context->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return nullptr);
+  RMW_CHECK_FOR_NULL_WITH_MSG(
+    context->impl,
+    "expected initialized context",
+    return nullptr);
+
   bool node_localhost_only = false;
 
 #if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
@@ -56,18 +67,10 @@ rmw_api_connextdds_create_node(
 #else
   node_localhost_only = context->options.localhost_only;
 #endif /* RMW_CONNEXT_RELEASE */
-  RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
-  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-    context,
-    context->implementation_identifier,
-    RMW_CONNEXTDDS_ID,
-    return nullptr);
-  RMW_CHECK_FOR_NULL_WITH_MSG(
-    context->impl,
-    "expected initialized context",
-    return nullptr);
-
-  RMW_CONNEXT_LOG_DEBUG_A("creating new node: name=%s, ns=%s", name, ns)
+  
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "creating new node: name=%s, ns=%s, localhost_only=%d",
+    name, ns, node_localhost_only)
 
   rmw_context_impl_t * ctx = context->impl;
   std::lock_guard<std::mutex> guard(ctx->initialization_mutex);

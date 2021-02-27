@@ -178,7 +178,7 @@ rmw_connextdds_initialize_participant_qos_impl(
     dp_qos->resource_limits.contentfilter_property_max_length = 1024;
   }
 
-#if 0
+#if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   // Apply Optimization.Discovery.Endpoint.Fast:
   //
   // QoS Snippet to optimize Endpoint Discovery to be faster. This
@@ -198,7 +198,7 @@ rmw_connextdds_initialize_participant_qos_impl(
   dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.sec = 0;
   dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.nanosec = 100000000;
   dp_qos->discovery_config.subscription_writer.max_heartbeat_retries = 300;
-#endif
+#endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
 #if RMW_CONNEXT_DDS_API_PRO_LEGACY
   dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;

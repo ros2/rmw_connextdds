@@ -67,7 +67,7 @@ rmw_api_connextdds_create_node(
 #else
   node_localhost_only = context->options.localhost_only;
 #endif /* RMW_CONNEXT_RELEASE */
-  
+
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new node: name=%s, ns=%s, localhost_only=%d",
     name, ns, node_localhost_only)

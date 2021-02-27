@@ -123,6 +123,13 @@
 #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
 
 /******************************************************************************
+ * Modify DomainParticipantQos to perform faster endpoint discovery
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
+#define RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY     1
+#endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
+
+/******************************************************************************
  * ROS Target Release
  ******************************************************************************/
 #define RMW_CONNEXT_RELEASE_DASHING     10

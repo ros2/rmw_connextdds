@@ -148,6 +148,7 @@ rmw_connextdds_get_readerwriter_qos(
   UNUSED_ARG(writer_qos);
   UNUSED_ARG(type_support);
   UNUSED_ARG(publish_mode);
+  UNUSED_ARG(resource_limits);
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   UNUSED_ARG(pub_options);
   UNUSED_ARG(sub_options);
@@ -303,18 +304,18 @@ rmw_connextdds_get_readerwriter_qos(
 
   // Make sure that resource limits are consistent with history qos
   // TODO(asorbini): do not overwrite if using non-default QoS
-  if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
-    history->depth > 1 &&
-    resource_limits->max_samples_per_instance == DDS_LENGTH_UNLIMITED)
-  {
-    resource_limits->max_samples_per_instance = history->depth;
-    if (resource_limits->max_samples != DDS_LENGTH_UNLIMITED &&
-      resource_limits->max_samples < resource_limits->max_samples_per_instance)
-    {
-      resource_limits->max_samples =
-        resource_limits->max_samples_per_instance;
-    }
-  }
+  // if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
+  //   history->depth > 1 &&
+  //   resource_limits->max_samples_per_instance == DDS_LENGTH_UNLIMITED)
+  // {
+  //   resource_limits->max_samples_per_instance = history->depth;
+  //   if (resource_limits->max_samples != DDS_LENGTH_UNLIMITED &&
+  //     resource_limits->max_samples < resource_limits->max_samples_per_instance)
+  //   {
+  //     resource_limits->max_samples =
+  //       resource_limits->max_samples_per_instance;
+  //   }
+  // }
 
   return RMW_RET_OK;
 }

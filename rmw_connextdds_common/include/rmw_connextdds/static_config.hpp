@@ -116,11 +116,72 @@
 /******************************************************************************
  * Shmem Transport.
  * If disabled, the shared memory transport will not be used by the
- * DomainParticipant.
+ * DomainParticipant (Micro version only).
  ******************************************************************************/
 #ifndef RMW_CONNEXT_TRANSPORT_SHMEM
 #define RMW_CONNEXT_TRANSPORT_SHMEM     1
 #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+
+/******************************************************************************
+ * Always use UUID algorithm to generate the RTPS GUID of the DomainParticipant.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID
+#define RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID   1
+#endif /* RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID */
+
+/******************************************************************************
+ * Address used to constrain the UDPv4 transport to only allow "localhost"
+ * communication. It must match the address of the localhost interface.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS
+#define RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS   "127.0.0.1"
+#endif /* RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS */
+
+/******************************************************************************
+ * Maximum length of a ContentFilterProperty_t.
+ * According to the RTPS spec, ContentFilterProperty_t has the following fields:
+ * -contentFilteredTopicName (max length 256)
+ * -relatedTopicName (max length 256)
+ * -filterClassName (max length 256)
+ * -filterName (DDSSQL)
+ * -filterExpression
+ * In Connext, contentfilter_property_max_length is sum of lengths of all these
+ * fields, which by default is 256.
+ * So we set the limit to 1024, to accomodate the complete topic name with
+ * namespaces.
+ * The property will only be set if the current max length is smaller.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_CONTENTFILTER_PROPERTY_MAX_LENGTH
+#define RMW_CONNEXT_CONTENTFILTER_PROPERTY_MAX_LENGTH   1024
+#endif /* RMW_CONNEXT_CONTENTFILTER_PROPERTY_MAX_LENGTH */
+
+/******************************************************************************
+ * Maximum serialized size of a type code propagated by the RMW.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_TYPE_CODE_MAX_SERIALIZED_SIZE
+#define RMW_CONNEXT_TYPE_CODE_MAX_SERIALIZED_SIZE   0
+#endif /* RMW_CONNEXT_TYPE_CODE_MAX_SERIALIZED_SIZE */
+
+/******************************************************************************
+ * Maximum serialized size of a type object propagated by the RMW.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE
+#define RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE   65000
+#endif /* RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE */
+
+/******************************************************************************
+ * In order to reduce the time to cleanup a participant (Node), we use the
+ * advice from
+ * https://community.rti.com/static/documentation/connext-dds/5.3.1/doc/api/connext_dds/api_cpp/structDDS__DomainParticipantQos.html
+ * and reduce the shutdown_cleanup_period to 50 milliseconds.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC
+#define RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC   0
+#endif /* RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC */
+
+#ifndef RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC
+#define RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC   50000000
+#endif /* RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC */
 
 /******************************************************************************
  * Modify DomainParticipantQos to perform faster endpoint discovery

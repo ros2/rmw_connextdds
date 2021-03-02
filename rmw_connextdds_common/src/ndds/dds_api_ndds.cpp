@@ -88,25 +88,12 @@ rmw_connextdds_initialize_participant_qos_impl(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos * const dp_qos)
 {
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(dp_qos);
-
-  // Only propagate type object
-  dp_qos->resource_limits.type_code_max_serialized_length = 0;
-
-  // In order to reduce the time to cleanup a participant (Node),
-  // we use the advice from
-  // https://community.rti.com/static/documentation/connext-dds/5.3.1/doc/api/connext_dds/api_cpp/structDDS__DomainParticipantQos.html
-  // and reduce the shutdown_cleanup_period to 50 milliseconds.
-  dp_qos->database.shutdown_cleanup_period.sec = 0;
-  dp_qos->database.shutdown_cleanup_period.nanosec = 50000000;
-
   if (ctx->localhost_only) {
     if (DDS_RETCODE_OK !=
       DDS_PropertyQosPolicyHelper_assert_property(
         &dp_qos->property,
         "dds.transport.UDPv4.builtin.parent.allow_interfaces",
-        "127.0.0.1",
+        RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
         DDS_BOOLEAN_FALSE /* propagate */))
     {
       RMW_CONNEXT_LOG_ERROR_A_SET(
@@ -133,6 +120,15 @@ rmw_connextdds_initialize_participant_qos_impl(
 #endif
 
 #if RMW_CONNEXT_HAVE_OPTIONS
+  const size_t user_data_len_in =
+    DDS_OctetSeq_get_length(&dp_qos->user_data.value);
+
+  if (user_data_len_in != 0) {
+    RMW_CONNEXT_LOG_WARNING(
+      "DomainParticipant's USER_DATA will be overwritten to "
+      "propagate node enclave")
+  }
+
   const char * const user_data_fmt = "enclave=%s;";
 
   const int user_data_len =
@@ -163,20 +159,26 @@ rmw_connextdds_initialize_participant_qos_impl(
   }
 #endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
-  // According to the RTPS spec, ContentFilterProperty_t has the following fields:
-  // -contentFilteredTopicName (max length 256)
-  // -relatedTopicName (max length 256)
-  // -filterClassName (max length 256)
-  // -filterName (DDSSQL)
-  // -filterExpression
-  // In Connext, contentfilter_property_max_length is sum of lengths of all these fields,
-  // which by default is 256.
-  // So we set the limit to 1024, to accomodate the complete topic name with namespaces.
-  if (dp_qos->resource_limits.contentfilter_property_max_length !=
-    DDS_LENGTH_UNLIMITED)
+#if RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID
+  dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;
+#endif /* RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID */
+
+  if (dp_qos->resource_limits.contentfilter_property_max_length <
+    RMW_CONNEXT_CONTENTFILTER_PROPERTY_MAX_LENGTH)
   {
-    dp_qos->resource_limits.contentfilter_property_max_length = 1024;
+    dp_qos->resource_limits.contentfilter_property_max_length =
+      RMW_CONNEXT_CONTENTFILTER_PROPERTY_MAX_LENGTH;
   }
+
+  dp_qos->resource_limits.type_code_max_serialized_length =
+    RMW_CONNEXT_TYPE_CODE_MAX_SERIALIZED_SIZE;
+  dp_qos->resource_limits.type_object_max_serialized_length =
+    RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE;
+
+  dp_qos->database.shutdown_cleanup_period.sec =
+    RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC;
+  dp_qos->database.shutdown_cleanup_period.nanosec =
+    RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC;
 
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   // Apply Optimization.Discovery.Endpoint.Fast:
@@ -199,10 +201,6 @@ rmw_connextdds_initialize_participant_qos_impl(
   dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.nanosec = 100000000;
   dp_qos->discovery_config.subscription_writer.max_heartbeat_retries = 300;
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
-
-#if RMW_CONNEXT_DDS_API_PRO_LEGACY
-  dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;
-#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   return RMW_RET_OK;
 }
@@ -282,7 +280,7 @@ rmw_connextdds_get_qos_policies(
   UNUSED_ARG(sub_options);
 #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
-  /* if type is unbound set property force allocation of samples from heap */
+  /* if type is unbound set property to force allocation of samples from heap */
   if (type_support->unbounded()) {
     const char * property_name = nullptr;
     if (writer_qos) {

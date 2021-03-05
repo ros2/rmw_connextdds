@@ -3028,6 +3028,7 @@ RMW_Connext_Client::finalize()
       return RMW_RET_ERROR;
     }
     delete this->request_pub;
+    this->request_pub = nullptr;
   }
 
   if (nullptr != this->reply_sub) {
@@ -3037,6 +3038,7 @@ RMW_Connext_Client::finalize()
     }
 
     delete this->reply_sub;
+    this->reply_sub = nullptr;
   }
 
   return RMW_RET_OK;
@@ -3279,19 +3281,25 @@ RMW_Connext_Service::send_response(
 rmw_ret_t
 RMW_Connext_Service::finalize()
 {
-  if (RMW_RET_OK != this->publisher()->finalize()) {
-    RMW_CONNEXT_LOG_ERROR("failed to finalize service publisher")
-    return RMW_RET_ERROR;
+  if (nullptr != this->reply_pub) {
+    if (RMW_RET_OK != this->reply_pub->finalize()) {
+      RMW_CONNEXT_LOG_ERROR("failed to finalize service publisher")
+      return RMW_RET_ERROR;
+    }
+
+    delete this->reply_pub;
+    this->reply_pub = nullptr;
   }
 
-  delete this->publisher();
+  if (nullptr != this->request_sub) {
+    if (RMW_RET_OK != this->request_sub->finalize()) {
+      RMW_CONNEXT_LOG_ERROR("failed to finalize service subscriber")
+      return RMW_RET_ERROR;
+    }
 
-  if (RMW_RET_OK != this->subscriber()->finalize()) {
-    RMW_CONNEXT_LOG_ERROR("failed to finalize service subscriber")
-    return RMW_RET_ERROR;
+    delete this->request_sub;
+    this->request_sub = nullptr;
   }
-
-  delete this->subscriber();
 
   return RMW_RET_OK;
 }

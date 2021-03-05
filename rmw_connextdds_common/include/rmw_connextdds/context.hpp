@@ -63,6 +63,12 @@
 extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
 extern size_t RMW_Connext_gv_ContextCount;
 
+enum class RMW_Connext_RequestReplyMapping
+{
+  Basic,
+  Extended
+};
+
 struct rmw_context_impl_t
 {
   rmw_dds_common::Context common;
@@ -90,7 +96,14 @@ struct rmw_context_impl_t
   std::string qos_ctx_name;
   std::string qos_ctx_namespace;
   bool override_publish_mode;
-
+  RMW_Connext_RequestReplyMapping request_reply_mapping;
+  bool cyclone_compatible{false};
+#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+  bool old_rmw_compatible{false};
+#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
+#if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
+  bool fast_endp_discovery{true};
+#endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
   /* Participant reference count*/
   size_t node_count{0};
   std::mutex initialization_mutex;

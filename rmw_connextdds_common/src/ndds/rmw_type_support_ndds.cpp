@@ -775,7 +775,7 @@ rmw_connextdds_register_type_support(
     RMW_Connext_MessageTypeSupport * type_support = nullptr;
     try {
       type_support = new RMW_Connext_MessageTypeSupport(
-        message_type, type_supports, type_name);
+        message_type, type_supports, type_name, ctx);
     } catch (const std::exception & e) {
       RMW_CONNEXT_LOG_ERROR_A_SET("failed to create cached type support: %s", e.what())
     }
@@ -821,8 +821,8 @@ rmw_connextdds_register_type_support(
         rmw_connextdds_release_typecode_cache(tc_cache_ptr);
       });
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     dds_tc = rmw_connextdds_create_typecode(
+      type_support,
       type_supports,
       type_support->type_name(),
       intro_members,
@@ -834,10 +834,6 @@ rmw_connextdds_register_type_support(
         type_support->type_name())
       return RMW_RET_ERROR;
     }
-#else
-    UNUSED_ARG(intro_members);
-    UNUSED_ARG(intro_members_cpp);
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
     auto scope_exit_dds_tc_delete =
       rcpputils::make_scope_exit(

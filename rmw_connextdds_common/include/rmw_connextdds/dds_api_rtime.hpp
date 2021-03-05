@@ -38,4 +38,22 @@ typedef DDS_UntypedSampleSeq RMW_Connext_UntypedSampleSeq;
 // Forward declaration for DDS_LifespanQosPolicy, since it is not supported by Micro.
 struct DDS_LifespanQosPolicy;
 
+// These function are needed by code implementing the "extended" request/reply
+// mapping, but they are not available in Micro. They are defined as no-op's,
+// since the "extended" mapping cannot be used with Micro.
+#define DDS_SampleInfo_get_sample_identity(info_, identity_) \
+  { \
+    UNUSED_ARG((info_)); \
+    UNUSED_ARG((identity_)); \
+  }
+#define DDS_SampleInfo_get_related_sample_identity(info_, identity_) \
+  { \
+    UNUSED_ARG((info_)); \
+    UNUSED_ARG((identity_)); \
+  }
+
+// Define a common initializer for DDS_SampleIdentity_t, which initializes
+// the guid with 0's.
+#define DDS_SampleIdentity_UNKNOWN      DDS_SAMPLE_IDENTITY_UNKNOWN
+
 #endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

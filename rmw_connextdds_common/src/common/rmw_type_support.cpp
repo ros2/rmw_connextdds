@@ -19,7 +19,203 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
+static uint32_t
+RMW_Connext_RequestReplyMapping_Basic_serialized_size_max(
+  RMW_Connext_MessageTypeSupport * const type_support)
+{
+  // This function returns the max serialized size of the request header assuming
+  // that the starting byte is "aligned" (for XCDR that means on a 4-byte boundary).
+  // In order to support computation of this size from an unaligned starting
+  // point, the logic would have to be extended to take into account possible
+  // padding occurring before aligned members (e.g. sequence number,
+  // string length), and the formal parameters would need to include an
+  // "initial alignment" (similar to Connext's TypePlugin::get_serialized_size_max).
+  // We return an "aligned size" to make sure we take into account any possible
+  // padding that might be required to match the alignment of the first member
+  // in the data payload. We align the output to 8-byte boundary.
+  uint32_t result = 0;
 
+  if (type_support->ctx()->cyclone_compatible) {
+    /**
+     * Cyclone uses a custom request header:
+     * struct cdds_request_header_t
+     * {
+     *   uint64_t guid;
+     *   int64_t seq;
+     * };
+     */
+    result += 8 /* GUID */ + 8 /* SN */;
+  } else {
+    /**
+     * Add request header to the serialized buffer:
+     * struct SampleIdentity {
+     *   GUID_t writer_guid;
+     *   SequenceNumber_t sequence_number;
+     * };
+     * enum RemoteExceptionCode_t {
+     *   REMOTE_EX_OK,
+     *   ...
+     * };
+     * typedef string<255> InstanceName;
+     * struct RequestHeader {
+     *   SampleIndentity_t requestId;
+     *   InstanceName instanceName;
+     * };
+     * struct ReplyHeader {
+     *   dds::SampleIdentity relatedRequestId;
+     *   dds::rpc::RemoteExceptionCode_t remoteEx;
+     * };
+     */
+    static const uint32_t sample_identity_size = 16 /* GUID */ + 8 /* SN */;
+    static const uint32_t instance_name_size =
+      4 /* str_len */ + 1 /* nul */ + 3 /* possible padding */;
+    static const uint32_t header_req_size = sample_identity_size + instance_name_size;
+    static const uint32_t header_rep_size =
+      sample_identity_size + 4 /* ex */ + 4 /* padding */;
+
+    if (type_support->message_type() == RMW_CONNEXT_MESSAGE_REQUEST) {
+      result += header_req_size;
+    } else if (type_support->message_type() == RMW_CONNEXT_MESSAGE_REPLY) {
+      result += header_rep_size;
+    }
+  }
+
+  return result;
+}
+
+static rmw_ret_t
+RMW_Connext_RequestReplyMapping_Basic_serialize(
+  RMW_Connext_MessageTypeSupport * const type_support,
+  eprosima::fastcdr::Cdr & cdr_stream,
+  const RMW_Connext_RequestReplyMessage * const rr_msg)
+{
+  DDS_SampleIdentity_t sample_identity;
+
+  rmw_ret_t rc = rmw_connextdds_gid_to_guid(
+    rr_msg->gid, sample_identity.writer_guid);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+  sample_identity.sequence_number.high =
+    static_cast<DDS_Long>((rr_msg->sn & 0xFFFFFFFF00000000) >> 8);
+  sample_identity.sequence_number.low =
+    static_cast<DDS_UnsignedLong>(rr_msg->sn & 0x00000000FFFFFFFF);
+
+  try {
+    // Cyclone only serializes 8 bytes of the writer guid.
+    // We pick the last 8 to include instance and object ID.
+    for (size_t i = (type_support->ctx()->cyclone_compatible) ? 8 : 0; i < 16; i++) {
+      cdr_stream << sample_identity.writer_guid.value[i];
+    }
+    cdr_stream << sample_identity.sequence_number.high;
+    cdr_stream << sample_identity.sequence_number.low;
+
+    if (type_support->ctx()->cyclone_compatible) {
+      return RMW_RET_OK;
+    }
+
+    switch (type_support->message_type()) {
+      case RMW_CONNEXT_MESSAGE_REQUEST:
+        {
+          std::string instance_name = "";
+          cdr_stream << instance_name;
+          // static const uint32_t instance_name_len = 0;
+          // cdr_stream << instance_name_len;
+          // cdr_stream << '\0';
+          break;
+        }
+      case RMW_CONNEXT_MESSAGE_REPLY:
+        {
+          static const int32_t sample_rc = 0;
+          cdr_stream << sample_rc;
+          break;
+        }
+      default:
+        {
+          RMW_CONNEXT_LOG_ERROR_A_SET(
+            "invalid mapping type to serialize: %d",
+            type_support->message_type())
+          return RMW_RET_ERROR;
+        }
+    }
+
+    return RMW_RET_OK;
+  } catch (const std::exception & exc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "Failed to serialize %s request header: %s",
+      type_support->type_name(), exc.what())
+    return RMW_RET_ERROR;
+  } catch (...) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "Failed to serialize %s request header",
+      type_support->type_name())
+    return RMW_RET_ERROR;
+  }
+}
+
+static rmw_ret_t
+RMW_Connext_RequestReplyMapping_Basic_deserialize(
+  RMW_Connext_MessageTypeSupport * const type_support,
+  eprosima::fastcdr::Cdr & cdr_stream,
+  RMW_Connext_RequestReplyMessage * const rr_msg)
+{
+  DDS_SampleIdentity_t sample_identity = DDS_SampleIdentity_UNKNOWN;
+
+  try {
+    // Cyclone only serializes 8 bytes of the writer guid.
+    // We use these to fill the 8 MSB of the guid, and set the LSB to 0 for now
+    // (they will be set to the writer's prefix after take()).
+    for (int i = (type_support->ctx()->cyclone_compatible) ? 8 : 0; i < 16; i++) {
+      cdr_stream >> sample_identity.writer_guid.value[i];
+    }
+    cdr_stream >> sample_identity.sequence_number.high;
+    cdr_stream >> sample_identity.sequence_number.low;
+
+    rmw_connextdds_guid_to_gid(sample_identity.writer_guid, rr_msg->gid);
+    rmw_connextdds_sn_dds_to_ros(sample_identity.sequence_number, rr_msg->sn);
+    rr_msg->gid.implementation_identifier = RMW_CONNEXTDDS_ID;
+
+    if (type_support->ctx()->cyclone_compatible) {
+      return RMW_RET_OK;
+    }
+
+    switch (type_support->message_type()) {
+      case RMW_CONNEXT_MESSAGE_REQUEST:
+        {
+          std::string instance_name;
+          cdr_stream >> instance_name;
+          UNUSED_ARG(instance_name);
+          break;
+        }
+      case RMW_CONNEXT_MESSAGE_REPLY:
+        {
+          int32_t sample_rc = 0;
+          cdr_stream >> sample_rc;
+          UNUSED_ARG(sample_rc);
+          break;
+        }
+      default:
+        {
+          RMW_CONNEXT_LOG_ERROR_A_SET(
+            "invalid mapping type to deserialize: %d",
+            type_support->message_type())
+          return RMW_RET_ERROR;
+        }
+    }
+
+    return RMW_RET_OK;
+  } catch (const std::exception & exc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "Failed to deserialize %s request header: %s",
+      type_support->type_name(), exc.what())
+    return RMW_RET_ERROR;
+  } catch (...) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "Failed to deserialize %s request header",
+      type_support->type_name())
+    return RMW_RET_ERROR;
+  }
+}
 /******************************************************************************
  * RMW_Connext_MessageTypeSupport
  ******************************************************************************/
@@ -27,7 +223,8 @@
 RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
   const RMW_Connext_MessageType message_type,
   const rosidl_message_type_support_t * const type_supports,
-  const char * const type_name)
+  const char * const type_name,
+  rmw_context_impl_t * const ctx)
 : _type_support_fastrtps(
     RMW_Connext_MessageTypeSupport::get_type_support_fastrtps(
       type_supports)),
@@ -35,7 +232,8 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
   _empty(false),
   _serialized_size_max(0),
   _type_name(),
-  _message_type(message_type)
+  _message_type(message_type),
+  _ctx(ctx)
 {
   if (this->_type_support_fastrtps == nullptr) {
     throw std::runtime_error("FastRTPS type support not found");
@@ -66,12 +264,12 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
     this->_unbounded,
     this->_empty);
 
-#if RMW_CONNEXT_EMULATE_REQUESTREPLY
-  if (!this->unbounded() && this->type_requestreply()) {
-    /* Add request header to the serialized buffer */
-    this->_serialized_size_max += RMW_GID_STORAGE_SIZE + sizeof(int64_t);
+  if (this->type_requestreply() &&
+    this->_ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic)
+  {
+    this->_serialized_size_max +=
+      RMW_Connext_RequestReplyMapping_Basic_serialized_size_max(this);
   }
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[type support] new %s: "
@@ -126,16 +324,16 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
         reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(ros_msg);
       payload = rr_msg->payload;
 
-#if RMW_CONNEXT_EMULATE_REQUESTREPLY
-      /* Since Micro doesn't support sample_identity/related_sample_identity,
-         we encode the request's sequence number and originator's guid as a
-      header to the data payload */
-      for (size_t i = 0; i < RMW_GID_STORAGE_SIZE; i++) {
-        cdr_stream << rr_msg->gid.data[i];
-      }
 
-      cdr_stream << rr_msg->sn;
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY  */
+      if (this->_ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic) {
+        // encode the request's sequence number and originator's guid as a
+        // header to the data payload
+        rmw_ret_t head_rc = RMW_Connext_RequestReplyMapping_Basic_serialize(
+          this, cdr_stream, rr_msg);
+        if (RMW_RET_OK != head_rc) {
+          return head_rc;
+        }
+      }
     }
 
     if (!this->_empty) {
@@ -145,10 +343,13 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
         }
       } catch (const std::exception & exc) {
         RMW_CONNEXT_LOG_ERROR_A_SET(
-          "Failed to serialize data: %s", exc.what())
+          "Failed to serialize %s sample: %s",
+          this->type_name(), exc.what())
         return RMW_RET_ERROR;
       } catch (...) {
-        RMW_CONNEXT_LOG_ERROR_SET("Failed to serialize data")
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "Failed to serialize %s sample",
+          this->type_name())
         return RMW_RET_ERROR;
       }
     } else {
@@ -157,15 +358,14 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
     }
   } catch (const std::exception & exc) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
-      "Failed to serialize ROS message: %s", exc.what())
+      "Failed to serialize %s sample: %s", this->type_name(), exc.what())
     return RMW_RET_ERROR;
   } catch (...) {
-    RMW_CONNEXT_LOG_ERROR_SET("Failed to serialize ROS message")
+    RMW_CONNEXT_LOG_ERROR_A_SET("Failed to serialize %s sample", this->type_name())
     return RMW_RET_ERROR;
   }
 
-  to_buffer->buffer_length =
-    reinterpret_cast<uint8_t *>(cdr_stream.getCurrentPosition()) - to_buffer->buffer;
+  to_buffer->buffer_length = cdr_stream.getSerializedDataLength();
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[type support] %s serialized: "
@@ -180,7 +380,8 @@ rmw_ret_t
 RMW_Connext_MessageTypeSupport::deserialize(
   void * const ros_msg,
   const rcutils_uint8_array_t * const from_buffer,
-  size_t & size_out)
+  size_t & size_out,
+  const bool header_only)
 {
   auto callbacks =
     static_cast<const message_type_support_callbacks_t *>(
@@ -212,6 +413,18 @@ RMW_Connext_MessageTypeSupport::deserialize(
 
   void * payload = ros_msg;
 
+  // This function is only called with (header_only == true) when used by
+  // a request/reply endpoint using the "basic" mapping.
+  if (header_only &&
+    (!this->type_requestreply() ||
+    this->_ctx->request_reply_mapping != RMW_Connext_RequestReplyMapping::Basic))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "header_only used on non-request/reply or without basic mapping: %s",
+      this->type_name())
+    return RMW_RET_ERROR;
+  }
+
   try {
     cdr_stream.read_encapsulation();
 
@@ -221,12 +434,16 @@ RMW_Connext_MessageTypeSupport::deserialize(
 
       payload = reinterpret_cast<void *>(rr_msg->payload);
 
-#if RMW_CONNEXT_EMULATE_REQUESTREPLY
-      for (size_t i = 0; i < RMW_GID_STORAGE_SIZE; i++) {
-        cdr_stream >> rr_msg->gid.data[i];
+      if (this->_ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic) {
+        rmw_ret_t head_rc = RMW_Connext_RequestReplyMapping_Basic_deserialize(
+          this, cdr_stream, rr_msg);
+        if (RMW_RET_OK != head_rc) {
+          return head_rc;
+        }
+        if (header_only) {
+          return RMW_RET_OK;
+        }
       }
-      cdr_stream >> rr_msg->sn;
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
     }
 
     if (!this->_empty) {
@@ -236,30 +453,30 @@ RMW_Connext_MessageTypeSupport::deserialize(
         }
       } catch (const std::exception & exc) {
         RMW_CONNEXT_LOG_ERROR_A_SET(
-          "Failed to deserialize data: %s", exc.what())
+          "Failed to deserialize %s sample: %s", this->type_name(), exc.what())
         return RMW_RET_ERROR;
       } catch (...) {
-        RMW_CONNEXT_LOG_ERROR_SET("Failed to deserialize data")
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "Failed to deserialize %s sample",
+          this->type_name())
         return RMW_RET_ERROR;
       }
     } else {
       /* Consume dummy byte */
       uint8_t dummy = 0;
       cdr_stream >> dummy;
-      (void)dummy;
+      UNUSED_ARG(dummy);
     }
   } catch (const std::exception & exc) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
-      "Failed to deserialize ROS message: %s", exc.what())
+      "Failed to deserialize %s sample: %s", this->type_name(), exc.what())
     return RMW_RET_ERROR;
   } catch (...) {
-    RMW_CONNEXT_LOG_ERROR_SET("Failed to deserialize ROS message")
+    RMW_CONNEXT_LOG_ERROR_A_SET("Failed to deserialize %s sample", this->type_name())
     return RMW_RET_ERROR;
   }
 
-  size_out =
-    cdr_stream.getCurrentPosition() -
-    reinterpret_cast<char *>(from_buffer->buffer);
+  size_out = cdr_stream.getSerializedDataLength();
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[type support] %s deserialized: "
@@ -298,12 +515,13 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
       payload = rr_msg->payload;
     }
     serialized_size += callbacks->get_serialized_size(payload);
-#if RMW_CONNEXT_EMULATE_REQUESTREPLY
-    if (this->type_requestreply()) {
+    if (this->type_requestreply() &&
+      this->_ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic)
+    {
       /* Add request header to serialized payload */
-      serialized_size += RMW_GID_STORAGE_SIZE + sizeof(int64_t);
+      serialized_size +=
+        RMW_Connext_RequestReplyMapping_Basic_serialized_size_max(this);
     }
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
     RMW_CONNEXT_LOG_TRACE_A(
       "[type support] %s serialized size_MAX: %u",
       this->type_name(), serialized_size)
@@ -325,7 +543,7 @@ RMW_Connext_MessageTypeSupport::get_type_support_fastrtps(
   }
   return type_support;
 }
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
+
 const rosidl_message_type_support_t *
 RMW_Connext_MessageTypeSupport::get_type_support_intro(
   const rosidl_message_type_support_t * const type_supports,
@@ -347,7 +565,6 @@ RMW_Connext_MessageTypeSupport::get_type_support_intro(
   }
   return type_support;
 }
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 RMW_Connext_MessageTypeSupport *
 RMW_Connext_MessageTypeSupport::register_type_support(
@@ -364,7 +581,8 @@ RMW_Connext_MessageTypeSupport::register_type_support(
     type_support = new RMW_Connext_MessageTypeSupport(
       message_type,
       type_supports,
-      (nullptr != type_name) ? type_name->c_str() : nullptr);
+      (nullptr != type_name) ? type_name->c_str() : nullptr,
+      ctx);
   } catch (const std::exception & e) {
     RMW_CONNEXT_LOG_ERROR_A_SET("failed to create type support: %s", e.what())
   }
@@ -447,7 +665,6 @@ void RMW_Connext_MessageTypeSupport::type_info(
 /******************************************************************************
  * Service Type Support
  ******************************************************************************/
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
 const rosidl_service_type_support_t *
 RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
   const rosidl_service_type_support_t * const type_supports,
@@ -470,7 +687,6 @@ RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
 
   return type_support;
 }
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 const rosidl_service_type_support_t *
 RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(

@@ -27,8 +27,6 @@
 #define RMW_FASTRTPS_CPP_TYPESUPPORT_C rosidl_typesupport_fastrtps_c__identifier
 #define RMW_FASTRTPS_CPP_TYPESUPPORT_CPP rosidl_typesupport_fastrtps_cpp::typesupport_identifier
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
-
 #include "rosidl_typesupport_introspection_cpp/field_types.hpp"
 #include "rosidl_typesupport_introspection_cpp/identifier.hpp"
 #include "rosidl_typesupport_introspection_cpp/message_introspection.hpp"
@@ -40,8 +38,6 @@
 #include "rosidl_typesupport_introspection_c/message_introspection.h"
 #include "rosidl_typesupport_introspection_c/service_introspection.h"
 #include "rosidl_typesupport_introspection_c/visibility_control.h"
-
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 struct RMW_Connext_RequestReplyMessage
 {
@@ -59,6 +55,7 @@ class RMW_Connext_MessageTypeSupport
   uint32_t _serialized_size_max;
   std::string _type_name;
   RMW_Connext_MessageType _message_type;
+  rmw_context_impl_t * const _ctx;
 
 public:
   static const uint32_t ENCAPSULATION_HEADER_SIZE = 4;
@@ -66,12 +63,18 @@ public:
   RMW_Connext_MessageTypeSupport(
     const RMW_Connext_MessageType message_type,
     const rosidl_message_type_support_t * const type_supports,
-    const char * const type_name);
+    const char * const type_name,
+    rmw_context_impl_t * const ctx);
 
   const message_type_support_callbacks_t * callbacks_fastrtps()
   {
     return static_cast<const message_type_support_callbacks_t *>(
       this->_type_support_fastrtps->data);
+  }
+
+  rmw_context_impl_t * ctx() const
+  {
+    return this->_ctx;
   }
 
   const char * type_name() const
@@ -92,6 +95,11 @@ public:
   bool empty() const
   {
     return this->_empty;
+  }
+
+  RMW_Connext_MessageType message_type() const
+  {
+    return this->_message_type;
   }
 
   bool type_requestreply() const
@@ -116,7 +124,8 @@ public:
   rmw_ret_t deserialize(
     void * const ros_msg,
     const rcutils_uint8_array_t * const from_buffer,
-    size_t & size_out);
+    size_t & size_out,
+    const bool header_only = false);
 
   static
   RMW_Connext_MessageTypeSupport *
@@ -137,11 +146,9 @@ public:
   static const rosidl_message_type_support_t * get_type_support_fastrtps(
     const rosidl_message_type_support_t * const type_supports);
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
   static const rosidl_message_type_support_t * get_type_support_intro(
     const rosidl_message_type_support_t * const type_supports,
     bool & cpp_version);
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
   static void type_info(
     const rosidl_message_type_support_t * const type_support,
@@ -165,13 +172,11 @@ public:
   get_type_support_fastrtps(
     const rosidl_service_type_support_t * const type_supports);
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
   static
   const rosidl_service_type_support_t *
   get_type_support_intro(
     const rosidl_service_type_support_t * const type_supports,
     bool & cpp_version);
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
   static
   const rosidl_message_type_support_t *
@@ -190,7 +195,6 @@ public:
       static_cast<const service_type_support_callbacks_t *>(
       svc_type_support_fastrtps->data);
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     const rosidl_service_type_support_t * const svc_type_support_intro =
       RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
       type_supports, svc_members_cpp);
@@ -211,10 +215,6 @@ public:
 
       *svc_members_out = svc_members->request_members_;
     }
-#else
-    UNUSED_ARG(svc_members_out);
-    UNUSED_ARG(svc_members_cpp);
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
     return svc_callbacks->request_members_;
   }
@@ -237,7 +237,6 @@ public:
       static_cast<const service_type_support_callbacks_t *>(
       svc_type_support_fastrtps->data);
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     const rosidl_service_type_support_t * const svc_type_support_intro =
       RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
       type_supports, svc_members_cpp);
@@ -258,10 +257,6 @@ public:
 
       *svc_members_out = svc_members->response_members_;
     }
-#else
-    UNUSED_ARG(svc_members_out);
-    UNUSED_ARG(svc_members_cpp);
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
     return svc_callbacks->response_members_;
   }

@@ -2104,7 +2104,8 @@ RMW_Connext_Subscriber::take_next(
   const bool serialized,
   const DDS_InstanceHandle_t * const request_writer_handle)
 {
-  rmw_ret_t rc = RMW_RET_OK;
+  rmw_ret_t rc = RMW_RET_OK,
+    rc_exit = RMW_RET_OK;
 
   *taken = 0;
 
@@ -2121,7 +2122,9 @@ RMW_Connext_Subscriber::take_next(
       return RMW_RET_OK;
     }
 
-    for (; *taken < max_samples && this->loan_next < this->loan_len;
+    for (; *taken < max_samples &&
+      this->loan_next < this->loan_len &&
+      RMW_RET_OK == rc_exit;
       this->loan_next++)
     {
       rcutils_uint8_array_t * data_buffer =
@@ -2131,23 +2134,55 @@ RMW_Connext_Subscriber::take_next(
       DDS_SampleInfo * info =
         DDS_SampleInfoSeq_get_reference(
         &this->loan_info, static_cast<DDS_Long>(this->loan_next));
+      void * ros_message = ros_messages[*taken];
 
       if (info->valid_data) {
         bool accepted = false;
-        if (RMW_RET_OK != rmw_connextdds_filter_sample(
-            this, data_buffer, info, request_writer_handle, &accepted))
-        {
-          RMW_CONNEXT_LOG_ERROR_SET("failed to filter received sample")
-          return RMW_RET_ERROR;
-        }
-        if (!accepted) {
-          RMW_CONNEXT_LOG_DEBUG_A(
-            "[%s] DROPPED message",
-            this->type_support->type_name())
-          continue;
+
+        // If this is a request/reply message, and we are in "compatibility mode",
+        // then we must always call deserialize() to at least retrieve the
+        // request header.
+        if (this->type_support->type_requestreply()) {
+          if (this->ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic) {
+            size_t deserialized_size = 0;
+            UNUSED_ARG(deserialized_size);
+
+            if (RMW_RET_OK !=
+              this->type_support->deserialize(
+                ros_message, data_buffer, deserialized_size, true /* header_only */))
+            {
+              RMW_CONNEXT_LOG_ERROR_SET("failed to deserialize taken sample")
+              rc_exit = RMW_RET_ERROR;
+              continue;
+            }
+          } else {
+            RMW_Connext_RequestReplyMessage * const rr_msg =
+              reinterpret_cast<RMW_Connext_RequestReplyMessage *>(ros_message);
+
+            DDS_SampleIdentity_t identity,
+              related_sample_identity;
+
+            DDS_SampleInfo_get_sample_identity(info, &identity);
+            DDS_SampleInfo_get_related_sample_identity(
+              info, &related_sample_identity);
+
+            this->requestreply_header_from_dds(
+              rr_msg, &identity, &related_sample_identity);
+          }
         }
 
-        void * ros_message = ros_messages[*taken];
+        if (RMW_RET_OK != rmw_connextdds_filter_sample(
+            this, ros_message, info, request_writer_handle, &accepted))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to filter received sample")
+          rc_exit = RMW_RET_ERROR;
+          continue;
+        }
+        if (!accepted) {
+          RMW_CONNEXT_LOG_TRACE_A(
+            "[%s] DROPPED message", this->type_support->type_name())
+          continue;
+        }
 
         if (serialized) {
           if (RCUTILS_RET_OK !=
@@ -2156,26 +2191,10 @@ RMW_Connext_Subscriber::take_next(
               data_buffer))
           {
             RMW_CONNEXT_LOG_ERROR_SET("failed to copy uint8 array")
-            return RMW_RET_ERROR;
+            rc_exit = RMW_RET_ERROR;
+            continue;
           }
         } else {
-#if !RMW_CONNEXT_EMULATE_REQUESTREPLY
-          if (this->type_support->type_requestreply()) {
-            RMW_Connext_RequestReplyMessage * const rr_msg =
-              reinterpret_cast<RMW_Connext_RequestReplyMessage *>(ros_message);
-
-            DDS_SampleIdentity_t identity,
-              related_sample_identity;
-
-            DDS_SampleInfo_get_sample_identity(
-              info, &identity);
-            DDS_SampleInfo_get_related_sample_identity(
-              info, &related_sample_identity);
-
-            this->requestreply_header_from_dds(
-              rr_msg, &identity, &related_sample_identity);
-          }
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
           size_t deserialized_size = 0;
 
           if (RMW_RET_OK !=
@@ -2184,7 +2203,8 @@ RMW_Connext_Subscriber::take_next(
           {
             RMW_CONNEXT_LOG_ERROR_SET(
               "failed to deserialize taken sample")
-            return RMW_RET_ERROR;
+            rc_exit = RMW_RET_ERROR;
+            continue;
           }
         }
 
@@ -2204,9 +2224,13 @@ RMW_Connext_Subscriber::take_next(
 
   if (this->loan_len && this->loan_next >= this->loan_len) {
     rc = this->return_messages();
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to return loaned messages")
+      rc_exit = rc;
+    }
   }
 
-  return rc;
+  return rc_exit;
 }
 
 rmw_subscription_t *
@@ -2616,8 +2640,6 @@ rmw_connextdds_create_type_name(
     mangle_prefix);
 }
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
-
 std::string
 rmw_connextdds_create_type_name(
   const rosidl_typesupport_introspection_cpp::MessageMembers * const members,
@@ -2651,8 +2673,6 @@ rmw_connextdds_create_type_name(
     msg_prefix,
     mangle_prefix);
 }
-
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 std::string
 rmw_connextdds_create_type_name_request(
@@ -2691,6 +2711,95 @@ rmw_connextdds_create_type_name_response(
 /******************************************************************************
  * Client/Service helpers
  ******************************************************************************/
+static rmw_ret_t
+rmw_connextdds_client_content_filter(
+  DDS_InstanceHandle_t * const writer_ih,
+  const char * const reply_topic,
+  char ** const cft_name_out,
+  char ** const cft_filter_out)
+{
+  // TODO(asorbini) convert ih directly to guid
+  DDS_GUID_t writer_guid = DDS_GUID_INITIALIZER;
+  rmw_gid_t writer_gid;
+  rmw_connextdds_ih_to_gid(*writer_ih, writer_gid);
+  rmw_connextdds_gid_to_guid(writer_gid, writer_guid);
+
+#define GUID_FMT \
+  "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
+
+#define GUID_FMT_ARGS(g_) \
+  (g_)->value[0], \
+  (g_)->value[1], \
+  (g_)->value[2], \
+  (g_)->value[3], \
+  (g_)->value[4], \
+  (g_)->value[5], \
+  (g_)->value[6], \
+  (g_)->value[7], \
+  (g_)->value[8], \
+  (g_)->value[9], \
+  (g_)->value[10], \
+  (g_)->value[11], \
+  (g_)->value[12], \
+  (g_)->value[13], \
+  (g_)->value[14], \
+  (g_)->value[15]
+
+  /* Create content-filtered topic expression for the reply reader */
+  static const int GUID_SIZE = 16;
+  static const char * GUID_FIELD_NAME =
+    "@related_sample_identity.writer_guid.value";
+  const size_t reply_topic_len = strlen(reply_topic);
+  const size_t cft_name_len = reply_topic_len + 1 + (GUID_SIZE * 2);
+  char * const cft_name = DDS_String_alloc(cft_name_len);
+  if (nullptr == cft_name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed too allocate cft name")
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_cft_name = rcpputils::make_scope_exit(
+    [cft_name]()
+    {
+      DDS_String_free(cft_name);
+    });
+
+  // TODO(asorbini) check output of snprintf()
+  snprintf(
+    cft_name, cft_name_len + 1 /* \0 */,
+    "%s_" GUID_FMT,
+    reply_topic,
+    GUID_FMT_ARGS(&writer_guid));
+
+  const size_t cft_filter_len =
+    strlen(GUID_FIELD_NAME) + strlen(" = &hex(") + (GUID_SIZE * 2) + 1;
+  char * const cft_filter = DDS_String_alloc(cft_filter_len);
+  if (nullptr == cft_filter) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed too allocate cft filter")
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_cft_filter = rcpputils::make_scope_exit(
+    [cft_filter]()
+    {
+      DDS_String_free(cft_filter);
+    });
+
+  // TODO(asorbini) check output of snprintf()
+  snprintf(
+    cft_filter, cft_filter_len + 1 /* \0 */, "%s = &hex(" GUID_FMT ")",
+    GUID_FIELD_NAME,
+    GUID_FMT_ARGS(&writer_guid));
+
+#undef GUID_FMT
+#undef GUID_FMT_ARGS
+
+  scope_exit_cft_name.cancel();
+  scope_exit_cft_filter.cancel();
+
+  *cft_name_out = cft_name;
+  *cft_filter_out = cft_filter;
+
+  return RMW_RET_OK;
+}
+
 
 RMW_Connext_Client *
 RMW_Connext_Client::create(
@@ -2709,6 +2818,8 @@ RMW_Connext_Client::create(
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate client implementation")
     return nullptr;
   }
+
+  client_impl->ctx = ctx;
 
   auto scope_exit_client_impl_delete = rcpputils::make_scope_exit(
     [client_impl]()
@@ -2796,13 +2907,6 @@ RMW_Connext_Client::create(
     return nullptr;
   }
 
-  DDS_InstanceHandle_t writer_ih = client_impl->request_pub->instance_handle();
-  // TODO(asorbini) convert ih directly to guid
-  DDS_GUID_t writer_guid = DDS_GUID_INITIALIZER;
-  rmw_gid_t writer_gid;
-  rmw_connextdds_ih_to_gid(writer_ih, writer_gid);
-  rmw_connextdds_gid_to_guid(writer_gid, writer_guid);
-
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating reply subscriber: "
     "service=%s, "
@@ -2810,70 +2914,28 @@ RMW_Connext_Client::create(
     svc_name,
     reply_topic.c_str())
 
-#define GUID_FMT \
-  "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
-
-#define GUID_FMT_ARGS(g_) \
-  (g_)->value[0], \
-  (g_)->value[1], \
-  (g_)->value[2], \
-  (g_)->value[3], \
-  (g_)->value[4], \
-  (g_)->value[5], \
-  (g_)->value[6], \
-  (g_)->value[7], \
-  (g_)->value[8], \
-  (g_)->value[9], \
-  (g_)->value[10], \
-  (g_)->value[11], \
-  (g_)->value[12], \
-  (g_)->value[13], \
-  (g_)->value[14], \
-  (g_)->value[15]
-
-  /* Create content-filtered topic expression for the reply reader */
-  static const int GUID_SIZE = 16;
-  static const char * GUID_FIELD_NAME =
-    "@related_sample_identity.writer_guid.value";
-  const size_t reply_topic_len = strlen(reply_topic.c_str());
-  const size_t cft_name_len = reply_topic_len + 1 + (GUID_SIZE * 2);
-  char * const cft_name = DDS_String_alloc(cft_name_len);
-  if (nullptr == cft_name) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed too allocate cft name")
-    return nullptr;
-  }
+  char * cft_name = nullptr,
+  *cft_filter = nullptr;
   auto scope_exit_cft_name = rcpputils::make_scope_exit(
-    [cft_name]()
+    [cft_name, cft_filter]()
     {
-      DDS_String_free(cft_name);
+      if (nullptr != cft_name) {
+        DDS_String_free(cft_name);
+      }
+      if (nullptr != cft_filter) {
+        DDS_String_free(cft_filter);
+      }
     });
 
-  snprintf(
-    cft_name, cft_name_len + 1 /* \0 */,
-    "%s_" GUID_FMT,
-    reply_topic.c_str(),
-    GUID_FMT_ARGS(&writer_guid));
-
-  const size_t cft_filter_len =
-    strlen(GUID_FIELD_NAME) + strlen(" = &hex(") + (GUID_SIZE * 2) + 1;
-  char * const cft_filter = DDS_String_alloc(cft_filter_len);
-  if (nullptr == cft_filter) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed too allocate cft filter")
-    return nullptr;
+  if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
+    DDS_InstanceHandle_t writer_ih = client_impl->request_pub->instance_handle();
+    if (RMW_RET_OK != rmw_connextdds_client_content_filter(
+        &writer_ih, reply_topic.c_str(), &cft_name, &cft_filter))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to create content filter for client")
+      return nullptr;
+    }
   }
-  auto scope_exit_cft_filter = rcpputils::make_scope_exit(
-    [cft_filter]()
-    {
-      DDS_String_free(cft_filter);
-    });
-
-  snprintf(
-    cft_filter, cft_filter_len + 1 /* \0 */, "%s = &hex(" GUID_FMT ")",
-    GUID_FIELD_NAME,
-    GUID_FMT_ARGS(&writer_guid));
-
-#undef GUID_FMT
-#undef GUID_FMT_ARGS
 
   client_impl->reply_sub =
     RMW_Connext_Subscriber::create(
@@ -2959,10 +3021,20 @@ RMW_Connext_Client::take_response(
 
   if (taken_msg) {
     request_header->request_id.sequence_number = rr_msg.sn;
+
     memcpy(
       request_header->request_id.writer_guid,
       rr_msg.gid.data,
       16);
+
+    if (this->ctx->cyclone_compatible) {
+      // Copy 8 LSB from the client's publisher's guid
+      memcpy(
+        request_header->request_id.writer_guid,
+        this->request_pub->gid()->data,
+        8);
+    }
+
 #if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
     request_header->source_timestamp = message_info.source_timestamp;
     request_header->received_timestamp = message_info.received_timestamp;
@@ -2993,12 +3065,12 @@ RMW_Connext_Client::send_request(
   RMW_Connext_RequestReplyMessage rr_msg;
   rr_msg.request = true;
 
-#if RMW_CONNEXT_EMULATE_REQUESTREPLY
-  *sequence_id = ++this->next_request_id;
-  rr_msg.sn = *sequence_id;
-#else
-  rr_msg.sn = -1;
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
+  if (this->ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic) {
+    *sequence_id = ++this->next_request_id;
+    rr_msg.sn = *sequence_id;
+  } else {
+    rr_msg.sn = -1;
+  }
   rr_msg.gid = *this->request_pub->gid();
   rr_msg.payload = const_cast<void *>(ros_request);
 
@@ -3072,6 +3144,8 @@ RMW_Connext_Service::create(
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate service implementation")
     return nullptr;
   }
+
+  svc_impl->ctx = ctx;
 
   auto scope_exit_svc_impl_delete = rcpputils::make_scope_exit(
     [svc_impl]()

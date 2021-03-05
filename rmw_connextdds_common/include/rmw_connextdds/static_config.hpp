@@ -34,24 +34,44 @@
  * Environment Variables
  ******************************************************************************/
 #ifndef RMW_CONNEXT_ENV_UDP_INTERFACE
-#define RMW_CONNEXT_ENV_UDP_INTERFACE   "RMW_CONNEXT_UDP_INTERFACE"
+#define RMW_CONNEXT_ENV_UDP_INTERFACE \
+  "RMW_CONNEXT_UDP_INTERFACE"
 #endif /* RMW_CONNEXT_ENV_UDP_INTERFACE */
 
 #ifndef RMW_CONNEXT_ENV_INITIAL_PEER
-#define RMW_CONNEXT_ENV_INITIAL_PEER    "RMW_CONNEXT_INITIAL_PEER"
+#define RMW_CONNEXT_ENV_INITIAL_PEER \
+  "RMW_CONNEXT_INITIAL_PEER"
 #endif /* RMW_CONNEXT_ENV_INITIAL_PEER */
 
 #ifndef RMW_CONNEXT_ENV_QOS_LIBRARY
-#define RMW_CONNEXT_ENV_QOS_LIBRARY     "RMW_CONNEXT_QOS_LIBRARY"
+#define RMW_CONNEXT_ENV_QOS_LIBRARY \
+  "RMW_CONNEXT_QOS_LIBRARY"
 #endif /* RMW_CONNEXT_ENV_QOS_LIBRARY */
 
 #ifndef RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE
-#define RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE     "RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE"
+#define RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE \
+  "RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE"
 #endif /* RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE */
 
-#ifndef RMW_CONNEXT_ENV_LOCALHOST_ONLY
-#define RMW_CONNEXT_ENV_LOCALHOST_ONLY     "ROS_LOCALHOST_ONLY"
-#endif /* RMW_CONNEXT_ENV_LOCALHOST_ONLY */
+#ifndef RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING
+#define RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING \
+  "RMW_CONNEXT_REQUEST_REPLY_MAPPING"
+#endif /* RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING */
+
+#ifndef RMW_CONNEXT_ENV_CYCLONE_COMPATIBILITY_MODE
+#define RMW_CONNEXT_ENV_CYCLONE_COMPATIBILITY_MODE \
+  "RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE"
+#endif /* RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING */
+
+#ifndef RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE
+#define RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE \
+  "RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE"
+#endif /* RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE */
+
+#ifndef RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY
+#define RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY \
+  "RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY"
+#endif /* RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE */
 
 /******************************************************************************
  * DDS Implementation
@@ -102,20 +122,18 @@
 #endif /* RMW_CONNEXT_ASSERT_ENABLE */
 
 /******************************************************************************
- * Request/Reply support.
- * If this option is enabled, the RMW will implement RPC requests between
- * Clients and Servers using a custom protocol that serializes a "request header"
- * (containing GUID and SN) before the message payload, instead of using the
- * standard DDS RPC protocol. This allows the RMW to interoperate with DDS
- * implementations which don't support propagation and correlation of
- * "sample identity".
- * This option is enabled by default only for RTI Connext DDS Micro, and it must
- * be enable at build time not interoperable with the Pro version.
+ * If this option is enabled, the RMW will always implement RPC requests between
+ * Clients and Servers using the "basic" mapping from DDS-RPC, which serializes
+ * a "request header" (containing GUID and SN) before the message payload,
+ * This allows the RMW to interoperate with DDS implementations which don't
+ * support the "extended" mapping via propagation and correlation of
+ * "sample identities".
+ * This option is enabled by default only for RTI Connext DDS Micro.
  ******************************************************************************/
-#ifndef RMW_CONNEXT_EMULATE_REQUESTREPLY
-#define RMW_CONNEXT_EMULATE_REQUESTREPLY \
+#ifndef RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC
+#define RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC \
   (RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO)
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
+#endif /* RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC */
 
 /******************************************************************************
  * Shmem Transport.
@@ -203,6 +221,15 @@
 #define RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE     1
 #endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
 
+/******************************************************************************
+ * Enable support for running in "compatibility mode" with the old RMW for
+ * Connext (rmw_connext_cpp). If this option is enable, the mode can be
+ * enabled via env variable. Once the mode is enabled, rmw_connextdds will:
+ * - Add suffix "_" to member names of types propagated via DDS discovery.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+#define RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE     1
+#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
 
 /******************************************************************************
  * ROS Target Release
@@ -300,15 +327,10 @@
   (RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_ELOQUENT)
 #endif /* RMW_CONNEXT_HAVE_GET_INFO_BY_TOPIC */
 
-#ifndef RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
-#define RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT \
-  (RMW_CONNEXT_RELEASE >= RMW_CONNEXT_RELEASE_DASHING)
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
-
 #ifndef RMW_CONNEXT_HAVE_QOS_PROFILE_API
 #define RMW_CONNEXT_HAVE_QOS_PROFILE_API \
   (RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY)
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
+#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */
 
 #ifndef RMW_CONNEXT_HAVE_TIME_UTILS
 #define RMW_CONNEXT_HAVE_TIME_UTILS \

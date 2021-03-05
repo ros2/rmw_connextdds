@@ -220,7 +220,6 @@ rmw_api_connextdds_service_server_is_available(
   return rc;
 }
 
-
 rmw_ret_t
 rmw_api_connextdds_count_publishers(
   const rmw_node_t * node,

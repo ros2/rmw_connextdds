@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include <limits>
+#include <map>
 #include <mutex>
 #include <string>
 
@@ -95,6 +96,9 @@ struct rmw_context_impl_t
   /* suffix for GUIDs to construct unique client/service ids
      (protected by initialization_mutex) */
   uint32_t client_service_id{0};
+
+  std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
+  std::mutex endpoint_mutex;
 
   explicit rmw_context_impl_t(rmw_context_t * const base)
   : common(),

@@ -34,10 +34,8 @@ rmw_connextdds_duration_from_ros_time(
   DDS_Duration_t * const duration,
   const rmw_time_t * const ros_time)
 {
-  if (ros_time->sec > INT32_MAX || ros_time->nsec > UINT32_MAX) {
-    RMW_CONNEXT_LOG_ERROR("duration overflow detected")
-    return RMW_RET_ERROR;
-  }
+  // TODO(asorbini) This function ignores possible overflows which
+  // occur if (ros_time->sec > INT32_MAX || ros_time->nsec > UINT32_MAX)
   duration->sec = static_cast<DDS_Long>(ros_time->sec);
   duration->nanosec = static_cast<DDS_UnsignedLong>(ros_time->nsec);
   return RMW_RET_OK;
@@ -1155,17 +1153,13 @@ RMW_Connext_Publisher::create(
   const bool intro_members_cpp,
   std::string * const type_name)
 {
-  std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
   UNUSED_ARG(internal);
-
-  bool type_registered = false;
 
   RMW_Connext_MessageTypeSupport * type_support =
     RMW_Connext_MessageTypeSupport::register_type_support(
     ctx,
     type_supports,
     dp,
-    type_registered,
     msg_type,
     intro_members,
     intro_members_cpp,
@@ -1177,16 +1171,14 @@ RMW_Connext_Publisher::create(
   }
 
   auto scope_exit_type_unregister = rcpputils::make_scope_exit(
-    [type_registered, dp, type_support, ctx]()
+    [dp, type_support, ctx]()
     {
-      if (type_registered) {
-        if (RMW_RET_OK !=
-        RMW_Connext_MessageTypeSupport::unregister_type_support(
-          ctx, dp, type_support->type_name()))
-        {
-          RMW_CONNEXT_LOG_ERROR(
-            "failed to unregister type for writer")
-        }
+      if (RMW_RET_OK !=
+      RMW_Connext_MessageTypeSupport::unregister_type_support(
+        ctx, dp, type_support->type_name()))
+      {
+        RMW_CONNEXT_LOG_ERROR(
+          "failed to unregister type for writer")
       }
       delete type_support;
     });
@@ -1318,8 +1310,6 @@ RMW_Connext_Publisher::create(
 rmw_ret_t
 RMW_Connext_Publisher::finalize()
 {
-  std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing publisher: pub=%p, type=%s",
     (void *)this, this->type_support->type_name())
@@ -1488,6 +1478,7 @@ rmw_connextdds_create_publisher(
 #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal)
 {
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
   RMW_Connext_Publisher * rmw_pub_impl =
     RMW_Connext_Publisher::create(
     ctx,
@@ -1582,6 +1573,7 @@ rmw_connextdds_destroy_publisher(
   rmw_context_impl_t * const ctx,
   rmw_publisher_t * const rmw_publisher)
 {
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
   UNUSED_ARG(ctx);
 
   RMW_Connext_Publisher * const rmw_pub_impl =
@@ -1659,16 +1651,11 @@ RMW_Connext_Subscriber::create(
   const char * const cft_name,
   const char * const cft_filter)
 {
-  std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-
-  bool type_registered = false;
-
   RMW_Connext_MessageTypeSupport * const type_support =
     RMW_Connext_MessageTypeSupport::register_type_support(
     ctx,
     type_supports,
     dp,
-    type_registered,
     msg_type,
     intro_members,
     intro_members_cpp,
@@ -1680,17 +1667,16 @@ RMW_Connext_Subscriber::create(
   }
 
   auto scope_exit_type_unregister = rcpputils::make_scope_exit(
-    [type_registered, dp, type_support, ctx]()
+    [dp, type_support, ctx]()
     {
-      if (type_registered) {
-        if (RMW_RET_OK !=
-        RMW_Connext_MessageTypeSupport::unregister_type_support(
-          ctx, dp, type_support->type_name()))
-        {
-          RMW_CONNEXT_LOG_ERROR(
-            "failed to unregister type for writer")
-        }
+      if (RMW_RET_OK !=
+      RMW_Connext_MessageTypeSupport::unregister_type_support(
+        ctx, dp, type_support->type_name()))
+      {
+        RMW_CONNEXT_LOG_ERROR(
+          "failed to unregister type for writer")
       }
+      delete type_support;
     });
 
   std::string fqtopic_name;
@@ -1852,8 +1838,6 @@ RMW_Connext_Subscriber::create(
 rmw_ret_t
 RMW_Connext_Subscriber::finalize()
 {
-  std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
-
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing subscriber: sub=%p, type=%s",
     (void *)this, this->type_support->type_name())
@@ -2046,7 +2030,7 @@ RMW_Connext_Subscriber::loan_messages()
 
   this->loan_len = DDS_UntypedSampleSeq_get_length(&this->loan_data);
 
-  RMW_CONNEXT_LOG_DEBUG_A(
+  RMW_CONNEXT_LOG_TRACE_A(
     "[%s] loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
@@ -2059,7 +2043,7 @@ RMW_Connext_Subscriber::return_messages()
   /* this function should be called only if a loan is available */
   RMW_CONNEXT_ASSERT(this->loan_len > 0)
 
-  RMW_CONNEXT_LOG_DEBUG_A(
+  RMW_CONNEXT_LOG_TRACE_A(
     "[%s] return loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
@@ -2233,6 +2217,7 @@ rmw_connextdds_create_subscriber(
 {
   UNUSED_ARG(internal);
 
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
   RMW_Connext_Subscriber * rmw_sub_impl =
     RMW_Connext_Subscriber::create(
     ctx,
@@ -2327,6 +2312,7 @@ rmw_connextdds_destroy_subscriber(
   rmw_context_impl_t * const ctx,
   rmw_subscription_t * const rmw_subscriber)
 {
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
   UNUSED_ARG(ctx);
 
   RMW_Connext_Subscriber * const rmw_sub_impl =
@@ -2718,7 +2704,7 @@ RMW_Connext_Client::create(
     [client_impl]()
     {
       if (RMW_RET_OK != client_impl->finalize()) {
-        RMW_CONNEXT_LOG_ERROR("failed to finalize client")
+        RMW_CONNEXT_LOG_ERROR("failed to finalize client on error")
       }
       delete client_impl;
     });
@@ -3078,6 +3064,9 @@ RMW_Connext_Service::create(
   auto scope_exit_svc_impl_delete = rcpputils::make_scope_exit(
     [svc_impl]()
     {
+      if (RMW_RET_OK != svc_impl->finalize()) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize service on error")
+      }
       delete svc_impl;
     });
 

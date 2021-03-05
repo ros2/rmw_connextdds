@@ -841,22 +841,18 @@ rmw_connextdds_delete_type_if_unused(
 }
 
 
-RMW_Connext_MessageTypeSupport *
+rmw_ret_t
 rmw_connextdds_register_type_support(
   rmw_context_impl_t * const ctx,
   const rosidl_message_type_support_t * const type_supports,
   DDS_DomainParticipant * const participant,
-  bool & registered,
   const RMW_Connext_MessageType message_type,
   const void * const intro_members,
   const bool intro_members_cpp,
   const char * const type_name)
 {
-  UNUSED_ARG(ctx);
   UNUSED_ARG(intro_members);
   UNUSED_ARG(intro_members_cpp);
-
-  registered = false;
 
   RMW_Connext_MessageTypeSupport * type_support = nullptr;
   try {
@@ -867,7 +863,7 @@ rmw_connextdds_register_type_support(
   }
 
   if (nullptr == type_support) {
-    return nullptr;
+    return RMW_RET_ERROR;
   }
 
   auto scope_exit_intf_delete_ts =
@@ -881,7 +877,7 @@ rmw_connextdds_register_type_support(
     new (std::nothrow) RMW_Connext_RtimeTypePluginI(type_support);
 
   if (nullptr == type_plugin_intf) {
-    return nullptr;
+    return RMW_RET_ERROR;
   }
 
   auto scope_exit_intf_delete =
@@ -892,6 +888,7 @@ rmw_connextdds_register_type_support(
     });
 
   DDS_TypePluginI * reg_intf = nullptr;
+  bool registered = false;
 
   if (RMW_RET_OK !=
     rmw_connextdds_assert_type(
@@ -901,17 +898,20 @@ rmw_connextdds_register_type_support(
       &reg_intf,
       registered))
   {
-    return nullptr;
+    return RMW_RET_ERROR;
   }
 
   if (registered) {
     scope_exit_intf_delete.cancel();
+    scope_exit_intf_delete_ts.cancel();
+    // Cache type support wrapper so that we may delete it later,
+    // after deregistration.
+    // TODO(asorbini) add assertion for (nullptr == ctx->registered_types[tname])
+    std::string tname = type_support->type_name();
+    ctx->registered_types[tname] = type_support;
   }
 
-  scope_exit_intf_delete_ts.cancel();
-
-  // This type support object must be freed by the caller (via delete)
-  return type_support;
+  return RMW_RET_OK;
 }
 
 rmw_ret_t
@@ -920,7 +920,8 @@ rmw_connextdds_unregister_type_support(
   DDS_DomainParticipant * const participant,
   const char * const type_name)
 {
-  UNUSED_ARG(ctx);
+  /* Cache type_name into a string, since may be deallocated */
+  std::string tname(type_name);
 
   DDS_TypePluginI * reg_intf = nullptr;
 
@@ -934,8 +935,11 @@ rmw_connextdds_unregister_type_support(
   if (nullptr != reg_intf) {
     RMW_Connext_RtimeTypePluginI * type_plugin_intf =
       reinterpret_cast<RMW_Connext_RtimeTypePluginI *>(reg_intf);
-
+    RMW_Connext_MessageTypeSupport * type_support =
+      ctx->registered_types[tname];
+    ctx->registered_types.erase(tname);
     delete type_plugin_intf;
+    delete type_support;
   }
 
   return RMW_RET_OK;

@@ -74,7 +74,7 @@ rmw_api_connextdds_trigger_guard_condition(
     RMW_CONNEXTDDS_ID,
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-  RMW_CONNEXT_LOG_DEBUG_A(
+  RMW_CONNEXT_LOG_TRACE_A(
     "triggering guard condition: %p",
     reinterpret_cast<void *>(guard_condition_handle->data))
 

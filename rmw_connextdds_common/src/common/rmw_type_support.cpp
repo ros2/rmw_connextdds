@@ -104,7 +104,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
   cdr_stream.setDDSCdrPlFlag(
     eprosima::fastcdr::Cdr::DDSCdrPlFlag::DDS_CDR_WITHOUT_PL);
 
-  RMW_CONNEXT_LOG_DEBUG_A(
+  RMW_CONNEXT_LOG_TRACE_A(
     "[type support] %s serialize: "
     "type.unbounded=%d, "
     "type.empty=%d, "
@@ -194,7 +194,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
     eprosima::fastcdr::Cdr::DEFAULT_ENDIAN,
     eprosima::fastcdr::Cdr::DDS_CDR);
 
-  RMW_CONNEXT_LOG_DEBUG_A(
+  RMW_CONNEXT_LOG_TRACE_A(
     "[type support] %s deserialize: "
     "sample=%p, "
     "type.unbounded=%d, "
@@ -304,7 +304,7 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
       serialized_size += RMW_GID_STORAGE_SIZE + sizeof(int64_t);
     }
 #endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
-    RMW_CONNEXT_LOG_DEBUG_A(
+    RMW_CONNEXT_LOG_TRACE_A(
       "[type support] %s serialized size_MAX: %u",
       this->type_name(), serialized_size)
   }
@@ -354,21 +354,51 @@ RMW_Connext_MessageTypeSupport::register_type_support(
   rmw_context_impl_t * const ctx,
   const rosidl_message_type_support_t * const type_supports,
   DDS_DomainParticipant * const participant,
-  bool & registered,
   const RMW_Connext_MessageType message_type,
   const void * const intro_members,
   const bool intro_members_cpp,
   std::string * const type_name)
 {
-  return rmw_connextdds_register_type_support(
+  RMW_Connext_MessageTypeSupport * type_support = nullptr;
+  try {
+    type_support = new RMW_Connext_MessageTypeSupport(
+      message_type,
+      type_supports,
+      (nullptr != type_name) ? type_name->c_str() : nullptr);
+  } catch (const std::exception & e) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to create type support: %s", e.what())
+  }
+
+  if (nullptr == type_support) {
+    return nullptr;
+  }
+
+  auto scope_exit_support_delete =
+    rcpputils::make_scope_exit(
+    [type_support]()
+    {
+      delete type_support;
+    });
+
+  rmw_ret_t rc = rmw_connextdds_register_type_support(
     ctx,
     type_supports,
     participant,
-    registered,
     message_type,
     intro_members,
     intro_members_cpp,
-    (nullptr != type_name) ? type_name->c_str() : nullptr);
+    type_support->type_name());
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR_A(
+      "failed to register type support: %s",
+      type_support->type_name())
+    return nullptr;
+  }
+
+  scope_exit_support_delete.cancel();
+
+  // This type support object must be freed by the caller (via delete)
+  return type_support;
 }
 
 rmw_ret_t
@@ -377,8 +407,7 @@ RMW_Connext_MessageTypeSupport::unregister_type_support(
   DDS_DomainParticipant * const participant,
   const char * const type_name)
 {
-  return rmw_connextdds_unregister_type_support(
-    ctx, participant, type_name);
+  return rmw_connextdds_unregister_type_support(ctx, participant, type_name);
 }
 
 void RMW_Connext_MessageTypeSupport::type_info(

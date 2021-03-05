@@ -910,3 +910,24 @@ rmw_wait(
   return rmw_api_connextdds_wait(
     subs, gcs, srvs, cls, evs, wait_set, wait_timeout);
 }
+
+/******************************************************************************
+ * QoS Profile functions
+ ******************************************************************************/
+#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
+rmw_ret_t
+rmw_qos_profile_check_compatible(
+  const rmw_qos_profile_t publisher_profile,
+  const rmw_qos_profile_t subscription_profile,
+  rmw_qos_compatibility_type_t * compatibility,
+  char * reason,
+  size_t reason_size)
+{
+  return rmw_api_connextdds_qos_profile_check_compatible(
+    publisher_profile,
+    subscription_profile,
+    compatibility,
+    reason,
+    reason_size);
+}
+#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */

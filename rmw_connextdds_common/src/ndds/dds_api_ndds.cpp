@@ -118,7 +118,7 @@ rmw_connextdds_initialize_participant_qos_impl(
       DDS_BOOLEAN_FALSE /* propagate */))
   {
     RMW_CONNEXT_LOG_ERROR_SET(
-      "failed to assert property on participant: %s",
+      "failed to assert property on participant: "
       "dds.transport.UDPv4.builtin.ignore_loopback_interface")
     return RMW_RET_ERROR;
   }

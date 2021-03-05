@@ -1878,16 +1878,13 @@ void
 rmw_connextdds_ih_to_gid(
   const DDS_InstanceHandle_t & ih, rmw_gid_t & gid)
 {
-  RTPS_Guid guid = RTPS_GUID_UNKNOWN;
-  DDS_InstanceHandle_to_rtps(&guid, &ih);
-
   static_assert(
-    RMW_GID_STORAGE_SIZE >= sizeof(guid),
+    RMW_GID_STORAGE_SIZE >= 16,
     "rmw_gid_t type too small for an RTI Connext DDS Micro GUID");
 
   memset(&gid, 0, sizeof(gid));
   gid.implementation_identifier = RMW_CONNEXTDDS_ID;
-  memcpy(&gid.data, &guid, sizeof(guid));
+  memcpy(gid.data, ih.octet, 16);
 }
 
 static

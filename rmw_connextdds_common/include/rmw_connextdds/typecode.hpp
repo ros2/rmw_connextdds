@@ -21,6 +21,7 @@ DDS_SEQUENCE(RMW_Connext_TypeCodePtrSeq, DDS_TypeCode *);
 
 DDS_TypeCode *
 rmw_connextdds_create_typecode(
+  RMW_Connext_MessageTypeSupport * const type_support,
   const rosidl_message_type_support_t * const type_supports,
   const char * const type_name,
   const void * const intro_members = nullptr,

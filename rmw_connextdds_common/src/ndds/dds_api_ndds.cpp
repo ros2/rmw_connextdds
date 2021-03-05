@@ -186,25 +186,27 @@ rmw_connextdds_initialize_participant_qos_impl(
     RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC;
 
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
-  // Apply Optimization.Discovery.Endpoint.Fast:
-  //
-  // QoS Snippet to optimize Endpoint Discovery to be faster. This
-  // is useful when using security, to prevent a noticeable delay.
-  //
-  // Modified QoS Parameters:
-  //     participant_qos.discovery_config.publication_writer
-  //     participant_qos.discovery_config.subscription_writer
-  dp_qos->discovery_config.publication_writer.fast_heartbeat_period.sec = 0;
-  dp_qos->discovery_config.publication_writer.fast_heartbeat_period.nanosec = 100000000;
-  dp_qos->discovery_config.publication_writer.late_joiner_heartbeat_period.sec = 0;
-  dp_qos->discovery_config.publication_writer.late_joiner_heartbeat_period.nanosec = 100000000;
-  dp_qos->discovery_config.publication_writer.max_heartbeat_retries = 300;
+  if (ctx->fast_endp_discovery) {
+    // Apply Optimization.Discovery.Endpoint.Fast:
+    //
+    // QoS Snippet to optimize Endpoint Discovery to be faster. This
+    // is useful when using security, to prevent a noticeable delay.
+    //
+    // Modified QoS Parameters:
+    //     participant_qos.discovery_config.publication_writer
+    //     participant_qos.discovery_config.subscription_writer
+    dp_qos->discovery_config.publication_writer.fast_heartbeat_period.sec = 0;
+    dp_qos->discovery_config.publication_writer.fast_heartbeat_period.nanosec = 100000000;
+    dp_qos->discovery_config.publication_writer.late_joiner_heartbeat_period.sec = 0;
+    dp_qos->discovery_config.publication_writer.late_joiner_heartbeat_period.nanosec = 100000000;
+    dp_qos->discovery_config.publication_writer.max_heartbeat_retries = 300;
 
-  dp_qos->discovery_config.subscription_writer.fast_heartbeat_period.sec = 0;
-  dp_qos->discovery_config.subscription_writer.fast_heartbeat_period.nanosec = 100000000;
-  dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.sec = 0;
-  dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.nanosec = 100000000;
-  dp_qos->discovery_config.subscription_writer.max_heartbeat_retries = 300;
+    dp_qos->discovery_config.subscription_writer.fast_heartbeat_period.sec = 0;
+    dp_qos->discovery_config.subscription_writer.fast_heartbeat_period.nanosec = 100000000;
+    dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.sec = 0;
+    dp_qos->discovery_config.subscription_writer.late_joiner_heartbeat_period.nanosec = 100000000;
+    dp_qos->discovery_config.subscription_writer.max_heartbeat_retries = 300;
+  }
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
   return RMW_RET_OK;
@@ -496,8 +498,10 @@ rmw_connextdds_write_message(
   RMW_Connext_Message * const message,
   int64_t * const sn_out)
 {
-#if !RMW_CONNEXT_EMULATE_REQUESTREPLY
-  if (pub->message_type_support()->type_requestreply()) {
+  if (pub->message_type_support()->type_requestreply() &&
+    pub->message_type_support()->ctx()->request_reply_mapping ==
+    RMW_Connext_RequestReplyMapping::Extended)
+  {
     const RMW_Connext_RequestReplyMessage * const rr_msg =
       reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(message->user_data);
     DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
@@ -543,9 +547,6 @@ rmw_connextdds_write_message(
 
     return RMW_RET_OK;
   }
-#else
-  UNUSED_ARG(sn_out);
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
 
   if (DDS_RETCODE_OK !=
     DDS_DataWriter_write_untypedI(
@@ -638,8 +639,6 @@ rmw_connextdds_filter_sample(
   const DDS_InstanceHandle_t * const request_writer_handle,
   bool * const accepted)
 {
-  UNUSED_ARG(sub);
-  UNUSED_ARG(sample);
   UNUSED_ARG(info);
 
   *accepted = true;
@@ -658,17 +657,45 @@ rmw_connextdds_filter_sample(
   }
 
   if (nullptr != request_writer_handle) {
+    if (!sub->message_type_support()->type_requestreply()) {
+      return RMW_RET_ERROR;
+    }
+
+    const RMW_Connext_RequestReplyMessage * const rr_msg =
+      reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(sample);
     DDS_SampleIdentity_t related_sample_identity;
-    DDS_SampleInfo_get_related_sample_identity(
-      info, &related_sample_identity);
+
+    switch (sub->message_type_support()->ctx()->request_reply_mapping) {
+      case RMW_Connext_RequestReplyMapping::Extended:
+        {
+          DDS_SampleInfo_get_related_sample_identity(
+            info, &related_sample_identity);
+          break;
+        }
+      case RMW_Connext_RequestReplyMapping::Basic:
+        {
+          rmw_connextdds_gid_to_guid(
+            rr_msg->gid, related_sample_identity.writer_guid);
+          break;
+        }
+      default:
+        return RMW_RET_ERROR;
+    }
 
     // Convert instance handle to guid
     DDS_GUID_t writer_guid = DDS_GUID_DEFAULT;
     memcpy(writer_guid.value, request_writer_handle->keyHash.value, MIG_RTPS_KEY_HASH_MAX_LENGTH);
 
-    *accepted =
-      (DDS_GUID_compare(
-        &writer_guid, &related_sample_identity.writer_guid) == 0);
+    if (sub->message_type_support()->ctx()->cyclone_compatible) {
+      // Compare only the 8 MSB from writer_guid
+      *accepted = (memcmp(
+          static_cast<void *>(writer_guid.value + 8),
+          static_cast<void *>(related_sample_identity.writer_guid.value + 8), 8) == 0);
+    } else {
+      *accepted =
+        (DDS_GUID_compare(
+          &writer_guid, &related_sample_identity.writer_guid) == 0);
+    }
   }
 
   return RMW_RET_OK;

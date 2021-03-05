@@ -64,9 +64,11 @@ endfunction()
 # rti_load_rtimehome()
 ################################################################################
 function(rti_load_rtimehome)
+    set(RTIMEHOME_USER  false)
     if(NOT DEFINED RTIMEHOME)
         if(NOT "$ENV{RTIMEHOME}" STREQUAL "")
-            set(RTIMEHOME       "$ENV{RTIMEHOME}")
+            file(TO_CMAKE_PATH "$ENV{RTIMEHOME}" RTIMEHOME)
+            set(RTIMEHOME_USER  true)
         else()
             rti_load_connextddsdir()
 
@@ -76,6 +78,8 @@ function(rti_load_rtimehome)
                     RTIMEHOME)
             endif()
         endif()
+    else()
+      set(RTIMEHOME_USER  true)
     endif()
 
     if("${RTIMEHOME}" STREQUAL "" OR
@@ -103,6 +107,7 @@ function(rti_load_rtimehome)
 
     set(RTIMEHOME "${RTIMEHOME}" PARENT_SCOPE)
     set(RTIMEHOME_FOUND "${RTIMEHOME_FOUND}" PARENT_SCOPE)
+    set(RTIMEHOME_USER  "${RTIMEHOME_USER}" PARENT_SCOPE)
     set(RTIME_VERSION "${RTIME_VERSION}" PARENT_SCOPE)
 endfunction()
 
@@ -114,6 +119,7 @@ function(rti_build_connextmicro)
     list(FIND extra_components "security_plugins" component_security)
 
     set(RTIMEHOME_FOUND false PARENT_SCOPE)
+    set(RTIMEHOME_USER false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND false PARENT_SCOPE)
     set(RTIME_TARGETS "" PARENT_SCOPE)
 
@@ -185,6 +191,7 @@ function(rti_build_connextmicro)
 
     set(RTIME_TARGETS ${RTIME_TARGETS} PARENT_SCOPE)
     set(RTIMEHOME_FOUND true PARENT_SCOPE)
+    set(RTIMEHOME_USER ${RTIMEHOME_USER} PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND true PARENT_SCOPE)
     # Re-export RTIME_TARGET_NAME and RTIMEHOME in case they were
     # automatically detected.
@@ -225,6 +232,7 @@ function(rti_find_connextmicro)
     set(extra_components ${ARGN})
 
     set(RTIMEHOME_FOUND             false PARENT_SCOPE)
+    set(RTIMEHOME_USER              false PARENT_SCOPE)
     set(RTIConnextDDSMicro_FOUND    false PARENT_SCOPE)
     set(RTIME_TARGETS               "" PARENT_SCOPE)
 
@@ -247,8 +255,15 @@ function(rti_find_connextmicro)
 
     rti_load_rtimehome()
 
+    set(RTIMEHOME_USER              ${RTIMEHOME_USER} PARENT_SCOPE)
+
     if(NOT RTIMEHOME_FOUND)
         message(STATUS "RTIMEHOME not found")
+        if(RTIMEHOME_USER)
+          message(WARNING
+            "Invalid RTIMEHOME specified. "
+            "RTI Connext DDS Micro will not be available: '${RTIMEHOME}'")
+        endif()
         return()
     endif()
 
@@ -362,7 +377,7 @@ function(rti_load_connextddsdir)
             file(TO_CMAKE_PATH "$ENV{NDDSHOME}" connextdds_dir)
         endif()
         if("${connextdds_dir}" STREQUAL "")
-            message(WARNING "no CONNEXTDDS_DIR or NDDSHOME specified")
+            message(WARNING "no CONNEXTDDS_DIR nor NDDSHOME specified")
         endif()
         set(CONNEXTDDS_DIR "${connextdds_dir}")
     endif()
@@ -383,6 +398,149 @@ function(rti_load_connextddsdir)
 endfunction()
 
 ################################################################################
+# rti_guess_connextdds_arch()
+# This function is copied from FindRTIConnextDDS.cmake@6.0.1 and it is used
+# to avoid a bug (particularly on macOS) present in older versions of Connext
+# (e.g. 5.3.1) when there are hidden files in `${CONNEXTDDS_DIR}/lib`
+# (e.g. ".DS_Store").
+################################################################################
+function(rti_guess_connextdds_arch)
+  if(ENV{CONNEXTDDS_ARCH})
+    set(CONNEXTDDS_ARCH $ENV{CONNEXTDDS_ARCH} PARENT_SCOPE)
+    return()
+  endif()
+
+  message(STATUS "CONNEXTDDS_ARCH not provided, trying to guess it...")
+
+  # Guess the RTI Connext DDS architecture
+
+  if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+    string(REGEX REPLACE "^([0-9]+).*$" "\\1"
+        major_version
+        ${CMAKE_CXX_COMPILER_VERSION})
+    set(version_compiler "${major_version}.0")
+
+    string(REGEX REPLACE "^([0-9]+)\\.([0-9]+).*$" "\\1"
+        kernel_version "${CMAKE_SYSTEM_VERSION}")
+
+    set(guessed_architecture
+        "x64Darwin${kernel_version}${version_compiler}")
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86")
+      set(connextdds_host_arch "i86Win32")
+    elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "AMD64")
+      set(connextdds_host_arch "x64Win64")
+    else()
+      message(FATAL_ERROR
+        "${CMAKE_HOST_SYSTEM} is not supported as host architecture")
+    endif()
+
+    string(REGEX MATCH "[0-9][0-9][0-9][0-9]"
+      vs_year
+      "${CMAKE_GENERATOR}")
+
+    set(guessed_architecture "${connextdds_host_arch}VS${vs_year}")
+  elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+    if(CMAKE_COMPILER_VERSION VERSION_EQUAL "4.6.3")
+      set(kernel_version "3.x")
+    else()
+      string(REGEX REPLACE "^([0-9]+)\\.([0-9]+).*$" "\\1"
+        kernel_version
+        "${CMAKE_SYSTEM_VERSION}")
+    endif()
+
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+      set(connextdds_host_arch "x64Linux")
+    elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "i686")
+      set(connextdds_host_arch "i86Linux")
+    endif()
+
+    set(guessed_architecture
+      "${connextdds_host_arch}${kernel_version}gcc${CMAKE_C_COMPILER_VERSION}")
+  endif()
+
+  if(EXISTS "${CONNEXTDDS_DIR}/lib/${guessed_architecture}")
+    set(CONNEXTDDS_ARCH "${guessed_architecture}")
+    message(STATUS "Guessed ${CONNEXTDDS_DIR}/lib/${guessed_architecture} exists")
+  else()
+    # If CONNEXTDDS_ARCH is unspecified, the module tries uses the first
+    # architecture installed by looking under $CONNEXTDDS_DIR/lib that matches
+    # the detected host architecture
+    file(GLOB architectures_installed
+    RELATIVE "${CONNEXTDDS_DIR}/lib"
+    "${CONNEXTDDS_DIR}/lib/*")
+
+    message(STATUS "Guessed CONNEXTDDS_ARCH ('${guessed_architecture}') not available.")
+    message(STATUS "Pick first from ${CONNEXTDDS_DIR}/lib/[${architectures_installed}]")
+
+    foreach(architecture_name ${architectures_installed})
+      # Because the lib folder contains both target libraries and
+      # Java JAR files, here we exclude the "java" in our algorithm
+      # to guess the appropriate CONNEXTDDS_ARCH variable.
+      # We also exclude any file that doesn't start with a character or number
+      # since they are unlikely to be architecture names.
+      if(architecture_name STREQUAL "java" OR
+        NOT architecture_name MATCHES "[a-zA-Z0-9].*"
+      )
+        message(STATUS "ignored: ${architecture_name}")
+        continue()
+      elseif(architecture_name MATCHES ${CMAKE_HOST_SYSTEM_NAME} OR
+        (CMAKE_HOST_SYSTEM_NAME MATCHES "Windows" AND architecture_name MATCHES "Win")
+      )
+        if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+          # Get the installed Darwin
+          set(CONNEXTDDS_ARCH "${architecture_name}")
+        elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+          if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86" AND
+            "${architecture_name}" MATCHES "Win32")
+            # Get the x86Win32 architecture
+            set(CONNEXTDDS_ARCH "${architecture_name}")
+          elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "AMD64" AND
+            "${architecture_name}" MATCHES "Win64")
+            # Get the x64Win64 architecture
+            set(CONNEXTDDS_ARCH "${architecture_name}")
+          endif()
+        elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+          if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "i686" AND
+            "${architecture_name}" MATCHES "x86Linux")
+            # Get the x86Linux architecture
+            set(CONNEXTDDS_ARCH "${architecture_name}")
+          elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64" AND
+            "${architecture_name}" MATCHES "x64Linux")
+            # Get the x64Linux architecture
+            set(CONNEXTDDS_ARCH "${architecture_name}")
+          endif()
+        endif()
+        if(NOT CONNEXTDDS_ARCH)
+          message(STATUS "unsupported CMAKE_HOST_SYSTEM_NAME (${CMAKE_HOST_SYSTEM_NAME}) "
+            "or CMAKE_HOST_SYSTEM_PROCESSOR (${CMAKE_HOST_SYSTEM_PROCESSOR}). "
+            "Using architecture ${architecture_name} anyway.")
+          set(CONNEXTDDS_ARCH "${architecture_name}")
+        endif()
+      else()
+        message(STATUS "ignored foreign architecture: ${architecture_name}")
+      endif()
+
+      if(CONNEXTDDS_ARCH)
+        break()
+      endif()
+    endforeach()
+  endif()
+
+  if(NOT CONNEXTDDS_ARCH)
+    message(WARNING
+      "CONNEXTDDS_ARCH not specified. Please set "
+      "-DCONNEXTDDS_ARCH= to specify your RTI Connext DDS "
+      " architecture")
+  else()
+      message(STATUS "Selected CONNEXTDDS_ARCH: ${CONNEXTDDS_ARCH}")
+  endif()
+
+
+  set(CONNEXTDDS_ARCH "${CONNEXTDDS_ARCH}" PARENT_SCOPE)
+endfunction()
+
+################################################################################
 # rti_find_connextpro()
 ################################################################################
 function(rti_find_connextpro)
@@ -393,6 +551,12 @@ function(rti_find_connextpro)
     if(NOT CONNEXTDDS_DIR_FOUND)
         set(RTIConnextDDS_FOUND false)
     else()
+        # TODO(asorbini) Remove guessing logic after support for older Connext
+        # (< 6.x) is dropped.
+        if(NOT CONNEXTDDS_ARCH)
+          rti_guess_connextdds_arch()
+        endif()
+
         list(APPEND CMAKE_MODULE_PATH
             "${CONNEXTDDS_DIR}/resource/cmake")
         set(BUILD_SHARED_LIBS true)

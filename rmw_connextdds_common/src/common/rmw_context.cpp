@@ -801,7 +801,8 @@ rmw_api_connextdds_init(
 
   ctx->qos_library = qos_library;
 
-  /* Lookup name of custom QoS library */
+  // All publishers will use asynchronous publish mode if
+  // RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE is empty.
   const char * do_not_override_publish_mode_env = nullptr;
   lookup_rc = rcutils_get_env(
     RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE, &do_not_override_publish_mode_env);
@@ -815,10 +816,98 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-
-  // All publishers will use asynchronous publish mode if
-  // RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE is empty.
   ctx->override_publish_mode = '\0' == do_not_override_publish_mode_env[0];
+
+  // Check if we should run in "compatibility mode" with Cyclone DDS.
+  const char * cyclone_compatible_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_CYCLONE_COMPATIBILITY_MODE, &cyclone_compatible_env);
+
+  if (nullptr != lookup_rc || nullptr == cyclone_compatible_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_CYCLONE_COMPATIBILITY_MODE,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+  ctx->cyclone_compatible = '\0' != cyclone_compatible_env[0];
+
+#if !RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC
+  // Check if we should use the "basic" mapping profile for Request/Reply
+  // endpoints in order to interoperate with Micro, and Cyclone DDS.
+  // If "compatibility mode" with Cyclone is enabled, then we always use
+  // the "basic" profile.
+  if (ctx->cyclone_compatible) {
+    ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
+  } else {
+    const char * request_reply_mapping_env = nullptr;
+    lookup_rc = rcutils_get_env(
+      RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING, &request_reply_mapping_env);
+
+    if (nullptr != lookup_rc || nullptr == request_reply_mapping_env) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to lookup from environment: "
+        "var=%s, "
+        "rc=%s ",
+        RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING,
+        lookup_rc)
+      return RMW_RET_ERROR;
+    }
+    if ('\0' == request_reply_mapping_env[0] ||
+      strncmp("extended", request_reply_mapping_env, 5) == 0)
+    {
+      ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
+    } else if (strncmp("basic", request_reply_mapping_env, 5) == 0) {
+      ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
+    } else {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "invalid value for %s: '%s'. Use one of: basic, extended.",
+        RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING, request_reply_mapping_env)
+      return RMW_RET_ERROR;
+    }
+  }
+#else
+  ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
+#endif /* RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC */
+
+#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+  // Check if we should run in "compatibility mode" with the old RMW for Connext
+  const char * old_rmw_compatible_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE, &old_rmw_compatible_env);
+
+  if (nullptr != lookup_rc || nullptr == old_rmw_compatible_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+  ctx->old_rmw_compatible = '\0' != old_rmw_compatible_env[0];
+#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
+
+#if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
+  // Check if we should disable modifying the DomainParticipantQos to enable
+  // faster endpoint discovery (but also increase discovery traffic).
+  const char * fast_endp_discovery_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY, &fast_endp_discovery_env);
+
+  if (nullptr != lookup_rc || nullptr == fast_endp_discovery_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+  ctx->fast_endp_discovery = '\0' != fast_endp_discovery_env[0];
+#endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")

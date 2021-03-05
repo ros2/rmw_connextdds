@@ -17,6 +17,7 @@
 #include "rmw_connextdds/typecode.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
 
+
 static RTIBool
 RMW_Connext_TypeCodePtr_initialize_w_params(
   DDS_TypeCode ** self,
@@ -123,6 +124,7 @@ RMW_Connext_TypeCodePtrSeq_append(
 static
 DDS_TypeCode *
 RMW_Connext_TypeCodePtrSeq_assert_from_ros(
+  RMW_Connext_MessageTypeSupport * const type_support,
   struct RMW_Connext_TypeCodePtrSeq * const self,
   const rosidl_message_type_support_t * const type_supports,
   const char * const type_name,
@@ -147,6 +149,7 @@ RMW_Connext_TypeCodePtrSeq_assert_from_ros(
     tc = dds_tc;
   } else {
     tc = rmw_connextdds_create_typecode(
+      type_support,
       type_supports,
       type_name,
       nullptr /* intro_members */,
@@ -186,7 +189,503 @@ RMW_Connext_TypeCodePtrSeq_finalize_elements(
   }
 }
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
+/******************************************************************************
+ * Static TypeCodes for the Request/Reply header with "basic" mapping.
+ ******************************************************************************/
+static DDS_TypeCode *
+GUID_get_typecode(
+  DDS_TypeCodeFactory * const tc_factory,
+  struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
+{
+  DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
+
+  struct DDS_UnsignedLongSeq tc_octet_array_dimensions = DDS_SEQUENCE_INITIALIZER;
+  if (!DDS_UnsignedLongSeq_ensure_length(&tc_octet_array_dimensions, 1, 1)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize dimensions sequence")
+    return nullptr;
+  }
+  struct DDS_UnsignedLongSeq * const tc_octet_array_dimensions_ptr =
+    &tc_octet_array_dimensions;
+  *DDS_UnsignedLongSeq_get_reference(&tc_octet_array_dimensions, 0) = 16;
+  auto scope_exit_tc_octet_array_dim = rcpputils::make_scope_exit(
+    [tc_octet_array_dimensions_ptr]()
+    {
+      if (!DDS_UnsignedLongSeq_finalize(tc_octet_array_dimensions_ptr)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize dimensions sequence")
+      }
+    });
+
+  DDS_TypeCode * const tc_octet_array =
+    DDS_TypeCodeFactory_create_array_tc(
+    tc_factory, &tc_octet_array_dimensions, &DDS_g_tc_octet, &ex);
+  if (nullptr == tc_octet_array || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for octet array: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_octet_array = rcpputils::make_scope_exit(
+    [tc_factory, tc_octet_array]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_octet_array, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for octet array: %d", fex)
+      }
+    });
+
+  struct DDS_StructMemberSeq tc_guid_members = DDS_SEQUENCE_INITIALIZER;
+  if (!DDS_StructMemberSeq_ensure_length(&tc_guid_members, 1, 1)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to DDS_GUID_t members sequence")
+    return nullptr;
+  }
+  struct DDS_StructMemberSeq * const tc_guid_members_ptr = &tc_guid_members;
+  auto scope_exit_tc_guid_members = rcpputils::make_scope_exit(
+    [tc_guid_members_ptr]()
+    {
+      if (!DDS_StructMemberSeq_finalize(tc_guid_members_ptr)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize DDS_GUID_t members sequence")
+      }
+    });
+  DDS_StructMember * tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_guid_members, 0);
+  tc_member->name = DDS_String_dup("value");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_octet_array;
+
+  DDS_TypeCode * const tc_guid =
+    DDS_TypeCodeFactory_create_struct_tc(
+    tc_factory, "DDS_GUID_t", &tc_guid_members, &ex);
+  if (nullptr == tc_guid || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for DDS_GUID_t: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_guid = rcpputils::make_scope_exit(
+    [tc_factory, tc_guid]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_guid, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for DDS_GUID_t: %d", fex)
+      }
+    });
+
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_octet_array)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_octet_array")
+    return nullptr;
+  }
+  scope_exit_tc_octet_array.cancel();
+
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_guid)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_guid")
+    return nullptr;
+  }
+  scope_exit_tc_guid.cancel();
+
+  return tc_guid;
+}
+
+static DDS_TypeCode *
+SequenceNumber_get_typecode(
+  DDS_TypeCodeFactory * const tc_factory,
+  struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
+{
+  DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
+
+  struct DDS_StructMemberSeq tc_sn_members = DDS_SEQUENCE_INITIALIZER;
+  if (!DDS_StructMemberSeq_ensure_length(&tc_sn_members, 2, 2)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize DDS_SequenceNumber_t members sequence")
+    return nullptr;
+  }
+  struct DDS_StructMemberSeq * const tc_sn_members_ptr = &tc_sn_members;
+  auto scope_exit_tc_sn_members = rcpputils::make_scope_exit(
+    [tc_sn_members_ptr]()
+    {
+      if (!DDS_StructMemberSeq_finalize(tc_sn_members_ptr)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize DDS_SequenceNumber_t members sequence")
+      }
+    });
+
+  DDS_StructMember * tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_sn_members, 0);
+  tc_member->name = DDS_String_dup("high");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = &DDS_g_tc_long;
+
+  tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_sn_members, 1);
+  tc_member->name = DDS_String_dup("low");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = &DDS_g_tc_ulong;
+
+  DDS_TypeCode * const tc_sn =
+    DDS_TypeCodeFactory_create_struct_tc(
+    tc_factory, "DDS_SequenceNumber_t", &tc_sn_members, &ex);
+  if (nullptr == tc_sn || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for DDS_SequenceNumber_t: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_sn = rcpputils::make_scope_exit(
+    [tc_factory, tc_sn]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_sn, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for DDS_SequenceNumber_t: %d", fex)
+      }
+    });
+
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_sn)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_sn")
+    return nullptr;
+  }
+  scope_exit_tc_sn.cancel();
+
+  return tc_sn;
+}
+
+static DDS_TypeCode *
+SampleIdentity_get_typecode(
+  DDS_TypeCodeFactory * const tc_factory,
+  struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
+{
+  DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
+
+  DDS_TypeCode * const tc_guid = GUID_get_typecode(tc_factory, tc_cache);
+  if (nullptr == tc_guid) {
+    RMW_CONNEXT_LOG_ERROR("failed to get nested typecode")
+    return nullptr;
+  }
+  DDS_TypeCode * const tc_sn = SequenceNumber_get_typecode(tc_factory, tc_cache);
+  if (nullptr == tc_sn) {
+    RMW_CONNEXT_LOG_ERROR("failed to get nested typecode")
+    return nullptr;
+  }
+
+  struct DDS_StructMemberSeq tc_sampleid_members = DDS_SEQUENCE_INITIALIZER;
+  if (!DDS_StructMemberSeq_ensure_length(&tc_sampleid_members, 2, 2)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize DDS_SampleIdentity_t members sequence")
+    return nullptr;
+  }
+  struct DDS_StructMemberSeq * const tc_sampleid_members_ptr = &tc_sampleid_members;
+  auto scope_exit_tc_sampleid_members = rcpputils::make_scope_exit(
+    [tc_sampleid_members_ptr]()
+    {
+      if (!DDS_StructMemberSeq_finalize(tc_sampleid_members_ptr)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize DDS_SampleIdentity_t members sequence")
+      }
+    });
+
+  DDS_StructMember * tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_sampleid_members, 0);
+  tc_member->name = DDS_String_dup("writer_guid");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_guid;
+
+  tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_sampleid_members, 1);
+  tc_member->name = DDS_String_dup("sequence_number");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_sn;
+
+  DDS_TypeCode * const tc_sampleid =
+    DDS_TypeCodeFactory_create_struct_tc(
+    tc_factory, "DDS_SampleIdentity_t", &tc_sampleid_members, &ex);
+  if (nullptr == tc_sampleid || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for DDS_SampleIdentity_t: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_sampleid = rcpputils::make_scope_exit(
+    [tc_factory, tc_sampleid]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_sampleid, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for DDS_SampleIdentity_t: %d", fex)
+      }
+    });
+
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_sampleid)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_sampleid")
+    return nullptr;
+  }
+  scope_exit_tc_sampleid.cancel();
+
+  return tc_sampleid;
+}
+
+static DDS_TypeCode *
+RequestHeader_get_typecode(
+  DDS_TypeCodeFactory * const tc_factory,
+  struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
+{
+  DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
+
+  DDS_TypeCode * const tc_sampleid = SampleIdentity_get_typecode(tc_factory, tc_cache);
+  if (nullptr == tc_sampleid) {
+    RMW_CONNEXT_LOG_ERROR("failed to get nested typecode")
+    return nullptr;
+  }
+
+  DDS_TypeCode * const tc_instancename = DDS_TypeCodeFactory_create_string_tc(
+    tc_factory, 255, &ex);
+  if (nullptr == tc_instancename || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for InstanceName: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_instancename = rcpputils::make_scope_exit(
+    [tc_factory, tc_instancename]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_instancename, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for InstanceName: %d", fex)
+      }
+    });
+
+  struct DDS_StructMemberSeq tc_reqheader_members = DDS_SEQUENCE_INITIALIZER;
+  if (!DDS_StructMemberSeq_ensure_length(&tc_reqheader_members, 2, 2)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize RequestHeader members sequence")
+    return nullptr;
+  }
+  struct DDS_StructMemberSeq * const tc_reqheader_members_ptr = &tc_reqheader_members;
+  auto scope_exit_tc_reqheader_members = rcpputils::make_scope_exit(
+    [tc_reqheader_members_ptr]()
+    {
+      if (!DDS_StructMemberSeq_finalize(tc_reqheader_members_ptr)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize RequestHeader members sequence")
+      }
+    });
+
+  DDS_StructMember * tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_reqheader_members, 0);
+  tc_member->name = DDS_String_dup("requestId");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_sampleid;
+
+  tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_reqheader_members, 1);
+  tc_member->name = DDS_String_dup("instanceName");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_instancename;
+
+  DDS_TypeCode * const tc_reqheader =
+    DDS_TypeCodeFactory_create_struct_tc(
+    tc_factory, "RequestHeader", &tc_reqheader_members, &ex);
+  if (nullptr == tc_reqheader || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for RequestHeader: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_reqheader = rcpputils::make_scope_exit(
+    [tc_factory, tc_reqheader]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_reqheader, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for RequestHeader: %d", fex)
+      }
+    });
+
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_instancename)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_instancename")
+    return nullptr;
+  }
+  scope_exit_tc_instancename.cancel();
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_reqheader)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_reqheader")
+    return nullptr;
+  }
+  scope_exit_tc_reqheader.cancel();
+
+  return tc_reqheader;
+}
+
+static DDS_TypeCode *
+ReplyHeader_get_typecode(
+  DDS_TypeCodeFactory * const tc_factory,
+  struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
+{
+  DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
+
+  DDS_TypeCode * const tc_sampleid = SampleIdentity_get_typecode(tc_factory, tc_cache);
+  if (nullptr == tc_sampleid) {
+    RMW_CONNEXT_LOG_ERROR("failed to get nested typecode")
+    return nullptr;
+  }
+
+  struct DDS_StructMemberSeq tc_repheader_members = DDS_SEQUENCE_INITIALIZER;
+  if (!DDS_StructMemberSeq_ensure_length(&tc_repheader_members, 2, 2)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize ReplyHeader members sequence")
+    return nullptr;
+  }
+  struct DDS_StructMemberSeq * const tc_repheader_members_ptr = &tc_repheader_members;
+  auto scope_exit_tc_repheader_members = rcpputils::make_scope_exit(
+    [tc_repheader_members_ptr]()
+    {
+      if (!DDS_StructMemberSeq_finalize(tc_repheader_members_ptr)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize ReplyHeader members sequence")
+      }
+    });
+
+  DDS_StructMember * tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_repheader_members, 0);
+  tc_member->name = DDS_String_dup("relatedRequest");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_sampleid;
+
+  tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_repheader_members, 1);
+  tc_member->name = DDS_String_dup("remoteEx");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = &DDS_g_tc_long;
+
+  DDS_TypeCode * const tc_repheader =
+    DDS_TypeCodeFactory_create_struct_tc(
+    tc_factory, "ReplyHeader", &tc_repheader_members, &ex);
+  if (nullptr == tc_repheader || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for ReplyHeader: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_repheader = rcpputils::make_scope_exit(
+    [tc_factory, tc_repheader]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_repheader, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for ReplyHeader: %d", fex)
+      }
+    });
+
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_repheader)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_repheader")
+    return nullptr;
+  }
+  scope_exit_tc_repheader.cancel();
+
+  return tc_repheader;
+}
+
+
+static DDS_TypeCode *
+CycloneRequestHeader_get_typecode(
+  DDS_TypeCodeFactory * const tc_factory,
+  struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
+{
+  DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
+
+  struct DDS_StructMemberSeq tc_cycloneheader_members = DDS_SEQUENCE_INITIALIZER;
+  if (!DDS_StructMemberSeq_ensure_length(&tc_cycloneheader_members, 2, 2)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize CycloneRequestHeader members sequence")
+    return nullptr;
+  }
+  struct DDS_StructMemberSeq * const tc_cycloneheader_members_ptr = &tc_cycloneheader_members;
+  auto scope_exit_tc_cycloneheader_members = rcpputils::make_scope_exit(
+    [tc_cycloneheader_members_ptr]()
+    {
+      if (!DDS_StructMemberSeq_finalize(tc_cycloneheader_members_ptr)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize CycloneRequestHeader members sequence")
+      }
+    });
+
+  const DDS_TypeCode * const tc_longlong =
+    DDS_TypeCodeFactory_get_primitive_tc(tc_factory, DDS_TK_LONGLONG);
+  if (nullptr == tc_longlong) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to look up longlong typecode")
+    return nullptr;
+  }
+  const DDS_TypeCode * const tc_ulonglong =
+    DDS_TypeCodeFactory_get_primitive_tc(tc_factory, DDS_TK_ULONGLONG);
+  if (nullptr == tc_ulonglong) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to look up ulonglong typecode")
+    return nullptr;
+  }
+
+  DDS_StructMember * tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_cycloneheader_members, 0);
+  tc_member->name = DDS_String_dup("guid");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_longlong;
+
+  tc_member =
+    DDS_StructMemberSeq_get_reference(&tc_cycloneheader_members, 1);
+  tc_member->name = DDS_String_dup("seq");
+  if (nullptr == tc_member->name) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+    return nullptr;
+  }
+  tc_member->type = tc_ulonglong;
+
+  DDS_TypeCode * const tc_cycloneheader =
+    DDS_TypeCodeFactory_create_struct_tc(
+    tc_factory, "ReplyHeader", &tc_cycloneheader_members, &ex);
+  if (nullptr == tc_cycloneheader || DDS_NO_EXCEPTION_CODE != ex) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to create TypeCode for CycloneRequestHeader: %d", ex)
+    return nullptr;
+  }
+  auto scope_exit_tc_cycloneheader = rcpputils::make_scope_exit(
+    [tc_factory, tc_cycloneheader]()
+    {
+      DDS_ExceptionCode_t fex = DDS_NO_EXCEPTION_CODE;
+      DDS_TypeCodeFactory_delete_tc(tc_factory, tc_cycloneheader, &fex);
+      if (DDS_NO_EXCEPTION_CODE != fex) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to delete TypeCode for CycloneRequestHeader: %d", fex)
+      }
+    });
+
+  if (!RMW_Connext_TypeCodePtrSeq_append(tc_cache, tc_cycloneheader)) {
+    RMW_CONNEXT_LOG_ERROR("failed to cache tc_cycloneheader")
+    return nullptr;
+  }
+  scope_exit_tc_cycloneheader.cancel();
+
+  return tc_cycloneheader;
+}
+
+
 static
 DDS_TCKind
 rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
@@ -257,13 +756,13 @@ rmw_connextdds_type_id_ros_to_dds(const uint8_t ros_type_id)
       }
   }
 }
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 #define length_unbound          RTIXCdrLong_MAX
 
 template<typename MemberType>
 DDS_TypeCode *
 rmw_connextdds_convert_type_member(
+  RMW_Connext_MessageTypeSupport * const type_support,
   DDS_TypeCodeFactory * const tc_factory,
   const MemberType * const member,
   struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
@@ -271,7 +770,6 @@ rmw_connextdds_convert_type_member(
   DDS_TypeCode * el_tc = nullptr;
 
   switch (member->type_id_) {
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_BOOL:
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_BYTE:
     case ::rosidl_typesupport_introspection_cpp::ROS_TYPE_UINT8:
@@ -307,6 +805,7 @@ rmw_connextdds_convert_type_member(
           &ex);
 
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
+          type_support,
           tc_cache,
           nullptr /* members */,
           nullptr /* name */,
@@ -328,6 +827,7 @@ rmw_connextdds_convert_type_member(
           &ex);
 
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
+          type_support,
           tc_cache,
           nullptr /* members */,
           nullptr /* name */,
@@ -363,10 +863,9 @@ rmw_connextdds_convert_type_member(
         }
 
         el_tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
-          tc_cache, member->members_, type_name.c_str());
+          type_support, tc_cache, member->members_, type_name.c_str());
         break;
       }
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
     default:
       {
         RMW_CONNEXT_LOG_ERROR_A("unknown ROS type id: %d", member->type_id_)
@@ -399,6 +898,7 @@ rmw_connextdds_convert_type_member(
       DDS_UnsignedLongSeq_finalize(&dimensions);
 
       tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
+        type_support,
         tc_cache,
         nullptr /* members */,
         nullptr /* name */,
@@ -422,6 +922,7 @@ rmw_connextdds_convert_type_member(
         tc_factory, tc_seq_len, el_tc, &ex);
 
       tc = RMW_Connext_TypeCodePtrSeq_assert_from_ros(
+        type_support,
         tc_cache,
         nullptr /* members */,
         nullptr /* name */,
@@ -438,24 +939,75 @@ rmw_connextdds_convert_type_member(
 template<typename MembersType>
 rmw_ret_t
 rmw_connextdds_convert_type_members(
+  RMW_Connext_MessageTypeSupport * const type_support,
   DDS_TypeCodeFactory * const tc_factory,
   const MembersType * const members,
   struct DDS_StructMemberSeq * const tc_members,
   struct RMW_Connext_TypeCodePtrSeq * const tc_cache)
 {
-  if (members->member_count_ == 0) {
-    /* empty type, add a single int32 member */
+  DDS_TypeCode * tc_header = nullptr;
 
-    return RMW_RET_OK;
+  if (type_support->type_requestreply()) {
+    if (type_support->ctx()->cyclone_compatible) {
+      tc_header = CycloneRequestHeader_get_typecode(tc_factory, tc_cache);
+      if (nullptr == tc_header) {
+        RMW_CONNEXT_LOG_ERROR("failed to get CycloneRequestHeader typecode")
+        return RMW_RET_ERROR;
+      }
+    } else {
+      switch (type_support->message_type()) {
+        case RMW_CONNEXT_MESSAGE_REQUEST:
+          {
+            tc_header = RequestHeader_get_typecode(tc_factory, tc_cache);
+            if (nullptr == tc_header) {
+              RMW_CONNEXT_LOG_ERROR("failed to get RequestHeader typecode")
+              return RMW_RET_ERROR;
+            }
+            break;
+          }
+        case RMW_CONNEXT_MESSAGE_REPLY:
+          {
+            tc_header = ReplyHeader_get_typecode(tc_factory, tc_cache);
+            if (nullptr == tc_header) {
+              RMW_CONNEXT_LOG_ERROR("failed to get ReplyHeader typecode")
+              return RMW_RET_ERROR;
+            }
+            break;
+          }
+        default:
+          {
+            RMW_CONNEXT_LOG_ERROR_A_SET(
+              "invalid message type for typecode: %d",
+              type_support->message_type())
+            return RMW_RET_ERROR;
+          }
+      }
+    }
   }
-  if (!DDS_StructMemberSeq_ensure_length(
-      tc_members, members->member_count_, members->member_count_))
-  {
+
+  RMW_CONNEXT_ASSERT(members->member_count_ >= 0)
+  const DDS_Long member_count =
+    static_cast<DDS_Long>(members->member_count_) + ((nullptr != tc_header) ? 1 : 0);
+  const uint32_t member_i_start = (nullptr != tc_header) ? 1 : 0;
+
+  if (!DDS_StructMemberSeq_ensure_length(tc_members, member_count, member_count)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize tc_members sequence")
     return RMW_RET_ERROR;
   }
-  for (uint32_t i = 0; i < members->member_count_; ++i) {
+
+  if (nullptr != tc_header) {
     DDS_StructMember * const tc_member =
-      DDS_StructMemberSeq_get_reference(tc_members, i);
+      DDS_StructMemberSeq_get_reference(tc_members, 0);
+    tc_member->name = DDS_String_dup("_header");
+    if (nullptr == tc_member->name) {
+      return RMW_RET_BAD_ALLOC;
+    }
+    tc_member->type = tc_header;
+  }
+
+  for (uint32_t i = 0, j = member_i_start; i < members->member_count_; ++i, ++j) {
+    DDS_StructMember * const tc_member =
+      DDS_StructMemberSeq_get_reference(tc_members, j);
     const auto * member = members->members_ + i;
 
     /* Check that member has a non-empty name */
@@ -468,18 +1020,37 @@ rmw_connextdds_convert_type_members(
     }
 
     /* Names in the introspection plugin don't actually end with "_" */
+#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+    if (type_support->ctx()->old_rmw_compatible) {
+      const DDS_UnsignedLong member_name_len_u =
+        static_cast<DDS_UnsignedLong>(member_name_len) + 1;
+      tc_member->name = DDS_String_alloc(member_name_len_u);
+      if (nullptr == tc_member->name) {
+        return RMW_RET_BAD_ALLOC;
+      }
+      const int rc_written =
+        snprintf(tc_member->name, member_name_len_u + 1, "%s_", member->name_);
+      if (rc_written < 0 ||
+        static_cast<DDS_UnsignedLong>(rc_written) != member_name_len_u)
+      {
+        return RMW_RET_ERROR;
+      }
+    } else {
+#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
     tc_member->name = DDS_String_dup(member->name_);
     if (nullptr == tc_member->name) {
       return RMW_RET_BAD_ALLOC;
     }
+#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+  }
+#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
 
     tc_member->type =
-      rmw_connextdds_convert_type_member(tc_factory, member, tc_cache);
+      rmw_connextdds_convert_type_member(type_support, tc_factory, member, tc_cache);
     if (nullptr == tc_member->type) {
       return RMW_RET_ERROR;
     }
   }
-
 
   return RMW_RET_OK;
 }
@@ -487,6 +1058,7 @@ rmw_connextdds_convert_type_members(
 
 DDS_TypeCode *
 rmw_connextdds_create_typecode(
+  RMW_Connext_MessageTypeSupport * const type_support,
   const rosidl_message_type_support_t * const type_supports,
   const char * const type_name,
   const void * const intro_members_in,
@@ -511,7 +1083,6 @@ rmw_connextdds_create_typecode(
     });
 
   if (nullptr == intro_members_in) {
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
     intro_ts =
       RMW_Connext_MessageTypeSupport::get_type_support_intro(
       type_supports, cpp_version);
@@ -523,12 +1094,6 @@ rmw_connextdds_create_typecode(
       return nullptr;
     }
     intro_members = intro_ts->data;
-#else
-    // Introspection type support must be available to generate a tc.
-    UNUSED_ARG(intro_ts);
-    UNUSED_ARG(type_supports);
-    return nullptr;
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
   }
 
   DDS_TypeCodeFactory * const tc_factory = DDS_TypeCodeFactory_get_instance();
@@ -555,7 +1120,6 @@ rmw_connextdds_create_typecode(
       DDS_StructMemberSeq_finalize(tc_members_ptr);
     });
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
   if (cpp_version) {
     const rosidl_typesupport_introspection_cpp::MessageMembers * const members =
       reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(
@@ -563,7 +1127,7 @@ rmw_connextdds_create_typecode(
 
     if (RMW_RET_OK !=
       rmw_connextdds_convert_type_members(
-        tc_factory, members, &tc_members, tc_cache_ptr))
+        type_support, tc_factory, members, &tc_members, tc_cache_ptr))
     {
       RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to convert members for %s",
@@ -577,7 +1141,7 @@ rmw_connextdds_create_typecode(
 
     if (RMW_RET_OK !=
       rmw_connextdds_convert_type_members(
-        tc_factory, members, &tc_members, tc_cache_ptr))
+        type_support, tc_factory, members, &tc_members, tc_cache_ptr))
     {
       RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to convert members for %s",
@@ -585,11 +1149,6 @@ rmw_connextdds_create_typecode(
       return nullptr;
     }
   }
-#else
-  UNUSED_ARG(cpp_version);
-  UNUSED_ARG(intro_members);
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
-
 
   DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
   DDS_TypeCode * tc =

@@ -25,7 +25,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rmw_connextdds_common REQUIRED)
 
 if(NOT TARGET rmw_connextdds_common::rmw_connextdds_common_micro)
-    message(WARNING
+    message(STATUS
       "Common RMW implementation not found. Skipping ${PROJECT_NAME}.")
     ament_package()
     return()
@@ -39,7 +39,7 @@ endif()
 rti_find_connextmicro(${extra_components})
 
 if(NOT RTIConnextDDSMicro_FOUND)
-    message(WARNING "RTI Connext DDS Micro not found. Skipping ${PROJECT_NAME}.")
+    message(STATUS "RTI Connext DDS Micro not found. Skipping ${PROJECT_NAME}.")
     ament_package()
     return()
 endif()

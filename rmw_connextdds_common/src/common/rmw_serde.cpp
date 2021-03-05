@@ -44,8 +44,12 @@ rmw_api_connextdds_serialize(
   rmw_serialized_message_t * serialized_message)
 {
   try {
+    // declare a mock context struct to build a temporary type support
+    rmw_context_t ctx_base;
+    rmw_context_impl_t ctx(&ctx_base);
+    ctx.request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
     RMW_Connext_MessageTypeSupport type_support(
-      RMW_CONNEXT_MESSAGE_USERDATA, type_supports, nullptr);
+      RMW_CONNEXT_MESSAGE_USERDATA, type_supports, nullptr, &ctx);
 
     const uint32_t ser_size = type_support.serialized_size_max(ros_message);
     rmw_ret_t ret =
@@ -76,8 +80,12 @@ rmw_api_connextdds_deserialize(
   void * ros_message)
 {
   try {
+    // declare a mock context struct to build a temporary type support
+    rmw_context_t ctx_base;
+    rmw_context_impl_t ctx(&ctx_base);
+    ctx.request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
     RMW_Connext_MessageTypeSupport type_support(
-      RMW_CONNEXT_MESSAGE_USERDATA, type_supports, nullptr);
+      RMW_CONNEXT_MESSAGE_USERDATA, type_supports, nullptr, &ctx);
     size_t deserialized_size = 0;
     rmw_ret_t ret =
       type_support.deserialize(

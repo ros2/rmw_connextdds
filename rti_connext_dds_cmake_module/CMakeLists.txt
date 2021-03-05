@@ -29,8 +29,9 @@ set(_env_hooks)
 if(RTIConnextDDS_FOUND)
     message(STATUS "RTI Connext DDS Professional (${CONNEXTDDS_VERSION}, ${CONNEXTDDS_ARCH}): '${CONNEXTDDS_DIR}'")
     if(WIN32)
-        # TODO(asorbini): implement support for Windows
-        # list(APPEND _env_hooks env_hook/rti_connext_dds.bat.in)
+        # Export CONNEXTDDS_DIR in "native" format, to better support Windows.
+        file(TO_NATIVE_PATH "${CONNEXTDDS_DIR}" CONNEXTDDS_DIR_NATIVE)
+        list(APPEND _env_hooks env_hook/rti_connext_dds.bat.in)
     else()
         list(APPEND _env_hooks env_hook/rti_connext_dds.sh.in)
     endif()
@@ -58,8 +59,9 @@ else()
         message(STATUS "RTI Connext DDS Micro: '${RTIMEHOME}'")
     endif()
     if(WIN32)
-        # TODO(asorbini): implement support for Windows
-        # list(APPEND _env_hooks env_hook/rti_connext_dds_micro.bat.in)
+        # Export RTIMEHOME in "native" format, to better support Windows.
+        file(TO_NATIVE_PATH "${RTIMEHOME}" RTIMEHOME_NATIVE)
+        list(APPEND _env_hooks env_hook/rti_connext_dds_micro.bat.in)
     else()
         list(APPEND _env_hooks env_hook/rti_connext_dds_micro.sh.in)
     endif()

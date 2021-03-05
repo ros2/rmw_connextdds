@@ -1139,17 +1139,13 @@ class RMW_Connext_Client
 {
   RMW_Connext_Publisher * request_pub;
   RMW_Connext_Subscriber * reply_sub;
-#if RMW_CONNEXT_EMULATE_REQUESTREPLY
   std::atomic_uint next_request_id;
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
+  rmw_context_impl_t * ctx;
 
   RMW_Connext_Client()
   : request_pub(nullptr),
-    reply_sub(nullptr)
-#if RMW_CONNEXT_EMULATE_REQUESTREPLY
-    ,
+    reply_sub(nullptr),
     next_request_id(1)
-#endif /* RMW_CONNEXT_EMULATE_REQUESTREPLY */
   {}
 
 public:
@@ -1201,6 +1197,7 @@ class RMW_Connext_Service
 {
   RMW_Connext_Publisher * reply_pub;
   RMW_Connext_Subscriber * request_sub;
+  rmw_context_impl_t * ctx;
 
 public:
   static
@@ -1396,8 +1393,6 @@ rmw_connextdds_create_type_name(
   const message_type_support_callbacks_t * callbacks,
   const bool mangle_names = true);
 
-#if RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT
-
 std::string
 rmw_connextdds_create_type_name(
   const rosidl_typesupport_introspection_cpp::MessageMembers * const members,
@@ -1407,8 +1402,6 @@ std::string
 rmw_connextdds_create_type_name(
   const rosidl_typesupport_introspection_c__MessageMembers * const members,
   const bool mangle_names = true);
-
-#endif /* RMW_CONNEXT_HAVE_INTRO_TYPE_SUPPORT */
 
 std::string
 rmw_connextdds_create_type_name_request(

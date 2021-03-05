@@ -130,3 +130,129 @@ be found first in the relevant environement variables (e.g. `${LD_LIBRARY_PATH}`
 If you encounter any errors with selecting your desired Connext installation,
 consider uninstalling `rmw_connext_cpp` and `connext_cmake_module`
 (e.g. `sudo apt remove ros-<version>-rmw-connext-cpp ros-<version>-connext-cmake-module`).
+
+## Runtime Configuration
+
+In addition to standard configuration facilities provided by the ROS2 RMW
+interface, `rmw_connextdds`, and `rmw_connextddsmicro` support the additional
+configuration of some aspects of their runtime behavior via custom environment
+variables.
+
+- [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE)
+- [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY)
+- [RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE](#RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE)
+- [RMW_CONNEXT_INITIAL_PEER](#RMW_CONNEXT_INITIAL_PEER)
+- [RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE](#RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE)
+- [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#RMW_CONNEXT_REQUEST_REPLY_MAPPING)
+- [RMW_CONNEXT_UDP_INTERFACE](#RMW_CONNEXT_UDP_INTERFACE)
+
+### RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE
+
+Enable different policies to improve interoperability with `rmw_cyclonedds_cpp`.
+
+By default, ROS2 applications using `rmw_connextdds` will be able to communicate
+with those using `rmw_cyclonedds_cpp` only via ROS2 publishers and subscribers,
+while ROS2 clients and services will not interoperate across vendors.
+
+The reason for this incompatibility lies in `rmw_cyclonedds_cpp`'s use of a custom
+mapping for propagating request metadata between clients and services.
+
+When this "compatibility mode" is enabled, `rmw_connextdds` (and `rmw_connextddsmicro`)
+will use this non-standard profile in order to interoperate with `rmw_cyclonedds_cpp`,
+instead of using one the two standard profiles defined by the DDS-RPC specification
+(see [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#rmw_connext_request_reply_mapping)).
+
+### RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY
+
+By default, `rmw_connextdds` modifies the QoS of its DomainParticipant to enable
+the optimizations defined by RTI Connext DDS' built-in QoS snippet
+`Optimization.Discovery.Endpoint.Fast`.
+
+These optimizations speed up the discovery process between different applications
+but they also introduce an overhead in network traffic, which might be undesirable
+for larger systems.
+
+Variable `RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY` may be used to disable
+these automatic optimizations, and to leave the DomainParticipant's QoS to
+its defaults.
+
+### RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE
+
+`rmw_connextdds` will always set `DDS_DataWriterQos::publish_mode::kind` of
+any DataWriter it creates to `DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS`, in order to
+enable out of the box support for "large data".
+
+This behavior might not be always desirable, and it can be disabled by setting
+`RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE` to a non-empty value.
+
+This variable is not used by `rmw_connextddsmicro`, since it doesn't
+automatically override `DDS_DataWriterQos::publish_mode::kind`.
+
+### RMW_CONNEXT_INITIAL_PEER
+
+`rmw_connextddsmicro` allows users to specify an initial peer for its
+DomainParticipant via `RMW_CONNEXT_INITIAL_PEER`.
+
+The value will be stored in `DDS_DomainParticipantQos::discovery::initial_peers`.
+
+Note that by default, `rmw_connextddsmicro` will use the `lo` network interface,
+which will prevent it from accessing the default DDS multicast peer (`239.255.0.1`).
+
+This variable will also be honored by `rmw_connextdds`, although this is less
+flexible than [other ways to configure initial peers](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/Content/UsersManual/ConfigPeersListUsed_inDiscov.htm)
+that are already supported by RTI Connext DDS.
+
+### RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+
+ROS2 applications using `rmw_connextdds` will not be able to interoperate with
+applications using the previous RMW implementation for RTI Connext DDS, `rmw_connext_cpp`,
+unless variable `RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE` is used to enable
+a "compatibility" mode with these older implementation.
+
+In particular, when this mode is enabled, `rmw_connextdds` will revert to adding
+a suffix (`_`) to the end of the names of the attributes of the ROS2 data types
+propagated via DDS discovery.
+
+### RMW_CONNEXT_REQUEST_REPLY_MAPPING
+
+The [DDS-RPC specification](https://www.omg.org/spec/DDS-RPC/About-DDS-RPC/)
+defines two profiles for mapping "request/reply" interactions over DDS messages
+(e.g. ROS2 clients and services):
+
+- the *basic* profile conveys information about the originator of a request as
+  an inline payload, serialized before the actual request/reply payloads.
+
+- The *extended* profile relies on DDS' metadata to convey request/reply
+  information out of band.
+
+By default, `rmw_connextdds` uses the *extended* profile when sending requests
+from a ROS2 client to a service, while `rmw_connextddsmicro` uses the *basic* one.
+
+Variable `RMW_CONNEXT_REQUEST_REPLY_MAPPING` can be used to select the actual
+profile used at runtime. Either `"basic"` or `"extended"` may be specified.
+
+At the moment, the *extended* profile is only available with `rmw_connextdds`.
+In this configuration, `rmw_connextdds` will interoperate with `rmw_fastrtps_cpp`.
+
+When using the *basic* profile, `rmw_connextdds` will interoperate with
+`rmw_connextddsmicro`.
+
+Use variable [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE)
+to enable interoperability with `rmw_cyclonedds_cpp` using a non-standard version
+of the *basic* profile.
+
+### RMW_CONNEXT_UDP_INTERFACE
+
+RTI Connext DDS Micro requires applications to explicitly configure the network
+interface to use for UDPv4 communication.
+
+`rmw_connextddsmicro` makes the arbitrary decision of using `lo` as the default
+interface.
+
+This is undesireable if non-local communication is required, and/or if the
+default DDS multicast peer (`239.255.0.1`) is to be used.
+
+Variable `RMW_CONNEXT_UDP_INTERFACE` may be used to customize the network interface
+actually used by RTI Connext DDS Micro's UDPv4 transport (e.g. `"eth0"`).
+
+This variable is not used by `rmw_connextdds`.

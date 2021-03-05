@@ -1241,14 +1241,17 @@ rmw_connextdds_filter_sample(
   const DDS_InstanceHandle_t * const request_writer_handle,
   bool * const accepted)
 {
-  UNUSED_ARG(sub);
-  UNUSED_ARG(sample);
   UNUSED_ARG(info);
   // In this implementation, local samples are dropped by the
   // DataReaderListener::on_before_sample_commit() callback.
+  // TODO(asorbini) add filtering because this isn't true anymore
   *accepted = true;
 
   if (nullptr != request_writer_handle) {
+    if (!sub->message_type_support()->type_requestreply()) {
+      return RMW_RET_ERROR;
+    }
+
     const RMW_Connext_RequestReplyMessage * const rr_msg =
       reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(sample);
     // Convert instance handle to guid
@@ -1258,9 +1261,18 @@ rmw_connextdds_filter_sample(
       writer_guid.value,
       request_writer_handle->octet,
       16);
+    RMW_CONNEXT_ASSERT(nullptr != rr_msg)
     rmw_connextdds_gid_to_guid(rr_msg->gid, related_writer_guid);
-    *accepted =
-      (DDS_GUID_compare(&writer_guid, &related_writer_guid) == 0);
+
+    if (sub->message_type_support()->ctx()->cyclone_compatible) {
+      // Compare only the 8 MSB from writer_guid
+      *accepted = (memcmp(
+          static_cast<void *>(writer_guid.value + 8),
+          static_cast<void *>(related_writer_guid.value + 8), 8) == 0);
+    } else {
+      *accepted =
+        (DDS_GUID_compare(&writer_guid, &related_writer_guid) == 0);
+    }
   }
 
   return RMW_RET_OK;

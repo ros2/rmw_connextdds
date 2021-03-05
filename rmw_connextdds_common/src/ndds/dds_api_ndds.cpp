@@ -1110,7 +1110,7 @@ rmw_connextdds_ih_to_gid(const DDS_InstanceHandle_t & ih, rmw_gid_t & gid)
 {
   static_assert(
     RMW_GID_STORAGE_SIZE >= MIG_RTPS_KEY_HASH_MAX_LENGTH,
-    "rmw_gid_t type too small for an RTI Connext DDS Micro GUID");
+    "rmw_gid_t type too small for an RTI Connext DDS GUID");
 
   memset(&gid, 0, sizeof(gid));
   gid.implementation_identifier = RMW_CONNEXTDDS_ID;

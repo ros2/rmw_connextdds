@@ -103,8 +103,13 @@ rmw_connextdds_initialize_participant_qos_impl(
     }
   }
 
-#if 0
-  // TODO(asorbini) Enable this property after reassessing all implications
+#if RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE
+  // TODO(asorbini) Setting this property causes the middleware to send data
+  // over loopback, even if a better transport is available (e.g. shmem).
+  // This property is added to improve interoperability with other vendors.
+  // For this reason, it might be better to make this an optional behavior,
+  // based on an environment variable, and have the default not set it,
+  // to improve OOTB performance.
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &dp_qos->property,
@@ -117,7 +122,7 @@ rmw_connextdds_initialize_participant_qos_impl(
       "dds.transport.UDPv4.builtin.ignore_loopback_interface")
     return RMW_RET_ERROR;
   }
-#endif
+#endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
 
 #if RMW_CONNEXT_HAVE_OPTIONS
   const size_t user_data_len_in =

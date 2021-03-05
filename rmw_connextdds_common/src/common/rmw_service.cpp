@@ -187,6 +187,7 @@ rmw_api_connextdds_create_client(
     service_name)
 
   rmw_context_impl_t * ctx = node->context->impl;
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
   RMW_Connext_Client * const client_impl =
     RMW_Connext_Client::create(
@@ -207,7 +208,9 @@ rmw_api_connextdds_create_client(
   auto scope_exit_client_impl_delete = rcpputils::make_scope_exit(
     [client_impl]()
     {
-      client_impl->finalize();
+      if (RMW_RET_OK != client_impl->finalize()) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize client on error")
+      }
       delete client_impl;
     });
 
@@ -268,6 +271,9 @@ rmw_api_connextdds_destroy_client(
 
   RMW_Connext_Client * const client_impl =
     reinterpret_cast<RMW_Connext_Client *>(client->data);
+
+  rmw_context_impl_t * ctx = node->context->impl;
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
   if (RMW_RET_OK !=
     rmw_connextdds_graph_on_client_deleted(
@@ -334,6 +340,7 @@ rmw_api_connextdds_create_service(
     service_name)
 
   rmw_context_impl_t * ctx = node->context->impl;
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
   RMW_Connext_Service * const svc_impl =
     RMW_Connext_Service::create(
@@ -354,7 +361,9 @@ rmw_api_connextdds_create_service(
   auto scope_exit_svc_impl_delete = rcpputils::make_scope_exit(
     [svc_impl]()
     {
-      svc_impl->finalize();
+      if (RMW_RET_OK != svc_impl->finalize()) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize service on error")
+      }
       delete svc_impl;
     });
 
@@ -415,6 +424,9 @@ rmw_api_connextdds_destroy_service(
 
   RMW_Connext_Service * const svc_impl =
     reinterpret_cast<RMW_Connext_Service *>(service->data);
+
+  rmw_context_impl_t * ctx = node->context->impl;
+  std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
   if (RMW_RET_OK !=
     rmw_connextdds_graph_on_service_deleted(

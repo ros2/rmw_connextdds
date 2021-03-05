@@ -612,6 +612,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
     RMW_CONNEXT_ASSERT(serialized_msg->buffer_length <= UINT32_MAX - current_alignment)
     current_alignment += static_cast<unsigned int>(serialized_msg->buffer_length);
   } else {
+    RMW_CONNEXT_ASSERT(nullptr != msg->type_support)
     current_alignment +=
       msg->type_support->serialized_size_max(
       msg->user_data, include_encapsulation);
@@ -743,50 +744,53 @@ RMW_Connext_TypePlugin_initialize(
  * Type registration API
  ******************************************************************************/
 
-RMW_Connext_MessageTypeSupport *
+rmw_ret_t
 rmw_connextdds_register_type_support(
   rmw_context_impl_t * const ctx,
   const rosidl_message_type_support_t * const type_supports,
   DDS_DomainParticipant * const participant,
-  bool & registered,
   const RMW_Connext_MessageType message_type,
   const void * const intro_members,
   const bool intro_members_cpp,
   const char * const type_name)
 {
-  UNUSED_ARG(ctx);
-
-  registered = false;
-
-  RMW_Connext_MessageTypeSupport * type_support = nullptr;
-  try {
-    type_support = new RMW_Connext_MessageTypeSupport(
-      message_type, type_supports, type_name);
-  } catch (const std::exception & e) {
-    RMW_CONNEXT_LOG_ERROR_A_SET("failed to create type support: %s", e.what())
-  }
-
-  if (nullptr == type_support) {
-    return nullptr;
-  }
-
-  auto scope_exit_support_delete =
-    rcpputils::make_scope_exit(
-    [type_support]()
-    {
-      delete type_support;
-    });
-
   /* We can't use DDS_DomainParticipant_get_type_pluginI because the
      type plugin gets copied into the database record, so lookup the
      associated type code and retrieve the custom type plugin from it */
-
   const RMW_Connext_NddsTypeCode * tc =
     (const RMW_Connext_NddsTypeCode *)
-    DDS_DomainParticipant_get_typecode(
-    participant, type_support->type_name());
+    DDS_DomainParticipant_get_typecode(participant, type_name);
 
   if (nullptr == tc) {
+    // Create a type support wrapper to be cached with the type plugin.
+    // This wrapper is only used for operations which do not need a sample
+    // (e.g. get_serialized_sample_size_max), because it may otherwise risk
+    // of processing a sample with an incompatible memory representation
+    // (e.g. this wrapper might be created around C type support, and later
+    // be passed a C++ ROS message). For this reason, all operations which
+    // depend on a sample's memory representation will always use a type
+    // support wrapper that is uniquely associated with the ROS entity
+    // (pub or sub) performing that operation (and passed to the type plugin
+    // via RMW_Connext_Message::type_support).
+    RMW_Connext_MessageTypeSupport * type_support = nullptr;
+    try {
+      type_support = new RMW_Connext_MessageTypeSupport(
+        message_type, type_supports, type_name);
+    } catch (const std::exception & e) {
+      RMW_CONNEXT_LOG_ERROR_A_SET("failed to create cached type support: %s", e.what())
+    }
+
+    if (nullptr == type_support) {
+      return RMW_RET_ERROR;
+    }
+
+    auto scope_exit_support_cached_delete =
+      rcpputils::make_scope_exit(
+      [type_support]()
+      {
+        delete type_support;
+      });
+
     struct REDAFastBufferPoolProperty
       pool_prop = REDA_FAST_BUFFER_POOL_PROPERTY_DEFAULT;
 
@@ -797,7 +801,7 @@ rmw_connextdds_register_type_support(
       &pool_prop);
 
     if (nullptr == pool_samples) {
-      return nullptr;
+      return RMW_RET_ERROR;
     }
     auto scope_exit_pool_samples_delete =
       rcpputils::make_scope_exit(
@@ -828,7 +832,7 @@ rmw_connextdds_register_type_support(
       RMW_CONNEXT_LOG_ERROR_A(
         "failed to generate DDS type code: %s",
         type_support->type_name())
-      return nullptr;
+      return RMW_RET_ERROR;
     }
 #else
     UNUSED_ARG(intro_members);
@@ -855,7 +859,7 @@ rmw_connextdds_register_type_support(
       RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to allocate type plugin interface: %s",
         type_support->type_name())
-      return nullptr;
+      return RMW_RET_ERROR;
     }
 
     // type_plugin's destructor will take of releasing these resources
@@ -885,7 +889,7 @@ rmw_connextdds_register_type_support(
       RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to register type plugin: %s",
         type_support->type_name())
-      return nullptr;
+      return RMW_RET_ERROR;
     }
 
     // Type plugin is copied into the DP's database, but the cached type code
@@ -905,15 +909,21 @@ rmw_connextdds_register_type_support(
     // guard to revert DP::register_type().
     RMW_CONNEXT_ASSERT(nullptr != tc)
     RMW_CONNEXT_ASSERT(type_plugin == tc->type_plugin)
+    RMW_CONNEXT_ASSERT(type_support == tc->type_plugin->wrapper)
+
+    scope_exit_support_cached_delete.cancel();
+
+    // Cache type support wrapper so that we may delete it later,
+    // after deregistration.
+    // TODO(asorbini) add assertion for (nullptr == ctx->registered_types[tname])
+    std::string tname = type_support->type_name();
+    ctx->registered_types[tname] = type_support;
   }
 
   // Increase reference count in the type code object cached inside the DP.
   tc->type_plugin->attached_count += 1;
 
-  scope_exit_support_delete.cancel();
-
-  // This type support object must be freed by the caller (via delete)
-  return type_support;
+  return RMW_RET_OK;
 }
 
 rmw_ret_t
@@ -922,8 +932,6 @@ rmw_connextdds_unregister_type_support(
   DDS_DomainParticipant * const participant,
   const char * const type_name)
 {
-  UNUSED_ARG(ctx);
-
   const RMW_Connext_NddsTypeCode * const tc =
     (const RMW_Connext_NddsTypeCode *)
     DDS_DomainParticipant_get_typecode(participant, type_name);
@@ -943,13 +951,16 @@ rmw_connextdds_unregister_type_support(
     // The type plugin object allocated by register_type_support() will be
     // deleted by the descructor of the participant data object.
     if (DDS_RETCODE_OK !=
-      DDS_DomainParticipant_unregister_type(
-        participant, type_name))
+      DDS_DomainParticipant_unregister_type(participant, type_name))
     {
       RMW_CONNEXT_LOG_ERROR_A_SET(
         "failed to unregister type: %s", tname.c_str())
       return RMW_RET_ERROR;
     }
+    RMW_Connext_MessageTypeSupport * type_support =
+      ctx->registered_types[tname];
+    ctx->registered_types.erase(tname);
+    delete type_support;
   }
 
   return RMW_RET_OK;

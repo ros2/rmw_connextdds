@@ -761,14 +761,22 @@ public:
         DDS_Topic_as_entity(
           DDS_DataWriter_get_topic(this->dds_writer))))
     {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds writer's topic")
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to enable dds writer's topic: '%s' [%s]",
+        DDS_TopicDescription_get_name(
+          DDS_Topic_as_topicdescription(this->dds_topic())),
+        this->type_support->type_name())
       return RMW_RET_ERROR;
     }
 
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_DataWriter_as_entity(this->dds_writer)))
     {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds writer")
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to enable dds writer: '%s' [%s]",
+        DDS_TopicDescription_get_name(
+          DDS_Topic_as_topicdescription(this->dds_topic())),
+        this->type_support->type_name())
       return RMW_RET_ERROR;
     }
 
@@ -801,17 +809,17 @@ public:
     DDS_SampleIdentity_t * const sample_identity,
     DDS_SampleIdentity_t * const related_sample_identity);
 
-  DDS_Topic * dds_topic()
+  DDS_Topic * dds_topic() const
   {
     return DDS_DataWriter_get_topic(this->dds_writer);
   }
 
-  DDS_Publisher * dds_publisher()
+  DDS_Publisher * dds_publisher() const
   {
     return DDS_DataWriter_get_publisher(this->dds_writer);
   }
 
-  DDS_DomainParticipant * dds_participant()
+  DDS_DomainParticipant * dds_participant() const
   {
     DDS_Publisher * const pub = this->dds_publisher();
 
@@ -930,14 +938,22 @@ public:
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_Topic_as_entity(this->dds_topic)))
     {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds reader's topic")
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to enable dds reader's topic: '%s' [%s]",
+        DDS_TopicDescription_get_name(
+          DDS_Topic_as_topicdescription(this->dds_topic)),
+        this->type_support->type_name())
       return RMW_RET_ERROR;
     }
 
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_DataReader_as_entity(this->dds_reader)))
     {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to enable dds reader")
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to enable dds reader: '%s' [%s]",
+        DDS_TopicDescription_get_name(
+          DDS_Topic_as_topicdescription(this->dds_topic)),
+        this->type_support->type_name())
       return RMW_RET_ERROR;
     }
 
@@ -1042,19 +1058,19 @@ public:
     return has_data;
   }
 
-  DDS_Subscriber * dds_subscriber()
+  DDS_Subscriber * dds_subscriber() const
   {
     return DDS_DataReader_get_subscriber(this->dds_reader);
   }
 
-  DDS_DomainParticipant * dds_participant()
+  DDS_DomainParticipant * dds_participant() const
   {
     DDS_Subscriber * const sub = this->dds_subscriber();
 
     return DDS_Subscriber_get_participant(sub);
   }
 
-  DDS_Topic * topic()
+  DDS_Topic * topic() const
   {
     return this->dds_topic;
   }

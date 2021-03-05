@@ -156,12 +156,11 @@ rmw_connextdds_filter_sample(
   const DDS_InstanceHandle_t * const request_writer_handle,
   bool * const accepted);
 
-RMW_Connext_MessageTypeSupport *
+rmw_ret_t
 rmw_connextdds_register_type_support(
   rmw_context_impl_t * const ctx,
   const rosidl_message_type_support_t * const type_supports,
   DDS_DomainParticipant * const participant,
-  bool & registered,
   const RMW_Connext_MessageType message_type,
   const void * const intro_members,
   const bool intro_members_cpp,

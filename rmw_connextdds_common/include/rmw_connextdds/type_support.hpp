@@ -124,11 +124,10 @@ public:
     rmw_context_impl_t * const ctx,
     const rosidl_message_type_support_t * const type_supports,
     DDS_DomainParticipant * const participant,
-    bool & registered,
-    const RMW_Connext_MessageType message_type = RMW_CONNEXT_MESSAGE_USERDATA,
-    const void * const intro_members = nullptr,
-    const bool intro_members_cpp = false,
-    std::string * const type_name = nullptr);
+    const RMW_Connext_MessageType message_type,
+    const void * const intro_members,
+    const bool intro_members_cpp,
+    std::string * const type_name);
 
   static rmw_ret_t unregister_type_support(
     rmw_context_impl_t * const ctx,

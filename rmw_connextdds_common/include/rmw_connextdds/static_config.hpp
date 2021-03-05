@@ -191,6 +191,16 @@
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
 /******************************************************************************
+ * Override dds.transport.UDPv4.builtin.ignore_loopback_interface in
+ * DomainParticipantQos to force communication over loopback (in addition to
+ * other transports, e.g. shared memory).
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE
+#define RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE     1
+#endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
+
+
+/******************************************************************************
  * ROS Target Release
  ******************************************************************************/
 #define RMW_CONNEXT_RELEASE_DASHING     10

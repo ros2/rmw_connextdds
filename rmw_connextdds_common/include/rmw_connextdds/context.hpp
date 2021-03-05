@@ -47,6 +47,11 @@
 #include "rmw_connextdds_common/msg/participant_entities_info.hpp"
 #endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
+#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
+#include "rmw/qos_profiles.h"
+#include "rmw_dds_common/qos.hpp"
+#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */
+
 #include "rcutils/strdup.h"
 
 #if RMW_CONNEXT_HAVE_SCOPE_EXIT

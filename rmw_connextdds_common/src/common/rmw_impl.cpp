@@ -21,6 +21,10 @@
 
 #include "rmw_connextdds/graph_cache.hpp"
 
+#if RMW_CONNEXT_HAVE_TIME_UTILS
+#include "rmw_dds_common/time_utils.hpp"
+#endif /* RMW_CONNEXT_HAVE_TIME_UTILS */
+
 #define ROS_SERVICE_REQUESTER_PREFIX_STR "rq"
 #define ROS_SERVICE_RESPONSE_PREFIX_STR  "rr"
 
@@ -34,10 +38,16 @@ rmw_connextdds_duration_from_ros_time(
   DDS_Duration_t * const duration,
   const rmw_time_t * const ros_time)
 {
-  // TODO(asorbini) This function ignores possible overflows which
-  // occur if (ros_time->sec > INT32_MAX || ros_time->nsec > UINT32_MAX)
-  duration->sec = static_cast<DDS_Long>(ros_time->sec);
-  duration->nanosec = static_cast<DDS_UnsignedLong>(ros_time->nsec);
+#if RMW_CONNEXT_HAVE_TIME_UTILS
+  rmw_time_t in_time = rmw_dds_common::clamp_rmw_time_to_dds_time(*ros_time);
+#else
+  // TODO(asorbini) In older versions, this function ignores possible overflows
+  // which occur if (ros_time->sec > INT32_MAX || ros_time->nsec > UINT32_MAX)
+  rmw_time_t in_time = *ros_time;
+#endif /* RMW_CONNEXT_HAVE_TIME_UTILS */
+
+  duration->sec = static_cast<DDS_Long>(in_time.sec);
+  duration->nanosec = static_cast<DDS_UnsignedLong>(in_time.nsec);
   return RMW_RET_OK;
 }
 

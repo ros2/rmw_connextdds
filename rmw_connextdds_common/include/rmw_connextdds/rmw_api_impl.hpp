@@ -608,6 +608,7 @@ rmw_api_connextdds_wait(
  * QoS Profile functions
  ******************************************************************************/
 #if RMW_CONNEXT_HAVE_QOS_PROFILE_API
+RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
 rmw_api_connextdds_qos_profile_check_compatible(
   const rmw_qos_profile_t publisher_profile,

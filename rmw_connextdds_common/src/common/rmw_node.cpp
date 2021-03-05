@@ -65,7 +65,10 @@ rmw_api_connextdds_create_node(
 #elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
   node_localhost_only = localhost_only;
 #else
-  node_localhost_only = context->options.localhost_only;
+  // TODO(asorbini) support env variable ROS_LOCALHOST_ONLY to
+  // control behavior when RMW_LOCALHOST_ONLY_DEFAULT is used
+  node_localhost_only =
+    context->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED;
 #endif /* RMW_CONNEXT_RELEASE */
 
   RMW_CONNEXT_LOG_DEBUG_A(

@@ -49,6 +49,10 @@
 #define RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE     "RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE"
 #endif /* RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE */
 
+#ifndef RMW_CONNEXT_ENV_LOCALHOST_ONLY
+#define RMW_CONNEXT_ENV_LOCALHOST_ONLY     "ROS_LOCALHOST_ONLY"
+#endif /* RMW_CONNEXT_ENV_LOCALHOST_ONLY */
+
 /******************************************************************************
  * DDS Implementation
  * Select the DDS implementation used to build the RMW library.

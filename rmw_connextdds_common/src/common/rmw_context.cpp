@@ -1064,6 +1064,9 @@ rmw_connextdds_configure_security(
       prop_uri.c_str(),
       RTI_FALSE))
   {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_IDENTITY_CA_PROPERTY, prop_uri.c_str())
     return RMW_RET_ERROR;
   }
 
@@ -1088,6 +1091,9 @@ rmw_connextdds_configure_security(
       prop_uri.c_str(),
       RTI_FALSE))
   {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, prop_uri.c_str())
     return RMW_RET_ERROR;
   }
 
@@ -1112,6 +1118,9 @@ rmw_connextdds_configure_security(
       prop_uri.c_str(),
       RTI_FALSE))
   {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY, prop_uri.c_str())
     return RMW_RET_ERROR;
   }
 
@@ -1137,6 +1146,9 @@ rmw_connextdds_configure_security(
       prop_uri.c_str(),
       RTI_FALSE))
   {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, prop_uri.c_str())
     return RMW_RET_ERROR;
   }
 
@@ -1162,6 +1174,9 @@ rmw_connextdds_configure_security(
       prop_uri.c_str(),
       RTI_FALSE))
   {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_GOVERNANCE_PROPERTY, prop_uri.c_str())
     return RMW_RET_ERROR;
   }
 
@@ -1187,12 +1202,17 @@ rmw_connextdds_configure_security(
       prop_uri.c_str(),
       RTI_FALSE))
   {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PERMISSIONS_PROPERTY, prop_uri.c_str())
     return RMW_RET_ERROR;
   }
+
+  return rmw_connextdds_apply_security_logging_configuration(&qos->property);
 #else
   // Security not supported by ROS release
   UNUSED_ARG(ctx);
   UNUSED_ARG(qos);
-#endif /* RMW_CONNEXT_HAVE_SECURITY */
   return RMW_RET_OK;
+#endif /* RMW_CONNEXT_HAVE_SECURITY */
 }

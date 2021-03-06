@@ -156,6 +156,7 @@ set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_node.cpp
     src/common/rmw_publication.cpp
     src/common/rmw_qos.cpp
+    src/common/rmw_security_log.cpp
     src/common/rmw_serde.cpp
     src/common/rmw_service.cpp
     src/common/rmw_subscription.cpp

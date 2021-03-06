@@ -1504,4 +1504,13 @@ rmw_connextdds_list_service_qos_profiles(
   std::vector<std::string> & req_profiles,
   std::vector<std::string> & rep_profiles);
 
+/******************************************************************************
+ * Security Helpers
+ ******************************************************************************/
+#if RMW_CONNEXT_HAVE_SECURITY
+rmw_ret_t
+rmw_connextdds_apply_security_logging_configuration(
+  DDS_PropertyQosPolicy * const properties);
+#endif /* RMW_CONNEXT_HAVE_SECURITY */
+
 #endif  // RMW_CONNEXTDDS__RMW_IMPL_HPP_

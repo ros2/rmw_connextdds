@@ -73,6 +73,20 @@
   "RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY"
 #endif /* RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE */
 
+// TODO(security-wg): These are intended to be temporary, and need to be
+// refactored into a proper abstraction.
+#ifndef RMW_CONNEXT_ENV_SECURITY_LOG_FILE
+#define RMW_CONNEXT_ENV_SECURITY_LOG_FILE     "ROS_SECURITY_LOG_FILE"
+#endif /* RMW_CONNEXT_ENV_SECURITY_LOG_FILE */
+
+#ifndef RMW_CONNEXT_ENV_SECURITY_LOG_PUBLISH
+#define RMW_CONNEXT_ENV_SECURITY_LOG_PUBLISH     "ROS_SECURITY_LOG_PUBLISH"
+#endif /* RMW_CONNEXT_ENV_SECURITY_LOG_PUBLISH */
+
+#ifndef RMW_CONNEXT_ENV_SECURITY_LOG_VERBOSITY
+#define RMW_CONNEXT_ENV_SECURITY_LOG_VERBOSITY     "ROS_SECURITY_LOG_VERBOSITY"
+#endif /* RMW_CONNEXT_ENV_SECURITY_LOG_VERBOSITY */
+
 /******************************************************************************
  * DDS Implementation
  * Select the DDS implementation used to build the RMW library.

@@ -409,7 +409,13 @@ rmw_connextdds_convert_type_member(
     } else {
       DDS_Long tc_seq_len = length_unbound;
       if (member->is_upper_bound_) {
-        tc_seq_len = member->array_size_;
+        tc_seq_len = static_cast<DDS_Long>(member->array_size_);
+        if (member->array_size_ > static_cast<size_t>(INT32_MAX)) {
+          RMW_CONNEXT_LOG_WARNING_A(
+            "array member's length trucated to INT32_MAX (%d): %lu",
+            INT32_MAX, member->array_size_)
+          tc_seq_len = INT32_MAX;
+        }
       }
       DDS_TypeCode * const tc_seq =
         DDS_TypeCodeFactory_create_sequence_tc(

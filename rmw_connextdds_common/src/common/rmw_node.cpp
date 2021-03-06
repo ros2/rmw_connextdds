@@ -18,6 +18,11 @@
 #include "rmw/validate_namespace.h"
 #include "rmw/validate_node_name.h"
 
+#if RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY
+// Required to look up LOCALHOST_ONLY env variable.
+#include "rcutils/get_env.h"
+#endif /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
+
 /******************************************************************************
  * Node interface functions
  ******************************************************************************/
@@ -64,12 +69,44 @@ rmw_api_connextdds_create_node(
   node_localhost_only = localhost_only;
 #elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
   node_localhost_only = localhost_only;
-#else
-  // TODO(asorbini) support env variable ROS_LOCALHOST_ONLY to
-  // control behavior when RMW_LOCALHOST_ONLY_DEFAULT is used
-  node_localhost_only =
-    context->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED;
-#endif /* RMW_CONNEXT_RELEASE */
+#else /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
+  switch (context->options.localhost_only) {
+    case RMW_LOCALHOST_ONLY_DEFAULT:
+      {
+        /* Check if user requested localhost only via environment variable */
+        const char * localhost_only_env = nullptr;
+        const char * lookup_rc =
+          rcutils_get_env(RMW_CONNEXT_ENV_LOCALHOST_ONLY, &localhost_only_env);
+
+        if (nullptr != lookup_rc || nullptr == localhost_only_env) {
+          RMW_CONNEXT_LOG_ERROR_A_SET(
+            "failed to lookup from environment: "
+            "var=%s, "
+            "rc=%s ",
+            RMW_CONNEXT_ENV_LOCALHOST_ONLY,
+            lookup_rc)
+          return nullptr;
+        }
+
+        node_localhost_only = '\0' != localhost_only_env[0];
+        break;
+      }
+    case RMW_LOCALHOST_ONLY_ENABLED:
+    case RMW_LOCALHOST_ONLY_DISABLED:
+      {
+        node_localhost_only =
+          context->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED;
+        break;
+      }
+    default:
+      {
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "invalid rmw_localhost_only_t value: %d",
+          context->options.localhost_only)
+        return nullptr;
+      }
+  }
+#endif /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new node: name=%s, ns=%s, localhost_only=%d",

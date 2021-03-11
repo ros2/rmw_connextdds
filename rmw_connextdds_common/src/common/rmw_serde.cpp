@@ -46,6 +46,7 @@ rmw_api_connextdds_serialize(
   try {
     // declare a mock context struct to build a temporary type support
     rmw_context_t ctx_base;
+    ctx_base.options.localhost_only = RMW_LOCALHOST_ONLY_DISABLED;
     rmw_context_impl_t ctx(&ctx_base);
     ctx.request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
     RMW_Connext_MessageTypeSupport type_support(
@@ -82,6 +83,7 @@ rmw_api_connextdds_deserialize(
   try {
     // declare a mock context struct to build a temporary type support
     rmw_context_t ctx_base;
+    ctx_base.options.localhost_only = RMW_LOCALHOST_ONLY_DISABLED;
     rmw_context_impl_t ctx(&ctx_base);
     ctx.request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
     RMW_Connext_MessageTypeSupport type_support(

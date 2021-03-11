@@ -470,8 +470,10 @@ function(rti_guess_connextdds_arch)
     RELATIVE "${CONNEXTDDS_DIR}/lib"
     "${CONNEXTDDS_DIR}/lib/*")
 
-    message(STATUS "Guessed CONNEXTDDS_ARCH ('${guessed_architecture}') not available.")
-    message(STATUS "Pick first from ${CONNEXTDDS_DIR}/lib/[${architectures_installed}]")
+    message(STATUS
+      "Guessed CONNEXTDDS_ARCH ('${guessed_architecture}') not available.")
+    message(STATUS
+      "Pick first from ${CONNEXTDDS_DIR}/lib/[${architectures_installed}]")
 
     foreach(architecture_name ${architectures_installed})
       # Because the lib folder contains both target libraries and

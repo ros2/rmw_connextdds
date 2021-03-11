@@ -197,6 +197,16 @@ The value will be stored in `DDS_DomainParticipantQos::discovery::initial_peers`
 
 Note that by default, `rmw_connextddsmicro` will use the `lo` network interface,
 which will prevent it from accessing the default DDS multicast peer (`239.255.0.1`).
+It also means that discovery will not use the built-in shared-memory transport
+by default.
+
+For example, to enable discovery over the built-in shared-memory transport:
+
+```sh
+RMW_IMPLEMENTATION=rmw_connextddsmicro \
+RMW_CONNEXT_INITIAL_PEER=_shmem:// \
+  ros2 run demo_nodes_cpp listener
+```
 
 This variable will also be honored by `rmw_connextdds`, although this is less
 flexible than [other ways to configure initial peers](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/Content/UsersManual/ConfigPeersListUsed_inDiscov.htm)
@@ -232,14 +242,42 @@ Variable `RMW_CONNEXT_REQUEST_REPLY_MAPPING` can be used to select the actual
 profile used at runtime. Either `"basic"` or `"extended"` may be specified.
 
 At the moment, the *extended* profile is only available with `rmw_connextdds`.
-In this configuration, `rmw_connextdds` will interoperate with `rmw_fastrtps_cpp`.
+In this configuration, `rmw_connextdds` will interoperate with `rmw_fastrtps_cpp`,
+e.g.:
+
+```sh
+RMW_IMPLEMENTATION=rmw_connextdds \
+  ros2 run demo_nodes_cpp add_two_ints_server
+
+RMW_IMPLEMENTATION=rmw_fastrtps_cpp \
+  ros2 run demo_nodes_cpp add_two_ints_client
+```
 
 When using the *basic* profile, `rmw_connextdds` will interoperate with
-`rmw_connextddsmicro`.
+`rmw_connextddsmicro`, e.g.:
+
+```sh
+RMW_IMPLEMENTATION=rmw_connextdds \
+RMW_CONNEXT_REQUEST_REPLY_MAPPING=basic \
+  ros2 run demo_nodes_cpp add_two_ints_server
+
+RMW_IMPLEMENTATION=rmw_connextddsmicro \
+RMW_CONNEXT_INITIAL_PEER=localhost \
+  ros2 run demo_nodes_cpp add_two_ints_client
+```
 
 Use variable [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE)
 to enable interoperability with `rmw_cyclonedds_cpp` using a non-standard version
-of the *basic* profile.
+of the *basic* profile, e.g.:
+
+```sh
+RMW_IMPLEMENTATION=rmw_connextdds \
+RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE=y \
+  ros2 run demo_nodes_cpp add_two_ints_server
+
+RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  ros2 run demo_nodes_cpp add_two_ints_client
+```
 
 ### RMW_CONNEXT_UDP_INTERFACE
 
@@ -253,6 +291,12 @@ This is undesireable if non-local communication is required, and/or if the
 default DDS multicast peer (`239.255.0.1`) is to be used.
 
 Variable `RMW_CONNEXT_UDP_INTERFACE` may be used to customize the network interface
-actually used by RTI Connext DDS Micro's UDPv4 transport (e.g. `"eth0"`).
+actually used by RTI Connext DDS Micro's UDPv4 transport, e.g. to use `eth0`:
+
+```sh
+RMW_IMPLEMENTATION=rmw_connextddsmicro \
+RMW_CONNEXT_UDP_INTERFACE=eth0 \
+  ros2 run demo_nodes_cpp listener
+```
 
 This variable is not used by `rmw_connextdds`.

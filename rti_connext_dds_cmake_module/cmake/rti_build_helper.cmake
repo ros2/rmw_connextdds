@@ -461,7 +461,8 @@ function(rti_guess_connextdds_arch)
 
   if(EXISTS "${CONNEXTDDS_DIR}/lib/${guessed_architecture}")
     set(CONNEXTDDS_ARCH "${guessed_architecture}")
-    message(STATUS "Guessed ${CONNEXTDDS_DIR}/lib/${guessed_architecture} exists")
+    message(STATUS
+      "Guessed ${CONNEXTDDS_DIR}/lib/${guessed_architecture} exists")
   else()
     # If CONNEXTDDS_ARCH is unspecified, the module tries uses the first
     # architecture installed by looking under $CONNEXTDDS_DIR/lib that matches
@@ -487,7 +488,8 @@ function(rti_guess_connextdds_arch)
         message(STATUS "ignored: ${architecture_name}")
         continue()
       elseif(architecture_name MATCHES ${CMAKE_HOST_SYSTEM_NAME} OR
-        (CMAKE_HOST_SYSTEM_NAME MATCHES "Windows" AND architecture_name MATCHES "Win")
+        (CMAKE_HOST_SYSTEM_NAME MATCHES "Windows" AND
+          architecture_name MATCHES "Win")
       )
         if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
           # Get the installed Darwin
@@ -514,7 +516,8 @@ function(rti_guess_connextdds_arch)
           endif()
         endif()
         if(NOT CONNEXTDDS_ARCH)
-          message(STATUS "unsupported CMAKE_HOST_SYSTEM_NAME (${CMAKE_HOST_SYSTEM_NAME}) "
+          message(STATUS
+            "unsupported CMAKE_HOST_SYSTEM_NAME (${CMAKE_HOST_SYSTEM_NAME}) "
             "or CMAKE_HOST_SYSTEM_PROCESSOR (${CMAKE_HOST_SYSTEM_PROCESSOR}). "
             "Using architecture ${architecture_name} anyway.")
           set(CONNEXTDDS_ARCH "${architecture_name}")

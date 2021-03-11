@@ -4186,8 +4186,19 @@ RMW_Connext_WaitSet::wait(
   RMW_CONNEXT_ASSERT(active_conditions > 0 || DDS_RETCODE_TIMEOUT == wait_rc)
 
   if (DDS_RETCODE_TIMEOUT == wait_rc) {
+    // TODO(asorbini) This error was added to have a unit test that
+    // generates random errors, and expects the RMW to call RMW_SET_ERROR_MSG()
+    // when it returns a retcode other than "OK". Adding this log is quite
+    // intrusive, since `rcl` will print out an error on every wait time-out,
+    // which is really not an error, but a common occurrance in any ROS/DDS
+    // application. For this reason, the code is disabled, but kept in
+    // to keep track of the potential issue with that unit test (which should
+    // be resolved by making it accept "timeout" as a valid retcode without
+    // an error message).
+#if 0
     rmw_reset_error();
     RMW_SET_ERROR_MSG("DDS wait timed out");
+#endif
     return RMW_RET_TIMEOUT;
   }
 

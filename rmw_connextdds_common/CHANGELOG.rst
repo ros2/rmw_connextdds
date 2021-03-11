@@ -2,6 +2,10 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.1 (2021-03-10)
+------------------
+* Don't log an error on WaitSet::wait() timeout.
+
 0.1.0 (2021-03-10)
 ------------------
 * Initial release.

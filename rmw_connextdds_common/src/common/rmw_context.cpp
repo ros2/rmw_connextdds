@@ -92,39 +92,34 @@ rmw_connextdds_initialize_participant_qos(
   }
 
   /* Lookup and configure initial peer from environment */
-  const char * initial_peer = nullptr;
+  const char * initial_peers = nullptr;
   const char * lookup_rc =
-    rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEER, &initial_peer);
+    rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);
 
-  if (nullptr != lookup_rc || nullptr == initial_peer) {
+  if (nullptr != lookup_rc || nullptr == initial_peers) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "
       "rc=%s ",
-      RMW_CONNEXT_ENV_INITIAL_PEER,
+      RMW_CONNEXT_ENV_INITIAL_PEERS,
       lookup_rc)
     return RMW_RET_ERROR;
   }
 
-  if (strlen(initial_peer) > 0) {
-    char * peer = DDS_String_dup(initial_peer);
-    if (nullptr == peer) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate peer name")
-      return RMW_RET_ERROR;
+  if ('\0' != initial_peers[0]) {
+    rmw_ret_t rc = rmw_connextdds_parse_string_list(
+      initial_peers,
+      &dp_qos.discovery.initial_peers,
+      ',' /* delimiter */,
+      true /* trim_elements */,
+      false /* allow_empty_elements */,
+      false /* append_values */);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR_A(
+        "failed to parse initial peers: '%s'", initial_peers)
+      return rc;
     }
-
-    if (!DDS_StringSeq_set_maximum(&dp_qos.discovery.initial_peers, 1)) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to set initial peers maximum")
-      return RMW_RET_ERROR;
-    }
-    if (!DDS_StringSeq_set_length(&dp_qos.discovery.initial_peers, 1)) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to set initial peers length");
-      return RMW_RET_ERROR;
-    }
-    *DDS_StringSeq_get_reference(&dp_qos.discovery.initial_peers, 0) =
-      peer;
-
-    RMW_CONNEXT_LOG_DEBUG_A("initial peer: %s", peer)
+    RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
   }
 
   return RMW_RET_OK;
@@ -801,22 +796,22 @@ rmw_api_connextdds_init(
 
   ctx->qos_library = qos_library;
 
-  // All publishers will use asynchronous publish mode if
-  // RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE is empty.
-  const char * do_not_override_publish_mode_env = nullptr;
+  // All publishers will use asynchronous publish mode unless
+  // RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE is set.
+  const char * use_default_publish_mode_env = nullptr;
   lookup_rc = rcutils_get_env(
-    RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE, &do_not_override_publish_mode_env);
+    RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE, &use_default_publish_mode_env);
 
-  if (nullptr != lookup_rc || nullptr == do_not_override_publish_mode_env) {
+  if (nullptr != lookup_rc || nullptr == use_default_publish_mode_env) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "
       "rc=%s ",
-      RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE,
+      RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE,
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->override_publish_mode = '\0' == do_not_override_publish_mode_env[0];
+  ctx->use_default_publish_mode = '\0' != use_default_publish_mode_env[0];
 
   // Check if we should run in "compatibility mode" with Cyclone DDS.
   const char * cyclone_compatible_env = nullptr;
@@ -872,13 +867,13 @@ rmw_api_connextdds_init(
   ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
 #endif /* RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC */
 
-#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
   // Check if we should run in "compatibility mode" with the old RMW for Connext
-  const char * old_rmw_compatible_env = nullptr;
+  const char * legacy_rmw_compatible_env = nullptr;
   lookup_rc = rcutils_get_env(
-    RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE, &old_rmw_compatible_env);
+    RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE, &legacy_rmw_compatible_env);
 
-  if (nullptr != lookup_rc || nullptr == old_rmw_compatible_env) {
+  if (nullptr != lookup_rc || nullptr == legacy_rmw_compatible_env) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "
@@ -887,8 +882,8 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->old_rmw_compatible = '\0' != old_rmw_compatible_env[0];
-#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
+  ctx->legacy_rmw_compatible = '\0' != legacy_rmw_compatible_env[0];
+#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   // Check if we should disable modifying the DomainParticipantQos to enable

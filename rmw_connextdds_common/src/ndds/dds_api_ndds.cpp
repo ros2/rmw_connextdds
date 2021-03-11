@@ -351,7 +351,7 @@ rmw_connextdds_get_datawriter_qos(
     return RMW_RET_ERROR;
   }
 
-  if (ctx->override_publish_mode) {
+  if (!ctx->use_default_publish_mode) {
     qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
   }
 

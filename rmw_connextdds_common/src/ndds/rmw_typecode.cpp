@@ -1020,8 +1020,8 @@ rmw_connextdds_convert_type_members(
     }
 
     /* Names in the introspection plugin don't actually end with "_" */
-#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
-    if (type_support->ctx()->old_rmw_compatible) {
+#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
+    if (type_support->ctx()->legacy_rmw_compatible) {
       const DDS_UnsignedLong member_name_len_u =
         static_cast<DDS_UnsignedLong>(member_name_len) + 1;
       tc_member->name = DDS_String_alloc(member_name_len_u);
@@ -1036,14 +1036,14 @@ rmw_connextdds_convert_type_members(
         return RMW_RET_ERROR;
       }
     } else {
-#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
+#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
     tc_member->name = DDS_String_dup(member->name_);
     if (nullptr == tc_member->name) {
       return RMW_RET_BAD_ALLOC;
     }
-#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
   }
-#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
+#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
     tc_member->type =
       rmw_connextdds_convert_type_member(type_support, tc_factory, member, tc_cache);

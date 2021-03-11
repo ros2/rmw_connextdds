@@ -102,6 +102,10 @@ typedef struct RMW_PUBLIC_TYPE rmw_service_info_t
 } rmw_service_info_t;
 #endif /* !RMW_CONNEXT_HAVE_SERVICE_INFO */
 
+/******************************************************************************
+ * General helpers and utilities.
+ ******************************************************************************/
+
 rcutils_ret_t
 rcutils_uint8_array_copy(
   rcutils_uint8_array_t * const dst,
@@ -118,6 +122,20 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid);
 
 const char *
 dds_event_to_str(const DDS_StatusKind event);
+
+rmw_ret_t
+rmw_connextdds_parse_string_list(
+  const char * const list,
+  struct DDS_StringSeq * const parsed_out,
+  const char delimiter = ',',
+  const bool trim = true,
+  const bool allow_empty_elements = true,
+  const bool append_values = true);
+
+bool
+rmw_connextdds_find_string_in_list(
+  const DDS_StringSeq * const values,
+  const char * const value);
 
 /******************************************************************************
  * WaitSet: wrapper implementation on top of DDS_WaitSet
@@ -1467,11 +1485,6 @@ rmw_ret_t
   const DDS_LifespanQosPolicy * const lifespan,
 #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies);
-
-bool
-rmw_connextdds_find_string_in_list(
-  const DDS_StringSeq * const profile_names,
-  const char * const profile);
 
 rmw_ret_t
 rmw_connextdds_list_context_qos_profiles(

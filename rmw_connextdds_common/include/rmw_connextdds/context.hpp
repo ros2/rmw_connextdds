@@ -95,12 +95,12 @@ struct rmw_context_impl_t
   std::string qos_library;
   std::string qos_ctx_name;
   std::string qos_ctx_namespace;
-  bool override_publish_mode;
+  bool use_default_publish_mode;
   RMW_Connext_RequestReplyMapping request_reply_mapping;
   bool cyclone_compatible{false};
-#if RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
-  bool old_rmw_compatible{false};
-#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
+#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
+  bool legacy_rmw_compatible{false};
+#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   bool fast_endp_discovery{true};
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */

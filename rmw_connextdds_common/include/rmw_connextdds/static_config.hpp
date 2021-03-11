@@ -38,20 +38,20 @@
   "RMW_CONNEXT_UDP_INTERFACE"
 #endif /* RMW_CONNEXT_ENV_UDP_INTERFACE */
 
-#ifndef RMW_CONNEXT_ENV_INITIAL_PEER
-#define RMW_CONNEXT_ENV_INITIAL_PEER \
-  "RMW_CONNEXT_INITIAL_PEER"
-#endif /* RMW_CONNEXT_ENV_INITIAL_PEER */
+#ifndef RMW_CONNEXT_ENV_INITIAL_PEERS
+#define RMW_CONNEXT_ENV_INITIAL_PEERS \
+  "RMW_CONNEXT_INITIAL_PEERS"
+#endif /* RMW_CONNEXT_ENV_INITIAL_PEERS */
 
 #ifndef RMW_CONNEXT_ENV_QOS_LIBRARY
 #define RMW_CONNEXT_ENV_QOS_LIBRARY \
   "RMW_CONNEXT_QOS_LIBRARY"
 #endif /* RMW_CONNEXT_ENV_QOS_LIBRARY */
 
-#ifndef RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE
-#define RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE \
-  "RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE"
-#endif /* RMW_CONNEXT_ENV_DO_NOT_OVERRIDE_PUBLISH_MODE */
+#ifndef RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE
+#define RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE \
+  "RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE"
+#endif /* RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE */
 
 #ifndef RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING
 #define RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING \
@@ -65,7 +65,7 @@
 
 #ifndef RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE
 #define RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE \
-  "RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE"
+  "RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE"
 #endif /* RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE */
 
 #ifndef RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY
@@ -236,14 +236,14 @@
 #endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
 
 /******************************************************************************
- * Enable support for running in "compatibility mode" with the old RMW for
+ * Enable support for running in "compatibility mode" with the previous RMW for
  * Connext (rmw_connext_cpp). If this option is enable, the mode can be
  * enabled via env variable. Once the mode is enabled, rmw_connextdds will:
  * - Add suffix "_" to member names of types propagated via DDS discovery.
  ******************************************************************************/
-#ifndef RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
-#define RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE     1
-#endif /* RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE */
+#ifndef RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
+#define RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE     1
+#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
 /******************************************************************************
  * ROS Target Release

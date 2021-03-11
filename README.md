@@ -140,9 +140,9 @@ variables.
 
 - [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE)
 - [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY)
-- [RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE](#RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE)
-- [RMW_CONNEXT_INITIAL_PEER](#RMW_CONNEXT_INITIAL_PEER)
-- [RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE](#RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE)
+- [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE)
+- [RMW_CONNEXT_INITIAL_PEERS](#RMW_CONNEXT_INITIAL_PEERS)
+- [RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE](#RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE)
 - [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#RMW_CONNEXT_REQUEST_REPLY_MAPPING)
 - [RMW_CONNEXT_UDP_INTERFACE](#RMW_CONNEXT_UDP_INTERFACE)
 
@@ -176,47 +176,56 @@ Variable `RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY` may be used to disable
 these automatic optimizations, and to leave the DomainParticipant's QoS to
 its defaults.
 
-### RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE
+### RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE
 
 `rmw_connextdds` will always set `DDS_DataWriterQos::publish_mode::kind` of
 any DataWriter it creates to `DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS`, in order to
 enable out of the box support for "large data".
 
 This behavior might not be always desirable, and it can be disabled by setting
-`RMW_CONNEXT_DO_NOT_OVERRIDE_PUBLISH_MODE` to a non-empty value.
+`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE` to a non-empty value.
 
 This variable is not used by `rmw_connextddsmicro`, since it doesn't
 automatically override `DDS_DataWriterQos::publish_mode::kind`.
 
-### RMW_CONNEXT_INITIAL_PEER
+### RMW_CONNEXT_INITIAL_PEERS
 
-`rmw_connextddsmicro` allows users to specify an initial peer for its
-DomainParticipant via `RMW_CONNEXT_INITIAL_PEER`.
+Variable `RMW_CONNEXT_INITIAL_PEERS` can be used to specify a list of
+comma-separated values of "address locators" that the DomainParticipant created
+by the RMW will use to try to make contact with remote peer applications
+during the DDS discovery phase.
 
-The value will be stored in `DDS_DomainParticipantQos::discovery::initial_peers`.
+The values will be parsed, trimmed, and stored in QoS field
+`DDS_DomainParticipantQos::discovery::initial_peers`, overwriting any
+value it previously contained.
 
-Note that by default, `rmw_connextddsmicro` will use the `lo` network interface,
-which will prevent it from accessing the default DDS multicast peer (`239.255.0.1`).
-It also means that discovery will not use the built-in shared-memory transport
-by default.
+While both `rmw_connextdds` and `rmw_connextddsmicro` will honor this variable,
+[equivalent, and more advanced, functionality is already available in RTI Connext DDS](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/Content/UsersManual/ConfigPeersListUsed_inDiscov.htm),
+for example using variable `NDDS_DISCOVERY_PEERS`.
 
-For example, to enable discovery over the built-in shared-memory transport:
+For this reason, only users of `rmw_connextddsmicro` should consider specifying
+`RMW_CONNEXT_INITIAL_PEERS`.
+
+For example, `rmw_connextddsmicro` will use `lo` as its default UDP network
+interface (see [RMW_CONNEXT_UDP_INTERFACE](#RMW_CONNEXT_UDP_INTERFACE)),
+which will prevent it from accessing the default discovery peer
+(multicast address `239.255.0.1`).
+The default peer configuration will also prevent the DomainParticipant from
+carrying out discovery over the built-in shared-memory transport.
+To enable discovery over this transport, in addition to
+the default multicast peer:
 
 ```sh
 RMW_IMPLEMENTATION=rmw_connextddsmicro \
-RMW_CONNEXT_INITIAL_PEER=_shmem:// \
+RMW_CONNEXT_INITIAL_PEERS="_shmem://, 239.255.0.1" \
   ros2 run demo_nodes_cpp listener
 ```
 
-This variable will also be honored by `rmw_connextdds`, although this is less
-flexible than [other ways to configure initial peers](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/Content/UsersManual/ConfigPeersListUsed_inDiscov.htm)
-that are already supported by RTI Connext DDS.
-
-### RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE
+### RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
 
 ROS2 applications using `rmw_connextdds` will not be able to interoperate with
 applications using the previous RMW implementation for RTI Connext DDS, `rmw_connext_cpp`,
-unless variable `RMW_CONNEXT_OLD_RMW_COMPATIBILITY_MODE` is used to enable
+unless variable `RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE` is used to enable
 a "compatibility" mode with these older implementation.
 
 In particular, when this mode is enabled, `rmw_connextdds` will revert to adding

@@ -105,6 +105,142 @@ rcutils_uint8_array_copy(
   return RCUTILS_RET_OK;
 }
 
+static inline void str_trim(
+  const char * const s,
+  const size_t s_len,
+  size_t * const s_start_out,
+  size_t * const s_end_out)
+{
+  size_t s_i = 0;
+
+  for (; s_i < s_len && std::isspace(s[s_i]); s_i++) {
+  }
+  *s_start_out = s_i;
+
+  for (; s_i < s_len && !std::isspace(s[s_i]); s_i++) {
+  }
+  *s_end_out = s_i;
+}
+
+// This function "tokenizes" a string and stores the parsed tokens in a sequence.
+// Note that that a trailing empty element is not supported (e.g. `"foo,bar,"`,
+// or `"foo, bar,  "` if trimming is enabled), unless empty elements are allowed
+// (in which, e.g., `"foo,,bar,"` would also be accepted).
+rmw_ret_t
+rmw_connextdds_parse_string_list(
+  const char * const list,
+  struct DDS_StringSeq * const parsed_out,
+  const char delimiter,
+  const bool trim_elements,
+  const bool allow_empty_elements,
+  const bool append_values)
+{
+  const size_t input_len = strlen(list);
+  // This function expects to be called on a non-empty input string
+  RMW_CONNEXT_ASSERT(input_len > 0)
+
+  RMW_CONNEXT_LOG_TRACE_A(
+    "parse list: "
+    "delim=%c, trim_el=%d, empty_el=%d, append=%d, input='%s'",
+    delimiter, trim_elements, allow_empty_elements, append_values, list)
+
+  DDS_Long parsed_len = DDS_StringSeq_get_length(parsed_out);
+
+  if (!append_values) {
+    parsed_len = 0;
+    if (!DDS_StringSeq_set_length(parsed_out, parsed_len)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to reset sequence length")
+      return RMW_RET_ERROR;
+    }
+  }
+
+  size_t input_i = 0,
+    next_i_start = 0;
+  for (;
+    input_i < input_len;
+    parsed_len += 1,
+    input_i += 2,
+    next_i_start = input_i)
+  {
+    // determine token's lenght by finding a delimiter (or end of input)
+    for (;
+      input_i + 1 < input_len && delimiter != list[input_i + 1];
+      input_i += 1)
+    {
+    }
+
+    RMW_CONNEXT_ASSERT(input_i >= next_i_start)
+    RMW_CONNEXT_ASSERT(input_i < input_len)
+
+    size_t next_len = input_i - next_i_start + 1;
+
+    if (next_len > 0 && trim_elements) {
+      size_t trim_head = 0,
+        trim_tail = 0;
+      str_trim(list + next_i_start, next_len, &trim_head, &trim_tail);
+      next_i_start += trim_head;
+      next_len = trim_tail - trim_head;
+    }
+
+    if (next_len == 0 && !allow_empty_elements) {
+      RMW_CONNEXT_LOG_ERROR_A_SET("empty elements are not allowed: '%s'", list)
+      return RMW_RET_ERROR;
+    }
+
+    if (!DDS_StringSeq_ensure_length(
+        parsed_out, parsed_len + 1, parsed_len + 1))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to resize string sequence")
+      return RMW_RET_ERROR;
+    }
+
+    char ** const el_ref = DDS_StringSeq_get_reference(parsed_out, parsed_len);
+    RMW_CONNEXT_ASSERT(nullptr != el_ref);
+    if (nullptr != *el_ref) {
+      DDS_String_free(*el_ref);
+    }
+    *el_ref = DDS_String_alloc(next_len);
+    if (nullptr == el_ref) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
+      return RMW_RET_ERROR;
+    }
+
+    if (next_len > 0) {
+      memcpy(*el_ref, list + next_i_start, next_len);
+    }
+
+    RMW_CONNEXT_LOG_TRACE_A(
+      "parsed list element: i=%d, el='%s'",
+      parsed_len, *el_ref)
+
+    // check if we have a trailing empty element
+    if (input_i + 2 == input_len) {
+      if (!allow_empty_elements) {
+        RMW_CONNEXT_LOG_ERROR_A_SET("empty elements are not allowed: '%s'", list)
+        return RMW_RET_ERROR;
+      }
+    }
+  }
+
+  return RMW_RET_OK;
+}
+
+bool
+rmw_connextdds_find_string_in_list(
+  const DDS_StringSeq * const values,
+  const char * const value)
+{
+  const DDS_Long values_len = DDS_StringSeq_get_length(values);
+  for (DDS_Long i = 0; i < values_len; i++) {
+    const char * const v_str =
+      *DDS_StringSeq_get_reference(values, i);
+
+    if (strcmp(v_str, value) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /******************************************************************************
  * Qos Helpers
@@ -479,23 +615,6 @@ rmw_connextdds_datareader_qos_to_ros(
     nullptr /* Lifespan is a writer-only qos policy */,
 #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     qos_policies);
-}
-
-bool
-rmw_connextdds_find_string_in_list(
-  const DDS_StringSeq * const profile_names,
-  const char * const profile)
-{
-  const DDS_Long profiles_len = DDS_StringSeq_get_length(profile_names);
-  for (DDS_Long i = 0; i < profiles_len; i++) {
-    const char * const profile_str =
-      *DDS_StringSeq_get_reference(profile_names, i);
-
-    if (strcmp(profile_str, profile) == 0) {
-      return true;
-    }
-  }
-  return false;
 }
 
 #define RMW_CONNEXT_QOS_TAG_NODE          "[node]"

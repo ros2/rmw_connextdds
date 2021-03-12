@@ -8,8 +8,9 @@
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_export_depend>ament_cmake</buildtool_export_depend>
 
-  <build_depend>rti-connext-dds-5.3.1</build_depend>
+  <depend>rti-connext-dds-5.3.1</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

@@ -8,6 +8,7 @@
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
+  <buildtool_export_depend>ament_cmake</buildtool_export_depend>
 
   <depend>rti_connext_dds_cmake_module</depend>
   <depend>fastcdr</depend>

@@ -93,7 +93,6 @@ struct rmw_context_impl_t
   bool localhost_only;
 
   /* Global configuration for QoS profiles */
-  std::string qos_library;
   std::string qos_ctx_name;
   std::string qos_ctx_namespace;
   bool use_default_publish_mode;

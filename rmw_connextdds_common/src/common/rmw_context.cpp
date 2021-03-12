@@ -825,39 +825,6 @@ rmw_api_connextdds_init(
   // context->actual_domain_id in rmw_context_impl_t::initialize_node()
   ctx->domain_id = actual_domain_id;
 
-  /* Lookup name of custom QoS library - NOT USED FOR ANYTHING YET */
-  const char * qos_library = nullptr;
-  const char * lookup_rc =
-    rcutils_get_env(RMW_CONNEXT_ENV_QOS_LIBRARY, &qos_library);
-
-  if (nullptr != lookup_rc || nullptr == qos_library) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_QOS_LIBRARY,
-      lookup_rc)
-    return RMW_RET_ERROR;
-  }
-
-  ctx->qos_library = qos_library;
-
-  if (ctx->qos_library != "") {
-    struct DDS_StringSeq library_names = DDS_SEQUENCE_INITIALIZER;
-    if (
-      DDS_RETCODE_OK != DDS_DomainParticipantFactory_get_qos_profile_libraries(
-        ctx->factory, &library_names))
-    {
-      RMW_SET_ERROR_MSG("failed to get qos profile libraries");
-      return RMW_RET_ERROR;
-    }
-    if (!rmw_connextdds_find_string_in_list(&library_names, qos_library)) {
-      RMW_CONNEXT_LOG_ERROR_A_SET(
-        "specified qos library {%s} was not found", qos_library);
-      return RMW_RET_ERROR;
-    }
-  }
-
   // All publishers will use asynchronous publish mode unless
   // RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE is set.
   const char * use_default_publish_mode_env = nullptr;

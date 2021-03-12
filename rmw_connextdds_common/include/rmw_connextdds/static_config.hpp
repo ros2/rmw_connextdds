@@ -232,7 +232,7 @@
  * other transports, e.g. shared memory).
  ******************************************************************************/
 #ifndef RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE
-#define RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE     1
+#define RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE     0
 #endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
 
 /******************************************************************************

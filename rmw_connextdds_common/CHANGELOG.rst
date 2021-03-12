@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.0 (2021-03-12)
+------------------
+* Add `<buildtool_export_depend>` for `ament_cmake`.
+* Use default `dds.transport.UDPv4.builtin.ignore_loopback_interface`.
+
 0.2.1 (2021-03-11)
 ------------------
 

@@ -2,6 +2,10 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.0 (2021-03-12)
+------------------
+* Add `<buildtool_export_depend>` for `ament_cmake`.
+
 0.2.1 (2021-03-11)
 ------------------
 

@@ -2,6 +2,11 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.0 (2021-03-12)
+------------------
+* Add `<buildtool_export_depend>` for `ament_cmake`.
+* Add `<depend>` for `rti-connext-dds-5.3.1`
+
 0.2.1 (2021-03-11)
 ------------------
 

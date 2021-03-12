@@ -325,13 +325,13 @@ rmw_connextdds_get_datawriter_qos(
   UNUSED_ARG(topic);
 
   bool ignore_ros_profile = (
-    ctx->qos_profile_loading_policy ==
-    rmw_context_impl_t::qos_profile_loading_policy_t::Never);
+    ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::Never);
 
   const char * topic_name = DDS_TopicDescription_get_name(DDS_Topic_as_topicdescription(topic));
-  ignore_ros_profile = ignore_ros_profile || (ctx->qos_profile_loading_policy ==
-    rmw_context_impl_t::qos_profile_loading_policy_t::DDSTopics &&
-    std::regex_match(topic_name, ctx->dds_topics_regex));
+  ignore_ros_profile = ignore_ros_profile || (ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics &&
+    std::regex_match(topic_name, ctx->endpoint_qos_override_policy_topics_regex));
 
   if (!ignore_ros_profile) {
     if (RMW_RET_OK !=
@@ -394,13 +394,13 @@ rmw_connextdds_get_datareader_qos(
   UNUSED_ARG(topic_desc);
 
   bool ignore_ros_profile = (
-    ctx->qos_profile_loading_policy ==
-    rmw_context_impl_t::qos_profile_loading_policy_t::Never);
+    ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::Never);
 
   const char * topic_name = DDS_TopicDescription_get_name(topic_desc);
-  ignore_ros_profile = ignore_ros_profile || (ctx->qos_profile_loading_policy ==
-    rmw_context_impl_t::qos_profile_loading_policy_t::DDSTopics &&
-    std::regex_match(topic_name, ctx->dds_topics_regex));
+  ignore_ros_profile = ignore_ros_profile || (ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics &&
+    std::regex_match(topic_name, ctx->endpoint_qos_override_policy_topics_regex));
 
   if (!ignore_ros_profile) {
     if (RMW_RET_OK !=

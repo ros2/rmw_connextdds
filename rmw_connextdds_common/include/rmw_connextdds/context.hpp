@@ -106,7 +106,7 @@ struct rmw_context_impl_t
   bool fast_endp_discovery{true};
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
-  enum class qos_profile_loading_policy_t
+  enum class endpoint_qos_override_policy_t
   {
     // Use default QoS policy got from the DDS qos profile file applying topic filters
     // and apply the ROS settings on top of it.
@@ -120,8 +120,8 @@ struct rmw_context_impl_t
     Never,
   };
 
-  qos_profile_loading_policy_t qos_profile_loading_policy;
-  std::regex dds_topics_regex;
+  endpoint_qos_override_policy_t endpoint_qos_override_policy;
+  std::regex endpoint_qos_override_policy_topics_regex;
 
   /* Participant reference count*/
   size_t node_count{0};

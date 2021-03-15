@@ -827,7 +827,7 @@ rmw_api_connextdds_init(
   // All publishers will use asynchronous publish mode unless
   // RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE is set.
   const char * use_default_publish_mode_env = nullptr;
-  lookup_rc = rcutils_get_env(
+  const char * lookup_rc = rcutils_get_env(
     RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE, &use_default_publish_mode_env);
 
   if (nullptr != lookup_rc || nullptr == use_default_publish_mode_env) {

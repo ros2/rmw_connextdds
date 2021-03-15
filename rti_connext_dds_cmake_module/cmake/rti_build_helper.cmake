@@ -596,9 +596,19 @@ function(rti_find_connextpro)
 
       add_library(RTIConnextDDS::c_api SHARED IMPORTED)
       list(GET CONNEXTDDS_C_API_LIBRARIES_${release_type}_SHARED 0 libnddsc)
+      set(no_as_needed)
+      set(as_needed)
+      # Pass `--no-as-needed` to linker for "system" dependencies if we are
+      # using `gcc`, as specified in the Connext 5.3.1 Platform Notes.
+      if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(no_as_needed "-Wl,--no-as-needed")
+        set(as_needed "-Wl,--as-needed")
+      endif()
       set(c_api_libs
           ${CONNEXTDDS_C_API_LIBRARIES_${release_type}_SHARED}
-          ${CONNEXTDDS_EXTERNAL_LIBS})
+          "${no_as_needed}"
+          ${CONNEXTDDS_EXTERNAL_LIBS}
+          "${as_needed}")
       list(REMOVE_AT c_api_libs 0)
       # Iterate over definitions list and detect any options not starting with
       # -D. Conside these options, and not definitions.
@@ -624,7 +634,9 @@ function(rti_find_connextpro)
                 INTERFACE_COMPILE_DEFINITIONS
                   "${ndds_defines}"
                 INTERFACE_COMPILE_OPTIONS
-                  "${ndds_compile_opts}")
+                  "${ndds_compile_opts}"
+                IMPORTED_NO_SONAME
+                  true)
     endif()
 
     set(RTIConnextDDS_FOUND ${RTIConnextDDS_FOUND} PARENT_SCOPE)

@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.1 (2021-03-15)
+------------------
+
 0.3.0 (2021-03-12)
 ------------------
 * Add `<buildtool_export_depend>` for `ament_cmake`.

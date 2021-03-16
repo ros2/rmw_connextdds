@@ -209,7 +209,8 @@ rmw_context_impl_t::initialize_participant(const bool localhost_only)
     this->endpoint_qos_override_policy =
       rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics;
     try {
-      this->endpoint_qos_override_policy_topics_regex = &endpoint_qos_policy[sizeof(dds_topic_policy_prefix) - 1u];
+      this->endpoint_qos_override_policy_topics_regex =
+        &endpoint_qos_policy[sizeof(dds_topic_policy_prefix) - 1u];
     } catch (std::regex_error & err) {
       RMW_CONNEXT_LOG_ERROR_A_SET(
         "regex expression provided in {%s} environment variable is invalid: %s\n",

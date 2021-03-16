@@ -20,6 +20,7 @@
 #include <limits>
 #include <map>
 #include <mutex>
+#include <regex>
 #include <string>
 
 #include "rmw_connextdds/dds_api.hpp"
@@ -92,7 +93,6 @@ struct rmw_context_impl_t
   bool localhost_only;
 
   /* Global configuration for QoS profiles */
-  std::string qos_library;
   std::string qos_ctx_name;
   std::string qos_ctx_namespace;
   bool use_default_publish_mode;
@@ -104,6 +104,24 @@ struct rmw_context_impl_t
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   bool fast_endp_discovery{true};
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
+
+  enum class endpoint_qos_override_policy_t
+  {
+    // Use default QoS policy got from the DDS qos profile file applying topic filters
+    // and apply the ROS settings on top of it.
+    Always,
+    // Use default QoS policy got from the DDS qos profile file applying topic filters
+    // without any changes for the topics that matches the provided regex expressions.
+    // Apply the ROS settings on top of it for the ones that doesn't match.
+    DDSTopics,
+    // Use default QoS policy got from the DDS qos profile file applying topic filters
+    // without any changes.
+    Never,
+  };
+
+  endpoint_qos_override_policy_t endpoint_qos_override_policy;
+  std::regex endpoint_qos_override_policy_topics_regex;
+
   /* Participant reference count*/
   size_t node_count{0};
   std::mutex initialization_mutex;

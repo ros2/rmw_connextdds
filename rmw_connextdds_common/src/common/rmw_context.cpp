@@ -181,12 +181,57 @@ rmw_context_impl_t::initialize_participant(const bool localhost_only)
 {
   RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipant")
 
+  this->localhost_only = localhost_only;
+
+  /* Lookup RMW_CONNEXT_ENV_ALLOW_TOPIC_QOS_PROFILES env variable.*/
+  const char * endpoint_qos_policy = nullptr;
+  const char * lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY, &endpoint_qos_policy);
+
+  if (nullptr != lookup_rc || nullptr == endpoint_qos_policy) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  this->endpoint_qos_override_policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Always;
+  const char dds_topic_policy_prefix[] = "dds_topics: ";
+  const char never_policy[] = "never";
+  const char always_policy[] = "always";
+  if (
+    0 == strncmp(
+      endpoint_qos_policy, dds_topic_policy_prefix, sizeof(dds_topic_policy_prefix) - 1u))
+  {
+    this->endpoint_qos_override_policy =
+      rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics;
+    try {
+      this->endpoint_qos_override_policy_topics_regex = &endpoint_qos_policy[sizeof(dds_topic_policy_prefix) - 1u];
+    } catch (std::regex_error & err) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "regex expression provided in {%s} environment variable is invalid: %s\n",
+        RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY,
+        err.what());
+      return RMW_RET_ERROR;
+    }
+  } else if (0 == strcmp(endpoint_qos_policy, never_policy)) {
+    this->endpoint_qos_override_policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Never;
+  } else if (endpoint_qos_policy[0] != '\0' && strcmp(endpoint_qos_policy, always_policy) != 0) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "Environment variable {%s} has an unexpected value {%s}. "
+      "Allowed values are {always}, {never} or {dds_topics: <regex_expression>}.\n",
+      RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY,
+      endpoint_qos_policy);
+    return RMW_RET_ERROR;
+  }
+
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_ERROR("DDS DomainParticipantFactory not initialized")
     return RMW_RET_ERROR;
   }
-
-  this->localhost_only = localhost_only;
 
   DDS_DomainId_t domain_id =
     static_cast<DDS_DomainId_t>(this->domain_id);
@@ -779,27 +824,10 @@ rmw_api_connextdds_init(
   // context->actual_domain_id in rmw_context_impl_t::initialize_node()
   ctx->domain_id = actual_domain_id;
 
-  /* Lookup name of custom QoS library - NOT USED FOR ANYTHING YET */
-  const char * qos_library = nullptr;
-  const char * lookup_rc =
-    rcutils_get_env(RMW_CONNEXT_ENV_QOS_LIBRARY, &qos_library);
-
-  if (nullptr != lookup_rc || nullptr == qos_library) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_QOS_LIBRARY,
-      lookup_rc)
-    return RMW_RET_ERROR;
-  }
-
-  ctx->qos_library = qos_library;
-
   // All publishers will use asynchronous publish mode unless
   // RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE is set.
   const char * use_default_publish_mode_env = nullptr;
-  lookup_rc = rcutils_get_env(
+  const char * lookup_rc = rcutils_get_env(
     RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE, &use_default_publish_mode_env);
 
   if (nullptr != lookup_rc || nullptr == use_default_publish_mode_env) {

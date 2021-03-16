@@ -1486,37 +1486,6 @@ rmw_ret_t
 #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies);
 
-rmw_ret_t
-rmw_connextdds_list_context_qos_profiles(
-  rmw_context_impl_t * const ctx,
-  std::vector<std::string> & profiles);
-
-rmw_ret_t
-rmw_connextdds_list_publisher_qos_profiles(
-  rmw_context_impl_t * const ctx,
-  const char * const topic_name,
-  std::vector<std::string> & profiles);
-
-rmw_ret_t
-rmw_connextdds_list_subscription_qos_profiles(
-  rmw_context_impl_t * const ctx,
-  const char * const topic_name,
-  std::vector<std::string> & profiles);
-
-rmw_ret_t
-rmw_connextdds_list_client_qos_profiles(
-  rmw_context_impl_t * const ctx,
-  const char * const service_name,
-  std::vector<std::string> & req_profiles,
-  std::vector<std::string> & rep_profiles);
-
-rmw_ret_t
-rmw_connextdds_list_service_qos_profiles(
-  rmw_context_impl_t * const ctx,
-  const char * const service_name,
-  std::vector<std::string> & req_profiles,
-  std::vector<std::string> & rep_profiles);
-
 /******************************************************************************
  * Security Helpers
  ******************************************************************************/

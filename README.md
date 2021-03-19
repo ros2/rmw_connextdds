@@ -170,9 +170,8 @@ By default, `rmw_connextdds` will try to detect the use of "large data" types,
 and automatically optimize the QoS of DDS DataWriters and DataReaders
 using these types, to improve out of the box performance on reliable streams.
 
-These optimizations will be applied to any endpoint whose type is "bounded"
-(i.e. it doesn't contain any member of unlimited length), and whose serialized
-size exceeds a statically defined limit (1MB by default).
+These optimizations will be applied to any endpoint whose type has a serialized
+size of at least 1MB (configured by a compile-time limit).
 
 `rmw_connextdds` will modify a "large data" endpoint's RTPS reliability
 protocol parameters to more quickly recover samples, which typically improves

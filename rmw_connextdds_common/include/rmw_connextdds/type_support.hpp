@@ -117,7 +117,7 @@ public:
   bool large_data() const
   {
     const uint32_t large_data_threshold = RMW_CONNEXT_LARGE_DATA_MIN_SERIALIZED_SIZE;
-    return !this->_unbounded && this->_serialized_size_max >= large_data_threshold;
+    return this->_serialized_size_max >= large_data_threshold;
   }
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 

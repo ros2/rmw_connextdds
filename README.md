@@ -168,7 +168,7 @@ instead of using one the two standard profiles defined by the DDS-RPC specificat
 
 By default, `rmw_connextdds` will try to detect the use of "large data" types,
 and automatically optimize the QoS of DDS DataWriters and DataReaders
-using these types, to improve out of the box performance on reliable sterams.
+using these types, to improve out of the box performance on reliable streams.
 
 These optimizations will be applied to any endpoint whose type is "bounded"
 (i.e. it doesn't contain any member of unlimited length), and whose serialized
@@ -199,14 +199,22 @@ its defaults.
 
 ### RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY
 
-When this variable is not set or set to `always`, the qos settings specified in the default profile will be used and the ros qos profile will be applied on top of it.
-You can use topic filters in XML profile files to have different defaults for different topics, but you have to use the mangled topic names (see [ROS topic mangling conventions](#ros-topic-mangling-conventions)).
+When this variable is not set or set to `always`, the QoS settings specified in
+the default profile will be used and the ros QoS profile will be applied on top
+of it. You can use topic filters in XML profile files to have different defaults
+for different topics, but you have to use the mangled topic names
+(see [ROS topic mangling conventions](#ros-topic-mangling-conventions)).
 
-In case this variable is set to `never`, the qos settings will be loaded from the default profile as before but the ros qos profile will be ignored.
-Be aware of configuring the qos of rcl topics (rt/rosout, rt/parameter_events, etc) and the rmw internal topic `ros_discovery_info` correctly.
+In case this variable is set to `never`, the QoS settings will be loaded from
+the default profile as before but the ros QoS profile will be ignored.
+Be aware of configuring the QoS of rcl topics (`rt/rosout`, `rt/parameter_events`,
+etc.) and the rmw internal topic `ros_discovery_info` correctly.
 
-This variable can also be set to `dds_topics: <regex>`, e.g.: `dds_topics: rt/my_topic|rt/my_ns/another_topic`.
-In that case, qos settings for topics matching the provided regex will be loaded in the same way as the `never` policy, and the ones that don't match will be loaded in the same way as the `always` policy.
+This variable can also be set to `dds_topics: <regex>`, e.g.:
+ `dds_topics: rt/my_topic|rt/my_ns/another_topic`.
+In that case, QoS settings for topics matching the provided regex will be
+loaded in the same way as the `never` policy, and the ones that don't match
+will be loaded in the same way as the `always` policy.
 
 #### ROS topic mangling conventions
 

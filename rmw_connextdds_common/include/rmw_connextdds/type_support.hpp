@@ -113,6 +113,14 @@ public:
     return this->_message_type == RMW_CONNEXT_MESSAGE_USERDATA;
   }
 
+#if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
+  bool large_data() const
+  {
+    const uint32_t large_data_threshold = RMW_CONNEXT_LARGE_DATA_MIN_SERIALIZED_SIZE;
+    return !this->_unbounded && this->_serialized_size_max >= large_data_threshold;
+  }
+#endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
+
   uint32_t serialized_size_max(
     const void * const ros_msg,
     const bool include_encapsulation = true);

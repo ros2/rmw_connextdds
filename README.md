@@ -139,6 +139,7 @@ configuration of some aspects of their runtime behavior via custom environment
 variables.
 
 - [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE)
+- [RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS](#RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS)
 - [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY)
 - [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_INITIAL_PEERS](#RMW_CONNEXT_INITIAL_PEERS)
@@ -162,6 +163,25 @@ When this "compatibility mode" is enabled, `rmw_connextdds` (and `rmw_connextdds
 will use this non-standard profile in order to interoperate with `rmw_cyclonedds_cpp`,
 instead of using one the two standard profiles defined by the DDS-RPC specification
 (see [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#rmw_connext_request_reply_mapping)).
+
+## RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS
+
+By default, `rmw_connextdds` will try to detect the use of "large data" types,
+and automatically optimize the QoS of DDS DataWriters and DataReaders
+using these types, to improve out of the box performance on reliable sterams.
+
+These optimizations will be applied to any endpoint whose type is "bounded"
+(i.e. it doesn't contain any member of unlimited length), and whose serialized
+size exceeds a statically defined limit (1MB by default).
+
+`rmw_connextdds` will modify a "large data" endpoint's RTPS reliability
+protocol parameters to more quickly recover samples, which typically improves
+performance in the presence of very fragmented data, but it might also
+end up increasing network traffic unnecessarily, particularly if data is not
+exchanged at a fast periodic pace.
+
+Variable `RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS` may be used to disable
+these automatic optimizations, and revert to Connext's default behavior.
 
 ### RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY
 

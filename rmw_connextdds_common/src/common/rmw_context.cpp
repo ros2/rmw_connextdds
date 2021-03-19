@@ -917,11 +917,12 @@ rmw_api_connextdds_init(
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   // Check if we should disable modifying the DomainParticipantQos to enable
   // faster endpoint discovery (but also increase discovery traffic).
-  const char * fast_endp_discovery_env = nullptr;
+  const char * disable_fast_endp_discovery_env = nullptr;
   lookup_rc = rcutils_get_env(
-    RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY, &fast_endp_discovery_env);
+    RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY,
+    &disable_fast_endp_discovery_env);
 
-  if (nullptr != lookup_rc || nullptr == fast_endp_discovery_env) {
+  if (nullptr != lookup_rc || nullptr == disable_fast_endp_discovery_env) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to lookup from environment: "
       "var=%s, "
@@ -930,8 +931,28 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->fast_endp_discovery = '\0' != fast_endp_discovery_env[0];
+  ctx->fast_endp_discovery = '\0' == disable_fast_endp_discovery_env[0];
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
+
+#if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
+  // Check if we should disable modifying automatic tuning of reader and writer
+  // QoS to enable to handle "large data".
+  const char * disable_optimize_large_data_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS,
+    &disable_optimize_large_data_env);
+
+  if (nullptr != lookup_rc || nullptr == disable_optimize_large_data_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+  ctx->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
+#endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")

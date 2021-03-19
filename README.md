@@ -164,7 +164,7 @@ will use this non-standard profile in order to interoperate with `rmw_cyclonedds
 instead of using one the two standard profiles defined by the DDS-RPC specification
 (see [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#rmw_connext_request_reply_mapping)).
 
-## RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS
+### RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS
 
 By default, `rmw_connextdds` will try to detect the use of "large data" types,
 and automatically optimize the QoS of DDS DataWriters and DataReaders

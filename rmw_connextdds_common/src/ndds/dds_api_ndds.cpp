@@ -365,6 +365,40 @@ rmw_connextdds_get_datawriter_qos(
     qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
   }
 
+#if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
+  // Unless disabled, optimize the DataWriter's reliability protocol to
+  // better handle large data samples. These are *bounded* types whose
+  // size exceeds the threshold defined by RMW_CONNEXT_LARGE_DATA_MIN_SERIALIZED_SIZE
+  // These optmizations are mostly derived from Connext's built-in QoS profile
+  // 'Generic.KeepLastReliable.LargeData'. They consist of limiting the RTPS
+  // writer's "send window" to a limited amount of samples, and then configuring
+  // the reliability protocol to use a faster "heartbeat period" when sending
+  // data to a "late joiner" reader or a reader with many missed samples.
+  if (ctx->optimize_large_data && type_support->large_data()) {
+    qos->protocol.rtps_reliable_writer.min_send_window_size =
+      RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MIN;
+    qos->protocol.rtps_reliable_writer.max_send_window_size =
+      RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MAX;
+    qos->protocol.rtps_reliable_writer.heartbeats_per_max_samples =
+      RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MAX;
+
+    qos->protocol.rtps_reliable_writer.heartbeat_period =
+      RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD;
+    qos->protocol.rtps_reliable_writer.late_joiner_heartbeat_period =
+      RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD_FAST;
+    qos->protocol.rtps_reliable_writer.fast_heartbeat_period =
+      RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD_FAST;
+
+    qos->protocol.rtps_reliable_writer.max_nack_response_delay = DDS_DURATION_ZERO;
+
+    qos->protocol.rtps_reliable_writer.high_watermark =
+      RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MIN;
+    qos->protocol.rtps_reliable_writer.low_watermark = 0;
+
+    qos->protocol.rtps_reliable_writer.max_heartbeat_retries = 500;
+  }
+#endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
+
   return rmw_connextdds_get_qos_policies(
     true /* writer_qos */,
     type_support,
@@ -428,6 +462,24 @@ rmw_connextdds_get_datareader_qos(
       return RMW_RET_ERROR;
     }
   }
+
+#if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
+  // Unless disabled, optimize the DataReader's reliability protocol to
+  // better handle large data samples. These are *bounded* types whose
+  // size exceeds the threshold defined by RMW_CONNEXT_LARGE_DATA_MIN_SERIALIZED_SIZE
+  // These optmizations are mostly derived from Connext's built-in QoS profile
+  // 'Generic.KeepLastReliable.LargeData'.
+  if (ctx->optimize_large_data && type_support->large_data()) {
+    qos->protocol.rtps_reliable_reader.min_heartbeat_response_delay = DDS_DURATION_ZERO;
+    qos->protocol.rtps_reliable_reader.max_heartbeat_response_delay = DDS_DURATION_ZERO;
+
+    // Determines whether the DataReader pre-allocates storage for storing
+    // fragmented samples. This setting can be used to limit up-front memory
+    // allocation costs in applications that deal with large data.
+    qos->reader_resource_limits.dynamically_allocate_fragmented_samples = DDS_BOOLEAN_TRUE;
+  }
+#endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
+
   return rmw_connextdds_get_qos_policies(
     false /* writer_qos */,
     type_support,

@@ -73,6 +73,11 @@
   "RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY"
 #endif /* RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE */
 
+#ifndef RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS
+#define RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS \
+  "RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS"
+#endif /* RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS */
+
 // TODO(security-wg): These are intended to be temporary, and need to be
 // refactored into a proper abstraction.
 #ifndef RMW_CONNEXT_ENV_SECURITY_LOG_FILE
@@ -209,6 +214,50 @@
 #ifndef RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE
 #define RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE   65000
 #endif /* RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE */
+
+/******************************************************************************
+ * Automatically tune DataWriterQos to better handle reliable "large data".
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
+#define RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS     1
+#endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
+
+/******************************************************************************
+ * Threshold of the maximum serialized size for a message to be considered
+ * "large". The RMW will automatically tune the reliability protocol for
+ * writers of types that match or exceed this threshold.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_LARGE_DATA_MIN_SERIALIZED_SIZE
+#define RMW_CONNEXT_LARGE_DATA_MIN_SERIALIZED_SIZE   1048576 /* 1MB */
+#endif /* RMW_CONNEXT_LARGE_DATA_MIN_SERIALIZED_SIZE */
+
+/******************************************************************************
+ * Size of the "send window" of an RTPS Writer sending "large data".
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MIN
+#define RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MIN   10
+#endif /* RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MIN */
+
+#ifndef RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MAX
+#define RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MAX   100
+#endif /* RMW_CONNEXT_LARGE_DATA_SEND_WINDOW_SIZE_MAX */
+
+/******************************************************************************
+ * Regular hearbeat period used by an RTPS Writer sending "large data".
+ * This is an initializer for an instance of type DDS_Duration_t.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD
+#define RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD       {0, 200000000}   /* 200ms */
+#endif /* RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD */
+
+/******************************************************************************
+ * Fast hearbeat period used by an RTPS Writer sending "large data" to allow
+ * late joiners and out of sync readers to catch.
+ * This is an initializer for an instance of type DDS_Duration_t.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD_FAST
+#define RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD_FAST  {0, 20000000}   /* 20ms */
+#endif /* RMW_CONNEXT_LARGE_DATA_HEARTBEAT_PERIOD_FAST */
 
 /******************************************************************************
  * In order to reduce the time to cleanup a participant (Node), we use the

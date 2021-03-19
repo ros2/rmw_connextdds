@@ -104,6 +104,9 @@ struct rmw_context_impl_t
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   bool fast_endp_discovery{true};
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
+#if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
+  bool optimize_large_data{true};
+#endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
   enum class endpoint_qos_override_policy_t
   {

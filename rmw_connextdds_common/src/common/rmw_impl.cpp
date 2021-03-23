@@ -1093,7 +1093,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   dds_topic_cft(dds_topic_cft),
   type_support(type_support),
   created_topic(created_topic),
-  status_condition(dds_reader, ignore_local, internal)
+  status_condition(new RMW_Connext_SubscriberStatusCondition(dds_reader, ignore_local, internal))
 {
   rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
 
@@ -1211,11 +1211,24 @@ RMW_Connext_Subscriber::create(
     });
 
   DDS_TopicDescription * sub_topic = DDS_Topic_as_topicdescription(topic);
+  std::string cft_topic_name;
+  if ( nullptr != cft_name ||
+    nullptr != subscriber_options->filter_expression) {
+    rmw_ret_t cft_rc = RMW_RET_OK;
 
-  if (nullptr != cft_name) {
-    rmw_ret_t cft_rc =
-      rmw_connextdds_create_contentfilteredtopic(
-      ctx, dp, topic, cft_name, cft_filter, &cft_topic);
+    if (nullptr != cft_name) {
+      cft_rc =
+        rmw_connextdds_create_contentfilteredtopic(
+        ctx, dp, topic, cft_name, cft_filter, NULL, &cft_topic);
+    } else if (nullptr != subscriber_options->filter_expression) {
+      cft_topic_name =
+        fqtopic_name+"_ContentFilterTopic"+RMW_Connext_Subscriber::get_atomic_id();
+      cft_rc =
+        rmw_connextdds_create_contentfilteredtopic(
+        ctx, dp, topic, cft_topic_name.c_str(),
+        subscriber_options->filter_expression,
+        subscriber_options->expression_parameters, &cft_topic);
+    }
 
     if (RMW_RET_OK != cft_rc) {
       if (RMW_RET_UNSUPPORTED != cft_rc) {
@@ -1298,6 +1311,9 @@ RMW_Connext_Subscriber::create(
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate RMW subscriber")
     return nullptr;
   }
+  rmw_sub_impl->fqtopic_name = fqtopic_name;
+  rmw_sub_impl->qos_policies = *qos_policies;
+
   scope_exit_type_unregister.cancel();
   scope_exit_topic_delete.cancel();
   scope_exit_dds_reader_delete.cancel();
@@ -1313,7 +1329,7 @@ RMW_Connext_Subscriber::finalize()
     (void *)this, this->type_support->type_name())
 
   // Make sure subscriber's condition is detached from any waitset
-  this->status_condition.invalidate();
+  this->status_condition->invalidate();
 
   if (this->loan_len > 0) {
     this->loan_next = this->loan_len;
@@ -1322,7 +1338,7 @@ RMW_Connext_Subscriber::finalize()
     }
   }
 
-  if (DDS_RETCODE_OK !=
+  if (nullptr != this->dds_reader && DDS_RETCODE_OK !=
     DDS_Subscriber_delete_datareader(
       this->dds_subscriber(), this->dds_reader))
   {
@@ -1485,6 +1501,256 @@ RMW_Connext_Subscriber::take_serialized(
 }
 
 rmw_ret_t
+RMW_Connext_Subscriber::set_cft_expression_parameters(
+  const char * filter_expression,
+  const rcutils_string_array_t * expression_parameters)
+{
+  std::lock_guard<std::mutex> lock(this->cft_mutex);
+  if (nullptr == this->dds_topic_cft) {
+    // case 1: reset if there is no cft topic exist
+    if (filter_expression && *filter_expression == '\0') {
+      RMW_CONNEXT_LOG_DEBUG("current subscriber has no content filter topic")
+      return RMW_RET_OK;
+    }
+  } else {
+    if (nullptr != filter_expression && *filter_expression != '\0') {
+      // case 2: normally to set filter expre if cft already support
+      DDS_ContentFilteredTopic * const cft_topic =
+        DDS_ContentFilteredTopic_narrow(dds_topic_cft);
+
+      struct DDS_StringSeq cft_parameters;
+      DDS_StringSeq_initialize(&cft_parameters);
+      if (expression_parameters) {
+        DDS_StringSeq_ensure_length(
+          &cft_parameters, expression_parameters->size, expression_parameters->size);
+        DDS_StringSeq_from_array(&cft_parameters,
+          const_cast<const char **>(expression_parameters->data),
+          expression_parameters->size);
+      }
+
+      DDS_ReturnCode_t ret =
+        DDS_ContentFilteredTopic_set_expression(cft_topic, filter_expression, &cft_parameters);
+      DDS_StringSeq_finalize(&cft_parameters);
+      if (DDS_RETCODE_OK != ret)
+      {
+        RMW_CONNEXT_LOG_ERROR("failed to set content-filtered topic")
+        return RMW_RET_ERROR;
+      }
+      return RMW_RET_OK;
+    }
+  }
+
+  if (this->loan_len != 0) {
+    RMW_CONNEXT_LOG_ERROR("subscriber can't be reset because a message data loaned")
+    return RMW_RET_ERROR;
+  }
+  if (RMW_RET_OK !=
+    rmw_connextdds_graph_on_subscriber_deleted(
+      ctx, node, this))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to update graph for subscriber")
+    return RMW_RET_ERROR;
+  }
+
+  this->status_condition->invalidate();
+
+  if (DDS_RETCODE_OK !=
+    DDS_Subscriber_delete_datareader(this->dds_subscriber(), this->dds_reader))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET(
+      "failed to delete DDS DataReader")
+    return RMW_RET_ERROR;
+  }
+
+  DDS_DomainParticipant * const dp = this->dds_participant();
+  DDS_TopicDescription * sub_topic = nullptr;
+  if (nullptr == this->dds_topic_cft) {
+    // case 3: create a new cft if there is no cft topic and filter_expression is not empty("")
+    // remove old reader
+    // create cft topic and a new reader
+    std::string cft_topic_name =
+      fqtopic_name+"_ContentFilterTopic"+RMW_Connext_Subscriber::get_atomic_id();
+
+    rmw_ret_t cft_rc =
+      rmw_connextdds_create_contentfilteredtopic(
+      ctx, dp, dds_topic, cft_topic_name.c_str(),
+      filter_expression,
+      expression_parameters, &sub_topic);
+
+    if (RMW_RET_OK != cft_rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to create content filter topic")
+      return RMW_RET_ERROR;
+    }
+
+    this->dds_topic_cft = sub_topic;
+  } else {
+    // case 4: delete cft topic and create a normal reader if filter_expression is empty("")
+    // that means reset
+    // remove content filter topic
+    if (nullptr != this->dds_topic_cft) {
+      rmw_ret_t cft_rc = rmw_connextdds_delete_contentfilteredtopic(
+        ctx, dp, this->dds_topic_cft);
+
+      if (RMW_RET_OK != cft_rc) {
+        return cft_rc;
+      }
+    }
+
+    this->dds_topic_cft = nullptr;
+
+    // create normal topic and a new reader
+    sub_topic = DDS_Topic_as_topicdescription(dds_topic);
+  }
+
+  #if !RMW_CONNEXT_DDS_API_PRO_LEGACY
+    DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
+  #else
+    DDS_DataReaderQos dr_qos;
+    if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datareader qos")
+      return RMW_RET_ERROR;
+    }
+  #endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
+
+  DDS_DataReaderQos * const dr_qos_ptr = &dr_qos;
+  auto scope_exit_dr_qos_delete =
+    rcpputils::make_scope_exit(
+    [dr_qos_ptr]()
+    {
+      DDS_DataReaderQos_finalize(dr_qos_ptr);
+    });
+
+  if (DDS_RETCODE_OK !=
+    DDS_Subscriber_get_default_datareader_qos(this->dds_subscriber(), &dr_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get default reader QoS")
+    return RMW_RET_ERROR;
+  }
+
+  DDS_DataReader * dds_reader =
+    rmw_connextdds_create_datareader(
+    ctx,
+    dp,
+    this->dds_subscriber(),
+    &qos_policies,
+    nullptr,
+    internal,
+    type_support,
+    sub_topic,
+    &dr_qos);
+
+  if (nullptr == dds_reader) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS reader")
+    return RMW_RET_ERROR;
+  }
+
+  this->dds_reader = dds_reader;
+
+  this->status_condition.reset(
+    new RMW_Connext_SubscriberStatusCondition(
+      this->dds_reader, this->ignore_local, this->internal));
+  rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
+
+  if (!internal) {
+    if (RMW_RET_OK != this->enable()) {
+      RMW_CONNEXT_LOG_ERROR("failed to enable subscription")
+      return RMW_RET_ERROR;
+    }
+
+    if (RMW_RET_OK !=
+      rmw_connextdds_graph_on_subscriber_created(
+        ctx, node, this))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to update graph for subscriber")
+      return RMW_RET_ERROR;
+    }
+  }
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Subscriber::get_cft_expression_parameters(
+  char ** filter_expression,
+  rcutils_string_array_t * expression_parameters)
+{
+  std::lock_guard<std::mutex> lock(this->cft_mutex);
+  if (nullptr == this->dds_topic_cft) {
+    RMW_SET_ERROR_MSG("this subscriber has not created a contentfilteredtopic.");
+    return RMW_RET_ERROR;
+  }
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(dds_topic_cft);
+
+  int parameters_len;
+  rcutils_allocator_t allocator = rcutils_get_default_allocator();
+
+  // get filter_expression
+  const char* expression = DDS_ContentFilteredTopic_get_filter_expression(cft_topic);
+  if (!expression) {
+    RMW_SET_ERROR_MSG("failed to get filter expression");
+    return RMW_RET_ERROR;
+  }
+
+  *filter_expression = rcutils_strdup(expression, allocator);
+  if (NULL == *filter_expression) {
+    RMW_SET_ERROR_MSG("failed to duplicate string");
+    return RMW_RET_BAD_ALLOC;
+  }
+  auto scope_exit_filter_expression_delete =
+    rcpputils::make_scope_exit(
+    [filter_expression, allocator]()
+    {
+      if (*filter_expression) {
+        allocator.deallocate(*filter_expression, allocator.state);
+        *filter_expression = nullptr;
+      }
+    });
+
+  // get parameters
+  struct DDS_StringSeq parameters;
+  DDS_ReturnCode_t status =
+    DDS_ContentFilteredTopic_get_expression_parameters(cft_topic, &parameters);
+  if (DDS_RETCODE_OK != status) {
+    RMW_SET_ERROR_MSG("failed to get expression parameters");
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_parameters_delete =
+    rcpputils::make_scope_exit(
+    [&parameters]()
+    {
+      DDS_StringSeq_finalize(&parameters);
+    });
+
+  parameters_len = DDS_StringSeq_get_length(&parameters);
+  rcutils_ret_t rcutils_ret = rcutils_string_array_init(expression_parameters, parameters_len, &allocator);
+  if (rcutils_ret != RCUTILS_RET_OK) {
+    RMW_SET_ERROR_MSG("failed to init string array for expression parameters");
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_expression_parameters_delete =
+    rcpputils::make_scope_exit(
+    [expression_parameters]()
+    {
+      if (RCUTILS_RET_OK != rcutils_string_array_fini(expression_parameters)) {
+        RCUTILS_LOG_ERROR("Error while finalizing expression parameter due to another error");
+      }
+    });
+  for (int i = 0; i < parameters_len; ++i) {
+    char * parameter = rcutils_strdup(DDS_StringSeq_get(&parameters, i), allocator);
+    if (!parameter) {
+      RMW_SET_ERROR_MSG("failed to allocate memory for parameter");
+      return RMW_RET_BAD_ALLOC;
+    }
+    expression_parameters->data[i] = parameter;
+  }
+
+  scope_exit_filter_expression_delete.cancel();
+  scope_exit_expression_parameters_delete.cancel();
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 RMW_Connext_Subscriber::loan_messages(const bool update_condition)
 {
   /* this function should only be called once all previously
@@ -1519,16 +1785,16 @@ RMW_Connext_Subscriber::return_messages()
     "[%s] return loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
-  this->loan_len = 0;
-  this->loan_next = 0;
-
   rmw_ret_t rc_result = RMW_RET_OK;
   rmw_ret_t rc = rmw_connextdds_return_samples(this);
   if (RMW_RET_OK != rc) {
     rc_result = rc;
   }
 
-  rc = this->status_condition.set_data_available(false);
+  this->loan_len = 0;
+  this->loan_next = 0;
+
+  rc = this->status_condition->set_data_available(false);
   if (RMW_RET_OK != rc) {
     rc_result = rc;
   }
@@ -1726,7 +1992,7 @@ rmw_connextdds_create_subscriber(
       "failed to allocate RMW_Connext_Subscriber")
     return nullptr;
   }
-
+  rmw_sub_impl->set_node(node);
   auto scope_exit_rmw_reader_impl_delete =
     rcpputils::make_scope_exit(
     [rmw_sub_impl]()
@@ -1770,6 +2036,7 @@ rmw_connextdds_create_subscriber(
     topic_name_len + 1);
   rmw_subscriber->options = *subscriber_options;
   rmw_subscriber->can_loan_messages = false;
+  rmw_subscriber->is_cft_supported = rmw_sub_impl->is_cft_supported();
 
   if (!internal) {
     if (RMW_RET_OK != rmw_sub_impl->enable()) {

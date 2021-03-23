@@ -867,6 +867,7 @@ rmw_connextdds_create_contentfilteredtopic(
   DDS_Topic * const base_topic,
   const char * const cft_name,
   const char * const cft_filter,
+  const rcutils_string_array_t * cft_expression_parameters,
   DDS_TopicDescription ** const cft_out)
 {
   UNUSED_ARG(ctx);
@@ -874,6 +875,7 @@ rmw_connextdds_create_contentfilteredtopic(
   UNUSED_ARG(base_topic);
   UNUSED_ARG(cft_name);
   UNUSED_ARG(cft_filter);
+  UNUSED_ARG(cft_expression_parameters);
   UNUSED_ARG(cft_out);
   return RMW_RET_UNSUPPORTED;
 }

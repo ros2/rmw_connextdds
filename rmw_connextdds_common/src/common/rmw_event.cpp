@@ -124,12 +124,16 @@ rmw_api_connextdds_take_event(
   } else {
     condition = RMW_Connext_Event::publisher(event_handle)->condition();
   }
-  rmw_ret_t rc = condition->get_status(event_handle->event_type, event_info);
-  if (RMW_RET_OK != rc) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get status from DDS entity")
-    return rc;
-  }
+  if (nullptr != condition) {
+    rmw_ret_t rc = condition->get_status(event_handle->event_type, event_info);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to get status from DDS entity")
+      return rc;
+    }
 
-  *taken = true;
+    *taken = true;
+  } else {
+    RMW_CONNEXT_LOG_WARNING("condition was reset because of resetting cft")
+  }
   return RMW_RET_OK;
 }

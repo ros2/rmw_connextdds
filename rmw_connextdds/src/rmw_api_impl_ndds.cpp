@@ -638,6 +638,28 @@ rmw_subscription_get_actual_qos(
 
 
 rmw_ret_t
+rmw_subscription_set_cft_expression_parameters(
+  rmw_subscription_t * subscription,
+  const char * filter_expression,
+  const rcutils_string_array_t * expression_parameters)
+{
+  return rmw_api_connextdds_subscription_set_cft_expression_parameters(
+    subscription, filter_expression, expression_parameters);
+}
+
+
+rmw_ret_t
+rmw_subscription_get_cft_expression_parameters(
+  const rmw_subscription_t * subscription,
+  char ** filter_expression,
+  rcutils_string_array_t * expression_parameters)
+{
+  return rmw_api_connextdds_subscription_get_cft_expression_parameters(
+    subscription, filter_expression, expression_parameters);
+}
+
+
+rmw_ret_t
 rmw_destroy_subscription(
   rmw_node_t * node,
   rmw_subscription_t * subscription)

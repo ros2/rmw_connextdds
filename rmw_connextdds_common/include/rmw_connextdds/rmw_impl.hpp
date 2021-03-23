@@ -353,7 +353,7 @@ public:
   RMW_Connext_SubscriberStatusCondition *
   condition()
   {
-    return &this->status_condition;
+    return this->status_condition.get();
   }
 
   const rmw_gid_t * gid() const
@@ -396,7 +396,7 @@ public:
     }
 
     if (this->internal) {
-      return this->status_condition.trigger_loan_guard_condition(this->loan_len > 0);
+      return this->status_condition->trigger_loan_guard_condition(this->loan_len > 0);
     }
 
     return RMW_RET_OK;
@@ -437,6 +437,18 @@ public:
     rmw_message_info_t * const message_info,
     bool * const taken);
 
+  rmw_ret_t
+  set_cft_expression_parameters(
+    const char * filter_expression,
+    const rcutils_string_array_t * expression_parameters
+  );
+
+  rmw_ret_t
+  get_cft_expression_parameters(
+    char ** filter_expression,
+    rcutils_string_array_t * expression_parameters
+  );
+
   bool
   has_data()
   {
@@ -467,6 +479,21 @@ public:
     return this->dds_topic;
   }
 
+  static std::string get_atomic_id() {
+    static std::atomic_uint64_t id;
+    return std::to_string(id++);
+  }
+
+  void set_node(const rmw_node_t * node)
+  {
+    this->node = node;
+  }
+
+  bool is_cft_supported()
+  {
+    return nullptr != dds_topic_cft;
+  }
+
   const bool internal;
   const bool ignore_local;
 
@@ -478,12 +505,16 @@ private:
   RMW_Connext_MessageTypeSupport * type_support;
   rmw_gid_t ros_gid;
   const bool created_topic;
-  RMW_Connext_SubscriberStatusCondition status_condition;
+  std::shared_ptr<RMW_Connext_SubscriberStatusCondition> status_condition;
   RMW_Connext_UntypedSampleSeq loan_data;
   DDS_SampleInfoSeq loan_info;
-  size_t loan_len;
+  std::atomic_uint64_t loan_len;
   size_t loan_next;
   std::mutex loan_mutex;
+  std::mutex cft_mutex;
+  const rmw_node_t * node;
+  std::string fqtopic_name;
+  rmw_qos_profile_t qos_policies;
 
   RMW_Connext_Subscriber(
     rmw_context_impl_t * const ctx,

@@ -229,7 +229,8 @@ rmw_connextdds_create_contentfilteredtopic(
   if (cft_expression_parameters) {
     DDS_StringSeq_ensure_length(
       &cft_parameters, cft_expression_parameters->size, cft_expression_parameters->size);
-    DDS_StringSeq_from_array(&cft_parameters,
+    DDS_StringSeq_from_array(
+      &cft_parameters,
       const_cast<const char **>(cft_expression_parameters->data),
       cft_expression_parameters->size);
   } else {

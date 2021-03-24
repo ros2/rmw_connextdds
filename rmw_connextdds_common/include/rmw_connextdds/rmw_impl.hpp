@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
@@ -479,7 +480,8 @@ public:
     return this->dds_topic;
   }
 
-  static std::string get_atomic_id() {
+  static std::string get_atomic_id()
+  {
     static std::atomic_uint64_t id;
     return std::to_string(id++);
   }

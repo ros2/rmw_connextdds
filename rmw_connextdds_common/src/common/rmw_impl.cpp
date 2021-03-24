@@ -1212,8 +1212,9 @@ RMW_Connext_Subscriber::create(
 
   DDS_TopicDescription * sub_topic = DDS_Topic_as_topicdescription(topic);
   std::string cft_topic_name;
-  if ( nullptr != cft_name ||
-    nullptr != subscriber_options->filter_expression) {
+  if (nullptr != cft_name ||
+    nullptr != subscriber_options->filter_expression)
+  {
     rmw_ret_t cft_rc = RMW_RET_OK;
 
     if (nullptr != cft_name) {
@@ -1222,7 +1223,7 @@ RMW_Connext_Subscriber::create(
         ctx, dp, topic, cft_name, cft_filter, NULL, &cft_topic);
     } else if (nullptr != subscriber_options->filter_expression) {
       cft_topic_name =
-        fqtopic_name+"_ContentFilterTopic"+RMW_Connext_Subscriber::get_atomic_id();
+        fqtopic_name + "_ContentFilterTopic" + RMW_Connext_Subscriber::get_atomic_id();
       cft_rc =
         rmw_connextdds_create_contentfilteredtopic(
         ctx, dp, topic, cft_topic_name.c_str(),
@@ -1523,7 +1524,8 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
       if (expression_parameters) {
         DDS_StringSeq_ensure_length(
           &cft_parameters, expression_parameters->size, expression_parameters->size);
-        DDS_StringSeq_from_array(&cft_parameters,
+        DDS_StringSeq_from_array(
+          &cft_parameters,
           const_cast<const char **>(expression_parameters->data),
           expression_parameters->size);
       }
@@ -1531,8 +1533,7 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
       DDS_ReturnCode_t ret =
         DDS_ContentFilteredTopic_set_expression(cft_topic, filter_expression, &cft_parameters);
       DDS_StringSeq_finalize(&cft_parameters);
-      if (DDS_RETCODE_OK != ret)
-      {
+      if (DDS_RETCODE_OK != ret) {
         RMW_CONNEXT_LOG_ERROR("failed to set content-filtered topic")
         return RMW_RET_ERROR;
       }
@@ -1569,7 +1570,7 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
     // remove old reader
     // create cft topic and a new reader
     std::string cft_topic_name =
-      fqtopic_name+"_ContentFilterTopic"+RMW_Connext_Subscriber::get_atomic_id();
+      fqtopic_name + "_ContentFilterTopic" + RMW_Connext_Subscriber::get_atomic_id();
 
     rmw_ret_t cft_rc =
       rmw_connextdds_create_contentfilteredtopic(
@@ -1602,15 +1603,15 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
     sub_topic = DDS_Topic_as_topicdescription(dds_topic);
   }
 
-  #if !RMW_CONNEXT_DDS_API_PRO_LEGACY
-    DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
-  #else
-    DDS_DataReaderQos dr_qos;
-    if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datareader qos")
-      return RMW_RET_ERROR;
-    }
-  #endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
+  DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
+#else
+  DDS_DataReaderQos dr_qos;
+  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datareader qos")
+    return RMW_RET_ERROR;
+  }
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   DDS_DataReaderQos * const dr_qos_ptr = &dr_qos;
   auto scope_exit_dr_qos_delete =
@@ -1686,7 +1687,7 @@ RMW_Connext_Subscriber::get_cft_expression_parameters(
   rcutils_allocator_t allocator = rcutils_get_default_allocator();
 
   // get filter_expression
-  const char* expression = DDS_ContentFilteredTopic_get_filter_expression(cft_topic);
+  const char * expression = DDS_ContentFilteredTopic_get_filter_expression(cft_topic);
   if (!expression) {
     RMW_SET_ERROR_MSG("failed to get filter expression");
     return RMW_RET_ERROR;
@@ -1723,7 +1724,8 @@ RMW_Connext_Subscriber::get_cft_expression_parameters(
     });
 
   parameters_len = DDS_StringSeq_get_length(&parameters);
-  rcutils_ret_t rcutils_ret = rcutils_string_array_init(expression_parameters, parameters_len, &allocator);
+  rcutils_ret_t rcutils_ret =
+    rcutils_string_array_init(expression_parameters, parameters_len, &allocator);
   if (rcutils_ret != RCUTILS_RET_OK) {
     RMW_SET_ERROR_MSG("failed to init string array for expression parameters");
     return RMW_RET_ERROR;

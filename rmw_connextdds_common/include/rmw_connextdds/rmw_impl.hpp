@@ -281,7 +281,7 @@ public:
     const char * const cft_filter = nullptr);
 
   rmw_ret_t
-  finalize();
+  finalize(const bool reset_cft = false);
 
   DDS_DataReader *
   reader() const
@@ -514,6 +514,7 @@ private:
   const rmw_node_t * node;
   std::string fqtopic_name;
   rmw_qos_profile_t qos_policies;
+  rmw_subscription_options_t subscriber_options;
 
   RMW_Connext_Subscriber(
     rmw_context_impl_t * const ctx,
@@ -524,6 +525,19 @@ private:
     const bool created_topic,
     DDS_TopicDescription * const dds_topic_cft,
     const bool internal);
+
+  static
+  DDS_DataReader *
+  initialize_datareader(
+    rmw_context_impl_t * const ctx,
+    DDS_DomainParticipant * const dp,
+    DDS_Subscriber * const sub,
+    const std::string & fqtopic_name,
+    const rmw_qos_profile_t * const qos_policies,
+    RMW_Connext_MessageTypeSupport * const type_support,
+    const rmw_subscription_options_t * const subscriber_options,
+    const bool internal,
+    DDS_TopicDescription * sub_topic);
 
   friend class RMW_Connext_SubscriberStatusCondition;
 };

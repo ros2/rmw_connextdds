@@ -37,7 +37,7 @@ rmw_api_connextdds_create_guard_condition(
     return nullptr;
   }
   rmw_guard_condition_t * const ret =
-    rmw_connextdds_create_guard_condition();
+    rmw_connextdds_create_guard_condition(false /* internal */);
   RMW_CONNEXT_LOG_DEBUG_A(
     "new guard condition: %p",
     (ret != nullptr) ? reinterpret_cast<void *>(ret->data) : nullptr)

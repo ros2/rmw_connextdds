@@ -300,6 +300,13 @@
 #endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
 /******************************************************************************
+ * Use an alternative implementation of WaitSets based on C++ std library
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_CPP_STD_WAITSETS
+#define RMW_CONNEXT_CPP_STD_WAITSETS     0
+#endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
+
+/******************************************************************************
  * ROS Target Release
  ******************************************************************************/
 #define RMW_CONNEXT_RELEASE_DASHING     10

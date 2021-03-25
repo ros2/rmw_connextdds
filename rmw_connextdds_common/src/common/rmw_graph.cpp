@@ -134,7 +134,8 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   RMW_CONNEXT_LOG_DEBUG("configuring discovery")
 
-  ctx->common.graph_guard_condition = rmw_connextdds_create_guard_condition();
+  ctx->common.graph_guard_condition =
+    rmw_connextdds_create_guard_condition(false /* internal */);
   if (nullptr == ctx->common.graph_guard_condition) {
     RMW_CONNEXT_LOG_ERROR(
       "failed to create graph guard condition")

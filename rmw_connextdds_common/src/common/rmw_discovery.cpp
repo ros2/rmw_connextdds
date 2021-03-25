@@ -286,7 +286,8 @@ rmw_connextdds_discovery_thread_start(rmw_context_impl_t * ctx)
 
   RMW_CONNEXT_LOG_DEBUG("starting discovery thread...")
 
-  common_ctx->listener_thread_gc = rmw_connextdds_create_guard_condition();
+  common_ctx->listener_thread_gc =
+    rmw_connextdds_create_guard_condition(true /* internal */);
   if (nullptr == common_ctx->listener_thread_gc) {
     RMW_CONNEXT_LOG_ERROR(
       "failed to create discovery thread condition")

@@ -716,7 +716,7 @@ rmw_connextdds_filter_sample(
 
   *accepted = true;
 
-  if (sub->condition()->ignore_local) {
+  if (sub->ignore_local) {
     DDS_InstanceHandle_t reader_ih = sub->participant_instance_handle();
 
     *accepted = (0 != memcmp(

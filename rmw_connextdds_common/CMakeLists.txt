@@ -74,13 +74,26 @@ function(rtirmw_add_library)
     target_compile_definitions(${_rti_build_NAME}
         PUBLIC RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
 
+    set(private_defines)
+
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
         string(TOUPPER "${RMW_CONNEXT_LOG_MODE}" rmw_connext_log_mode)
-        target_compile_definitions(${_rti_build_NAME}
-            PRIVATE RMW_CONNEXT_LOG_MODE=RMW_CONNEXT_LOG_MODE_${rmw_connext_log_mode})
+        list(APPEND private_defines
+          "RMW_CONNEXT_LOG_MODE=RMW_CONNEXT_LOG_MODE_${rmw_connext_log_mode}")
         set(RMW_CONNEXT_LOG_MODE "${RMW_CONNEXT_LOG_MODE}"
             CACHE INTERNAL "")
     endif()
+
+    if(NOT "${RMW_CONNEXT_WAITSET_MODE}" STREQUAL "")
+        string(TOUPPER "${RMW_CONNEXT_WAITSET_MODE}" rmw_connext_waitset_mode)
+        if(rmw_connext_waitset_mode STREQUAL "STD")
+          list(APPEND private_defines "RMW_CONNEXT_CPP_STD_WAITSETS=1")
+        endif()
+        set(RMW_CONNEXT_WAITSET_MODE "${RMW_CONNEXT_WAITSET_MODE}"
+            CACHE INTERNAL "")
+    endif()
+
+    target_compile_definitions(${_rti_build_NAME} PRIVATE ${private_defines})
 
     # Causes the visibility macros to use dllexport rather than dllimport,
     # which is appropriate when building the dll but not consuming it.
@@ -154,6 +167,8 @@ set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_graph.cpp
     src/common/rmw_event.cpp
     src/common/rmw_impl.cpp
+    src/common/rmw_impl_waitset_dds.cpp
+    src/common/rmw_impl_waitset_std.cpp
     src/common/rmw_info.cpp
     src/common/rmw_node.cpp
     src/common/rmw_publication.cpp
@@ -177,6 +192,8 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
     include/rmw_connextdds/resource_limits.hpp
     include/rmw_connextdds/rmw_impl.hpp
     include/rmw_connextdds/rmw_api_impl.hpp
+    include/rmw_connextdds/rmw_waitset_dds.hpp
+    include/rmw_connextdds/rmw_waitset_std.hpp
     include/rmw_connextdds/scope_exit.hpp
     include/rmw_connextdds/static_config.hpp
     include/rmw_connextdds/type_support.hpp

@@ -2,6 +2,9 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.4.0 (2021-03-25)
+------------------
+
 0.3.1 (2021-03-15)
 ------------------
 * Pass ``-Wl,--no-as-needed`` for system dependencies of Connext 5.3.1.

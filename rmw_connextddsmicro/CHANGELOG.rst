@@ -2,6 +2,12 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.4.0 (2021-03-25)
+------------------
+* Only trigger data condition if samples were loaned from reader.
+* Alternative WaitSet implementation based on C++ std, selectable at
+  compile-time.
+
 0.3.1 (2021-03-15)
 ------------------
 

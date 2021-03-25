@@ -210,6 +210,29 @@ rmw_connextdds_initialize_participant_qos_impl(
   return RMW_RET_OK;
 }
 
+static
+rmw_ret_t
+initialize_cft_parameters(
+  struct DDS_StringSeq * cft_parameters,
+  const rcutils_string_array_t * cft_expression_parameters)
+{
+  if (!DDS_StringSeq_ensure_length(
+      cft_parameters, cft_expression_parameters->size, cft_expression_parameters->size))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to ensure length for cft parameters sequence")
+    return RMW_RET_ERROR;
+  }
+  if (!DDS_StringSeq_from_array(
+      cft_parameters,
+      const_cast<const char **>(cft_expression_parameters->data),
+      cft_expression_parameters->size))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to copy data for cft parameters sequence")
+    return RMW_RET_ERROR;
+  }
+  return RMW_RET_OK;
+}
+
 rmw_ret_t
 rmw_connextdds_create_contentfilteredtopic(
   rmw_context_impl_t * const ctx,
@@ -225,16 +248,17 @@ rmw_connextdds_create_contentfilteredtopic(
   RMW_CONNEXT_ASSERT(nullptr != cft_filter)
 
   struct DDS_StringSeq cft_parameters = DDS_SEQUENCE_INITIALIZER;
-  DDS_StringSeq_initialize(&cft_parameters);
+  auto scope_exit_cft_params = rcpputils::make_scope_exit(
+    [&cft_parameters]() {
+      if (!DDS_StringSeq_finalize(&cft_parameters)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize cft parameters sequence")
+      }
+    });
   if (cft_expression_parameters) {
-    DDS_StringSeq_ensure_length(
-      &cft_parameters, cft_expression_parameters->size, cft_expression_parameters->size);
-    DDS_StringSeq_from_array(
-      &cft_parameters,
-      const_cast<const char **>(cft_expression_parameters->data),
-      cft_expression_parameters->size);
-  } else {
-    DDS_StringSeq_ensure_length(&cft_parameters, 0, 0);
+    if (RMW_RET_OK != initialize_cft_parameters(&cft_parameters, cft_expression_parameters)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to initialize_cft_parameters")
+      return RMW_RET_ERROR;
+    }
   }
 
   *cft_out = nullptr;
@@ -242,7 +266,6 @@ rmw_connextdds_create_contentfilteredtopic(
   DDS_ContentFilteredTopic * cft_topic =
     DDS_DomainParticipant_create_contentfilteredtopic(
     dp, cft_name, base_topic, cft_filter, &cft_parameters);
-  DDS_StringSeq_finalize(&cft_parameters);
   if (nullptr == cft_topic) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create content-filtered topic: "
@@ -1234,5 +1257,115 @@ rmw_connextdds_enable_security(
     return RMW_RET_ERROR;
   }
 
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * filter_expression,
+  const rcutils_string_array_t * expression_parameters)
+{
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(topic_desc);
+
+  struct DDS_StringSeq cft_parameters = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_cft_parameters = rcpputils::make_scope_exit(
+    [&cft_parameters]() {
+      if (!DDS_StringSeq_finalize(&cft_parameters)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize cft parameters sequence")
+      }
+    });
+  if (expression_parameters) {
+    if (RMW_RET_OK != initialize_cft_parameters(&cft_parameters, expression_parameters)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to initialize_cft_parameters")
+      return RMW_RET_ERROR;
+    }
+  }
+
+  DDS_ReturnCode_t ret =
+    DDS_ContentFilteredTopic_set_expression(cft_topic, filter_expression, &cft_parameters);
+  if (DDS_RETCODE_OK != ret) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set content-filtered topic")
+    return RMW_RET_ERROR;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  char ** const expr_out,
+  rcutils_string_array_t * cft_params_out)
+{
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(topic_desc);
+
+  int parameters_len;
+  rcutils_allocator_t allocator = rcutils_get_default_allocator();
+
+  // get filter_expression
+  const char * expression = DDS_ContentFilteredTopic_get_filter_expression(cft_topic);
+  if (!expression) {
+    RMW_SET_ERROR_MSG("failed to get filter expression");
+    return RMW_RET_ERROR;
+  }
+
+  *expr_out = rcutils_strdup(expression, allocator);
+  if (NULL == *expr_out) {
+    RMW_SET_ERROR_MSG("failed to duplicate string");
+    return RMW_RET_BAD_ALLOC;
+  }
+  auto scope_exit_filter_expression_delete =
+    rcpputils::make_scope_exit(
+    [expr_out, allocator]()
+    {
+      if (*expr_out) {
+        allocator.deallocate(*expr_out, allocator.state);
+        *expr_out = nullptr;
+      }
+    });
+
+  // get parameters
+  struct DDS_StringSeq parameters;
+  DDS_ReturnCode_t status =
+    DDS_ContentFilteredTopic_get_expression_parameters(cft_topic, &parameters);
+  if (DDS_RETCODE_OK != status) {
+    RMW_SET_ERROR_MSG("failed to get expression parameters");
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_parameters_delete =
+    rcpputils::make_scope_exit(
+    [&parameters]()
+    {
+      DDS_StringSeq_finalize(&parameters);
+    });
+
+  parameters_len = DDS_StringSeq_get_length(&parameters);
+  rcutils_ret_t rcutils_ret =
+    rcutils_string_array_init(cft_params_out, parameters_len, &allocator);
+  if (rcutils_ret != RCUTILS_RET_OK) {
+    RMW_SET_ERROR_MSG("failed to init string array for expression parameters");
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_expression_parameters_delete =
+    rcpputils::make_scope_exit(
+    [cft_params_out]()
+    {
+      if (RCUTILS_RET_OK != rcutils_string_array_fini(cft_params_out)) {
+        RCUTILS_LOG_ERROR("Error while finalizing expression parameter due to another error");
+      }
+    });
+  for (int i = 0; i < parameters_len; ++i) {
+    char * parameter = rcutils_strdup(DDS_StringSeq_get(&parameters, i), allocator);
+    if (!parameter) {
+      RMW_SET_ERROR_MSG("failed to allocate memory for parameter");
+      return RMW_RET_BAD_ALLOC;
+    }
+    cft_params_out->data[i] = parameter;
+  }
+
+  scope_exit_filter_expression_delete.cancel();
+  scope_exit_expression_parameters_delete.cancel();
   return RMW_RET_OK;
 }

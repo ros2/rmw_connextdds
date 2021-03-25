@@ -1954,3 +1954,27 @@ rmw_connextdds_enable_security(
   return RMW_RET_ERROR;
 #endif /* RMW_CONNEXT_ENABLE_SECURITY */
 }
+
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * filter_expression,
+  const rcutils_string_array_t * expression_parameters)
+{
+  UNUSED_ARG(topic_desc);
+  UNUSED_ARG(filter_expression);
+  UNUSED_ARG(expression_parameters);
+  return RMW_RET_UNSUPPORTED;
+}
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  char ** const expr_out,
+  rcutils_string_array_t * cft_params_out);
+{
+  UNUSED_ARG(topic_desc);
+  UNUSED_ARG(expr_out);
+  UNUSED_ARG(cft_params_out);
+  return RMW_RET_UNSUPPORTED;
+}

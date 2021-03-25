@@ -208,6 +208,18 @@ rmw_connextdds_enable_security(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos * const qos);
 
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * filter_expression,
+  const rcutils_string_array_t * expression_parameters);
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  char ** const expr_out,
+  rcutils_string_array_t * cft_params_out);
+
 // Define some macro aliases for security-related properties
 #ifndef DDS_SECURITY_PROPERTY_PREFIX
 #define DDS_SECURITY_PROPERTY_PREFIX \

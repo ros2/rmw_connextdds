@@ -287,40 +287,9 @@ rmw_node_t *
 rmw_create_node(
   rmw_context_t * context,
   const char * name,
-  const char * ns
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
-  ,
-  size_t domain_id,
-  const rmw_node_security_options_t * security_options
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  ,
-  size_t domain_id,
-  const rmw_node_security_options_t * security_options,
-  bool localhost_only
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-  ,
-  size_t domain_id,
-  bool localhost_only
-#endif /* RMW_CONNEXT_RELEASE */
-)
+  const char * ns)
 {
-  return rmw_api_connextdds_create_node(
-    context, name, ns
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
-    ,
-    domain_id,
-    security_options
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-    ,
-    domain_id,
-    security_options,
-    localhost_only
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-    ,
-    domain_id,
-    localhost_only
-#endif /* RMW_CONNEXT_RELEASE */
-  );
+  return rmw_api_connextdds_create_node(context, name, ns);
 }
 
 
@@ -336,15 +305,6 @@ rmw_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
 {
   return rmw_api_connextdds_node_get_graph_guard_condition(rmw_node);
 }
-
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-
-rmw_ret_t
-rmw_node_assert_liveliness(const rmw_node_t * node)
-{
-  return rmw_api_connextdds_node_assert_liveliness(node);
-}
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
 
 /*****************************************************************************
  * Publication API
@@ -385,21 +345,11 @@ rmw_publish_loaned_message(
 rmw_ret_t
 rmw_init_publisher_allocation(
   const rosidl_message_type_support_t * type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   rmw_publisher_allocation_t * allocation)
 {
   return rmw_api_connextdds_init_publisher_allocation(
-    type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-    message_bounds,
-#else
-    message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
-    allocation);
+    type_support, message_bounds, allocation);
 }
 
 
@@ -510,21 +460,11 @@ rmw_destroy_publisher(
 rmw_ret_t
 rmw_get_serialized_message_size(
   const rosidl_message_type_support_t * type_supports,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   size_t * size)
 {
   return rmw_api_connextdds_get_serialized_message_size(
-    type_supports,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-    message_bounds,
-#else
-    message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
-    size);
+    type_supports, message_bounds, size);
 }
 
 
@@ -650,21 +590,11 @@ rmw_destroy_service(
 rmw_ret_t
 rmw_init_subscription_allocation(
   const rosidl_message_type_support_t * type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   rmw_subscription_allocation_t * allocation)
 {
   return rmw_api_connextdds_init_subscription_allocation(
-    type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-    message_bounds,
-#else
-    message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
-    allocation);
+    type_support, message_bounds, allocation);
 }
 
 
@@ -874,7 +804,6 @@ rmw_wait(
 /******************************************************************************
  * QoS Profile functions
  ******************************************************************************/
-#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
 rmw_ret_t
 rmw_qos_profile_check_compatible(
   const rmw_qos_profile_t publisher_profile,
@@ -890,4 +819,3 @@ rmw_qos_profile_check_compatible(
     reason,
     reason_size);
 }
-#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */

@@ -31,9 +31,7 @@ static rmw_ret_t
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
   const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const bool is_reader,
   const bool local);
 
@@ -732,9 +730,7 @@ rmw_connextdds_graph_add_entityEA(
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
   const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const bool is_reader,
   const bool local)
 {
@@ -753,9 +749,7 @@ rmw_connextdds_graph_add_entityEA(
       durability,
       deadline,
       liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
       lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
       &qos_profile))
   {
     // this should never happen with a valid DDS implementation
@@ -883,13 +877,11 @@ rmw_connextdds_graph_add_local_publisherEA(
     &dw_qos.durability,
     &dw_qos.deadline,
     &dw_qos.liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     &dw_qos.lifespan,
 #elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
     nullptr /* Micro doesn't support LifespanQosPolicy */,
 #endif /* RMW_CONNEXT_DDS_API */
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     false /* is_reader */,
     true /* local */);
 }
@@ -955,9 +947,7 @@ rmw_connextdds_graph_add_local_subscriberEA(
     &dr_qos.durability,
     &dr_qos.deadline,
     &dr_qos.liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
     nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     true /* is_reader */,
     true /* local */);
 }
@@ -973,9 +963,7 @@ rmw_connextdds_graph_add_remote_entity(
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
   const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const bool is_reader)
 {
   std::lock_guard<std::mutex> guard(ctx->common.node_update_mutex);
@@ -1000,9 +988,7 @@ rmw_connextdds_graph_add_remote_entity(
     durability,
     deadline,
     liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
     lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     is_reader,
     false /* local */);
   if (RMW_RET_OK != rc) {

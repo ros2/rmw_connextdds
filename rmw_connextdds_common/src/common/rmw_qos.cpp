@@ -17,7 +17,6 @@
 /******************************************************************************
  * QoS Profile functions
  ******************************************************************************/
-#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
 rmw_ret_t
 rmw_api_connextdds_qos_profile_check_compatible(
   const rmw_qos_profile_t publisher_profile,
@@ -29,4 +28,3 @@ rmw_api_connextdds_qos_profile_check_compatible(
   return rmw_dds_common::qos_profile_check_compatible(
     publisher_profile, subscription_profile, compatibility, reason, reason_size);
 }
-#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */

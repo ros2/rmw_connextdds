@@ -752,9 +752,7 @@ rmw_api_connextdds_init(
   const DDS_DomainId_t actual_domain_id =
     (RMW_DEFAULT_DOMAIN_ID != options->domain_id) ?
     static_cast<DDS_DomainId_t>(options->domain_id) : RMW_CONNEXT_DEFAULT_DOMAIN;
-#if RMW_CONNEXT_HAVE_GET_DOMAIN
   context->actual_domain_id = actual_domain_id;
-#endif /* RMW_CONNEXT_HAVE_GET_DOMAIN */
   rmw_ret_t rc = rmw_api_connextdds_init_options_copy(options, &context->options);
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to copy RMW context options")

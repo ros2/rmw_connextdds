@@ -31,54 +31,6 @@
 #include "rcutils/types/uint8_array.h"
 #include "rcpputils/thread_safety_annotations.hpp"
 
-#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
-
-/******************************************************************************
- * Symbols provided by rmw/incompatible_qos.h from Foxy onward
- ******************************************************************************/
-
-typedef enum RMW_PUBLIC_TYPE rmw_qos_policy_kind_t
-{
-  RMW_QOS_POLICY_INVALID = 1 << 0,
-  RMW_QOS_POLICY_DURABILITY = 1 << 1,
-  RMW_QOS_POLICY_DEADLINE = 1 << 2,
-  RMW_QOS_POLICY_LIVELINESS = 1 << 3,
-  RMW_QOS_POLICY_RELIABILITY = 1 << 4,
-  RMW_QOS_POLICY_HISTORY = 1 << 5,
-  RMW_QOS_POLICY_LIFESPAN = 1 << 6
-} rmw_qos_policy_kind_t;
-
-/******************************************************************************
- * rmw_qos_incompatible_event_status_t is defined by rmw/incompatible_qos.h
- * from Foxy onward.
- ******************************************************************************/
-struct RMW_PUBLIC_TYPE rmw_qos_incompatible_event_status_t
-{
-  int32_t total_count;
-  int32_t total_count_change;
-  rmw_qos_policy_kind_t last_policy_kind;
-};
-
-typedef struct rmw_qos_incompatible_event_status_t rmw_requested_qos_incompatible_event_status_t;
-
-typedef struct rmw_qos_incompatible_event_status_t rmw_offered_qos_incompatible_event_status_t;
-
-#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
-/******************************************************************************
- * Define value for RMW_EVENT_MESSAGE_LOST as an invalid value,
- * since it's not defined by rmw_event_type_t.
- ******************************************************************************/
-#define RMW_EVENT_MESSAGE_LOST (RMW_EVENT_INVALID + 3)
-
-typedef struct RMW_PUBLIC_TYPE rmw_message_lost_status_t
-{
-  size_t total_count;
-  size_t total_count_change;
-} rmw_message_lost_status_t;
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
-
 /******************************************************************************
  * General helpers and utilities.
  ******************************************************************************/
@@ -816,9 +768,7 @@ rmw_ret_t
   DDS_LivelinessQosPolicy * const liveliness,
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
   DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
   const rmw_subscription_options_t * const sub_options);
@@ -830,9 +780,7 @@ rmw_ret_t
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
   const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies);
 
 /******************************************************************************

@@ -18,11 +18,6 @@
 #include "rmw/validate_namespace.h"
 #include "rmw/validate_node_name.h"
 
-#if RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY
-// Required to look up LOCALHOST_ONLY env variable.
-#include "rcutils/get_env.h"
-#endif /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
-
 /******************************************************************************
  * Node interface functions
  ******************************************************************************/
@@ -32,22 +27,7 @@ rmw_node_t *
 rmw_api_connextdds_create_node(
   rmw_context_t * context,
   const char * name,
-  const char * ns
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
-  ,
-  size_t domain_id,
-  const rmw_node_security_options_t * security_options
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  ,
-  size_t domain_id,
-  const rmw_node_security_options_t * security_options,
-  bool localhost_only
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-  ,
-  size_t domain_id,
-  bool localhost_only
-#endif /* RMW_CONNEXT_RELEASE */
-)
+  const char * ns)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -60,19 +40,8 @@ rmw_api_connextdds_create_node(
     "expected initialized context",
     return nullptr);
 
-  bool node_localhost_only = false;
-
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
-  UNUSED_ARG(security_options);
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  UNUSED_ARG(security_options);
-  node_localhost_only = localhost_only;
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-  node_localhost_only = localhost_only;
-#else /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
-  node_localhost_only =
+  bool node_localhost_only =
     context->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED;
-#endif /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new node: name=%s, ns=%s, localhost_only=%d",
@@ -113,16 +82,6 @@ rmw_api_connextdds_create_node(
     RMW_CONNEXT_LOG_ERROR_A_SET("invalid node namespace: %s", reason)
     return nullptr;
   }
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-  if (0u == ctx->node_count) {
-    ctx->domain_id = domain_id;
-  } else if ((size_t)ctx->domain_id != domain_id) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "invalid domain id: context=%d, node=%ld\n",
-      ctx->domain_id, domain_id)
-    return nullptr;
-  }
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY */
 
   ret = ctx->initialize_node(ns, name, node_localhost_only);
   if (RMW_RET_OK != ret) {
@@ -270,13 +229,3 @@ rmw_api_connextdds_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
 
   return node_impl->graph_guard_condition();
 }
-
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-
-rmw_ret_t
-rmw_api_connextdds_node_assert_liveliness(const rmw_node_t * node)
-{
-  UNUSED_ARG(node);
-  return RMW_RET_UNSUPPORTED;
-}
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */

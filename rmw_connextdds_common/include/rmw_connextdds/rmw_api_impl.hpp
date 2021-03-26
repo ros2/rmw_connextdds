@@ -204,22 +204,7 @@ rmw_node_t *
 rmw_api_connextdds_create_node(
   rmw_context_t * context,
   const char * name,
-  const char * ns
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_DASHING
-  ,
-  size_t domain_id,
-  const rmw_node_security_options_t * security_options
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  ,
-  size_t domain_id,
-  const rmw_node_security_options_t * security_options,
-  bool localhost_only
-#elif RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_FOXY
-  ,
-  size_t domain_id,
-  bool localhost_only
-#endif /* RMW_CONNEXT_RELEASE */
-);
+  const char * ns);
 
 RMW_CONNEXTDDS_PUBLIC
 
@@ -229,12 +214,6 @@ rmw_api_connextdds_destroy_node(rmw_node_t * rmw_node);
 RMW_CONNEXTDDS_PUBLIC
 const rmw_guard_condition_t *
 rmw_api_connextdds_node_get_graph_guard_condition(const rmw_node_t * rmw_node);
-
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-RMW_CONNEXTDDS_PUBLIC
-rmw_ret_t
-rmw_api_connextdds_node_assert_liveliness(const rmw_node_t * node);
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
 
 /*****************************************************************************
  * Publication API
@@ -264,11 +243,7 @@ RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
   rmw_api_connextdds_init_publisher_allocation(
   const rosidl_message_type_support_t * type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   rmw_publisher_allocation_t * allocation);
 
 RMW_CONNEXTDDS_PUBLIC
@@ -341,11 +316,7 @@ RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
   rmw_api_connextdds_get_serialized_message_size(
   const rosidl_message_type_support_t * type_supports,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   size_t * size);
 
 RMW_CONNEXTDDS_PUBLIC
@@ -429,11 +400,7 @@ RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
   rmw_api_connextdds_init_subscription_allocation(
   const rosidl_message_type_support_t * type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   rmw_subscription_allocation_t * allocation);
 
 RMW_CONNEXTDDS_PUBLIC
@@ -585,7 +552,6 @@ rmw_api_connextdds_wait(
 /******************************************************************************
  * QoS Profile functions
  ******************************************************************************/
-#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
 rmw_api_connextdds_qos_profile_check_compatible(
@@ -594,7 +560,5 @@ rmw_api_connextdds_qos_profile_check_compatible(
   rmw_qos_compatibility_type_t * compatibility,
   char * reason,
   size_t reason_size);
-#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */
-
 
 #endif  // RMW_CONNEXTDDS__RMW_API_IMPL_HPP_

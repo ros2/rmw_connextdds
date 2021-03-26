@@ -1216,9 +1216,7 @@ RMW_Connext_Subscriber::create(
 
   DDS_TopicDescription * sub_topic = DDS_Topic_as_topicdescription(topic);
   std::string cft_topic_name;
-  if (nullptr != cft_name ||
-    nullptr != subscriber_options->filter_expression)
-  {
+  if (nullptr != cft_name || nullptr != subscriber_options->filter_expression) {
     rmw_ret_t cft_rc = RMW_RET_OK;
 
     if (nullptr != cft_name) {
@@ -1240,7 +1238,9 @@ RMW_Connext_Subscriber::create(
         return nullptr;
       }
     } else {
-      sub_topic = cft_topic;
+      if (nullptr != cft_topic) {
+        sub_topic = cft_topic;
+      }
     }
   }
 
@@ -1540,26 +1540,23 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
 {
   RMW_CONNEXT_ASSERT(nullptr != filter_expression)
   RMW_CONNEXT_ASSERT(!internal)
+  RMW_CONNEXT_ASSERT(nullptr != node)
 
   rmw_ret_t ret;
   std::lock_guard<std::mutex> lock(this->cft_mutex);
   const bool filter_expression_empty = (*filter_expression == '\0');
-  if (nullptr == this->dds_topic_cft) {
+  if (nullptr == this->dds_topic_cft && filter_expression_empty) {
     // allow to call set filter_expresson even if cft not exist
-    if (filter_expression_empty) {
-      RMW_CONNEXT_LOG_DEBUG("current subscriber has no content filter topic")
-      return RMW_RET_OK;
-    }
-  } else {
-    if (!filter_expression_empty) {
-      // set filter expre if cft exist
-      return rmw_connextdds_set_cft_filter_expression(
-        this->dds_topic_cft, filter_expression, expression_parameters);
-    }
+    RMW_CONNEXT_LOG_DEBUG("current subscriber has no content filter topic")
+    return RMW_RET_OK;
+  } else if (nullptr != this->dds_topic_cft && !filter_expression_empty) {
+    // set filter expre if cft exist
+    return rmw_connextdds_set_cft_filter_expression(
+      this->dds_topic_cft, filter_expression, expression_parameters);
   }
 
   // finalization to remove the old data reader
-  ret = finalize(true);
+  ret = finalize(true /* reset_cft */);
   if (RMW_RET_OK != ret) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to finalize subscriber with resetting cft flag")
     return ret;

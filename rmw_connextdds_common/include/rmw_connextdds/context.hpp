@@ -33,20 +33,10 @@
 #include "rmw/get_node_info_and_types.h"
 #include "rmw/get_service_names_and_types.h"
 #include "rmw/get_topic_names_and_types.h"
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
 #include "rmw/topic_endpoint_info_array.h"
 #include "rmw/get_topic_endpoint_info.h"
-#else
-#include "rmw_connextdds/topic_endpoint_info_array.h"
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
-
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
 #include "rmw_dds_common/context.hpp"
 #include "rmw_dds_common/msg/participant_entities_info.hpp"
-#else
-#include "rmw_connextdds/context_common.hpp"
-#include "rmw_connextdds_common/msg/participant_entities_info.hpp"
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #if RMW_CONNEXT_HAVE_QOS_PROFILE_API
 #include "rmw/qos_profiles.h"
@@ -150,11 +140,7 @@ struct rmw_context_impl_t
     dr_participants(nullptr),
     dr_publications(nullptr),
     dr_subscriptions(nullptr),
-#if RMW_CONNEXT_HAVE_LOCALHOST_ONLY
     localhost_only(base->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED)
-#else
-    localhost_only(false)
-#endif /* RMW_CONNEXT_HAVE_LOCALHOST_ONLY */
   {
     /* destructor relies on these being initialized properly */
     common.thread_is_running.store(false);

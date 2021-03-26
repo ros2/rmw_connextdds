@@ -65,7 +65,6 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
   pubsub_qos.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
   pubsub_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
 
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   /* Create RMW publisher/subscription/guard condition used by rmw_dds_common
       discovery */
   rmw_publisher_options_t publisher_options =
@@ -73,15 +72,10 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
   rmw_subscription_options_t subscription_options =
     rmw_get_default_subscription_options();
   subscription_options.ignore_local_publications = true;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
   const rosidl_message_type_support_t * const type_supports_partinfo =
     rosidl_typesupport_cpp::get_message_type_support_handle<
-#if RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
     rmw_dds_common::msg::ParticipantEntitiesInfo>();
-#else
-    rmw_connextdds_common::msg::ParticipantEntitiesInfo > ();
-#endif /* RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
   const char * const topic_name_partinfo = "ros_discovery_info";
 
@@ -96,9 +90,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     type_supports_partinfo,
     topic_name_partinfo,
     &pubsub_qos,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     &publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     true /* internal */);
 
   if (nullptr == ctx->common.pub) {
@@ -120,11 +112,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     type_supports_partinfo,
     topic_name_partinfo,
     &pubsub_qos,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     &subscription_options,
-#else
-    true /* ignore_local_publications */,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     true /* internal */);
   if (nullptr == ctx->common.sub) {
     RMW_CONNEXT_LOG_ERROR(
@@ -154,11 +142,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   rmw_connextdds_get_entity_gid(ctx->participant, ctx->common.gid);
 
-  std::string dp_enclave;
-
-#if RMW_CONNEXT_HAVE_OPTIONS
-  dp_enclave = ctx->base->options.enclave;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS*/
+  std::string dp_enclave = ctx->base->options.enclave;
 
   ctx->common.graph_cache.add_participant(ctx->common.gid, dp_enclave);
 

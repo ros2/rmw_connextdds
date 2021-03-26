@@ -25,11 +25,7 @@
 rmw_ret_t
 rmw_api_connextdds_take_response(
   const rmw_client_t * client,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
-#else
-  rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_response,
   bool * taken)
 {
@@ -46,29 +42,14 @@ rmw_api_connextdds_take_response(
   RMW_Connext_Client * const client_impl =
     reinterpret_cast<RMW_Connext_Client *>(client->data);
 
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
   return client_impl->take_response(request_header, ros_response, taken);
-#else
-  rmw_service_info_t request_header_s;
-  rmw_ret_t rc =
-    client_impl->take_response(&request_header_s, ros_response, taken);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
-  *request_header = request_header_s.request_id;
-  return RMW_RET_OK;
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
 }
 
 
 rmw_ret_t
 rmw_api_connextdds_take_request(
   const rmw_service_t * service,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
-#else
-  rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_request,
   bool * taken)
 {
@@ -85,18 +66,7 @@ rmw_api_connextdds_take_request(
   RMW_Connext_Service * const svc_impl =
     reinterpret_cast<RMW_Connext_Service *>(service->data);
 
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
   return svc_impl->take_request(request_header, ros_request, taken);
-#else
-  rmw_service_info_t request_header_s;
-  rmw_ret_t rc =
-    svc_impl->take_request(&request_header_s, ros_request, taken);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
-  *request_header = request_header_s.request_id;
-  return RMW_RET_OK;
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
 }
 
 

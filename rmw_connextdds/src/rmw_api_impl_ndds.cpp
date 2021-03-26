@@ -416,19 +416,11 @@ rmw_create_publisher(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,
-  const rmw_qos_profile_t * qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  ,
-  const rmw_publisher_options_t * publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_qos_profile_t * qos_policies,
+  const rmw_publisher_options_t * publisher_options)
 {
   return rmw_api_connextdds_create_publisher(
-    node, type_supports, topic_name, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    , publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  );
+    node, type_supports, topic_name, qos_policies, publisher_options);
 }
 
 
@@ -564,21 +556,13 @@ rmw_deserialize(
 rmw_ret_t
 rmw_take_response(
   const rmw_client_t * client,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
-#else
-  rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_response,
   bool * taken)
 {
   return rmw_api_connextdds_take_response(
     client,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
     request_header,
-#else
-    request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     ros_response,
     taken);
 }
@@ -587,21 +571,13 @@ rmw_take_response(
 rmw_ret_t
 rmw_take_request(
   const rmw_service_t * service,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
   rmw_service_info_t * request_header,
-#else
-  rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_request,
   bool * taken)
 {
   return rmw_api_connextdds_take_request(
     service,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
     request_header,
-#else
-    request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     ros_request,
     taken);
 }
@@ -706,21 +682,10 @@ rmw_create_subscription(
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,
   const rmw_qos_profile_t * qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  const rmw_subscription_options_t * subscription_options
-#else
-  bool ignore_local_publications
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_subscription_options_t * subscription_options)
 {
   return rmw_api_connextdds_create_subscription(
-    node, type_supports, topic_name, qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    subscription_options
-#else
-    ignore_local_publications
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  );
+    node, type_supports, topic_name, qos_policies, subscription_options);
 }
 
 
@@ -775,8 +740,6 @@ rmw_take_with_info(
     subscription, ros_message, taken, message_info, allocation);
 }
 
-#if RMW_CONNEXT_HAVE_TAKE_SEQ
-
 rmw_ret_t
 rmw_take_sequence(
   const rmw_subscription_t * subscription,
@@ -790,9 +753,6 @@ rmw_take_sequence(
     subscription, count, message_sequence, message_info_sequence,
     taken, allocation);
 }
-
-#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
-
 
 rmw_ret_t
 rmw_take_serialized_message(

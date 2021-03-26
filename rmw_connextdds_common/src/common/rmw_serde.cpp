@@ -22,11 +22,7 @@
 rmw_ret_t
 rmw_api_connextdds_get_serialized_message_size(
   const rosidl_message_type_support_t * type_supports,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   size_t * size)
 {
   UNUSED_ARG(type_supports);

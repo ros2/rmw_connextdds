@@ -38,18 +38,9 @@
 #include "rmw_dds_common/context.hpp"
 #include "rmw_dds_common/msg/participant_entities_info.hpp"
 
-#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
-#include "rmw/qos_profiles.h"
-#include "rmw_dds_common/qos.hpp"
-#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */
-
 #include "rcutils/strdup.h"
 
-#if RMW_CONNEXT_HAVE_SCOPE_EXIT
-#include "rcpputils/scope_exit.hpp"
-#else
-#include "scope_exit.hpp"
-#endif /* RMW_CONNEXT_HAVE_SCOPE_EXIT */
+#include "rmw_connextdds/scope_exit.hpp"
 
 extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
 extern size_t RMW_Connext_gv_ContextCount;

@@ -31,8 +31,6 @@
 #include "rcutils/types/uint8_array.h"
 #include "rcpputils/thread_safety_annotations.hpp"
 
-#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
-
 /******************************************************************************
  * Symbols provided by rmw/incompatible_qos.h from Foxy onward
  ******************************************************************************/
@@ -63,9 +61,6 @@ typedef struct rmw_qos_incompatible_event_status_t rmw_requested_qos_incompatibl
 
 typedef struct rmw_qos_incompatible_event_status_t rmw_offered_qos_incompatible_event_status_t;
 
-#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
 /******************************************************************************
  * Define value for RMW_EVENT_MESSAGE_LOST as an invalid value,
  * since it's not defined by rmw_event_type_t.
@@ -77,7 +72,6 @@ typedef struct RMW_PUBLIC_TYPE rmw_message_lost_status_t
   size_t total_count;
   size_t total_count_change;
 } rmw_message_lost_status_t;
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
 
 /******************************************************************************
  * General helpers and utilities.
@@ -816,9 +810,6 @@ rmw_ret_t
   DDS_LivelinessQosPolicy * const liveliness,
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
   const rmw_subscription_options_t * const sub_options);
@@ -830,9 +821,6 @@ rmw_ret_t
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies);
 
 /******************************************************************************

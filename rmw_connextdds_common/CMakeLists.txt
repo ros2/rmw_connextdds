@@ -71,9 +71,6 @@ function(rtirmw_add_library)
             ${_rti_build_DEFINES}
     )
 
-    target_compile_definitions(${_rti_build_NAME}
-        PUBLIC RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
-
     set(private_defines)
 
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
@@ -131,26 +128,6 @@ foreach(pkg_dep ${RMW_CONNEXT_DEPS})
 endforeach()
 
 ################################################################################
-# Detect target rmw version
-################################################################################
-if(NOT DEFINED RMW_CONNEXT_RELEASE)
-  if(${rmw_VERSION} VERSION_GREATER_EQUAL "2.1.0")
-      set(RMW_CONNEXT_RELEASE       rolling)
-  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.2")
-      set(RMW_CONNEXT_RELEASE       foxy)
-  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.1")
-      set(RMW_CONNEXT_RELEASE       eloquent)
-  else()
-      set(RMW_CONNEXT_RELEASE       dashing)
-  endif()
-endif()
-
-string(TOUPPER "${RMW_CONNEXT_RELEASE}" RMW_CONNEXT_RELEASE)
-set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}" CACHE INTERNAL "" FORCE)
-
-message(STATUS "-- Target ROS Release: ${RMW_CONNEXT_RELEASE}")
-
-################################################################################
 # Common Source Configuration
 ################################################################################
 set(RMW_CONNEXT_DIR     ${CMAKE_CURRENT_SOURCE_DIR})
@@ -166,7 +143,6 @@ set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_info.cpp
     src/common/rmw_node.cpp
     src/common/rmw_publication.cpp
-    src/common/rmw_qos.cpp
     src/common/rmw_security_log.cpp
     src/common/rmw_serde.cpp
     src/common/rmw_service.cpp
@@ -331,6 +307,4 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package(
-    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
-)
+ament_package()

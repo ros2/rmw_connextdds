@@ -334,9 +334,6 @@ rmw_connextdds_get_datawriter_qos(
         &qos->resource_limits,
         // TODO(asorbini) this value is not actually used, remove it
         &qos->publish_mode,
-  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        &qos->lifespan,
-  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         qos_policies,
         pub_options,
         nullptr           /* sub_options */))
@@ -425,9 +422,6 @@ rmw_connextdds_get_datareader_qos(
         &qos->liveliness,
         &qos->resource_limits,
         nullptr /* publish_mode */,
-  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Lifespan is a writer-only qos policy */,
-  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         qos_policies,
         nullptr /* pub_options */,
         sub_options))
@@ -1059,9 +1053,6 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        &data->lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         false /* is_reader */);
     }
 
@@ -1144,9 +1135,6 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         true /* is_reader */);
     }
 

@@ -25,11 +25,7 @@
 rmw_ret_t
 rmw_api_connextdds_init_subscription_allocation(
   const rosidl_message_type_support_t * type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
-  const rosidl_message_bounds_t * message_bounds,
-#else
   const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   rmw_subscription_allocation_t * allocation)
 {
   UNUSED_ARG(type_support);

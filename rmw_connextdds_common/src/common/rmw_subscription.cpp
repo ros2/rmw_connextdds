@@ -67,7 +67,8 @@ rmw_api_connextdds_create_subscription(
   if (subscription_options->require_unique_network_flow_endpoints ==
     RMW_UNIQUE_NETWORK_FLOW_ENDPOINTS_STRICTLY_REQUIRED)
   {
-    RMW_CONNEXT_LOG_ERROR_SET("Strict requirement on unique network flow endpoints for subscriptions not supported");
+    RMW_CONNEXT_LOG_ERROR_SET(
+      "Strict requirement on unique network flow endpoints for subscriptions not supported");
     return nullptr;
   }
 

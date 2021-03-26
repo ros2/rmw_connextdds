@@ -14,11 +14,6 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
-#include "rmw/error_handling.h"
-#include "rmw/get_network_flow_endpoints.h"
-#include "rmw/rmw.h"
-#include "rmw/types.h"
-
 extern "C"
 {
 rmw_ret_t

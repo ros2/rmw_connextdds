@@ -15,7 +15,6 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#include "rmw/types.h"
 #include "rmw/validate_full_topic_name.h"
 
 /******************************************************************************

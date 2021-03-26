@@ -135,7 +135,7 @@ set(RMW_CONNEXT_DIR     ${CMAKE_CURRENT_SOURCE_DIR})
 set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_context.cpp
     src/common/rmw_discovery.cpp
-    src/common/rmw_get_network_flow_endpoints.cpp
+    src/common/rmw_network_flow_endpoints.cpp
     src/common/rmw_graph.cpp
     src/common/rmw_event.cpp
     src/common/rmw_impl.cpp

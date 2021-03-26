@@ -306,23 +306,6 @@
 #define RMW_CONNEXT_CPP_STD_WAITSETS     0
 #endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
 
-/******************************************************************************
- * ROS Target Release
- ******************************************************************************/
-#define RMW_CONNEXT_RELEASE_DASHING     10
-#define RMW_CONNEXT_RELEASE_ELOQUENT    20
-#define RMW_CONNEXT_RELEASE_FOXY        30
-#define RMW_CONNEXT_RELEASE_ROLLING     40
-
-#ifndef RMW_CONNEXT_RELEASE
-#define RMW_CONNEXT_RELEASE             RMW_CONNEXT_RELEASE_DASHING
-#endif /* RMW_CONNEXT_RELEASE */
-
-#ifndef RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-#define RMW_CONNEXT_HAVE_OPTIONS_PUBSUB \
-  (RMW_CONNEXT_RELEASE >= RMW_CONNEXT_RELEASE_ELOQUENT)
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-
 #include "resource_limits.hpp"
 
 #endif  // RMW_CONNEXTDDS__STATIC_CONFIG_HPP_

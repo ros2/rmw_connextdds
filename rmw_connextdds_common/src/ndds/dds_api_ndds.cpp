@@ -212,7 +212,7 @@ rmw_connextdds_initialize_participant_qos_impl(
 
 static
 rmw_ret_t
-initialize_cft_parameters(
+rmw_connextdds_initialize_cft_parameters(
   struct DDS_StringSeq * cft_parameters,
   const rcutils_string_array_t * cft_expression_parameters)
 {
@@ -255,8 +255,10 @@ rmw_connextdds_create_contentfilteredtopic(
       }
     });
   if (cft_expression_parameters) {
-    if (RMW_RET_OK != initialize_cft_parameters(&cft_parameters, cft_expression_parameters)) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to initialize_cft_parameters")
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_cft_parameters(&cft_parameters, cft_expression_parameters))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_connextdds_initialize_cft_parameters")
       return RMW_RET_ERROR;
     }
   }
@@ -1277,8 +1279,10 @@ rmw_connextdds_set_cft_filter_expression(
       }
     });
   if (expression_parameters) {
-    if (RMW_RET_OK != initialize_cft_parameters(&cft_parameters, expression_parameters)) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to initialize_cft_parameters")
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_cft_parameters(&cft_parameters, expression_parameters))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_connextdds_initialize_cft_parameters")
       return RMW_RET_ERROR;
     }
   }
@@ -1301,7 +1305,6 @@ rmw_connextdds_get_cft_filter_expression(
   DDS_ContentFilteredTopic * const cft_topic =
     DDS_ContentFilteredTopic_narrow(topic_desc);
 
-  int parameters_len;
   rcutils_allocator_t allocator = rcutils_get_default_allocator();
 
   // get filter_expression
@@ -1327,7 +1330,7 @@ rmw_connextdds_get_cft_filter_expression(
     });
 
   // get parameters
-  struct DDS_StringSeq parameters;
+  struct DDS_StringSeq parameters = DDS_SEQUENCE_INITIALIZER;
   DDS_ReturnCode_t status =
     DDS_ContentFilteredTopic_get_expression_parameters(cft_topic, &parameters);
   if (DDS_RETCODE_OK != status) {
@@ -1341,9 +1344,9 @@ rmw_connextdds_get_cft_filter_expression(
       DDS_StringSeq_finalize(&parameters);
     });
 
-  parameters_len = DDS_StringSeq_get_length(&parameters);
+  const DDS_Long parameters_len = DDS_StringSeq_get_length(&parameters);
   rcutils_ret_t rcutils_ret =
-    rcutils_string_array_init(cft_params_out, parameters_len, &allocator);
+    rcutils_string_array_init(cft_params_out, static_cast<size_t>(parameters_len), &allocator);
   if (rcutils_ret != RCUTILS_RET_OK) {
     RMW_SET_ERROR_MSG("failed to init string array for expression parameters");
     return RMW_RET_ERROR;
@@ -1356,8 +1359,14 @@ rmw_connextdds_get_cft_filter_expression(
         RCUTILS_LOG_ERROR("Error while finalizing expression parameter due to another error");
       }
     });
-  for (int i = 0; i < parameters_len; ++i) {
-    char * parameter = rcutils_strdup(DDS_StringSeq_get(&parameters, i), allocator);
+  for (DDS_Long i = 0; i < parameters_len; ++i) {
+    const char * parameter_ref = *DDS_StringSeq_get_reference(&parameters, i);
+    if (!parameter_ref) {
+      RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
+        "failed to get a reference for parameter with index %d", i);
+      return RMW_RET_ERROR;
+    }
+    char * parameter = rcutils_strdup(parameter_ref, allocator);
     if (!parameter) {
       RMW_SET_ERROR_MSG("failed to allocate memory for parameter");
       return RMW_RET_BAD_ALLOC;

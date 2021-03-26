@@ -14,8 +14,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #include "rmw_connextdds/topic_endpoint_info.h"
 
 #include "rcutils/strdup.h"
@@ -223,6 +221,3 @@ rmw_topic_endpoint_info_set_qos_profile(
   topic_endpoint_info->qos_profile = *qos_profile;
   return RMW_RET_OK;
 }
-
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

@@ -124,46 +124,6 @@ rmw_connextdds_initialize_participant_qos_impl(
   }
 #endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
 
-#if RMW_CONNEXT_HAVE_OPTIONS
-  const size_t user_data_len_in =
-    DDS_OctetSeq_get_length(&dp_qos->user_data.value);
-
-  if (user_data_len_in != 0) {
-    RMW_CONNEXT_LOG_WARNING(
-      "DomainParticipant's USER_DATA will be overwritten to "
-      "propagate node enclave")
-  }
-
-  const char * const user_data_fmt = "enclave=%s;";
-
-  const int user_data_len =
-    std::snprintf(
-    nullptr, 0, user_data_fmt, ctx->base->options.enclave) + 1;
-
-  if (!DDS_OctetSeq_ensure_length(
-      &dp_qos->user_data.value, user_data_len, user_data_len))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data length")
-    return RMW_RET_ERROR;
-  }
-
-  char * const user_data_ptr =
-    reinterpret_cast<char *>(
-    DDS_OctetSeq_get_contiguous_buffer(&dp_qos->user_data.value));
-
-  const int user_data_rc =
-    std::snprintf(
-    user_data_ptr,
-    user_data_len,
-    user_data_fmt,
-    ctx->base->options.enclave);
-
-  if (user_data_rc < 0 || user_data_rc != user_data_len - 1) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data")
-    return RMW_RET_ERROR;
-  }
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-
 #if RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID
   dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;
 #endif /* RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID */
@@ -346,9 +306,6 @@ rmw_connextdds_get_datawriter_qos(
         &qos->resource_limits,
         // TODO(asorbini) this value is not actually used, remove it
         &qos->publish_mode,
-  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        &qos->lifespan,
-  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         qos_policies
   #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
         ,
@@ -448,9 +405,6 @@ rmw_connextdds_get_datareader_qos(
         &qos->liveliness,
         &qos->resource_limits,
         nullptr /* publish_mode */,
-  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Lifespan is a writer-only qos policy */,
-  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         qos_policies
   #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
         ,
@@ -1102,9 +1056,6 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        &data->lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         false /* is_reader */);
     }
 
@@ -1187,9 +1138,6 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         true /* is_reader */);
     }
 

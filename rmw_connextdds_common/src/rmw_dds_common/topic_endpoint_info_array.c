@@ -15,8 +15,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #include "rmw_connextdds/topic_endpoint_info_array.h"
 #include "rmw/error_handling.h"
 #include "rmw/types.h"
@@ -106,5 +104,3 @@ rmw_topic_endpoint_info_array_fini(
   topic_endpoint_info_array->size = 0;
   return RMW_RET_OK;
 }
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

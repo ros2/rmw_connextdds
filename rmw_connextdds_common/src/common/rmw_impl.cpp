@@ -255,9 +255,6 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_LivelinessQosPolicy * const liveliness,
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const rmw_qos_profile_t * const qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   ,
@@ -409,35 +406,6 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  if (nullptr != lifespan &&
-    (qos_policies->lifespan.sec != 0 || qos_policies->lifespan.nsec != 0))
-  {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    lifespan->duration.sec = static_cast<DDS_Long>(qos_policies->lifespan.sec);
-    lifespan->duration.nanosec =
-      static_cast<DDS_UnsignedLong>(qos_policies->lifespan.nsec);
-#else
-    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-  }
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
-
-  // Make sure that resource limits are consistent with history qos
-  // TODO(asorbini): do not overwrite if using non-default QoS
-  // if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
-  //   history->depth > 1 &&
-  //   resource_limits->max_samples_per_instance == DDS_LENGTH_UNLIMITED)
-  // {
-  //   resource_limits->max_samples_per_instance = history->depth;
-  //   if (resource_limits->max_samples != DDS_LENGTH_UNLIMITED &&
-  //     resource_limits->max_samples < resource_limits->max_samples_per_instance)
-  //   {
-  //     resource_limits->max_samples =
-  //       resource_limits->max_samples_per_instance;
-  //   }
-  // }
-
   return RMW_RET_OK;
 }
 
@@ -448,9 +416,6 @@ rmw_connextdds_readerwriter_qos_to_ros(
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies)
 {
   if (nullptr != history) {
@@ -540,17 +505,6 @@ rmw_connextdds_readerwriter_qos_to_ros(
       }
   }
 
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  if (nullptr != lifespan) {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    qos_policies->lifespan.sec = lifespan->duration.sec;
-    qos_policies->lifespan.nsec = lifespan->duration.nanosec;
-#else
-    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-  }
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
-
   return RMW_RET_OK;
 }
 
@@ -566,13 +520,6 @@ rmw_connextdds_datawriter_qos_to_ros(
     &qos->durability,
     &qos->deadline,
     &qos->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    &qos->lifespan,
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    nullptr,
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     qos_policies);
 }
 
@@ -588,9 +535,6 @@ rmw_connextdds_datareader_qos_to_ros(
     &qos->durability,
     &qos->deadline,
     &qos->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-    nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
     qos_policies);
 }
 
@@ -1050,9 +994,6 @@ rmw_connextdds_create_publisher(
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   rmw_publisher->options = *publisher_options;
 #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-#if RMW_CONNEXT_HAVE_LOAN_MESSAGE
-  rmw_publisher->can_loan_messages = false;
-#endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
 
   if (!internal) {
     if (RMW_RET_OK != rmw_pub_impl->enable()) {
@@ -1485,29 +1426,6 @@ RMW_Connext_Subscriber::take_message(
   return rc;
 }
 
-#if RMW_CONNEXT_HAVE_TAKE_SEQ
-rmw_ret_t
-RMW_Connext_Subscriber::take(
-  rmw_message_sequence_t * const message_sequence,
-  rmw_message_info_sequence_t * const message_info_sequence,
-  const size_t max_samples,
-  size_t * const taken)
-{
-  if (max_samples == 0 ||
-    message_sequence->capacity < max_samples ||
-    message_info_sequence->capacity != message_sequence->capacity)
-  {
-    return RMW_RET_INVALID_ARGUMENT;
-  }
-  return this->take_next(
-    message_sequence->data,
-    message_info_sequence->data,
-    max_samples,
-    taken,
-    false /* serialized*/);
-}
-#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
-
 rmw_ret_t
 RMW_Connext_Subscriber::take_serialized(
   rmw_serialized_message_t * const serialized_message,
@@ -1825,9 +1743,6 @@ rmw_connextdds_create_subscriber(
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   rmw_subscriber->options = *subscriber_options;
 #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-#if RMW_CONNEXT_HAVE_LOAN_MESSAGE
-  rmw_subscriber->can_loan_messages = false;
-#endif /* RMW_CONNEXT_HAVE_LOAN_MESSAGE */
 
   if (!internal) {
     if (RMW_RET_OK != rmw_sub_impl->enable()) {
@@ -1889,17 +1804,6 @@ rmw_connextdds_message_info_from_dds(
   const DDS_SampleInfo * const from)
 {
   rmw_connextdds_ih_to_gid(from->publication_handle, to->publisher_gid);
-#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
-// Message timestamps are disabled on Windows because RTI Connext DDS
-// does not support a high enough clock resolution by default (see: _ftime()).
-#if !RTI_WIN32
-  to->source_timestamp = dds_time_to_u64(&from->source_timestamp);
-  to->received_timestamp = dds_time_to_u64(&from->reception_timestamp);
-#else
-  to->source_timestamp = 0;
-  to->received_timestamp = 0;
-#endif /* !RTI_WIN32 */
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
 }
 
 /******************************************************************************
@@ -2543,11 +2447,6 @@ RMW_Connext_Client::take_response(
         8);
     }
 
-#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
-    request_header->source_timestamp = message_info.source_timestamp;
-    request_header->received_timestamp = message_info.received_timestamp;
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
-
     *taken = true;
 
     RMW_CONNEXT_LOG_DEBUG_A(
@@ -2822,10 +2721,6 @@ RMW_Connext_Service::take_request(
       request_header->request_id.writer_guid,
       rr_msg.gid.data,
       16);
-#if RMW_CONNEXT_HAVE_MESSAGE_INFO_TS
-    request_header->source_timestamp = message_info.source_timestamp;
-    request_header->received_timestamp = message_info.received_timestamp;
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_INFO_TS */
 
     *taken = true;
 
@@ -2923,34 +2818,8 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
       {
         return DDS_OFFERED_DEADLINE_MISSED_STATUS;
       }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-    case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-      {
-        return DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS;
-      }
-    case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
-      {
-        return DDS_OFFERED_INCOMPATIBLE_QOS_STATUS;
-      }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
-// the defined values for rmw_event_type_t. This #if and the one in
-// the `default` case, should be removed once support for releases
-// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-    case RMW_EVENT_MESSAGE_LOST:
-      {
-        return DDS_SAMPLE_LOST_STATUS;
-      }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     default:
       {
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
-        if (RMW_EVENT_MESSAGE_LOST == ros) {
-          RMW_CONNEXT_LOG_WARNING(
-            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
-        }
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
         if (nullptr != invalid) {
           *invalid = true;
         }
@@ -3004,27 +2873,11 @@ ros_event_for_reader(const rmw_event_type_t ros)
   switch (ros) {
     case RMW_EVENT_LIVELINESS_CHANGED:
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-    case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
-// the defined values for rmw_event_type_t. This #if and the one in
-// the `default` case, should be removed once support for releases
-// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-    case RMW_EVENT_MESSAGE_LOST:
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
       {
         return true;
       }
     default:
       {
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
-        if (RMW_EVENT_MESSAGE_LOST == ros) {
-          RMW_CONNEXT_LOG_WARNING(
-            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
-        }
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
         return false;
       }
   }
@@ -3053,30 +2906,6 @@ RMW_Connext_SubscriberStatusCondition::get_status(
         rc = this->get_requested_deadline_missed_status(status);
         break;
       }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-    case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-      {
-        rmw_requested_qos_incompatible_event_status_t * const status =
-          reinterpret_cast<rmw_requested_qos_incompatible_event_status_t *>(event_info);
-
-        rc = this->get_requested_qos_incompatible_status(status);
-        break;
-      }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
-// the defined values for rmw_event_type_t. This #if and the one in
-// the `default` case, should be removed once support for releases
-// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-    case RMW_EVENT_MESSAGE_LOST:
-      {
-        rmw_message_lost_status_t * const status =
-          reinterpret_cast<rmw_message_lost_status_t *>(event_info);
-
-        rc = this->get_message_lost_status(status);
-        break;
-      }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
     default:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
@@ -3112,16 +2941,6 @@ RMW_Connext_PublisherStatusCondition::get_status(
         rc = this->get_offered_deadline_missed_status(status);
         break;
       }
-#if RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-    case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
-      {
-        rmw_offered_qos_incompatible_event_status_t * const status =
-          reinterpret_cast<rmw_offered_qos_incompatible_event_status_t *>(event_info);
-
-        rc = this->get_offered_qos_incompatible_status(status);
-        break;
-      }
-#endif /* RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
     default:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET("unsupported publisher qos: %d", event_type)

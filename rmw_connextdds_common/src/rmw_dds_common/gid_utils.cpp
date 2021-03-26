@@ -14,8 +14,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -77,5 +75,3 @@ rmw_dds_common::convert_msg_to_gid(
   assert(nullptr != gid);
   std::memcpy(const_cast<uint8_t *>(gid->data), &msg_gid->data, RMW_GID_STORAGE_SIZE);
 }
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

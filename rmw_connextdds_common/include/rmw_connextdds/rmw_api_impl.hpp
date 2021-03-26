@@ -373,11 +373,7 @@ RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
   rmw_api_connextdds_take_response(
   const rmw_client_t * client,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
-  rmw_service_info_t * request_header,
-#else
   rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_response,
   bool * taken);
 
@@ -385,11 +381,7 @@ RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
   rmw_api_connextdds_take_request(
   const rmw_service_t * service,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
-  rmw_service_info_t * request_header,
-#else
   rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_request,
   bool * taken);
 
@@ -504,21 +496,6 @@ rmw_api_connextdds_take_with_info(
   rmw_message_info_t * message_info,
   rmw_subscription_allocation_t * allocation);
 
-#if RMW_CONNEXT_HAVE_TAKE_SEQ
-
-RMW_CONNEXTDDS_PUBLIC
-rmw_ret_t
-rmw_api_connextdds_take_sequence(
-  const rmw_subscription_t * subscription,
-  size_t count,
-  rmw_message_sequence_t * message_sequence,
-  rmw_message_info_sequence_t * message_info_sequence,
-  size_t * taken,
-  rmw_subscription_allocation_t * allocation);
-
-#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
-
-
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
 rmw_api_connextdds_take_serialized_message(
@@ -603,20 +580,5 @@ rmw_api_connextdds_wait(
   rmw_events_t * evs,
   rmw_wait_set_t * wait_set,
   const rmw_time_t * wait_timeout);
-
-/******************************************************************************
- * QoS Profile functions
- ******************************************************************************/
-#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
-RMW_CONNEXTDDS_PUBLIC
-rmw_ret_t
-rmw_api_connextdds_qos_profile_check_compatible(
-  const rmw_qos_profile_t publisher_profile,
-  const rmw_qos_profile_t subscription_profile,
-  rmw_qos_compatibility_type_t * compatibility,
-  char * reason,
-  size_t reason_size);
-#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */
-
 
 #endif  // RMW_CONNEXTDDS__RMW_API_IMPL_HPP_

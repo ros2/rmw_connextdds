@@ -695,26 +695,6 @@ public:
     return RMW_RET_OK;
   }
 
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-  inline rmw_ret_t
-  get_message_lost_status(rmw_message_lost_status_t * const status)
-  {
-    DDS_SampleLostStatus dds_status = DDS_SampleLostStatus_INITIALIZER;
-
-    if (DDS_RETCODE_OK !=
-      DDS_DataReader_get_sample_lost_status(this->reader, &dds_status))
-    {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to get sample lost status")
-      return RMW_RET_ERROR;
-    }
-
-    status->total_count = dds_status.total_count;
-    status->total_count_change = dds_status.total_count_change;
-
-    return RMW_RET_OK;
-  }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
-
 protected:
   rmw_ret_t
   install();

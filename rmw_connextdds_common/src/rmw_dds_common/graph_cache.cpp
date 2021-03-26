@@ -14,8 +14,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #include "rmw_connextdds/graph_cache_common.hpp"
 
 #include <algorithm>
@@ -1071,5 +1069,3 @@ rmw_dds_common::operator<<(std::ostream & ostream, const GraphCache & graph_cach
 
   return ostream << ss.str();
 }
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */

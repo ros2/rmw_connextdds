@@ -265,53 +265,6 @@ rmw_api_connextdds_take_with_info(
   return rc;
 }
 
-#if RMW_CONNEXT_HAVE_TAKE_SEQ
-
-
-rmw_ret_t
-rmw_api_connextdds_take_sequence(
-  const rmw_subscription_t * subscription,
-  size_t count,
-  rmw_message_sequence_t * message_sequence,
-  rmw_message_info_sequence_t * message_info_sequence,
-  size_t * taken,
-  rmw_subscription_allocation_t * allocation)
-{
-  RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
-  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-    subscription,
-    subscription->implementation_identifier,
-    RMW_CONNEXTDDS_ID,
-    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-  RMW_CHECK_ARGUMENT_FOR_NULL(message_sequence, RMW_RET_INVALID_ARGUMENT);
-  RMW_CHECK_ARGUMENT_FOR_NULL(
-    message_info_sequence, RMW_RET_INVALID_ARGUMENT);
-  RMW_CHECK_ARGUMENT_FOR_NULL(taken, RMW_RET_INVALID_ARGUMENT);
-
-  UNUSED_ARG(allocation);
-
-  RMW_Connext_Subscriber * const sub_impl =
-    reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
-
-  // Reset length of output sequences
-  message_sequence->size = 0;
-  message_info_sequence->size = 0;
-
-  rmw_ret_t rc = sub_impl->take(
-    message_sequence, message_info_sequence, count, taken);
-
-  // Update length of output sequences if we received any data
-  if (*taken > 0) {
-    message_sequence->size = *taken;
-    message_info_sequence->size = *taken;
-  }
-
-  return rc;
-}
-
-#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
-
-
 rmw_ret_t
 rmw_api_connextdds_take_serialized_message(
   const rmw_subscription_t * subscription,

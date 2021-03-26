@@ -661,20 +661,6 @@ public:
     return RMW_RET_OK;
   }
 
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-  inline rmw_ret_t
-  get_message_lost_status(rmw_message_lost_status_t * const status)
-  {
-    status->total_count = this->status_sample_lost.total_count;
-    status->total_count_change = this->status_sample_lost.total_count_change;
-
-    this->status_sample_lost.total_count_change = 0;
-    this->triggered_sample_lost = false;
-
-    return RMW_RET_OK;
-  }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
-
 protected:
   void update_status_deadline(
     const DDS_RequestedDeadlineMissedStatus * const status);

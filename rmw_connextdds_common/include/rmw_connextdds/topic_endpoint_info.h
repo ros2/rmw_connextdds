@@ -17,8 +17,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -219,7 +217,5 @@ rmw_topic_endpoint_info_set_qos_profile(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #endif    // RMW_CONNEXTDDS__TOPIC_ENDPOINT_INFO_H_

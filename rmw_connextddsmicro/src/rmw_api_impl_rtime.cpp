@@ -564,21 +564,13 @@ rmw_deserialize(
 rmw_ret_t
 rmw_take_response(
   const rmw_client_t * client,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
-  rmw_service_info_t * request_header,
-#else
   rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_response,
   bool * taken)
 {
   return rmw_api_connextdds_take_response(
     client,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
     request_header,
-#else
-    request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     ros_response,
     taken);
 }
@@ -587,21 +579,13 @@ rmw_take_response(
 rmw_ret_t
 rmw_take_request(
   const rmw_service_t * service,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
-  rmw_service_info_t * request_header,
-#else
   rmw_request_id_t * request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
   void * ros_request,
   bool * taken)
 {
   return rmw_api_connextdds_take_request(
     service,
-#if RMW_CONNEXT_HAVE_SERVICE_INFO
     request_header,
-#else
-    request_header,
-#endif /* RMW_CONNEXT_HAVE_SERVICE_INFO */
     ros_request,
     taken);
 }
@@ -775,24 +759,6 @@ rmw_take_with_info(
     subscription, ros_message, taken, message_info, allocation);
 }
 
-#if RMW_CONNEXT_HAVE_TAKE_SEQ
-
-rmw_ret_t
-rmw_take_sequence(
-  const rmw_subscription_t * subscription,
-  size_t count,
-  rmw_message_sequence_t * message_sequence,
-  rmw_message_info_sequence_t * message_info_sequence,
-  size_t * taken,
-  rmw_subscription_allocation_t * allocation)
-{
-  return rmw_api_connextdds_take_sequence(
-    subscription, count, message_sequence, message_info_sequence,
-    taken, allocation);
-}
-
-#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
-
 
 rmw_ret_t
 rmw_take_serialized_message(
@@ -910,24 +876,3 @@ rmw_wait(
   return rmw_api_connextdds_wait(
     subs, gcs, srvs, cls, evs, wait_set, wait_timeout);
 }
-
-/******************************************************************************
- * QoS Profile functions
- ******************************************************************************/
-#if RMW_CONNEXT_HAVE_QOS_PROFILE_API
-rmw_ret_t
-rmw_qos_profile_check_compatible(
-  const rmw_qos_profile_t publisher_profile,
-  const rmw_qos_profile_t subscription_profile,
-  rmw_qos_compatibility_type_t * compatibility,
-  char * reason,
-  size_t reason_size)
-{
-  return rmw_api_connextdds_qos_profile_check_compatible(
-    publisher_profile,
-    subscription_profile,
-    compatibility,
-    reason,
-    reason_size);
-}
-#endif /* RMW_CONNEXT_HAVE_QOS_PROFILE_API */

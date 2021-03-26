@@ -1009,9 +1009,6 @@ rmw_connextdds_get_datawriter_qos(
       &qos->liveliness,
       &qos->resource_limits,
       &qos->publish_mode,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-      nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
       ,
@@ -1071,9 +1068,6 @@ rmw_connextdds_get_datareader_qos(
       &qos->liveliness,
       &qos->resource_limits,
       nullptr /* publish_mode */,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-      nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
       qos_policies
 #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
       ,
@@ -1800,9 +1794,6 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &qdata.data.durability,
         &qdata.data.deadline,
         &qdata.data.liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         false /* is_reader */);
 
       RMW_Connext_PublicationData::finalize(&qdata.data);
@@ -1860,9 +1851,6 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &qdata.data.durability,
         &qdata.data.deadline,
         &qdata.data.liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         true /* is_reader */);
 
       RMW_Connext_SubscriptionData::finalize(&qdata.data);

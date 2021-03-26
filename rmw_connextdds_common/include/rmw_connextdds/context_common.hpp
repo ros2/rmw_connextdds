@@ -17,8 +17,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #include <atomic>
 #include <mutex>
 #include <thread>
@@ -56,7 +54,5 @@ struct Context
 };
 
 }  // namespace rmw_dds_common
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #endif  // RMW_CONNEXTDDS__CONTEXT_COMMON_HPP_

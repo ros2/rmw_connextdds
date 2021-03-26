@@ -17,8 +17,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #include "rmw/types.h"
 
 #include "rmw_connextdds/visibility_control.h"
@@ -74,7 +72,5 @@ convert_msg_to_gid(
   rmw_gid_t * gid);
 
 }  // namespace rmw_dds_common
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #endif  // RMW_CONNEXTDDS__GID_UTILS_HPP_

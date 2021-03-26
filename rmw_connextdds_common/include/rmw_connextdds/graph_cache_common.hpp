@@ -17,8 +17,6 @@
 
 #include "rmw_connextdds/static_config.hpp"
 
-#if !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON
-
 #include <functional>
 #include <map>
 #include <mutex>
@@ -570,7 +568,5 @@ struct EntityInfo
 };
 
 }  // namespace rmw_dds_common
-
-#endif /* !RMW_CONNEXT_HAVE_PKG_RMW_DDS_COMMON */
 
 #endif  // RMW_CONNEXTDDS__GRAPH_CACHE_COMMON_HPP_

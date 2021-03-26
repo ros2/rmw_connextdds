@@ -16,8 +16,9 @@
 
 extern "C"
 {
+#if RMW_CONNEXT_HAVE_GET_NETWORK_FLOW_ENDPOINTS
 rmw_ret_t
-rmw_publisher_get_network_flow_endpoints(
+rmw_api_connextdds_publisher_get_network_flow_endpoints(
   const rmw_publisher_t * publisher,
   rcutils_allocator_t * allocator,
   rmw_network_flow_endpoint_array_t * network_flow_endpoint_array)
@@ -30,7 +31,7 @@ rmw_publisher_get_network_flow_endpoints(
 }
 
 rmw_ret_t
-rmw_subscription_get_network_flow_endpoints(
+rmw_api_connextdds_subscription_get_network_flow_endpoints(
   const rmw_subscription_t * subscription,
   rcutils_allocator_t * allocator,
   rmw_network_flow_endpoint_array_t * network_flow_endpoint_array)
@@ -41,4 +42,5 @@ rmw_subscription_get_network_flow_endpoints(
   RMW_CONNEXT_LOG_NOT_IMPLEMENTED
   return RMW_RET_UNSUPPORTED;
 }
+#endif /* RMW_CONNEXT_HAVE_GET_NETWORK_FLOW_ENDPOINTS */
 }  // extern "C"

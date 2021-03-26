@@ -561,4 +561,21 @@ rmw_api_connextdds_qos_profile_check_compatible(
   char * reason,
   size_t reason_size);
 
+/*****************************************************************************
+ * Network Flow Endpoints API
+ *****************************************************************************/
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_publisher_get_network_flow_endpoints(
+  const rmw_publisher_t * publisher,
+  rcutils_allocator_t * allocator,
+  rmw_network_flow_endpoint_array_t * network_flow_endpoint_array);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_subscription_get_network_flow_endpoints(
+  const rmw_subscription_t * subscription,
+  rcutils_allocator_t * allocator,
+  rmw_network_flow_endpoint_array_t * network_flow_endpoint_array);
+
 #endif  // RMW_CONNEXTDDS__RMW_API_IMPL_HPP_

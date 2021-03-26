@@ -1310,13 +1310,13 @@ rmw_connextdds_get_cft_filter_expression(
   // get filter_expression
   const char * expression = DDS_ContentFilteredTopic_get_filter_expression(cft_topic);
   if (!expression) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get filter expression");
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get filter expression")
     return RMW_RET_ERROR;
   }
 
   *expr_out = rcutils_strdup(expression, allocator);
   if (NULL == *expr_out) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to duplicate string");
+    RMW_CONNEXT_LOG_ERROR_SET("failed to duplicate string")
     return RMW_RET_BAD_ALLOC;
   }
   auto scope_exit_filter_expression_delete =
@@ -1334,7 +1334,7 @@ rmw_connextdds_get_cft_filter_expression(
   DDS_ReturnCode_t status =
     DDS_ContentFilteredTopic_get_expression_parameters(cft_topic, &parameters);
   if (DDS_RETCODE_OK != status) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get expression parameters");
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get expression parameters")
     return RMW_RET_ERROR;
   }
   auto scope_exit_parameters_delete =
@@ -1348,7 +1348,7 @@ rmw_connextdds_get_cft_filter_expression(
   rcutils_ret_t rcutils_ret =
     rcutils_string_array_init(cft_params_out, static_cast<size_t>(parameters_len), &allocator);
   if (rcutils_ret != RCUTILS_RET_OK) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to init string array for expression parameters");
+    RMW_CONNEXT_LOG_ERROR_SET("failed to init string array for expression parameters")
     return RMW_RET_ERROR;
   }
   auto scope_exit_expression_parameters_delete =
@@ -1363,12 +1363,12 @@ rmw_connextdds_get_cft_filter_expression(
     const char * parameter_ref = *DDS_StringSeq_get_reference(&parameters, i);
     if (!parameter_ref) {
       RMW_CONNEXT_LOG_ERROR_A_SET(
-        "failed to get a reference for parameter with index %d", i);
+        "failed to get a reference for parameter with index %d", i)
       return RMW_RET_ERROR;
     }
     char * parameter = rcutils_strdup(parameter_ref, allocator);
     if (!parameter) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate memory for parameter");
+      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate memory for parameter")
       return RMW_RET_BAD_ALLOC;
     }
     cft_params_out->data[i] = parameter;

@@ -1637,7 +1637,7 @@ RMW_Connext_Subscriber::get_cft_expression_parameters(
 {
   std::lock_guard<std::mutex> lock(this->cft_mutex);
   if (nullptr == this->dds_topic_cft) {
-    RMW_CONNEXT_LOG_ERROR_SET("this subscriber has not created a contentfilteredtopic.");
+    RMW_CONNEXT_LOG_ERROR_SET("this subscriber has not created a contentfilteredtopic")
     return RMW_RET_ERROR;
   }
 

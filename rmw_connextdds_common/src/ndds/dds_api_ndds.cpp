@@ -232,19 +232,13 @@ rmw_connextdds_get_qos_policies(
   const bool writer_qos,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_PropertyQosPolicy * const property,
-  const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  ,
+  const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
-  const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_subscription_options_t * const sub_options)
 {
   UNUSED_ARG(qos_policies);
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   UNUSED_ARG(pub_options);
   UNUSED_ARG(sub_options);
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
   /* if type is unbound set property to force allocation of samples from heap */
   if (type_support->unbounded()) {
@@ -275,12 +269,8 @@ rmw_connextdds_get_datawriter_qos(
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_Topic * const topic,
   DDS_DataWriterQos * const qos,
-  const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  ,
-  const rmw_publisher_options_t * const pub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_qos_profile_t * const qos_policies,
+  const rmw_publisher_options_t * const pub_options)
 {
   UNUSED_ARG(topic);
 
@@ -306,13 +296,9 @@ rmw_connextdds_get_datawriter_qos(
         &qos->resource_limits,
         // TODO(asorbini) this value is not actually used, remove it
         &qos->publish_mode,
-        qos_policies
-  #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-        ,
+        qos_policies,
         pub_options,
-        nullptr           /* sub_options */
-  #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-    ))
+        nullptr /* sub_options */))
     {
       return RMW_RET_ERROR;
     }
@@ -360,13 +346,9 @@ rmw_connextdds_get_datawriter_qos(
     true /* writer_qos */,
     type_support,
     &qos->property,
-    qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    ,
+    qos_policies,
     pub_options,
-    nullptr             /* sub_options */
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  );
+    nullptr /* sub_options */);
 }
 
 rmw_ret_t
@@ -375,11 +357,8 @@ rmw_connextdds_get_datareader_qos(
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_TopicDescription * const topic_desc,
   DDS_DataReaderQos * const qos,
-  const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  , const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_qos_profile_t * const qos_policies,
+  const rmw_subscription_options_t * const sub_options)
 {
   UNUSED_ARG(ctx);
   UNUSED_ARG(topic_desc);
@@ -405,13 +384,9 @@ rmw_connextdds_get_datareader_qos(
         &qos->liveliness,
         &qos->resource_limits,
         nullptr /* publish_mode */,
-        qos_policies
-  #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-        ,
+        qos_policies,
         nullptr /* pub_options */,
-        sub_options
-  #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-    ))
+        sub_options))
     {
       return RMW_RET_ERROR;
     }
@@ -438,13 +413,9 @@ rmw_connextdds_get_datareader_qos(
     false /* writer_qos */,
     type_support,
     &qos->property,
-    qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    ,
+    qos_policies,
     nullptr /* pub_options */,
-    sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  );
+    sub_options);
 }
 
 DDS_DataWriter *
@@ -453,9 +424,7 @@ rmw_connextdds_create_datawriter(
   DDS_DomainParticipant * const participant,
   DDS_Publisher * const pub,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_Topic * const topic,
@@ -467,11 +436,7 @@ rmw_connextdds_create_datawriter(
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datawriter_qos(
-      ctx, type_support, topic, dw_qos, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-      , publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  ))
+      ctx, type_support, topic, dw_qos, qos_policies, publisher_options))
   {
     RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
     return nullptr;
@@ -491,9 +456,7 @@ rmw_connextdds_create_datareader(
   DDS_DomainParticipant * const participant,
   DDS_Subscriber * const sub,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_subscription_options_t * const subscriber_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_TopicDescription * const topic_desc,
@@ -505,11 +468,7 @@ rmw_connextdds_create_datareader(
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datareader_qos(
-      ctx, type_support, topic_desc, dr_qos, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-      , subscriber_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  ))
+      ctx, type_support, topic_desc, dr_qos, qos_policies, subscriber_options))
   {
     RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
     return nullptr;

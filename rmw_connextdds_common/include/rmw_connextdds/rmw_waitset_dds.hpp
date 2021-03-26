@@ -297,13 +297,6 @@ public:
       // DomainParticipantFactory has already been finalized.
       // Don't try to delete the guard condition, or we might
       // end up with a segfault.
-#if RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY
-      // For ROS2 releases > Foxy, this is unexpected behavior
-      // so print an error message.
-      RMW_CONNEXT_LOG_ERROR(
-        "DomainParticipantFactory already finalized, "
-        "leaked DDS guard condition")
-#endif /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
       return;
     }
     this->invalidate();

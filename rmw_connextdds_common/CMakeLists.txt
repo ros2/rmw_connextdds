@@ -71,9 +71,6 @@ function(rtirmw_add_library)
             ${_rti_build_DEFINES}
     )
 
-    target_compile_definitions(${_rti_build_NAME}
-        PUBLIC RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
-
     set(private_defines)
 
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
@@ -127,26 +124,6 @@ set(RMW_CONNEXT_DEPS
 foreach(pkg_dep ${RMW_CONNEXT_DEPS})
     find_package(${pkg_dep} REQUIRED)
 endforeach()
-
-################################################################################
-# Detect target rmw version
-################################################################################
-if(NOT DEFINED RMW_CONNEXT_RELEASE)
-  if(${rmw_VERSION} VERSION_GREATER_EQUAL "2.1.0")
-      set(RMW_CONNEXT_RELEASE       rolling)
-  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.2")
-      set(RMW_CONNEXT_RELEASE       foxy)
-  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.1")
-      set(RMW_CONNEXT_RELEASE       eloquent)
-  else()
-      set(RMW_CONNEXT_RELEASE       dashing)
-  endif()
-endif()
-
-string(TOUPPER "${RMW_CONNEXT_RELEASE}" RMW_CONNEXT_RELEASE)
-set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}" CACHE INTERNAL "" FORCE)
-
-message(STATUS "-- Target ROS Release: ${RMW_CONNEXT_RELEASE}")
 
 ################################################################################
 # Common Source Configuration

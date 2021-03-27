@@ -154,7 +154,7 @@ class RMW_Connext_Publisher
 {
 public:
   static RMW_Connext_Publisher *
-    create(
+  create(
     rmw_context_impl_t * const ctx,
     DDS_DomainParticipant * const dp,
     DDS_Publisher * const pub,
@@ -284,7 +284,7 @@ private:
 };
 
 rmw_publisher_t *
-  rmw_connextdds_create_publisher(
+rmw_connextdds_create_publisher(
   rmw_context_impl_t * const ctx,
   const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
@@ -307,7 +307,7 @@ class RMW_Connext_Subscriber
 {
 public:
   static RMW_Connext_Subscriber *
-    create(
+  create(
     rmw_context_impl_t * const ctx,
     DDS_DomainParticipant * const dp,
     DDS_Subscriber * const sub,
@@ -535,7 +535,7 @@ private:
 };
 
 rmw_subscription_t *
-  rmw_connextdds_create_subscriber(
+rmw_connextdds_create_subscriber(
   rmw_context_impl_t * const ctx,
   const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
@@ -794,7 +794,7 @@ rmw_connextdds_create_topic_name(
  ******************************************************************************/
 
 rmw_ret_t
-  rmw_connextdds_get_readerwriter_qos(
+rmw_connextdds_get_readerwriter_qos(
   const bool writer_qos,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_HistoryQosPolicy * const history,
@@ -807,7 +807,7 @@ rmw_ret_t
   const rmw_qos_profile_t * const qos_policies);
 
 rmw_ret_t
-  rmw_connextdds_readerwriter_qos_to_ros(
+rmw_connextdds_readerwriter_qos_to_ros(
   const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,

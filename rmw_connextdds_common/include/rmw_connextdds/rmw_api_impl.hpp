@@ -247,7 +247,7 @@ rmw_api_connextdds_publish_loaned_message(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-  rmw_api_connextdds_init_publisher_allocation(
+rmw_api_connextdds_init_publisher_allocation(
   const rosidl_message_type_support_t * type_support,
   const rosidl_message_bounds_t * message_bounds,
   rmw_publisher_allocation_t * allocation);
@@ -319,7 +319,7 @@ rmw_api_connextdds_destroy_publisher(
  *****************************************************************************/
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-  rmw_api_connextdds_get_serialized_message_size(
+rmw_api_connextdds_get_serialized_message_size(
   const rosidl_message_type_support_t * type_supports,
   const rosidl_message_bounds_t * message_bounds,
   size_t * size);
@@ -343,7 +343,7 @@ rmw_api_connextdds_deserialize(
  *****************************************************************************/
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-  rmw_api_connextdds_take_response(
+rmw_api_connextdds_take_response(
   const rmw_client_t * client,
   rmw_request_id_t * request_header,
   void * ros_response,
@@ -351,7 +351,7 @@ rmw_ret_t
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-  rmw_api_connextdds_take_request(
+rmw_api_connextdds_take_request(
   const rmw_service_t * service,
   rmw_request_id_t * request_header,
   void * ros_request,
@@ -403,7 +403,7 @@ rmw_api_connextdds_destroy_service(
  *****************************************************************************/
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-  rmw_api_connextdds_init_subscription_allocation(
+rmw_api_connextdds_init_subscription_allocation(
   const rosidl_message_type_support_t * type_support,
   const rosidl_message_bounds_t * message_bounds,
   rmw_subscription_allocation_t * allocation);
@@ -415,7 +415,7 @@ rmw_api_connextdds_fini_subscription_allocation(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_subscription_t *
-  rmw_api_connextdds_create_subscription(
+rmw_api_connextdds_create_subscription(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,

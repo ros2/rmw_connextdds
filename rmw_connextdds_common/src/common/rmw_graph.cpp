@@ -21,7 +21,7 @@
 #define rmw_publish     rmw_api_connextdds_publish
 
 static rmw_ret_t
-  rmw_connextdds_graph_add_entityEA(
+rmw_connextdds_graph_add_entityEA(
   rmw_context_impl_t * ctx,
   const DDS_GUID_t * const endp_guid,
   const DDS_GUID_t * const dp_guid,
@@ -64,7 +64,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   const rosidl_message_type_support_t * const type_supports_partinfo =
     rosidl_typesupport_cpp::get_message_type_support_handle<
-    rmw_connextdds_common::msg::ParticipantEntitiesInfo > ();
+    rmw_connextdds_common::msg::ParticipantEntitiesInfo>();
 
   const char * const topic_name_partinfo = "ros_discovery_info";
 

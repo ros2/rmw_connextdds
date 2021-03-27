@@ -114,7 +114,6 @@ set(RMW_CONNEXT_DEPS
     rcpputils
     rmw
     fastcdr
-    rosidl_default_runtime
     rosidl_typesupport_fastrtps_c
     rosidl_typesupport_fastrtps_cpp
     rosidl_typesupport_introspection_c

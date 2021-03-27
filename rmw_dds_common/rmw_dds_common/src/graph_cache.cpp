@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rmw_connextdds/static_config.hpp"
-
-#include "rmw_connextdds/graph_cache_common.hpp"
+#include "rmw_dds_common/graph_cache.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -37,10 +35,10 @@
 #include "rmw/convert_rcutils_ret_to_rmw_ret.h"
 #include "rmw/error_handling.h"
 #include "rmw/sanity_checks.h"
-#include "rmw_connextdds/topic_endpoint_info.h"
-#include "rmw_connextdds/topic_endpoint_info_array.h"
+#include "rmw_dds_common/topic_endpoint_info.h"
+#include "rmw_dds_common/topic_endpoint_info_array.h"
 
-#include "rmw_connextdds/gid_utils.hpp"
+#include "rmw_dds_common/gid_utils.hpp"
 
 using rmw_dds_common::GraphCache;
 using rmw_dds_common::operator<<;
@@ -831,7 +829,7 @@ __get_names_and_types_by_node(
     namespace_);
 
   if (nullptr == node_info_ptr) {
-    return RMW_RET_NODE_NAME_NON_EXISTENT;
+    return /* RMW_RET_NODE_NAME_NON_EXISTENT */ RMW_RET_ERROR;
   }
 
   NamesAndTypes topics = __get_names_and_types_from_gids(
@@ -1011,14 +1009,6 @@ fail:
     RCUTILS_LOG_ERROR_NAMED(
       "rmw_dds_common",
       "failed to cleanup during error handling: %s", rcutils_get_error_string().str);
-  }
-  if (enclaves) {
-    rcutils_ret = rcutils_string_array_fini(enclaves);
-    if (rcutils_ret != RCUTILS_RET_OK) {
-      RCUTILS_LOG_ERROR_NAMED(
-        "rmw_dds_common",
-        "failed to cleanup during error handling: %s", rcutils_get_error_string().str);
-    }
   }
   return RMW_RET_BAD_ALLOC;
 }

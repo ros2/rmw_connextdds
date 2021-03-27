@@ -64,7 +64,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   const rosidl_message_type_support_t * const type_supports_partinfo =
     rosidl_typesupport_cpp::get_message_type_support_handle<
-    rmw_connextdds_common::msg::ParticipantEntitiesInfo>();
+    rmw_dds_common::msg::ParticipantEntitiesInfo>();
 
   const char * const topic_name_partinfo = "ros_discovery_info";
 

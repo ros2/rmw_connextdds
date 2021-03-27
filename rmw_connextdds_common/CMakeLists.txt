@@ -114,6 +114,7 @@ set(RMW_CONNEXT_DEPS
     rcpputils
     rmw
     fastcdr
+    rmw_dds_common
     rosidl_typesupport_fastrtps_c
     rosidl_typesupport_fastrtps_cpp
     rosidl_typesupport_introspection_c
@@ -164,18 +165,6 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
     include/rmw_connextdds/static_config.hpp
     include/rmw_connextdds/type_support.hpp
     include/rmw_connextdds/visibility_control.h)
-
-# Backported implementation of `rmw_dds_common`
-list(APPEND RMW_CONNEXT_COMMON_SOURCE_CPP
-    src/rmw_dds_common/graph_cache.cpp
-    src/rmw_dds_common/topic_endpoint_info.c
-    src/rmw_dds_common/topic_endpoint_info_array.c
-    src/rmw_dds_common/gid_utils.cpp)
-list(APPEND RMW_CONNEXT_COMMON_SOURCE_HPP
-    include/rmw_connextdds/graph_cache_common.hpp
-    include/rmw_connextdds/topic_endpoint_info.h
-    include/rmw_connextdds/topic_endpoint_info_array.h
-    include/rmw_connextdds/gid_utils.hpp)
 
 set(RMW_CONNEXT_COMMON_SOURCE
     ${RMW_CONNEXT_COMMON_SOURCE_CPP}
@@ -294,35 +283,6 @@ endif()
 
 if(TARGET ${PROJECT_NAME}_pro OR TARGET ${PROJECT_NAME}_micro)
   set(RMW_CONNEXT_BUILT   true)
-endif()
-
-# Set STATIC_${type_support_type_uppercase} variables to explicitly request
-# the generation of the required type supports (fastrtps, and introspection).
-set(STATIC_ROSIDL_TYPESUPPORT_C rosidl_typesupport_fastrtps_c
-                                rosidl_typesupport_introspection_c)
-set(STATIC_ROSIDL_TYPESUPPORT_CPP rosidl_typesupport_fastrtps_cpp
-                                  rosidl_typesupport_introspection_cpp)
-
-rosidl_generate_interfaces(
-  ${PROJECT_NAME}
-  "msg/Gid.msg"
-  "msg/NodeEntitiesInfo.msg"
-  "msg/ParticipantEntitiesInfo.msg"
-)
-
-if(TARGET ${PROJECT_NAME}_pro)
-  add_dependencies(${PROJECT_NAME}_pro ${PROJECT_NAME})
-  target_include_directories(${PROJECT_NAME}_pro
-    PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
-endif()
-if(TARGET ${PROJECT_NAME}_micro)
-add_dependencies(${PROJECT_NAME}_micro ${PROJECT_NAME})
-  target_include_directories(${PROJECT_NAME}_micro
-    PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
 endif()
 
 ################################################################################

@@ -16,7 +16,6 @@
   <depend>rcpputils</depend>
   <depend>rmw</depend>
   <depend>rmw_dds_common</depend>
-  <depend>rosidl_default_runtime</depend>
   <depend>rosidl_typesupport_fastrtps_c</depend>
   <depend>rosidl_typesupport_fastrtps_cpp</depend>
   <depend>rosidl_typesupport_introspection_c</depend>

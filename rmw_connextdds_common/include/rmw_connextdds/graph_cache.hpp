@@ -105,7 +105,7 @@ rmw_connextdds_graph_remove_participant(
   const DDS_InstanceHandle_t * const instance);
 
 rmw_ret_t
-  rmw_connextdds_graph_add_remote_entity(
+rmw_connextdds_graph_add_remote_entity(
   rmw_context_impl_t * ctx,
   const DDS_GUID_t * const endp_guid,
   const DDS_GUID_t * const dp_guid,

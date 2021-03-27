@@ -1002,7 +1002,7 @@ rmw_connextdds_get_datawriter_qos(
       nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
       qos_policies,
       pub_options,
-      nullptr           /* sub_options */))
+      nullptr /* sub_options */))
   {
     return RMW_RET_ERROR;
   }
@@ -1022,7 +1022,7 @@ rmw_connextdds_get_datawriter_qos(
     &qos->protocol,
     qos_policies,
     pub_options,
-    nullptr             /* sub_options */);
+    nullptr /* sub_options */);
 }
 
 rmw_ret_t

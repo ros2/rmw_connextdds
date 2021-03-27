@@ -21,7 +21,7 @@
 #define rmw_publish     rmw_api_connextdds_publish
 
 static rmw_ret_t
-  rmw_connextdds_graph_add_entityEA(
+rmw_connextdds_graph_add_entityEA(
   rmw_context_impl_t * ctx,
   const DDS_GUID_t * const endp_guid,
   const DDS_GUID_t * const dp_guid,

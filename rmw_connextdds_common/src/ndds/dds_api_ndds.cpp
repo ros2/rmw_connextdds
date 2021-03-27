@@ -337,7 +337,7 @@ rmw_connextdds_get_datawriter_qos(
         &qos->lifespan,
         qos_policies,
         pub_options,
-        nullptr           /* sub_options */))
+        nullptr /* sub_options */))
     {
       return RMW_RET_ERROR;
     }
@@ -387,7 +387,7 @@ rmw_connextdds_get_datawriter_qos(
     &qos->property,
     qos_policies,
     pub_options,
-    nullptr             /* sub_options */);
+    nullptr /* sub_options */);
 }
 
 rmw_ret_t

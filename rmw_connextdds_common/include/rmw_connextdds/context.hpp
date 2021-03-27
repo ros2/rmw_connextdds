@@ -33,10 +33,10 @@
 #include "rmw/get_node_info_and_types.h"
 #include "rmw/get_service_names_and_types.h"
 #include "rmw/get_topic_names_and_types.h"
-#include "rmw_connextdds/topic_endpoint_info_array.h"
+#include "rmw_dds_common/topic_endpoint_info_array.h"
 
-#include "rmw_connextdds/context_common.hpp"
-#include "rmw_connextdds_common/msg/participant_entities_info.hpp"
+#include "rmw_dds_common/context.hpp"
+#include "rmw_dds_common/msg/participant_entities_info.hpp"
 
 #include "rcutils/strdup.h"
 

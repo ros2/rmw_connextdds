@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rmw_connextdds/static_config.hpp"
-
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 
 #include "rmw/types.h"
 
-#include "rmw_connextdds/gid_utils.hpp"
-#include "rmw_connextdds_common/msg/gid.hpp"
+#include "rmw_dds_common/gid_utils.hpp"
+#include "rmw_dds_common/msg/gid.hpp"
 
 using rmw_dds_common::Compare_rmw_gid_t;
 

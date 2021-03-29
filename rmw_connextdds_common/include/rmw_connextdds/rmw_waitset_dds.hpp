@@ -297,13 +297,6 @@ public:
       // DomainParticipantFactory has already been finalized.
       // Don't try to delete the guard condition, or we might
       // end up with a segfault.
-#if RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY
-      // For ROS2 releases > Foxy, this is unexpected behavior
-      // so print an error message.
-      RMW_CONNEXT_LOG_ERROR(
-        "DomainParticipantFactory already finalized, "
-        "leaked DDS guard condition")
-#endif /* RMW_CONNEXT_RELEASE > RMW_CONNEXT_RELEASE_FOXY */
       return;
     }
     this->invalidate();
@@ -694,26 +687,6 @@ public:
 
     return RMW_RET_OK;
   }
-
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
-  inline rmw_ret_t
-  get_message_lost_status(rmw_message_lost_status_t * const status)
-  {
-    DDS_SampleLostStatus dds_status = DDS_SampleLostStatus_INITIALIZER;
-
-    if (DDS_RETCODE_OK !=
-      DDS_DataReader_get_sample_lost_status(this->reader, &dds_status))
-    {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to get sample lost status")
-      return RMW_RET_ERROR;
-    }
-
-    status->total_count = dds_status.total_count;
-    status->total_count_change = dds_status.total_count_change;
-
-    return RMW_RET_OK;
-  }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
 
 protected:
   rmw_ret_t

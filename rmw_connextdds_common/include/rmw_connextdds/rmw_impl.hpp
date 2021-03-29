@@ -31,8 +31,6 @@
 #include "rcutils/types/uint8_array.h"
 #include "rcpputils/thread_safety_annotations.hpp"
 
-#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS
-
 /******************************************************************************
  * Symbols provided by rmw/incompatible_qos.h from Foxy onward
  ******************************************************************************/
@@ -63,21 +61,6 @@ typedef struct rmw_qos_incompatible_event_status_t rmw_requested_qos_incompatibl
 
 typedef struct rmw_qos_incompatible_event_status_t rmw_offered_qos_incompatible_event_status_t;
 
-#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS */
-
-#if !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT
-
-/******************************************************************************
- * Define value for RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE, and
- * RMW_EVENT_OFFERED_QOS_INCOMPATIBLE as invalid values,
- * since they're not defined by rmw_event_type_t.
- ******************************************************************************/
-#define RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE (RMW_EVENT_INVALID + 1)
-#define RMW_EVENT_OFFERED_QOS_INCOMPATIBLE (RMW_EVENT_INVALID + 2)
-
-#endif /* !RMW_CONNEXT_HAVE_INCOMPATIBLE_QOS_EVENT */
-
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
 /******************************************************************************
  * Define value for RMW_EVENT_MESSAGE_LOST as an invalid value,
  * since it's not defined by rmw_event_type_t.
@@ -89,18 +72,6 @@ typedef struct RMW_PUBLIC_TYPE rmw_message_lost_status_t
   size_t total_count;
   size_t total_count_change;
 } rmw_message_lost_status_t;
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
-
-#if !RMW_CONNEXT_HAVE_SERVICE_INFO
-typedef rcutils_time_point_value_t rmw_time_point_value_t;
-
-typedef struct RMW_PUBLIC_TYPE rmw_service_info_t
-{
-  rmw_time_point_value_t source_timestamp;
-  rmw_time_point_value_t received_timestamp;
-  rmw_request_id_t request_id;
-} rmw_service_info_t;
-#endif /* !RMW_CONNEXT_HAVE_SERVICE_INFO */
 
 /******************************************************************************
  * General helpers and utilities.
@@ -180,16 +151,14 @@ class RMW_Connext_Publisher
 {
 public:
   static RMW_Connext_Publisher *
-    create(
+  create(
     rmw_context_impl_t * const ctx,
     DDS_DomainParticipant * const dp,
     DDS_Publisher * const pub,
     const rosidl_message_type_support_t * const type_supports,
     const char * const topic_name,
     const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     const bool internal = false,
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
@@ -313,7 +282,7 @@ private:
 };
 
 rmw_publisher_t *
-  rmw_connextdds_create_publisher(
+rmw_connextdds_create_publisher(
   rmw_context_impl_t * const ctx,
   const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
@@ -321,9 +290,7 @@ rmw_publisher_t *
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal = false);
 
 rmw_ret_t
@@ -339,18 +306,14 @@ class RMW_Connext_Subscriber
 {
 public:
   static RMW_Connext_Subscriber *
-    create(
+  create(
     rmw_context_impl_t * const ctx,
     DDS_DomainParticipant * const dp,
     DDS_Subscriber * const sub,
     const rosidl_message_type_support_t * const type_supports,
     const char * const topic_name,
     const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
     const rmw_subscription_options_t * const subscriber_options,
-#else
-    const bool ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
     const bool internal = false,
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
@@ -503,14 +466,12 @@ public:
     bool * const taken,
     const DDS_InstanceHandle_t * const request_writer_handle = nullptr);
 
-#if RMW_CONNEXT_HAVE_TAKE_SEQ
   rmw_ret_t
   take(
     rmw_message_sequence_t * const message_sequence,
     rmw_message_info_sequence_t * const message_info_sequence,
     const size_t max_samples,
     size_t * const taken);
-#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
 
   rmw_ret_t
   take_serialized(
@@ -580,7 +541,7 @@ private:
 };
 
 rmw_subscription_t *
-  rmw_connextdds_create_subscriber(
+rmw_connextdds_create_subscriber(
   rmw_context_impl_t * const ctx,
   const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
@@ -588,11 +549,7 @@ rmw_subscription_t *
   const rosidl_message_type_support_t * const type_supports,
   const char * const topic_name,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   const rmw_subscription_options_t * const subscriber_options,
-#else
-  const bool ignore_local_publications,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal = false);
 
 rmw_ret_t
@@ -843,7 +800,7 @@ rmw_connextdds_create_topic_name(
  ******************************************************************************/
 
 rmw_ret_t
-  rmw_connextdds_get_readerwriter_qos(
+rmw_connextdds_get_readerwriter_qos(
   const bool writer_qos,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_HistoryQosPolicy * const history,
@@ -853,36 +810,24 @@ rmw_ret_t
   DDS_LivelinessQosPolicy * const liveliness,
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
-  const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  ,
+  const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
-  const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  );
+  const rmw_subscription_options_t * const sub_options);
 
 rmw_ret_t
-  rmw_connextdds_readerwriter_qos_to_ros(
+rmw_connextdds_readerwriter_qos_to_ros(
   const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-  const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   rmw_qos_profile_t * const qos_policies);
 
 /******************************************************************************
  * Security Helpers
  ******************************************************************************/
-#if RMW_CONNEXT_HAVE_SECURITY
 rmw_ret_t
 rmw_connextdds_apply_security_logging_configuration(
   DDS_PropertyQosPolicy * const properties);
-#endif /* RMW_CONNEXT_HAVE_SECURITY */
 
 #endif  // RMW_CONNEXTDDS__RMW_IMPL_HPP_

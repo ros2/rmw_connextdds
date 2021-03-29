@@ -14,8 +14,6 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
-#if RMW_CONNEXT_HAVE_SECURITY
-
 #include "rcutils/get_env.h"
 
 // Connext 5.3.1 uses numeric levels (although note that v6 moved to using
@@ -237,4 +235,3 @@ rmw_connextdds_apply_security_logging_configuration(
 
   return RMW_RET_OK;
 }
-#endif /* RMW_CONNEXT_HAVE_SECURITY */

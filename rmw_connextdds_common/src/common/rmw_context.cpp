@@ -636,16 +636,10 @@ rmw_api_connextdds_init_options_init(
   init_options->implementation_identifier = RMW_CONNEXTDDS_ID;
   init_options->allocator = allocator;
   init_options->impl = nullptr;
-#if RMW_CONNEXT_HAVE_LOCALHOST_ONLY
   init_options->localhost_only = RMW_LOCALHOST_ONLY_DEFAULT;
-#endif /* RMW_CONNEXT_HAVE_LOCALHOST_ONLY */
-#if RMW_CONNEXT_HAVE_OPTIONS
   init_options->domain_id = RMW_DEFAULT_DOMAIN_ID;
   init_options->enclave = nullptr;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-#if RMW_CONNEXT_HAVE_SECURITY
   init_options->security_options = rmw_get_zero_initialized_security_options();
-#endif /* RMW_CONNEXT_HAVE_SECURITY */
   return RMW_RET_OK;
 }
 
@@ -673,15 +667,11 @@ rmw_api_connextdds_init_options_copy(
 
   rmw_init_options_t tmp = *src;
 
-#if RMW_CONNEXT_HAVE_OPTIONS || RMW_CONNEXT_HAVE_SECURITY
-#if RMW_CONNEXT_HAVE_OPTIONS
   const rcutils_allocator_t * allocator = &src->allocator;
   tmp.enclave = rcutils_strdup(tmp.enclave, *allocator);
   if (nullptr != src->enclave && nullptr == tmp.enclave) {
     return RMW_RET_BAD_ALLOC;
   }
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-#if RMW_CONNEXT_HAVE_SECURITY
   tmp.security_options = rmw_get_zero_initialized_security_options();
   rmw_ret_t ret =
     rmw_security_options_copy(&src->security_options, allocator, &tmp.security_options);
@@ -689,8 +679,7 @@ rmw_api_connextdds_init_options_copy(
     allocator->deallocate(tmp.enclave, allocator->state);
     return ret;
   }
-#endif /* RMW_CONNEXT_HAVE_SECURITY */
-#endif /* RMW_CONNEXT_HAVE_OPTIONS || RMW_CONNEXT_HAVE_SECURITY */
+
   *dst = tmp;
   return RMW_RET_OK;
 }
@@ -710,18 +699,11 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
     RMW_CONNEXTDDS_ID,
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
 
-#if RMW_CONNEXT_HAVE_OPTIONS || RMW_CONNEXT_HAVE_SECURITY
   rcutils_allocator_t * allocator = &init_options->allocator;
   RCUTILS_CHECK_ALLOCATOR(allocator, return RMW_RET_INVALID_ARGUMENT);
-#if RMW_CONNEXT_HAVE_OPTIONS
   allocator->deallocate(init_options->enclave, allocator->state);
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-#if RMW_CONNEXT_HAVE_SECURITY
   rmw_ret_t ret = rmw_security_options_fini(&init_options->security_options, allocator);
-#endif /* RMW_CONNEXT_HAVE_SECURITY */
-#else
-  rmw_ret_t ret = RMW_RET_OK;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS || RMW_CONNEXT_HAVE_SECURITY */
+
   *init_options = rmw_get_zero_initialized_init_options();
   return ret;
 }
@@ -743,25 +725,21 @@ rmw_api_connextdds_init(
     options->implementation_identifier,
     RMW_CONNEXTDDS_ID,
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-#if RMW_CONNEXT_HAVE_OPTIONS
   RMW_CHECK_FOR_NULL_WITH_MSG(
     options->enclave,
     "expected non-null enclave",
     return RMW_RET_INVALID_ARGUMENT);
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
   if (nullptr != context->implementation_identifier) {
     RMW_CONNEXT_LOG_ERROR_SET("expected a zero-initialized context")
     return RMW_RET_INVALID_ARGUMENT;
   }
 
-#if RMW_CONNEXT_HAVE_OPTIONS
   if (options->domain_id >= INT32_MAX &&
     options->domain_id != RMW_DEFAULT_DOMAIN_ID)
   {
     RMW_CONNEXT_LOG_ERROR_SET("domain id out of range")
     return RMW_RET_INVALID_ARGUMENT;
   }
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
 
   auto scope_exit_context_reset = rcpputils::make_scope_exit(
     [context]()
@@ -772,14 +750,9 @@ rmw_api_connextdds_init(
   context->instance_id = options->instance_id;
   context->implementation_identifier = RMW_CONNEXTDDS_ID;
   const DDS_DomainId_t actual_domain_id =
-#if !RMW_CONNEXT_HAVE_OPTIONS
-    RMW_CONNEXT_DEFAULT_DOMAIN;
-#else
     (RMW_DEFAULT_DOMAIN_ID != options->domain_id) ?
     static_cast<DDS_DomainId_t>(options->domain_id) : RMW_CONNEXT_DEFAULT_DOMAIN;
-#if RMW_CONNEXT_HAVE_GET_DOMAIN
-  context->actual_domain_id = actual_domain_id;
-#endif /* RMW_CONNEXT_HAVE_GET_DOMAIN */
+
   rmw_ret_t rc = rmw_api_connextdds_init_options_copy(options, &context->options);
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to copy RMW context options")
@@ -794,11 +767,6 @@ rmw_api_connextdds_init(
         RMW_CONNEXT_LOG_ERROR("failed to finalize RMW context options")
       }
     });
-
-#endif /* RMW_CONNEXT_HAVE_OPTIONS*/
-
-  /* The context object will be initialized upon creation of the first node */
-
 
   rmw_context_impl_t * const ctx = new (std::nothrow) rmw_context_impl_t(context);
   if (nullptr == ctx) {
@@ -985,9 +953,7 @@ rmw_api_connextdds_init(
   RMW_CONNEXT_ASSERT(1 == RMW_Connext_gv_ContextCount)
 
   scope_exit_context_finalize.cancel();
-#if RMW_CONNEXT_HAVE_OPTIONS
   scope_exit_context_opts_finalize.cancel();
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
   scope_exit_context_reset.cancel();
 
   return RMW_RET_OK;
@@ -1049,13 +1015,12 @@ rmw_api_connextdds_context_fini(rmw_context_t * context)
     rc_exit = rc;
   }
 
-#if RMW_CONNEXT_HAVE_OPTIONS
   rc = rmw_api_connextdds_init_options_fini(&context->options);
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to finalize RMW context options")
     rc_exit = rc;
   }
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
+
   delete context->impl;
   *context = rmw_get_zero_initialized_context();
   return rc_exit;
@@ -1066,7 +1031,6 @@ rmw_connextdds_configure_security(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos * const qos)
 {
-#if RMW_CONNEXT_HAVE_SECURITY
   if (nullptr == ctx->base->options.security_options.security_root_path) {
     // Security not enabled;
     return RMW_RET_OK;
@@ -1254,10 +1218,4 @@ rmw_connextdds_configure_security(
   }
 
   return rmw_connextdds_apply_security_logging_configuration(&qos->property);
-#else
-  // Security not supported by ROS release
-  UNUSED_ARG(ctx);
-  UNUSED_ARG(qos);
-  return RMW_RET_OK;
-#endif /* RMW_CONNEXT_HAVE_SECURITY */
 }

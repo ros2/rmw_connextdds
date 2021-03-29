@@ -105,7 +105,7 @@ rmw_connextdds_graph_remove_participant(
   const DDS_InstanceHandle_t * const instance);
 
 rmw_ret_t
-  rmw_connextdds_graph_add_remote_entity(
+rmw_connextdds_graph_add_remote_entity(
   rmw_context_impl_t * ctx,
   const DDS_GUID_t * const endp_guid,
   const DDS_GUID_t * const dp_guid,
@@ -115,9 +115,7 @@ rmw_ret_t
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
   const DDS_LivelinessQosPolicy * const liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
   const DDS_LifespanQosPolicy * const lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
   const bool is_reader);
 
 rmw_ret_t

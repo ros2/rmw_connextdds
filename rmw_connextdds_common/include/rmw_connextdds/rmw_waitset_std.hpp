@@ -661,7 +661,6 @@ public:
     return RMW_RET_OK;
   }
 
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
   inline rmw_ret_t
   get_message_lost_status(rmw_message_lost_status_t * const status)
   {
@@ -673,7 +672,6 @@ public:
 
     return RMW_RET_OK;
   }
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
 
 protected:
   void update_status_deadline(

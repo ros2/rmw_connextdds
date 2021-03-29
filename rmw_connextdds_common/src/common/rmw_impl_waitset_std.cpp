@@ -631,24 +631,12 @@ RMW_Connext_SubscriberStatusCondition::has_status(
       {
         return this->triggered_qos;
       }
-// Avoid warnings caused by RMW_EVENT_MESSAGE_LOST not being one of
-// the defined values for rmw_event_type_t. This #if and the one in
-// the `default` case, should be removed once support for releases
-// without RMW_EVENT_MESSAGE_LOST is dropped (or the value is backported).
-#if RMW_CONNEXT_HAVE_MESSAGE_LOST
     case RMW_EVENT_MESSAGE_LOST:
-#endif /* RMW_CONNEXT_HAVE_MESSAGE_LOST */
       {
         return this->triggered_sample_lost;
       }
     default:
       {
-#if !RMW_CONNEXT_HAVE_MESSAGE_LOST
-        if (RMW_EVENT_MESSAGE_LOST == event_type) {
-          RMW_CONNEXT_LOG_WARNING(
-            "unexpected rmw_event_type_t: RMW_EVENT_MESSAGE_LOST")
-        }
-#endif /* !RMW_CONNEXT_HAVE_MESSAGE_LOST */
         RMW_CONNEXT_ASSERT(0)
         return false;
       }

@@ -81,12 +81,20 @@ The following table summarizes which branch of the repository should be
 checked out in order to compile the RMW implementations for a specific ROS 2
 release:
 
-|ROS 2 Release|Branch|
-|-------------|------|
-|Rolling      |`master`|
-|Foxy         |`master`|
-|Eloquent     |`dashing`|
-|Dashing      |`dashing`|
+|ROS 2 Release|Branch|Status|
+|-------------|------|------|
+|Rolling      |`master`|Developed|
+|Foxy         |`foxy`|LTS (May 2023)|
+|Eloquent     |`eloquent`|EOL (Nov 2020)|
+|Dashing      |`dashing`|LTS (May 2021)|
+
+Branch `master` is actively developed and maintained. It is used to create
+other branches for specific ROS 2 releases (starting from Galactic).
+
+Branches marked as `LTS` will receive updates for critical bug fixes and
+important patches only (until they reach `EOL`).
+
+Branches marked as `EOL` will not receive any future updates.
 
 ## RTI Connext DDS Requirements
 

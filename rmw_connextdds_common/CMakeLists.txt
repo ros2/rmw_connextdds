@@ -71,9 +71,6 @@ function(rtirmw_add_library)
             ${_rti_build_DEFINES}
     )
 
-    target_compile_definitions(${_rti_build_NAME}
-        PUBLIC RMW_CONNEXT_RELEASE=RMW_CONNEXT_RELEASE_${RMW_CONNEXT_RELEASE})
-
     set(private_defines)
 
     if(NOT "${RMW_CONNEXT_LOG_MODE}" STREQUAL "")
@@ -117,7 +114,7 @@ set(RMW_CONNEXT_DEPS
     rcpputils
     rmw
     fastcdr
-    rosidl_default_runtime
+    rmw_dds_common
     rosidl_typesupport_fastrtps_c
     rosidl_typesupport_fastrtps_cpp
     rosidl_typesupport_introspection_c
@@ -127,32 +124,6 @@ set(RMW_CONNEXT_DEPS
 foreach(pkg_dep ${RMW_CONNEXT_DEPS})
     find_package(${pkg_dep} REQUIRED)
 endforeach()
-
-################################################################################
-# Detect target rmw version
-################################################################################
-if(NOT DEFINED RMW_CONNEXT_RELEASE)
-  if(${rmw_VERSION} VERSION_GREATER_EQUAL "2.1.0")
-      set(RMW_CONNEXT_RELEASE       rolling)
-  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.2")
-      set(RMW_CONNEXT_RELEASE       foxy)
-  elseif(${rmw_VERSION} VERSION_GREATER_EQUAL "0.8.1")
-      set(RMW_CONNEXT_RELEASE       eloquent)
-  else()
-      set(RMW_CONNEXT_RELEASE       dashing)
-  endif()
-endif()
-
-string(TOUPPER "${RMW_CONNEXT_RELEASE}" RMW_CONNEXT_RELEASE)
-set(RMW_CONNEXT_RELEASE "${RMW_CONNEXT_RELEASE}" CACHE INTERNAL "" FORCE)
-
-message(STATUS "-- Target ROS Release: ${RMW_CONNEXT_RELEASE}")
-
-set(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON      false)
-if("${RMW_CONNEXT_RELEASE}" STREQUAL "DASHING"
-  OR "${RMW_CONNEXT_RELEASE}" STREQUAL "ELOQUENT")
-  set(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON      true)
-endif()
 
 ################################################################################
 # Common Source Configuration
@@ -170,8 +141,6 @@ set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_info.cpp
     src/common/rmw_node.cpp
     src/common/rmw_publication.cpp
-    src/common/rmw_qos.cpp
-    src/common/rmw_security_log.cpp
     src/common/rmw_serde.cpp
     src/common/rmw_service.cpp
     src/common/rmw_subscription.cpp
@@ -196,19 +165,6 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
     include/rmw_connextdds/static_config.hpp
     include/rmw_connextdds/type_support.hpp
     include/rmw_connextdds/visibility_control.h)
-
-if(RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
-  list(APPEND RMW_CONNEXT_COMMON_SOURCE_CPP
-      src/rmw_dds_common/graph_cache.cpp
-      src/rmw_dds_common/topic_endpoint_info.c
-      src/rmw_dds_common/topic_endpoint_info_array.c
-      src/rmw_dds_common/gid_utils.cpp)
-  list(APPEND RMW_CONNEXT_COMMON_SOURCE_HPP
-      include/rmw_connextdds/graph_cache_common.hpp
-      include/rmw_connextdds/topic_endpoint_info.h
-      include/rmw_connextdds/topic_endpoint_info_array.h
-      include/rmw_connextdds/gid_utils.hpp)
-endif()
 
 set(RMW_CONNEXT_COMMON_SOURCE
     ${RMW_CONNEXT_COMMON_SOURCE_CPP}
@@ -329,37 +285,6 @@ if(TARGET ${PROJECT_NAME}_pro OR TARGET ${PROJECT_NAME}_micro)
   set(RMW_CONNEXT_BUILT   true)
 endif()
 
-if(RMW_CONNEXT_BUILT AND RMW_CONNEXT_PROVIDE_RMW_DDS_COMMON)
-  # Set STATIC_${type_support_type_uppercase} variables to explicitly request
-  # the generation of the required type supports (fastrtps, and introspection).
-  set(STATIC_ROSIDL_TYPESUPPORT_C rosidl_typesupport_fastrtps_c
-                                  rosidl_typesupport_introspection_c)
-  set(STATIC_ROSIDL_TYPESUPPORT_CPP rosidl_typesupport_fastrtps_cpp
-                                    rosidl_typesupport_introspection_cpp)
-
-  rosidl_generate_interfaces(
-    ${PROJECT_NAME}
-    "msg/Gid.msg"
-    "msg/NodeEntitiesInfo.msg"
-    "msg/ParticipantEntitiesInfo.msg"
-  )
-
-  if(TARGET ${PROJECT_NAME}_pro)
-    add_dependencies(${PROJECT_NAME}_pro ${PROJECT_NAME})
-    target_include_directories(${PROJECT_NAME}_pro
-      PUBLIC
-      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c>"
-      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
-  endif()
-  if(TARGET ${PROJECT_NAME}_micro)
-  add_dependencies(${PROJECT_NAME}_micro ${PROJECT_NAME})
-    target_include_directories(${PROJECT_NAME}_micro
-      PUBLIC
-      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c>"
-      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
-  endif()
-endif()
-
 ################################################################################
 # Configure Ament package
 ################################################################################
@@ -379,6 +304,4 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package(
-    CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
-)
+ament_package()

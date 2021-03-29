@@ -93,11 +93,7 @@ rmw_api_connextdds_publish_loaned_message(
 rmw_ret_t
 rmw_api_connextdds_init_publisher_allocation(
   const rosidl_message_type_support_t * type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
   const rosidl_message_bounds_t * message_bounds,
-#else
-  const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   rmw_publisher_allocation_t * allocation)
 {
   UNUSED_ARG(type_support);
@@ -123,12 +119,8 @@ rmw_api_connextdds_create_publisher(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,
-  const rmw_qos_profile_t * qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  ,
-  const rmw_publisher_options_t * publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_qos_profile_t * qos_policies,
+  const rmw_publisher_options_t * publisher_options)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(node, nullptr);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -139,9 +131,7 @@ rmw_api_connextdds_create_publisher(
   RMW_CHECK_ARGUMENT_FOR_NULL(type_supports, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
   RMW_CHECK_ARGUMENT_FOR_NULL(publisher_options, nullptr);
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new publisher: topic=%s",
@@ -179,12 +169,8 @@ rmw_api_connextdds_create_publisher(
     ctx->dds_pub,
     type_supports,
     topic_name,
-    qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    ,
-    publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-    );
+    qos_policies,
+    publisher_options);
 
   if (nullptr == rmw_pub) {
     RMW_CONNEXT_LOG_ERROR("failed to create RMW publisher")

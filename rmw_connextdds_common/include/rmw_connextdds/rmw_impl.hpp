@@ -507,7 +507,7 @@ private:
   std::shared_ptr<RMW_Connext_SubscriberStatusCondition> status_condition;
   RMW_Connext_UntypedSampleSeq loan_data;
   DDS_SampleInfoSeq loan_info;
-  std::atomic_uint64_t loan_len;
+  size_t loan_len;
   size_t loan_next;
   std::mutex loan_mutex;
   std::mutex cft_mutex;

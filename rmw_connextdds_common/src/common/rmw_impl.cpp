@@ -1358,10 +1358,12 @@ RMW_Connext_Subscriber::finalize(const bool reset_cft)
   // Make sure subscriber's condition is detached from any waitset
   this->status_condition->invalidate();
 
-  if (this->loan_len > 0) {
-    this->loan_next = this->loan_len;
-    if (RMW_RET_OK != this->return_messages()) {
-      return RMW_RET_ERROR;
+  {
+    std::lock_guard<std::mutex> lock(this->loan_mutex);
+    if (this->loan_len > 0) {
+      if (RMW_RET_OK != this->return_messages()) {
+        return RMW_RET_ERROR;
+      }
     }
   }
 

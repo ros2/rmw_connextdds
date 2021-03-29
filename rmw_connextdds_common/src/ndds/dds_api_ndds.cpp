@@ -124,46 +124,6 @@ rmw_connextdds_initialize_participant_qos_impl(
   }
 #endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
 
-#if RMW_CONNEXT_HAVE_OPTIONS
-  const size_t user_data_len_in =
-    DDS_OctetSeq_get_length(&dp_qos->user_data.value);
-
-  if (user_data_len_in != 0) {
-    RMW_CONNEXT_LOG_WARNING(
-      "DomainParticipant's USER_DATA will be overwritten to "
-      "propagate node enclave")
-  }
-
-  const char * const user_data_fmt = "enclave=%s;";
-
-  const int user_data_len =
-    std::snprintf(
-    nullptr, 0, user_data_fmt, ctx->base->options.enclave) + 1;
-
-  if (!DDS_OctetSeq_ensure_length(
-      &dp_qos->user_data.value, user_data_len, user_data_len))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data length")
-    return RMW_RET_ERROR;
-  }
-
-  char * const user_data_ptr =
-    reinterpret_cast<char *>(
-    DDS_OctetSeq_get_contiguous_buffer(&dp_qos->user_data.value));
-
-  const int user_data_rc =
-    std::snprintf(
-    user_data_ptr,
-    user_data_len,
-    user_data_fmt,
-    ctx->base->options.enclave);
-
-  if (user_data_rc < 0 || user_data_rc != user_data_len - 1) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data")
-    return RMW_RET_ERROR;
-  }
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
-
 #if RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID
   dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;
 #endif /* RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID */
@@ -272,19 +232,9 @@ rmw_connextdds_get_qos_policies(
   const bool writer_qos,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_PropertyQosPolicy * const property,
-  const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  ,
-  const rmw_publisher_options_t * const pub_options,
-  const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_qos_profile_t * const qos_policies)
 {
   UNUSED_ARG(qos_policies);
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  UNUSED_ARG(pub_options);
-  UNUSED_ARG(sub_options);
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
   /* if type is unbound set property to force allocation of samples from heap */
   if (type_support->unbounded()) {
@@ -315,12 +265,7 @@ rmw_connextdds_get_datawriter_qos(
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_Topic * const topic,
   DDS_DataWriterQos * const qos,
-  const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  ,
-  const rmw_publisher_options_t * const pub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_qos_profile_t * const qos_policies)
 {
   UNUSED_ARG(topic);
 
@@ -346,16 +291,7 @@ rmw_connextdds_get_datawriter_qos(
         &qos->resource_limits,
         // TODO(asorbini) this value is not actually used, remove it
         &qos->publish_mode,
-  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        &qos->lifespan,
-  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
-        qos_policies
-  #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-        ,
-        pub_options,
-        nullptr           /* sub_options */
-  #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-    ))
+        qos_policies))
     {
       return RMW_RET_ERROR;
     }
@@ -403,13 +339,7 @@ rmw_connextdds_get_datawriter_qos(
     true /* writer_qos */,
     type_support,
     &qos->property,
-    qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    ,
-    pub_options,
-    nullptr             /* sub_options */
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  );
+    qos_policies);
 }
 
 rmw_ret_t
@@ -418,11 +348,7 @@ rmw_connextdds_get_datareader_qos(
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_TopicDescription * const topic_desc,
   DDS_DataReaderQos * const qos,
-  const rmw_qos_profile_t * const qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  , const rmw_subscription_options_t * const sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  const rmw_qos_profile_t * const qos_policies)
 {
   UNUSED_ARG(ctx);
   UNUSED_ARG(topic_desc);
@@ -448,16 +374,7 @@ rmw_connextdds_get_datareader_qos(
         &qos->liveliness,
         &qos->resource_limits,
         nullptr /* publish_mode */,
-  #if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Lifespan is a writer-only qos policy */,
-  #endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
-        qos_policies
-  #if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-        ,
-        nullptr /* pub_options */,
-        sub_options
-  #endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-    ))
+        qos_policies))
     {
       return RMW_RET_ERROR;
     }
@@ -484,13 +401,7 @@ rmw_connextdds_get_datareader_qos(
     false /* writer_qos */,
     type_support,
     &qos->property,
-    qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    ,
-    nullptr /* pub_options */,
-    sub_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  );
+    qos_policies);
 }
 
 DDS_DataWriter *
@@ -499,9 +410,6 @@ rmw_connextdds_create_datawriter(
   DDS_DomainParticipant * const participant,
   DDS_Publisher * const pub,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  const rmw_publisher_options_t * const publisher_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_Topic * const topic,
@@ -513,11 +421,7 @@ rmw_connextdds_create_datawriter(
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datawriter_qos(
-      ctx, type_support, topic, dw_qos, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-      , publisher_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  ))
+      ctx, type_support, topic, dw_qos, qos_policies))
   {
     RMW_CONNEXT_LOG_ERROR("failed to convert writer QoS")
     return nullptr;
@@ -537,9 +441,6 @@ rmw_connextdds_create_datareader(
   DDS_DomainParticipant * const participant,
   DDS_Subscriber * const sub,
   const rmw_qos_profile_t * const qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  const rmw_subscription_options_t * const subscriber_options,
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
   const bool internal,
   RMW_Connext_MessageTypeSupport * const type_support,
   DDS_TopicDescription * const topic_desc,
@@ -551,11 +452,7 @@ rmw_connextdds_create_datareader(
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datareader_qos(
-      ctx, type_support, topic_desc, dr_qos, qos_policies
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-      , subscriber_options
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-  ))
+      ctx, type_support, topic_desc, dr_qos, qos_policies))
   {
     RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
     return nullptr;
@@ -1102,9 +999,6 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        &data->lifespan,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         false /* is_reader */);
     }
 
@@ -1187,9 +1081,6 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &data->durability,
         &data->deadline,
         &data->liveliness,
-#if RMW_CONNEXT_HAVE_LIFESPAN_QOS
-        nullptr /* Lifespan is a writer-only qos policy */,
-#endif /* RMW_CONNEXT_HAVE_LIFESPAN_QOS */
         true /* is_reader */);
     }
 

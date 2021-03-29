@@ -22,11 +22,7 @@
 rmw_ret_t
 rmw_api_connextdds_get_serialized_message_size(
   const rosidl_message_type_support_t * type_supports,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
   const rosidl_message_bounds_t * message_bounds,
-#else
-  const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   size_t * size)
 {
   UNUSED_ARG(type_supports);
@@ -46,9 +42,6 @@ rmw_api_connextdds_serialize(
   try {
     // declare a mock context struct to build a temporary type support
     rmw_context_t ctx_base;
-#if RMW_CONNEXT_HAVE_OPTIONS
-    ctx_base.options.localhost_only = RMW_LOCALHOST_ONLY_DISABLED;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     rmw_context_impl_t ctx(&ctx_base);
     ctx.request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
     RMW_Connext_MessageTypeSupport type_support(
@@ -85,9 +78,6 @@ rmw_api_connextdds_deserialize(
   try {
     // declare a mock context struct to build a temporary type support
     rmw_context_t ctx_base;
-#if RMW_CONNEXT_HAVE_OPTIONS
-    ctx_base.options.localhost_only = RMW_LOCALHOST_ONLY_DISABLED;
-#endif /* RMW_CONNEXT_HAVE_OPTIONS */
     rmw_context_impl_t ctx(&ctx_base);
     ctx.request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
     RMW_Connext_MessageTypeSupport type_support(

@@ -25,11 +25,7 @@
 rmw_ret_t
 rmw_api_connextdds_init_subscription_allocation(
   const rosidl_message_type_support_t * type_support,
-#if RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT
   const rosidl_message_bounds_t * message_bounds,
-#else
-  const rosidl_runtime_c__Sequence__bound * message_bounds,
-#endif /* RMW_CONNEXT_RELEASE <= RMW_CONNEXT_RELEASE_ELOQUENT */
   rmw_subscription_allocation_t * allocation)
 {
   UNUSED_ARG(type_support);
@@ -56,12 +52,7 @@ rmw_api_connextdds_create_subscription(
   const rosidl_message_type_support_t * type_supports,
   const char * topic_name,
   const rmw_qos_profile_t * qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  const rmw_subscription_options_t * subscription_options
-#else
-  bool ignore_local_publications
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-)
+  bool ignore_local_publications)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(node, nullptr);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -72,9 +63,6 @@ rmw_api_connextdds_create_subscription(
   RMW_CHECK_ARGUMENT_FOR_NULL(type_supports, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-  RMW_CHECK_ARGUMENT_FOR_NULL(subscription_options, nullptr);
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new subscription: topic=%s",
@@ -113,12 +101,7 @@ rmw_api_connextdds_create_subscription(
     type_supports,
     topic_name,
     qos_policies,
-#if RMW_CONNEXT_HAVE_OPTIONS_PUBSUB
-    subscription_options
-#else
-    ignore_local_publications
-#endif /* RMW_CONNEXT_HAVE_OPTIONS_PUBSUB */
-    );
+    ignore_local_publications);
 
   if (nullptr == rmw_sub) {
     RMW_CONNEXT_LOG_ERROR("failed to create RMW subscription")
@@ -264,53 +247,6 @@ rmw_api_connextdds_take_with_info(
 
   return rc;
 }
-
-#if RMW_CONNEXT_HAVE_TAKE_SEQ
-
-
-rmw_ret_t
-rmw_api_connextdds_take_sequence(
-  const rmw_subscription_t * subscription,
-  size_t count,
-  rmw_message_sequence_t * message_sequence,
-  rmw_message_info_sequence_t * message_info_sequence,
-  size_t * taken,
-  rmw_subscription_allocation_t * allocation)
-{
-  RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
-  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-    subscription,
-    subscription->implementation_identifier,
-    RMW_CONNEXTDDS_ID,
-    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
-  RMW_CHECK_ARGUMENT_FOR_NULL(message_sequence, RMW_RET_INVALID_ARGUMENT);
-  RMW_CHECK_ARGUMENT_FOR_NULL(
-    message_info_sequence, RMW_RET_INVALID_ARGUMENT);
-  RMW_CHECK_ARGUMENT_FOR_NULL(taken, RMW_RET_INVALID_ARGUMENT);
-
-  UNUSED_ARG(allocation);
-
-  RMW_Connext_Subscriber * const sub_impl =
-    reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
-
-  // Reset length of output sequences
-  message_sequence->size = 0;
-  message_info_sequence->size = 0;
-
-  rmw_ret_t rc = sub_impl->take(
-    message_sequence, message_info_sequence, count, taken);
-
-  // Update length of output sequences if we received any data
-  if (*taken > 0) {
-    message_sequence->size = *taken;
-    message_info_sequence->size = *taken;
-  }
-
-  return rc;
-}
-
-#endif /* RMW_CONNEXT_HAVE_TAKE_SEQ */
-
 
 rmw_ret_t
 rmw_api_connextdds_take_serialized_message(

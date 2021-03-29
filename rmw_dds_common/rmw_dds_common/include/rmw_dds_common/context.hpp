@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RMW_CONNEXTDDS__CONTEXT_COMMON_HPP_
-#define RMW_CONNEXTDDS__CONTEXT_COMMON_HPP_
-
-#include "rmw_connextdds/static_config.hpp"
+#ifndef RMW_DDS_COMMON__CONTEXT_HPP_
+#define RMW_DDS_COMMON__CONTEXT_HPP_
 
 #include <atomic>
 #include <mutex>
@@ -23,36 +21,25 @@
 
 #include "rmw/types.h"
 
-#include "rmw_connextdds/graph_cache_common.hpp"
-#include "rmw_connextdds/visibility_control.h"
+#include "rmw_dds_common/graph_cache.hpp"
+#include "rmw_dds_common/visibility_control.h"
 
 namespace rmw_dds_common
 {
 
-/// Base data structure that a Context will need in any DDS-based RMW implementation
-/// mapping one Participant to Multiple Nodes.
 struct Context
 {
-  /// Global ID of the Participant that the Context uses.
   rmw_gid_t gid;
-  /// Publisher used to publish ParticipantEntitiesInfo discovery data.
   rmw_publisher_t * pub;
-  /// Subscriber used to listen to ParticipantEntitiesInfo discovery data.
   rmw_subscription_t * sub;
-  /// Cached graph from discovery data.
   GraphCache graph_cache;
-  /// Mutex that should be locked when updating graph cache and publishing a graph message.
   std::mutex node_update_mutex;
-  /// Thread to listen to discovery data.
   std::thread listener_thread;
-  /// Indicates if the listener thread is running.
   std::atomic_bool thread_is_running;
-  /// Awakes listener thread when finishing the context.
   rmw_guard_condition_t * listener_thread_gc;
-  /// Guard condition that should be triggered when the graph changes.
   rmw_guard_condition_t * graph_guard_condition;
 };
 
 }  // namespace rmw_dds_common
 
-#endif  // RMW_CONNEXTDDS__CONTEXT_COMMON_HPP_
+#endif  // RMW_DDS_COMMON__CONTEXT_HPP_

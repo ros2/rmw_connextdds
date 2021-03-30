@@ -45,16 +45,10 @@
 
 #include "rcpputils/scope_exit.hpp"
 
-#if RMW_CONNEXT_HAVE_UNIQUE_NETWORK_FLOW_ENDPOINTS
-#include "rmw/types.h"
-#endif /* RMW_CONNEXT_HAVE_UNIQUE_NETWORK_FLOW_ENDPOINTS */
-
-#if RMW_CONNEXT_HAVE_GET_NETWORK_FLOW_ENDPOINTS
 #include "rmw/get_network_flow_endpoints.h"
 #include "rmw/error_handling.h"
 #include "rmw/rmw.h"
 #include "rmw/types.h"
-#endif /* RMW_CONNEXT_HAVE_GET_NETWORK_FLOW_ENDPOINTS */
 
 extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
 extern size_t RMW_Connext_gv_ContextCount;

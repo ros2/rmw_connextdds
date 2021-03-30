@@ -24,10 +24,11 @@ For any questions or feedback, feel free to reach out to robotics@rti.com.
 
 ## Quick Start
 
-1. Load ROS into the shell environment, e.g. if you are using Foxy:
+1. Load ROS into the shell environment (Rolling if using the `master` branch,
+   see [Support for different ROS 2 Releases](#support-for-different-ros-2-releases))
 
     ```sh
-    source /opt/ros/foxy/setup.bash
+    source /opt/ros/rolling/setup.bash
     ```
 
 2. Configure RTI Connext DDS Professional and/or RTI Connext DDS Micro on your

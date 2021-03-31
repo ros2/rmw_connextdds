@@ -16,7 +16,6 @@
 
 extern "C"
 {
-#if RMW_CONNEXT_HAVE_GET_NETWORK_FLOW_ENDPOINTS
 rmw_ret_t
 rmw_api_connextdds_publisher_get_network_flow_endpoints(
   const rmw_publisher_t * publisher,
@@ -42,5 +41,4 @@ rmw_api_connextdds_subscription_get_network_flow_endpoints(
   RMW_CONNEXT_LOG_NOT_IMPLEMENTED
   return RMW_RET_UNSUPPORTED;
 }
-#endif /* RMW_CONNEXT_HAVE_GET_NETWORK_FLOW_ENDPOINTS */
 }  // extern "C"

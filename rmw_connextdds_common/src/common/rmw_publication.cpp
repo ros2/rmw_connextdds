@@ -284,6 +284,26 @@ rmw_api_connextdds_publisher_assert_liveliness(
 
 
 rmw_ret_t
+rmw_api_connextdds_publisher_wait_for_all_acked(
+  const rmw_publisher_t * publisher,
+  rmw_time_t wait_timeout)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(publisher, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    publisher,
+    publisher->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_Connext_Publisher * const pub_impl =
+    reinterpret_cast<RMW_Connext_Publisher *>(publisher->data);
+  RMW_CHECK_ARGUMENT_FOR_NULL(pub_impl, RMW_RET_INVALID_ARGUMENT);
+
+  return pub_impl->wait_for_all_acked(wait_timeout);
+}
+
+
+rmw_ret_t
 rmw_api_connextdds_publisher_get_actual_qos(
   const rmw_publisher_t * publisher,
   rmw_qos_profile_t * qos)

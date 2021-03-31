@@ -198,6 +198,9 @@ public:
   assert_liveliness();
 
   rmw_ret_t
+  wait_for_all_acked(rmw_time_t wait_timeout);
+
+  rmw_ret_t
   qos(rmw_qos_profile_t * const qos);
 
   rmw_ret_t

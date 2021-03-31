@@ -414,6 +414,17 @@ rmw_publisher_assert_liveliness(
 
 
 rmw_ret_t
+rmw_publisher_wait_for_all_acked(
+  const rmw_publisher_t * publisher,
+  rmw_time_t wait_timeout
+)
+{
+  return rmw_api_connextdds_publisher_wait_for_all_acked(
+    publisher, wait_timeout);
+}
+
+
+mw_ret_t
 rmw_publisher_get_actual_qos(
   const rmw_publisher_t * publisher,
   rmw_qos_profile_t * qos)

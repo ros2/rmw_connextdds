@@ -13,7 +13,10 @@ The repository provides two RMW packages:
 
 Package `rmw_connextdds` is meant to be a replacement for [`rmw_connext_cpp`](https://github.com/ros2/rmw_connext).
 This new implementation resolves several performance issues, and it improves out-of-the-box
-interoperability with DDS applications.
+wire interoperability with ROS 2 and DDS applications.
+
+For any questions or feedback, feel free to [file an issue](https://github.com/ros2/rmw_connextdds/issues/new/choose),
+or reach out to robotics@rti.com.
 
 ## Additional Documentation
 

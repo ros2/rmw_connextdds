@@ -728,43 +728,32 @@ RMW_Connext_WaitSet::invalidate(RMW_Connext_Condition * const condition)
     return RMW_RET_OK;
   }
 
+  // Ideally, we would consider an error if the WaitSet is not in FREE or
+  // ACQUIRING state, because it signals parallel wait() and delete(). This
+  // should probably be considered an "application error", but it seems like
+  // some packages might not be making the same assumption, so for now, we wait
+  // for the waitset to be free. This might block a thread indefinitely
+  // (if the parallel wait has infinite timeout and never returns).
+  while (this->state != RMW_CONNEXT_WAITSET_FREE) {
+    this->state_cond.wait(lock);
+  }
+
   // If the waitset is "FREE" then we can just mark it as "INVALIDATING",
   // do the clean up, and release it. A wait()'ing thread will detect the
   // "INVALIDATING" state and block until notified.
-  if (this->state == RMW_CONNEXT_WAITSET_FREE) {
-    this->state = RMW_CONNEXT_WAITSET_INVALIDATING;
-    lock.unlock();
+  this->state = RMW_CONNEXT_WAITSET_INVALIDATING;
+  lock.unlock();
 
-    rmw_ret_t rc = this->detach();
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to detach conditions on invalidate")
-    }
-
-    lock.lock();
-    this->state = RMW_CONNEXT_WAITSET_FREE;
-    lock.unlock();
-    this->state_cond.notify_all();
-    return rc;
+  rmw_ret_t rc = this->detach();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to detach conditions on invalidate")
   }
 
-  // Waitset is currently inside a wait() call. If the state is not "ACQUIRING"
-  // then it means the user is trying to delete a condition while simultaneously
-  // waiting on it. This is an error.
-  if (this->state != RMW_CONNEXT_WAITSET_ACQUIRING) {
-    RMW_CONNEXT_LOG_ERROR_SET("cannot delete and wait on the same object")
-    return RMW_RET_ERROR;
-  }
-
-  // Block on state_cond and wait for the next state transition, at which
-  // point the condition must have been detached, or we can return an error.
-  this->state_cond.wait(lock);
-
-  if (this->is_attached(condition)) {
-    RMW_CONNEXT_LOG_ERROR_SET("deleted condition not detached")
-    return RMW_RET_ERROR;
-  }
-
-  return RMW_RET_OK;
+  lock.lock();
+  this->state = RMW_CONNEXT_WAITSET_FREE;
+  lock.unlock();
+  this->state_cond.notify_all();
+  return rc;
 }
 
 rmw_ret_t

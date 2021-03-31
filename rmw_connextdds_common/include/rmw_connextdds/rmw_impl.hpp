@@ -274,6 +274,7 @@ public:
     const rmw_qos_profile_t * const qos_policies,
     const rmw_subscription_options_t * const subscriber_options,
     const bool internal = false,
+    const rmw_node_t * const node = nullptr,
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
     const bool intro_members_cpp = false,
@@ -486,11 +487,6 @@ public:
     return std::to_string(id++);
   }
 
-  void set_node(const rmw_node_t * node)
-  {
-    this->node = node;
-  }
-
   bool is_cft_supported()
   {
     return nullptr != dds_topic_cft;
@@ -515,7 +511,6 @@ private:
   std::mutex loan_mutex;
   std::mutex cft_mutex;
   const rmw_node_t * node;
-  std::string fqtopic_name;
   rmw_qos_profile_t qos_policies;
   rmw_subscription_options_t subscriber_options;
 
@@ -527,7 +522,10 @@ private:
     const bool ignore_local,
     const bool created_topic,
     DDS_TopicDescription * const dds_topic_cft,
-    const bool internal);
+    const bool internal,
+    const rmw_node_t * const node,
+    const rmw_qos_profile_t * const qos_policies,
+    const rmw_subscription_options_t * const subscriber_options);
 
   static
   DDS_DataReader *

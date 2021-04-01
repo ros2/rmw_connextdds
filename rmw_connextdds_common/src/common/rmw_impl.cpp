@@ -1311,7 +1311,7 @@ RMW_Connext_Subscriber::initialize_datareader(
   RMW_Connext_MessageTypeSupport * const type_support,
   const rmw_subscription_options_t * const subscriber_options,
   const bool internal,
-  DDS_TopicDescription * sub_topic)
+  DDS_TopicDescription * const sub_topic)
 {
   // The following initialization generates warnings when built
   // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use

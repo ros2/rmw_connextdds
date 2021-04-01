@@ -538,7 +538,7 @@ private:
     RMW_Connext_MessageTypeSupport * const type_support,
     const rmw_subscription_options_t * const subscriber_options,
     const bool internal,
-    DDS_TopicDescription * sub_topic);
+    DDS_TopicDescription * const sub_topic);
 
   friend class RMW_Connext_SubscriberStatusCondition;
 };

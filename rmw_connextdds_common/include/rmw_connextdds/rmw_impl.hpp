@@ -64,6 +64,10 @@ bool rmw_connextdds_find_string_in_list(
   const DDS_StringSeq * const values,
   const char * const value);
 
+rmw_ret_t rmw_connextdds_duration_from_ros_time(
+  DDS_Duration_t * const duration,
+  const rmw_time_t * const ros_time);
+
 /******************************************************************************
  * WaitSet wrapper
  ******************************************************************************/

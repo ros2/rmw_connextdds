@@ -221,6 +221,18 @@ rmw_connextdds_find_string_in_list(
   return false;
 }
 
+rmw_ret_t
+rmw_connextdds_duration_from_ros_time(
+  DDS_Duration_t * const duration,
+  const rmw_time_t * const ros_time)
+{
+  rmw_time_t in_time = rmw_dds_common::clamp_rmw_time_to_dds_time(*ros_time);
+
+  duration->sec = static_cast<DDS_Long>(in_time.sec);
+  duration->nanosec = static_cast<DDS_UnsignedLong>(in_time.nsec);
+  return RMW_RET_OK;
+}
+
 /******************************************************************************
  * Qos Helpers
  ******************************************************************************/
@@ -930,25 +942,26 @@ RMW_Connext_Publisher::assert_liveliness()
 rmw_ret_t
 RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
 {
-  DDS_Duration_t timeout;
+  DDS_Duration_t timeout = DDS_DURATION_INFINITE;
 
-  // TODO(Barry): While rmw_connextdds_duration_from_ros_time() is changed to the public function,
-  // replace below codes.
-  if (rmw_time_equal(wait_timeout, RMW_DURATION_INFINITE)) {
-    timeout = DDS_DURATION_INFINITE;
-  } else {
-    rmw_time_t clamped_time = rmw_dds_common::clamp_rmw_time_to_dds_time(wait_timeout);
-    timeout.sec = static_cast<DDS_Long>(clamped_time.sec);
-    timeout.nanosec = static_cast<DDS_UnsignedLong>(clamped_time.nsec);
+  if (!rmw_time_equal(wait_timeout, RMW_DURATION_INFINITE)) {
+    rmw_connextdds_duration_from_ros_time(&timeout, &wait_timeout);
   }
 
-  switch (DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout)) {
+  const DDS_ReturnCode_t dds_rc =
+    DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout);
+
+  switch (dds_rc) {
     case DDS_RETCODE_OK:
       return RMW_RET_OK;
     case DDS_RETCODE_TIMEOUT:
       return RMW_RET_TIMEOUT;
     default:
-      return RMW_RET_ERROR;
+      {
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "failed to wait for reader acknowledgements: dds_rc=%d", dds_rc)
+        return RMW_RET_ERROR;
+      }
   }
 }
 

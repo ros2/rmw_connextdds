@@ -508,11 +508,9 @@ RMW_Connext_WaitSet::wait(
   size_t active_conditions = 0;
   this->detach(subs, gcs, srvs, cls, evs, active_conditions);
 
-  // assert(active_conditions > 0 || timedout);
+  RMW_CONNEXT_ASSERT(active_conditions > 0 || timedout);
 
   if (timedout) {
-    rmw_reset_error();
-    // RMW_SET_ERROR_MSG("wait timed out");
     return RMW_RET_TIMEOUT;
   }
 

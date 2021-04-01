@@ -1553,7 +1553,7 @@ RMW_Connext_Subscriber::take_serialized(
 rmw_ret_t
 RMW_Connext_Subscriber::set_cft_expression_parameters(
   const char * const filter_expression,
-  const rcutils_string_array_t * expression_parameters)
+  const rcutils_string_array_t * const expression_parameters)
 {
   RMW_CONNEXT_ASSERT(nullptr != filter_expression)
   RMW_CONNEXT_ASSERT(!this->internal)

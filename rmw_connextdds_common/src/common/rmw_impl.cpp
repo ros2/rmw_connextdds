@@ -1647,7 +1647,7 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
 
 rmw_ret_t
 RMW_Connext_Subscriber::get_cft_expression_parameters(
-  char ** filter_expression,
+  char ** const filter_expression,
   rcutils_string_array_t * expression_parameters)
 {
   std::lock_guard<std::mutex> lock(this->cft_mutex);

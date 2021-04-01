@@ -448,7 +448,7 @@ public:
   rmw_ret_t
   get_cft_expression_parameters(
     char ** const filter_expression,
-    rcutils_string_array_t * expression_parameters
+    rcutils_string_array_t * const expression_parameters
   );
 
   bool

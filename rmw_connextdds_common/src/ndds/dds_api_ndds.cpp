@@ -213,7 +213,7 @@ rmw_connextdds_initialize_participant_qos_impl(
 static
 rmw_ret_t
 rmw_connextdds_initialize_cft_parameters(
-  struct DDS_StringSeq * cft_parameters,
+  struct DDS_StringSeq * const cft_parameters,
   const rcutils_string_array_t * cft_expression_parameters)
 {
   if (!DDS_StringSeq_ensure_length(

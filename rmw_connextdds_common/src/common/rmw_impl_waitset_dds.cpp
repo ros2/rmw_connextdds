@@ -576,14 +576,6 @@ RMW_Connext_WaitSet::wait(
           // waitset is available
           break;
         }
-      case RMW_CONNEXT_WAITSET_INVALIDATING:
-        {
-          // waitset is currently being invalidated, wait for other thread to
-          // complete.
-          this->state_cond.wait(lock);
-          already_taken = (RMW_CONNEXT_WAITSET_FREE != this->state);
-          break;
-        }
       default:
         {
           already_taken = true;
@@ -653,7 +645,9 @@ RMW_Connext_WaitSet::wait(
   }
 
   DDS_Duration_t wait_duration = DDS_DURATION_INFINITE;
-  if (nullptr != wait_timeout) {
+  if (nullptr != wait_timeout &&
+    !rmw_time_equal(*wait_timeout, RMW_DURATION_INFINITE))
+  {
     rc = rmw_connextdds_duration_from_ros_time(&wait_duration, wait_timeout);
     if (RMW_RET_OK != rc) {
       return rc;
@@ -721,13 +715,6 @@ RMW_Connext_WaitSet::invalidate(RMW_Connext_Condition * const condition)
 {
   std::unique_lock<std::mutex> lock(this->mutex_internal);
 
-  // Scan attached elements to see if condition is still attached.
-  // If the invalidated condition is not attached, then there's nothing to do,
-  // since the waitset is already free from potential stale references.
-  if (!this->is_attached(condition)) {
-    return RMW_RET_OK;
-  }
-
   // Ideally, we would consider an error if the WaitSet is not in FREE or
   // ACQUIRING state, because it signals parallel wait() and delete(). This
   // should probably be considered an "application error", but it seems like
@@ -735,22 +722,25 @@ RMW_Connext_WaitSet::invalidate(RMW_Connext_Condition * const condition)
   // for the waitset to be free. This might block a thread indefinitely
   // (if the parallel wait has infinite timeout and never returns).
   while (this->state != RMW_CONNEXT_WAITSET_FREE) {
+    RMW_CONNEXT_LOG_DEBUG(
+      "waiting for waitset to become available for invalidation: "
+      "waitset=%p, condition=%p",
+      static_cast<void*>(this), static_cast<void*>(condition))
     this->state_cond.wait(lock);
   }
 
-  // If the waitset is "FREE" then we can just mark it as "INVALIDATING",
-  // do the clean up, and release it. A wait()'ing thread will detect the
-  // "INVALIDATING" state and block until notified.
-  this->state = RMW_CONNEXT_WAITSET_INVALIDATING;
-  lock.unlock();
+  // Scan attached elements to see if condition is still attached.
+  // If the invalidated condition is not attached, then there's nothing to do,
+  // since the waitset is already free from potential stale references.
+  if (!this->is_attached(condition)) {
+    return RMW_RET_OK;
+  }
 
   rmw_ret_t rc = this->detach();
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to detach conditions on invalidate")
   }
 
-  lock.lock();
-  this->state = RMW_CONNEXT_WAITSET_FREE;
   lock.unlock();
   this->state_cond.notify_all();
   return rc;

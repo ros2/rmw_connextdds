@@ -507,7 +507,7 @@ private:
   size_t loan_next;
   std::mutex loan_mutex;
   std::mutex cft_mutex;
-  const rmw_node_t * node;
+  const rmw_node_t * const node;
   rmw_qos_profile_t qos_policies;
   rmw_subscription_options_t subscriber_options;
 

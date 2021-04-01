@@ -214,7 +214,7 @@ static
 rmw_ret_t
 rmw_connextdds_initialize_cft_parameters(
   struct DDS_StringSeq * const cft_parameters,
-  const rcutils_string_array_t * cft_expression_parameters)
+  const rcutils_string_array_t * const cft_expression_parameters)
 {
   if (!DDS_StringSeq_ensure_length(
       cft_parameters, cft_expression_parameters->size, cft_expression_parameters->size))

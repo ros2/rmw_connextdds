@@ -441,7 +441,7 @@ public:
 
   rmw_ret_t
   set_cft_expression_parameters(
-    const char * filter_expression,
+    const char * const filter_expression,
     const rcutils_string_array_t * expression_parameters
   );
 

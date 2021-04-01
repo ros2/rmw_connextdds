@@ -394,16 +394,16 @@ public:
   inline rmw_ret_t
   get_liveliness_lost_status(rmw_liveliness_lost_status_t * const status)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->triggered_liveliness = false;
+    this->reported_liveliness = true;
+
     status->total_count = this->status_liveliness.total_count;
     status->total_count_change = this->status_liveliness.total_count_change;
 
-    this->triggered_liveliness = false;
-    {
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->status_liveliness.total_count_change = 0;
-      this->status_liveliness_last = this->status_liveliness;
-      this->reported_liveliness = true;
-    }
+    this->status_liveliness.total_count_change = 0;
+    this->status_liveliness_last = this->status_liveliness;
 
     return RMW_RET_OK;
   }
@@ -412,16 +412,16 @@ public:
   get_offered_deadline_missed_status(
     rmw_offered_deadline_missed_status_t * const status)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->triggered_deadline = false;
+    this->reported_deadline = true;
+
     status->total_count = this->status_deadline.total_count;
     status->total_count_change = this->status_deadline.total_count_change;
 
-    this->triggered_deadline = false;
-    {
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->status_deadline.total_count_change = 0;
-      this->status_deadline_last = this->status_deadline;
-      this->reported_deadline = true;
-    }
+    this->status_deadline.total_count_change = 0;
+    this->status_deadline_last = this->status_deadline;
 
     return RMW_RET_OK;
   }
@@ -430,18 +430,18 @@ public:
   get_offered_qos_incompatible_status(
     rmw_offered_qos_incompatible_event_status_t * const status)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->triggered_qos = false;
+    this->reported_qos = true;
+
     status->total_count = this->status_qos.total_count;
     status->total_count_change = this->status_qos.total_count_change;
     status->last_policy_kind =
       dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
 
-    this->triggered_qos = false;
-    {
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->status_qos.total_count_change = 0;
-      this->status_qos_last = this->status_qos;
-      this->reported_qos = true;
-    }
+    this->status_qos.total_count_change = 0;
+    this->status_qos_last = this->status_qos;
 
     return RMW_RET_OK;
   }
@@ -651,19 +651,19 @@ public:
   inline rmw_ret_t
   get_liveliness_changed_status(rmw_liveliness_changed_status_t * const status)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->triggered_liveliness = false;
+    this->reported_liveliness = true;
+
     status->alive_count = this->status_liveliness.alive_count;
     status->alive_count_change = this->status_liveliness.alive_count_change;
     status->not_alive_count = this->status_liveliness.not_alive_count;
     status->not_alive_count_change = this->status_liveliness.not_alive_count_change;
 
-    this->triggered_liveliness = false;
-    {
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->status_liveliness.alive_count_change = 0;
-      this->status_liveliness.not_alive_count_change = 0;
-      this->status_liveliness_last = this->status_liveliness;
-      this->reported_liveliness = true;
-    }
+    this->status_liveliness.alive_count_change = 0;
+    this->status_liveliness.not_alive_count_change = 0;
+    this->status_liveliness_last = this->status_liveliness;
 
     return RMW_RET_OK;
   }
@@ -672,16 +672,16 @@ public:
   get_requested_deadline_missed_status(
     rmw_requested_deadline_missed_status_t * const status)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->triggered_deadline = false;
+    this->reported_deadline = true;
+
     status->total_count = this->status_deadline.total_count;
     status->total_count_change = this->status_deadline.total_count_change;
 
-    this->triggered_deadline = false;
-    {
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->status_deadline.total_count_change = 0;
-      this->status_deadline_last = this->status_deadline;
-      this->reported_deadline = true;
-    }
+    this->status_deadline.total_count_change = 0;
+    this->status_deadline_last = this->status_deadline;
 
     return RMW_RET_OK;
   }
@@ -691,18 +691,18 @@ public:
   get_requested_qos_incompatible_status(
     rmw_requested_qos_incompatible_event_status_t * const status)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->triggered_qos = false;
+    this->reported_qos = true;
+
     status->total_count = this->status_qos.total_count;
     status->total_count_change = this->status_qos.total_count_change;
     status->last_policy_kind =
       dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
 
-    this->triggered_qos = false;
-    {
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->status_qos.total_count_change = 0;
-      this->status_qos_last = this->status_qos;
-      this->reported_qos = true;
-    }
+    this->status_qos.total_count_change = 0;
+    this->status_qos_last = this->status_qos;
 
     return RMW_RET_OK;
   }
@@ -710,16 +710,16 @@ public:
   inline rmw_ret_t
   get_message_lost_status(rmw_message_lost_status_t * const status)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+
+    this->triggered_sample_lost = false;
+    this->reported_sample_lost = true;
+
     status->total_count = this->status_sample_lost.total_count;
     status->total_count_change = this->status_sample_lost.total_count_change;
 
-    this->triggered_sample_lost = false;
-    {
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->status_sample_lost.total_count_change = 0;
-      this->status_sample_lost_last = this->status_sample_lost;
-      this->reported_sample_lost = true;
-    }
+    this->status_sample_lost.total_count_change = 0;
+    this->status_sample_lost_last = this->status_sample_lost;
 
     return RMW_RET_OK;
   }

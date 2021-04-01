@@ -1971,7 +1971,7 @@ rmw_ret_t
 rmw_connextdds_get_cft_filter_expression(
   DDS_TopicDescription * const topic_desc,
   char ** const expr_out,
-  rcutils_string_array_t * cft_params_out);
+  rcutils_string_array_t * const cft_params_out);
 {
   UNUSED_ARG(topic_desc);
   UNUSED_ARG(expr_out);

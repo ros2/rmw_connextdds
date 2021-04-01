@@ -397,8 +397,13 @@ public:
     status->total_count = this->status_liveliness.total_count;
     status->total_count_change = this->status_liveliness.total_count_change;
 
-    this->status_liveliness.total_count_change = 0;
     this->triggered_liveliness = false;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      this->status_liveliness.total_count_change = 0;
+      this->status_liveliness_last = this->status_liveliness;
+      this->reported_liveliness = true;
+    }
 
     return RMW_RET_OK;
   }
@@ -410,8 +415,13 @@ public:
     status->total_count = this->status_deadline.total_count;
     status->total_count_change = this->status_deadline.total_count_change;
 
-    this->status_deadline.total_count_change = 0;
     this->triggered_deadline = false;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      this->status_deadline.total_count_change = 0;
+      this->status_deadline_last = this->status_deadline;
+      this->reported_deadline = true;
+    }
 
     return RMW_RET_OK;
   }
@@ -425,8 +435,13 @@ public:
     status->last_policy_kind =
       dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
 
-    this->status_qos.total_count_change = 0;
     this->triggered_qos = false;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      this->status_qos.total_count_change = 0;
+      this->status_qos_last = this->status_qos;
+      this->reported_qos = true;
+    }
 
     return RMW_RET_OK;
   }
@@ -441,13 +456,21 @@ protected:
   void update_status_qos(
     const DDS_OfferedIncompatibleQosStatus * const status);
 
-  bool triggered_deadline;
-  bool triggered_liveliness;
-  bool triggered_qos;
+  std::atomic_bool triggered_deadline;
+  std::atomic_bool triggered_liveliness;
+  std::atomic_bool triggered_qos;
 
   DDS_OfferedDeadlineMissedStatus status_deadline;
   DDS_OfferedIncompatibleQosStatus status_qos;
   DDS_LivelinessLostStatus status_liveliness;
+
+  bool reported_deadline{false};
+  bool reported_liveliness{false};
+  bool reported_qos{false};
+
+  DDS_OfferedDeadlineMissedStatus status_deadline_last;
+  DDS_OfferedIncompatibleQosStatus status_qos_last;
+  DDS_LivelinessLostStatus status_liveliness_last;
 
   RMW_Connext_Publisher * pub;
 };
@@ -591,6 +614,14 @@ public:
            DDS_GuardCondition_as_condition(this->_loan_guard_condition) : nullptr;
   }
 
+  virtual bool
+  owns(DDS_Condition * const cond)
+  {
+    return RMW_Connext_StatusCondition::owns(cond) ||
+       (nullptr != this->_loan_guard_condition &&
+        cond == DDS_GuardCondition_as_condition(this->_loan_guard_condition));
+  }
+
   virtual rmw_ret_t _attach(DDS_WaitSet * const waitset)
   {
     rmw_ret_t rc = RMW_Connext_StatusCondition::_attach(waitset);
@@ -625,9 +656,14 @@ public:
     status->not_alive_count = this->status_liveliness.not_alive_count;
     status->not_alive_count_change = this->status_liveliness.not_alive_count_change;
 
-    this->status_liveliness.alive_count_change = 0;
-    this->status_liveliness.not_alive_count_change = 0;
     this->triggered_liveliness = false;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      this->status_liveliness.alive_count_change = 0;
+      this->status_liveliness.not_alive_count_change = 0;
+      this->status_liveliness_last = this->status_liveliness;
+      this->reported_liveliness = true;
+    }
 
     return RMW_RET_OK;
   }
@@ -639,8 +675,13 @@ public:
     status->total_count = this->status_deadline.total_count;
     status->total_count_change = this->status_deadline.total_count_change;
 
-    this->status_deadline.total_count_change = 0;
     this->triggered_deadline = false;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      this->status_deadline.total_count_change = 0;
+      this->status_deadline_last = this->status_deadline;
+      this->reported_deadline = true;
+    }
 
     return RMW_RET_OK;
   }
@@ -655,8 +696,13 @@ public:
     status->last_policy_kind =
       dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
 
-    this->status_qos.total_count_change = 0;
     this->triggered_qos = false;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      this->status_qos.total_count_change = 0;
+      this->status_qos_last = this->status_qos;
+      this->reported_qos = true;
+    }
 
     return RMW_RET_OK;
   }
@@ -667,8 +713,13 @@ public:
     status->total_count = this->status_sample_lost.total_count;
     status->total_count_change = this->status_sample_lost.total_count_change;
 
-    this->status_sample_lost.total_count_change = 0;
     this->triggered_sample_lost = false;
+    {
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      this->status_sample_lost.total_count_change = 0;
+      this->status_sample_lost_last = this->status_sample_lost;
+      this->reported_sample_lost = true;
+    }
 
     return RMW_RET_OK;
   }
@@ -698,6 +749,17 @@ protected:
   DDS_RequestedIncompatibleQosStatus status_qos;
   DDS_LivelinessChangedStatus status_liveliness;
   DDS_SampleLostStatus status_sample_lost;
+
+  bool reported_deadline{false};
+  bool reported_liveliness{false};
+  bool reported_qos{false};
+  bool reported_sample_lost{false};
+  bool reported_data{false};
+
+  DDS_RequestedDeadlineMissedStatus status_deadline_last;
+  DDS_RequestedIncompatibleQosStatus status_qos_last;
+  DDS_LivelinessChangedStatus status_liveliness_last;
+  DDS_SampleLostStatus status_sample_lost_last;
 
   RMW_Connext_Subscriber * sub;
 };

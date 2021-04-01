@@ -1363,6 +1363,11 @@ RMW_Connext_Subscriber::finalize(const bool reset_cft)
     "finalizing subscriber: sub=%p, type=%s",
     (void *)this, this->type_support->type_name())
 
+  if (nullptr == this->dds_reader) {
+    RMW_CONNEXT_LOG_ERROR_SET("DDS DataReader is invalid")
+    return RMW_RET_ERROR;
+  }
+
   // Make sure subscriber's condition is detached from any waitset
   this->status_condition->invalidate();
 
@@ -1373,11 +1378,6 @@ RMW_Connext_Subscriber::finalize(const bool reset_cft)
         return RMW_RET_ERROR;
       }
     }
-  }
-
-  if (nullptr == this->dds_reader) {
-    RMW_CONNEXT_LOG_ERROR_SET("DDS DataReader is invalid")
-    return RMW_RET_ERROR;
   }
 
   // to get the participant needs a valid dds_reader
@@ -1395,7 +1395,7 @@ RMW_Connext_Subscriber::finalize(const bool reset_cft)
   if (!reset_cft) {
     if (nullptr != this->dds_topic_cft) {
       rmw_ret_t cft_rc = rmw_connextdds_delete_contentfilteredtopic(
-        ctx, participant, this->dds_topic_cft);
+        this->ctx, participant, this->dds_topic_cft);
 
       if (RMW_RET_OK != cft_rc) {
         return cft_rc;

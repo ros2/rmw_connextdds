@@ -212,7 +212,7 @@ rmw_ret_t
 rmw_connextdds_set_cft_filter_expression(
   DDS_TopicDescription * const topic_desc,
   const char * const filter_expression,
-  const rcutils_string_array_t * expression_parameters);
+  const rcutils_string_array_t * const expression_parameters);
 
 rmw_ret_t
 rmw_connextdds_get_cft_filter_expression(

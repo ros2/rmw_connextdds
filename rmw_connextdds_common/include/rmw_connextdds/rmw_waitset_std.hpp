@@ -618,8 +618,8 @@ public:
   owns(DDS_Condition * const cond)
   {
     return RMW_Connext_StatusCondition::owns(cond) ||
-       (nullptr != this->_loan_guard_condition &&
-        cond == DDS_GuardCondition_as_condition(this->_loan_guard_condition));
+           (nullptr != this->_loan_guard_condition &&
+           cond == DDS_GuardCondition_as_condition(this->_loan_guard_condition));
   }
 
   virtual rmw_ret_t _attach(DDS_WaitSet * const waitset)

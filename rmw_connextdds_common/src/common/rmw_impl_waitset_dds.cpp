@@ -712,7 +712,7 @@ RMW_Connext_WaitSet::invalidate(RMW_Connext_Condition * const condition)
     RMW_CONNEXT_LOG_DEBUG(
       "waiting for waitset to become available for invalidation: "
       "waitset=%p, condition=%p",
-      static_cast<void*>(this), static_cast<void*>(condition))
+      static_cast<void *>(this), static_cast<void *>(condition))
     this->state_cond.wait(lock);
   }
 

@@ -2429,11 +2429,68 @@ RMW_Connext_Client::enable()
 rmw_ret_t
 RMW_Connext_Client::is_service_available(bool & available)
 {
-  /* TODO(asorbini): check that we actually have at least one service matched by both
-     request writer and response reader */
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  // TODO(asorbini): check that we actually have at least one service matched by both
+  // request writer and response reader from the same remote DomainParticipant.
+  // Since Micro doesn't provide access to the list of matched pubs/subs yet,
+  // we still use this naive algorithm to determine if the service is available.
+  // Beside being subjected to the general race conditions between ROS 2
+  // clients and services, caused by the (as of yet) lack of "match synchronization"
+  // in DDS (so a client might match both endpoints before the service actually
+  // matched them too, and a "volatile" request -- default in ROS 2 -- might
+  // end up getting lost and never delivered), this strategy might also report
+  // a false positive the matched publishers and subscribers are from different
+  // DomainParticipants.
   available = (this->request_pub->subscriptions_count() > 0 &&
     this->reply_sub->publications_count() > 0);
   return RMW_RET_OK;
+#else /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
+  // mark service as available if we have at least one writer and one reader
+  // matched from the same remote DomainParticipant.
+
+  struct DDS_InstanceHandleSeq matched_req_subs = DDS_SEQUENCE_INITIALIZER,
+    matched_rep_pubs = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_seqs = rcpputils::make_scope_exit(
+    [&matched_req_subs, &matched_rep_pubs]()
+    {
+      if (!DDS_InstanceHandleSeq_finalize(&matched_req_subs)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize req instance handle sequence")
+      }
+      if (!DDS_InstanceHandleSeq_finalize(&matched_rep_pubs)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize rep instance handle sequence")
+      }
+    });
+
+  DDS_ReturnCode_t dds_rc =
+    DDS_DataWriter_get_matched_subscriptions(this->request_pub->writer(), &matched_req_subs);
+  if (DDS_RETCODE_OK != dds_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched subscriptions: dds_rc=%d", dds_rc)
+    return RMW_RET_ERROR;
+  }
+
+  dds_rc =
+    DDS_DataReader_get_matched_publications(this->reply_sub->reader(), &matched_rep_pubs);
+  if (DDS_RETCODE_OK != dds_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched publications: dds_rc=%d", dds_rc)
+    return RMW_RET_ERROR;
+  }
+
+  const DDS_Long subs_len = DDS_InstanceHandleSeq_get_length(&matched_req_subs),
+    pubs_len = DDS_InstanceHandleSeq_get_length(&matched_rep_pubs);
+
+  for (DDS_Long i = 0; i < subs_len && !available; i++) {
+    DDS_InstanceHandle_t * const sub_ih =
+      DDS_InstanceHandleSeq_get_reference(&matched_req_subs, i);
+
+    for (DDS_Long j = 0; j < pubs_len && !available; j++) {
+      DDS_InstanceHandle_t * const pub_ih =
+        DDS_InstanceHandleSeq_get_reference(&matched_rep_pubs, j);
+      available = memcmp(sub_ih->keyHash.value, pub_ih->keyHash.value, 12) == 0;
+    }
+  }
+
+  return RMW_RET_OK;
+#endif
 }
 
 rmw_ret_t

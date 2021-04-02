@@ -954,7 +954,9 @@ rmw_connextdds_convert_type_members(
         RMW_CONNEXT_LOG_ERROR("failed to get CycloneRequestHeader typecode")
         return RMW_RET_ERROR;
       }
-    } else {
+    } else if (
+      RMW_Connext_RequestReplyMapping::Basic == type_support->ctx()->request_reply_mapping)
+    {
       switch (type_support->message_type()) {
         case RMW_CONNEXT_MESSAGE_REQUEST:
           {

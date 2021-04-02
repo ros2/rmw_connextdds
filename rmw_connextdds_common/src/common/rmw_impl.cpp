@@ -2429,25 +2429,8 @@ RMW_Connext_Client::enable()
 rmw_ret_t
 RMW_Connext_Client::is_service_available(bool & available)
 {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-  // TODO(asorbini): check that we actually have at least one service matched by both
-  // request writer and response reader from the same remote DomainParticipant.
-  // Since Micro doesn't provide access to the list of matched pubs/subs yet,
-  // we still use this naive algorithm to determine if the service is available.
-  // Beside being subjected to the general race conditions between ROS 2
-  // clients and services, caused by the (as of yet) lack of "match synchronization"
-  // in DDS (so a client might match both endpoints before the service actually
-  // matched them too, and a "volatile" request -- default in ROS 2 -- might
-  // end up getting lost and never delivered), this strategy might also report
-  // a false positive the matched publishers and subscribers are from different
-  // DomainParticipants.
-  available = (this->request_pub->subscriptions_count() > 0 &&
-    this->reply_sub->publications_count() > 0);
-  return RMW_RET_OK;
-#else /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   // mark service as available if we have at least one writer and one reader
   // matched from the same remote DomainParticipant.
-
   struct DDS_InstanceHandleSeq matched_req_subs = DDS_SEQUENCE_INITIALIZER,
     matched_rep_pubs = DDS_SEQUENCE_INITIALIZER;
   auto scope_exit_seqs = rcpputils::make_scope_exit(
@@ -2485,12 +2468,11 @@ RMW_Connext_Client::is_service_available(bool & available)
     for (DDS_Long j = 0; j < pubs_len && !available; j++) {
       DDS_InstanceHandle_t * const pub_ih =
         DDS_InstanceHandleSeq_get_reference(&matched_rep_pubs, j);
-      available = memcmp(sub_ih->keyHash.value, pub_ih->keyHash.value, 12) == 0;
+      available = DDS_InstanceHandle_compare_prefix(sub_ih, pub_ih) == 0;
     }
   }
 
   return RMW_RET_OK;
-#endif
 }
 
 rmw_ret_t

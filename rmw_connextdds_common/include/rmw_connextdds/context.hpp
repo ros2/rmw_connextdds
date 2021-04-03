@@ -46,7 +46,6 @@
 #include "rcpputils/scope_exit.hpp"
 
 #include "rmw/get_network_flow_endpoints.h"
-#include "rmw/error_handling.h"
 #include "rmw/rmw.h"
 #include "rmw/types.h"
 

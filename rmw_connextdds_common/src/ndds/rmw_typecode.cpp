@@ -948,15 +948,18 @@ rmw_connextdds_convert_type_members(
   DDS_TypeCode * tc_header = nullptr;
 
   if (type_support->type_requestreply()) {
+    // TODO(asorbini) cache condition to a variable to avoid an "unformattable"
+    // long line on the `else()` (see https://github.com/ament/ament_lint/issues/158)
+    const bool basic_mapping =
+      RMW_Connext_RequestReplyMapping::Basic == type_support->ctx()->request_reply_mapping;
+
     if (type_support->ctx()->cyclone_compatible) {
       tc_header = CycloneRequestHeader_get_typecode(tc_factory, tc_cache);
       if (nullptr == tc_header) {
         RMW_CONNEXT_LOG_ERROR("failed to get CycloneRequestHeader typecode")
         return RMW_RET_ERROR;
       }
-    } else if (
-      RMW_Connext_RequestReplyMapping::Basic == type_support->ctx()->request_reply_mapping)
-    {
+    } else if (basic_mapping) {
       switch (type_support->message_type()) {
         case RMW_CONNEXT_MESSAGE_REQUEST:
           {

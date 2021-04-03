@@ -709,7 +709,7 @@ RMW_Connext_WaitSet::invalidate(RMW_Connext_Condition * const condition)
   // for the waitset to be free. This might block a thread indefinitely
   // (if the parallel wait has infinite timeout and never returns).
   while (this->state != RMW_CONNEXT_WAITSET_FREE) {
-    RMW_CONNEXT_LOG_DEBUG(
+    RMW_CONNEXT_LOG_DEBUG_A(
       "waiting for waitset to become available for invalidation: "
       "waitset=%p, condition=%p",
       static_cast<void *>(this), static_cast<void *>(condition))

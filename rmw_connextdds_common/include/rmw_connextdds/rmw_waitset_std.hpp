@@ -24,9 +24,7 @@
 class RMW_Connext_WaitSet
 {
 public:
-  RMW_Connext_WaitSet()
-  : waiting(false)
-  {}
+  RMW_Connext_WaitSet() {}
 
   rmw_ret_t
   wait(
@@ -45,7 +43,8 @@ protected:
     rmw_services_t * const srvs,
     rmw_clients_t * const cls,
     rmw_events_t * const evs,
-    bool & already_active);
+    bool & already_active,
+    std::unique_lock<std::mutex> & wait_lock);
 
   void
   detach(
@@ -54,7 +53,8 @@ protected:
     rmw_services_t * const srvs,
     rmw_clients_t * const cls,
     rmw_events_t * const evs,
-    size_t & active_conditions);
+    size_t & active_conditions,
+    std::unique_lock<std::mutex> & wait_lock);
 
   bool
   on_condition_active(
@@ -62,12 +62,12 @@ protected:
     rmw_guard_conditions_t * const gcs,
     rmw_services_t * const srvs,
     rmw_clients_t * const cls,
-    rmw_events_t * const evs);
+    rmw_events_t * const evs,
+    std::unique_lock<std::mutex> & wait_lock);
 
+  bool waiting{false};
   std::mutex mutex_internal;
-  bool waiting;
   std::condition_variable condition;
-  std::mutex condition_mutex;
 };
 
 class RMW_Connext_Condition
@@ -133,6 +133,28 @@ protected:
     }
     return RMW_RET_OK;
   }
+
+  void
+  notify_waitset()
+  {
+    // We don't protect access to `waitset_mutex` with `mutex_internal` because
+    // we could still potentially miss the situation where the condition is
+    // being attached to the waitset (i.e. the application is inside
+    // WaitSet::wait(), possibly owning `waitset_mutex`) but `waitset_mutex`
+    // has not been set yet, in which case this notification will not be
+    // received by the waitset.
+    std::mutex * waitset_mutex = this->waitset_mutex;
+
+    if (nullptr != waitset_mutex) {
+      // Always take the WaitSet's mutex first to prevent deadlocks with
+      // concurrent WaitSet::wait().
+      std::lock_guard<std::mutex> lock_mutex(*waitset_mutex);
+      std::lock_guard<std::mutex> lock(this->mutex_internal);
+      if (nullptr != this->waitset_condition) {
+        this->waitset_condition->notify_one();
+      }
+    }
+  }
 };
 
 class RMW_Connext_GuardCondition : public RMW_Connext_Condition
@@ -167,12 +189,20 @@ public:
   bool
   trigger_check()
   {
-    return this->trigger_value.exchange(false);
+    // This function is always called from within WaitSet::wait(), so it
+    // doesn't need to take waitset_mutex.
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    bool triggered = this->trigger_value;
+    this->trigger_value = false;
+    return triggered;
   }
 
   bool
   has_triggered()
   {
+    // This function is always called from within WaitSet::wait(), so it
+    // doesn't need to take waitset_mutex.
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
     return this->trigger_value;
   }
 
@@ -184,22 +214,31 @@ public:
         DDS_GuardCondition_set_trigger_value(
           this->gcond, DDS_BOOLEAN_TRUE))
       {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to trigger guard condition")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to trigger internal guard condition")
         return RMW_RET_ERROR;
       }
 
       return RMW_RET_OK;
     }
 
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    // If condition is attached to a waitset, lock its mutex to prevent
+    // modification of the `triggered_*` flags concurrently with WaitSet::wait().
+    std::mutex * waitset_mutex = this->waitset_mutex;
+    auto scope_exit = rcpputils::make_scope_exit(
+      [waitset_mutex]()
+      {
+        if (nullptr != waitset_mutex) {
+          waitset_mutex->unlock();
+        }
+      });
+    if (nullptr != waitset_mutex) {
+      waitset_mutex->lock();
+    }
 
-    if (this->waitset_mutex != nullptr) {
-      std::unique_lock<std::mutex> clock(*this->waitset_mutex);
-      this->trigger_value = true;
-      clock.unlock();
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    this->trigger_value = true;
+    if (nullptr != this->waitset_condition) {
       this->waitset_condition->notify_one();
-    } else {
-      this->trigger_value = true;
     }
 
     return RMW_RET_OK;
@@ -223,7 +262,7 @@ public:
   }
 
 protected:
-  std::atomic_bool trigger_value;
+  bool trigger_value;
   bool internal;
   DDS_GuardCondition * gcond;
 };
@@ -453,9 +492,9 @@ protected:
   void update_status_qos(
     const DDS_OfferedIncompatibleQosStatus * const status);
 
-  std::atomic_bool triggered_deadline;
-  std::atomic_bool triggered_liveliness;
-  std::atomic_bool triggered_qos;
+  bool triggered_deadline;
+  bool triggered_liveliness;
+  bool triggered_qos;
 
   DDS_OfferedDeadlineMissedStatus status_deadline;
   DDS_OfferedIncompatibleQosStatus status_qos;
@@ -550,12 +589,6 @@ public:
   rmw_ret_t
   install(RMW_Connext_Subscriber * const sub);
 
-  bool
-  on_data_triggered()
-  {
-    return this->triggered_data.exchange(false);
-  }
-
   void
   on_data();
 
@@ -588,11 +621,11 @@ public:
   inline rmw_ret_t
   trigger_loan_guard_condition(const bool trigger_value)
   {
-    if (nullptr == this->_loan_guard_condition) {
+    if (nullptr == this->loan_guard_condition) {
       return RMW_RET_ERROR;
     }
     if (DDS_RETCODE_OK != DDS_GuardCondition_set_trigger_value(
-        this->_loan_guard_condition, trigger_value))
+        this->loan_guard_condition, trigger_value))
     {
       RMW_CONNEXT_LOG_ERROR_SET("failed to set internal reader condition's trigger")
       return RMW_RET_ERROR;
@@ -601,18 +634,18 @@ public:
   }
 
   DDS_Condition *
-  loan_guard_condition() const
+  data_condition() const
   {
-    return (nullptr != this->_loan_guard_condition) ?
-           DDS_GuardCondition_as_condition(this->_loan_guard_condition) : nullptr;
+    return (nullptr != this->loan_guard_condition) ?
+           DDS_GuardCondition_as_condition(this->loan_guard_condition) : nullptr;
   }
 
   virtual bool
   owns(DDS_Condition * const cond)
   {
     return RMW_Connext_StatusCondition::owns(cond) ||
-           (nullptr != this->_loan_guard_condition &&
-           cond == DDS_GuardCondition_as_condition(this->_loan_guard_condition));
+           (nullptr != this->loan_guard_condition &&
+           cond == DDS_GuardCondition_as_condition(this->loan_guard_condition));
   }
 
   virtual rmw_ret_t _attach(DDS_WaitSet * const waitset)
@@ -621,9 +654,9 @@ public:
     if (RMW_RET_OK != rc) {
       return rc;
     }
-    if (nullptr != this->_loan_guard_condition) {
+    if (nullptr != this->loan_guard_condition) {
       return RMW_Connext_Condition::_attach(
-        waitset, DDS_GuardCondition_as_condition(this->_loan_guard_condition));
+        waitset, DDS_GuardCondition_as_condition(this->loan_guard_condition));
     }
     return RMW_RET_OK;
   }
@@ -633,9 +666,9 @@ public:
     if (RMW_RET_OK != rc) {
       return rc;
     }
-    if (nullptr != this->_loan_guard_condition) {
+    if (nullptr != this->loan_guard_condition) {
       return RMW_Connext_Condition::_detach(
-        waitset, DDS_GuardCondition_as_condition(this->_loan_guard_condition));
+        waitset, DDS_GuardCondition_as_condition(this->loan_guard_condition));
     }
     return RMW_RET_OK;
   }
@@ -726,13 +759,12 @@ protected:
   void update_status_sample_lost(
     const DDS_SampleLostStatus * const status);
 
-  std::atomic_bool triggered_deadline;
-  std::atomic_bool triggered_liveliness;
-  std::atomic_bool triggered_qos;
-  std::atomic_bool triggered_sample_lost;
-  std::atomic_bool triggered_data;
+  DDS_GuardCondition * const loan_guard_condition;
 
-  DDS_GuardCondition * _loan_guard_condition;
+  bool triggered_deadline;
+  bool triggered_liveliness;
+  bool triggered_qos;
+  bool triggered_sample_lost;
 
   DDS_RequestedDeadlineMissedStatus status_deadline;
   DDS_RequestedIncompatibleQosStatus status_qos;

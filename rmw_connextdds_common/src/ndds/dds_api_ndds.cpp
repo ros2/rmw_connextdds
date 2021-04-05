@@ -207,6 +207,12 @@ rmw_connextdds_initialize_participant_qos_impl(
   }
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
+#if RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP
+  dp_qos->user_object.flow_controller_user_object.size = sizeof(void*);
+  dp_qos->user_object.topic_user_object.size = sizeof(void*);
+  dp_qos->user_object.content_filtered_topic_user_object.size = sizeof(void*);
+#endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
+
   return RMW_RET_OK;
 }
 

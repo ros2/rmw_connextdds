@@ -575,6 +575,14 @@ RMW_Connext_SubscriberStatusCondition::RMW_Connext_SubscriberStatusCondition(
   triggered_sample_lost(false),
   triggered_data(false),
   _loan_guard_condition(nullptr),
+  status_deadline(DDS_RequestedDeadlineMissedStatus_INITIALIZER),
+  status_qos(DDS_RequestedIncompatibleQosStatus_INITIALIZER),
+  status_liveliness(DDS_LivelinessChangedStatus_INITIALIZER),
+  status_sample_lost(DDS_SampleLostStatus_INITIALIZER),
+  status_deadline_last(DDS_RequestedDeadlineMissedStatus_INITIALIZER),
+  status_qos_last(DDS_RequestedIncompatibleQosStatus_INITIALIZER),
+  status_liveliness_last(DDS_LivelinessChangedStatus_INITIALIZER),
+  status_sample_lost_last(DDS_SampleLostStatus_INITIALIZER),
   sub(nullptr)
 {
   if (internal) {
@@ -702,9 +710,7 @@ RMW_Connext_SubscriberStatusCondition::update_status_deadline(
   this->triggered_deadline = true;
 
   this->status_deadline.total_count_change = this->status_deadline.total_count;
-  if (this->reported_deadline) {
-    this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
-  }
+  this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
 }
 
 void
@@ -716,11 +722,9 @@ RMW_Connext_SubscriberStatusCondition::update_status_liveliness(
 
   this->status_liveliness.alive_count_change = this->status_liveliness.alive_count;
   this->status_liveliness.not_alive_count_change = this->status_liveliness.not_alive_count;
-  if (this->reported_liveliness) {
-    this->status_liveliness.alive_count_change -= this->status_liveliness_last.alive_count;
-    this->status_liveliness.not_alive_count_change -=
-      this->status_liveliness_last.not_alive_count;
-  }
+  this->status_liveliness.alive_count_change -= this->status_liveliness_last.alive_count;
+  this->status_liveliness.not_alive_count_change -=
+    this->status_liveliness_last.not_alive_count;
 }
 
 void
@@ -731,9 +735,7 @@ RMW_Connext_SubscriberStatusCondition::update_status_qos(
   this->triggered_qos = true;
 
   this->status_qos.total_count_change = this->status_qos.total_count;
-  if (this->reported_qos) {
-    this->status_qos.total_count_change -= this->status_qos_last.total_count;
-  }
+  this->status_qos.total_count_change -= this->status_qos_last.total_count;
 }
 
 void
@@ -744,10 +746,8 @@ RMW_Connext_SubscriberStatusCondition::update_status_sample_lost(
   this->triggered_sample_lost = true;
 
   this->status_sample_lost.total_count_change = this->status_sample_lost.total_count;
-  if (this->reported_sample_lost) {
-    this->status_sample_lost.total_count_change -=
-      this->status_sample_lost_last.total_count;
-  }
+  this->status_sample_lost.total_count_change -=
+    this->status_sample_lost_last.total_count;
 }
 
 rmw_ret_t
@@ -788,19 +788,14 @@ RMW_Connext_PublisherStatusCondition::RMW_Connext_PublisherStatusCondition(
 : RMW_Connext_StatusCondition(DDS_DataWriter_as_entity(writer)),
   triggered_deadline(false),
   triggered_liveliness(false),
-  triggered_qos(false)
-{
-  const DDS_OfferedDeadlineMissedStatus def_status_deadline =
-    DDS_OfferedDeadlineMissedStatus_INITIALIZER;
-  const DDS_OfferedIncompatibleQosStatus def_status_qos =
-    DDS_OfferedIncompatibleQosStatus_INITIALIZER;
-  const DDS_LivelinessLostStatus def_status_liveliness =
-    DDS_LivelinessLostStatus_INITIALIZER;
-
-  this->status_deadline = def_status_deadline;
-  this->status_liveliness = def_status_liveliness;
-  this->status_qos = def_status_qos;
-}
+  triggered_qos(false),
+  status_deadline(DDS_OfferedDeadlineMissedStatus_INITIALIZER),
+  status_qos(DDS_OfferedIncompatibleQosStatus_INITIALIZER),
+  status_liveliness(DDS_LivelinessLostStatus_INITIALIZER),
+  status_deadline_last(DDS_OfferedDeadlineMissedStatus_INITIALIZER),
+  status_qos_last(DDS_OfferedIncompatibleQosStatus_INITIALIZER),
+  status_liveliness_last(DDS_LivelinessLostStatus_INITIALIZER)
+{}
 
 bool
 RMW_Connext_PublisherStatusCondition::has_status(
@@ -873,9 +868,7 @@ RMW_Connext_PublisherStatusCondition::update_status_deadline(
   this->triggered_deadline = true;
 
   this->status_deadline.total_count_change = this->status_deadline.total_count;
-  if (this->reported_deadline) {
-    this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
-  }
+  this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
 }
 
 void
@@ -886,9 +879,7 @@ RMW_Connext_PublisherStatusCondition::update_status_liveliness(
   this->triggered_liveliness = true;
 
   this->status_liveliness.total_count_change = this->status_liveliness.total_count;
-  if (this->reported_liveliness) {
-    this->status_liveliness.total_count_change -= this->status_liveliness_last.total_count;
-  }
+  this->status_liveliness.total_count_change -= this->status_liveliness_last.total_count;
 }
 
 void
@@ -899,8 +890,6 @@ RMW_Connext_PublisherStatusCondition::update_status_qos(
   this->triggered_qos = true;
 
   this->status_qos.total_count_change = this->status_qos.total_count;
-  if (this->reported_qos) {
-    this->status_qos.total_count_change -= this->status_qos_last.total_count;
-  }
+  this->status_qos.total_count_change -= this->status_qos_last.total_count;
 }
 #endif /* !RMW_CONNEXT_CPP_STD_WAITSETS */

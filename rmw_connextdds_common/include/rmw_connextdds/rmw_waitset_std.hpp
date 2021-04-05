@@ -397,7 +397,6 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
 
     this->triggered_liveliness = false;
-    this->reported_liveliness = true;
 
     status->total_count = this->status_liveliness.total_count;
     status->total_count_change = this->status_liveliness.total_count_change;
@@ -415,7 +414,6 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
 
     this->triggered_deadline = false;
-    this->reported_deadline = true;
 
     status->total_count = this->status_deadline.total_count;
     status->total_count_change = this->status_deadline.total_count_change;
@@ -433,7 +431,6 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
 
     this->triggered_qos = false;
-    this->reported_qos = true;
 
     status->total_count = this->status_qos.total_count;
     status->total_count_change = this->status_qos.total_count_change;
@@ -463,10 +460,6 @@ protected:
   DDS_OfferedDeadlineMissedStatus status_deadline;
   DDS_OfferedIncompatibleQosStatus status_qos;
   DDS_LivelinessLostStatus status_liveliness;
-
-  bool reported_deadline{false};
-  bool reported_liveliness{false};
-  bool reported_qos{false};
 
   DDS_OfferedDeadlineMissedStatus status_deadline_last;
   DDS_OfferedIncompatibleQosStatus status_qos_last;
@@ -654,7 +647,6 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
 
     this->triggered_liveliness = false;
-    this->reported_liveliness = true;
 
     status->alive_count = this->status_liveliness.alive_count;
     status->alive_count_change = this->status_liveliness.alive_count_change;
@@ -675,7 +667,6 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
 
     this->triggered_deadline = false;
-    this->reported_deadline = true;
 
     status->total_count = this->status_deadline.total_count;
     status->total_count_change = this->status_deadline.total_count_change;
@@ -694,7 +685,6 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
 
     this->triggered_qos = false;
-    this->reported_qos = true;
 
     status->total_count = this->status_qos.total_count;
     status->total_count_change = this->status_qos.total_count_change;
@@ -713,7 +703,6 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
 
     this->triggered_sample_lost = false;
-    this->reported_sample_lost = true;
 
     status->total_count = this->status_sample_lost.total_count;
     status->total_count_change = this->status_sample_lost.total_count_change;
@@ -749,12 +738,6 @@ protected:
   DDS_RequestedIncompatibleQosStatus status_qos;
   DDS_LivelinessChangedStatus status_liveliness;
   DDS_SampleLostStatus status_sample_lost;
-
-  bool reported_deadline{false};
-  bool reported_liveliness{false};
-  bool reported_qos{false};
-  bool reported_sample_lost{false};
-  bool reported_data{false};
 
   DDS_RequestedDeadlineMissedStatus status_deadline_last;
   DDS_RequestedIncompatibleQosStatus status_qos_last;

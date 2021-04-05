@@ -64,6 +64,13 @@ rmw_api_connextdds_create_subscription(
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(subscription_options, nullptr);
+  if (subscription_options->require_unique_network_flow_endpoints ==
+    RMW_UNIQUE_NETWORK_FLOW_ENDPOINTS_STRICTLY_REQUIRED)
+  {
+    RMW_CONNEXT_LOG_ERROR_SET(
+      "Strict requirement on unique network flow endpoints for subscriptions not supported");
+    return nullptr;
+  }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new subscription: topic=%s",

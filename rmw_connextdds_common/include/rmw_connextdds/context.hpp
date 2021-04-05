@@ -45,6 +45,10 @@
 
 #include "rcpputils/scope_exit.hpp"
 
+#include "rmw/get_network_flow_endpoints.h"
+#include "rmw/rmw.h"
+#include "rmw/types.h"
+
 extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
 extern size_t RMW_Connext_gv_ContextCount;
 

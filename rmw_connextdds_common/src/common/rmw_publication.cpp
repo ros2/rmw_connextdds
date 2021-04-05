@@ -132,6 +132,13 @@ rmw_api_connextdds_create_publisher(
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
   RMW_CHECK_ARGUMENT_FOR_NULL(publisher_options, nullptr);
+  if (publisher_options->require_unique_network_flow_endpoints ==
+    RMW_UNIQUE_NETWORK_FLOW_ENDPOINTS_STRICTLY_REQUIRED)
+  {
+    RMW_CONNEXT_LOG_ERROR_SET(
+      "Strict requirement on unique network flow endpoints for publishers not supported");
+    return nullptr;
+  }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating new publisher: topic=%s",

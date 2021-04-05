@@ -820,3 +820,30 @@ rmw_qos_profile_check_compatible(
     reason,
     reason_size);
 }
+
+/*****************************************************************************
+ * Network Flow Endpoints API
+ *****************************************************************************/
+rmw_ret_t
+rmw_publisher_get_network_flow_endpoints(
+  const rmw_publisher_t * publisher,
+  rcutils_allocator_t * allocator,
+  rmw_network_flow_endpoint_array_t * network_flow_endpoint_array)
+{
+  return rmw_api_connextdds_publisher_get_network_flow_endpoints(
+    publisher,
+    allocator,
+    network_flow_endpoint_array);
+}
+
+rmw_ret_t
+rmw_subscription_get_network_flow_endpoints(
+  const rmw_subscription_t * subscription,
+  rcutils_allocator_t * allocator,
+  rmw_network_flow_endpoint_array_t * network_flow_endpoint_array)
+{
+  return rmw_api_connextdds_subscription_get_network_flow_endpoints(
+    subscription,
+    allocator,
+    network_flow_endpoint_array);
+}

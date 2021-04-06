@@ -19,6 +19,9 @@
 #include "rmw_dds_common/time_utils.hpp"
 
 #if !RMW_CONNEXT_CPP_STD_WAITSETS
+
+#error "This waitset implementation is currently broken and requires updates to work"
+
 /******************************************************************************
  * WaitSet
  ******************************************************************************/

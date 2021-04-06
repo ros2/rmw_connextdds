@@ -2,6 +2,13 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#13 <https://github.com/rticommunity/rmw_connextdds/issues/13>`_ from Ericsson/unique_network_flows
+* Refactor common API
+* Update branch `master` to support Rolling only (`#15 <https://github.com/rticommunity/rmw_connextdds/issues/15>`_)
+* Contributors: Ananya Muddukrishna, Andrea Sorbini, William Woodall
+
 0.4.0 (2021-03-25)
 ------------------
 * Add ability to override of endpoint qos settings based on topic name.

@@ -395,10 +395,6 @@ public:
       }
     }
 
-    if (this->internal) {
-      return this->status_condition.trigger_loan_guard_condition(this->loan_len > 0);
-    }
-
     return RMW_RET_OK;
   }
 

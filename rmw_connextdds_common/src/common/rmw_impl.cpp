@@ -1506,11 +1506,7 @@ RMW_Connext_Subscriber::loan_messages()
     "[%s] loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
-  if (this->loan_len > 0) {
-    return this->status_condition.set_data_available(true);
-  }
-
-  return RMW_RET_OK;
+  return this->status_condition.set_data_available(this->loan_len > 0);
 }
 
 rmw_ret_t

@@ -52,13 +52,20 @@ RMW_Connext_Event::disable(rmw_event_t * const event)
   }
 }
 
+// This method is not actually used by this implementation (only by the DDS one)
 bool
 RMW_Connext_Event::active(rmw_event_t * const event)
 {
   if (RMW_Connext_Event::reader_event(event)) {
-    return RMW_Connext_Event::subscriber(event)->condition()->has_status(event->event_type);
+    RMW_Connext_SubscriberStatusCondition * const cond =
+      RMW_Connext_Event::subscriber(event)->condition();
+    std::lock_guard<std::mutex> lock(cond->mutex_internal);
+    return cond->has_status(event->event_type);
   } else {
-    return RMW_Connext_Event::publisher(event)->condition()->has_status(event->event_type);
+    RMW_Connext_PublisherStatusCondition * const cond =
+      RMW_Connext_Event::publisher(event)->condition();
+    std::lock_guard<std::mutex> lock(cond->mutex_internal);
+    return cond->has_status(event->event_type);
   }
 }
 
@@ -184,27 +191,13 @@ RMW_Connext_WaitSet::on_condition_active(
   rmw_guard_conditions_t * const gcs,
   rmw_services_t * const srvs,
   rmw_clients_t * const cls,
-  rmw_events_t * const evs,
-  std::unique_lock<std::mutex> & wait_lock)
+  rmw_events_t * const evs)
 {
   if (nullptr != subs) {
     for (size_t i = 0; i < subs->subscriber_count; ++i) {
       RMW_Connext_Subscriber * const sub =
         reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
-      // The call to Subscriber::has_data() must be made outside of the
-      // waitset's mutex to prevent a deadlock with the listener installed on
-      // the entity to capture status events. The Subscriber will access the
-      // DDS DataReader's "exclusive area", which might be already taken by a
-      // "receive thread" invoking the associated listener. The listener in turn
-      // might be trying to lock the WaitSet's mutex in order to coordinate its
-      // events with WaitSet::wait(), and prevent them from being lost. It is ok
-      // to unlock the waitset here, because concurrent wait()'s are not
-      // supported, and the logic in has_data() does not depend on the WaitSet
-      // nor the Subscriber's StatusCondition wrapper object.
-      wait_lock.unlock();
-      const bool has_data = sub->has_data();
-      wait_lock.lock();
-      if (has_data) {
+      if (sub->condition()->has_data()) {
         return true;
       }
     }
@@ -214,12 +207,7 @@ RMW_Connext_WaitSet::on_condition_active(
     for (size_t i = 0; i < cls->client_count; ++i) {
       RMW_Connext_Client * const client =
         reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      const bool has_data = client->subscriber()->has_data();
-      wait_lock.lock();
-      if (has_data) {
+      if (client->subscriber()->condition()->has_data()) {
         return true;
       }
     }
@@ -229,12 +217,7 @@ RMW_Connext_WaitSet::on_condition_active(
     for (size_t i = 0; i < srvs->service_count; ++i) {
       RMW_Connext_Service * const svc =
         reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      const bool has_data = svc->subscriber()->has_data();
-      wait_lock.lock();
-      if (has_data) {
+      if (svc->subscriber()->condition()->has_data()) {
         return true;
       }
     }
@@ -279,22 +262,19 @@ RMW_Connext_WaitSet::attach(
   rmw_services_t * const srvs,
   rmw_clients_t * const cls,
   rmw_events_t * const evs,
-  bool & wait_active,
-  std::unique_lock<std::mutex> & wait_lock)
+  bool & wait_active)
 {
   if (nullptr != subs) {
     for (size_t i = 0; i < subs->subscriber_count; ++i) {
       RMW_Connext_Subscriber * const sub =
         reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      wait_active = wait_active || sub->has_data();
-      wait_lock.lock();
+      RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      wait_active = wait_active || cond->triggered_data;
       if (wait_active) {
         return;
       }
-      sub->condition()->attach(&this->mutex_internal, &this->condition);
+      cond->attach(&this->mutex_internal, &this->condition);
     }
   }
 
@@ -302,15 +282,13 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < cls->client_count; ++i) {
       RMW_Connext_Client * const client =
         reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      wait_active = wait_active || client->subscriber()->has_data();
-      wait_lock.lock();
+      RMW_Connext_SubscriberStatusCondition * const cond = client->subscriber()->condition();
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      wait_active = wait_active || cond->triggered_data;
       if (wait_active) {
         return;
       }
-      client->subscriber()->condition()->attach(&this->mutex_internal, &this->condition);
+      cond->attach(&this->mutex_internal, &this->condition);
     }
   }
 
@@ -318,15 +296,13 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < srvs->service_count; ++i) {
       RMW_Connext_Service * const svc =
         reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      wait_active = wait_active || svc->subscriber()->has_data();
-      wait_lock.lock();
+      RMW_Connext_SubscriberStatusCondition * const cond = svc->subscriber()->condition();
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      wait_active = wait_active || cond->triggered_data;
       if (wait_active) {
         return;
       }
-      svc->subscriber()->condition()->attach(&this->mutex_internal, &this->condition);
+      cond->attach(&this->mutex_internal, &this->condition);
     }
   }
 
@@ -336,18 +312,22 @@ RMW_Connext_WaitSet::attach(
         reinterpret_cast<rmw_event_t *>(evs->events[i]);
       if (RMW_Connext_Event::reader_event(event)) {
         auto sub = RMW_Connext_Event::subscriber(event);
-        wait_active = wait_active || sub->condition()->has_status(event->event_type);
+        RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        wait_active = wait_active || cond->has_status(event->event_type);
         if (wait_active) {
           return;
         }
-        sub->condition()->attach(&this->mutex_internal, &this->condition);
+        cond->attach(&this->mutex_internal, &this->condition);
       } else {
         auto pub = RMW_Connext_Event::publisher(event);
-        wait_active = wait_active || pub->condition()->has_status(event->event_type);
+        RMW_Connext_PublisherStatusCondition * const cond = pub->condition();
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        wait_active = wait_active || cond->has_status(event->event_type);
         if (wait_active) {
           return;
         }
-        pub->condition()->attach(&this->mutex_internal, &this->condition);
+        cond->attach(&this->mutex_internal, &this->condition);
       }
     }
   }
@@ -356,7 +336,8 @@ RMW_Connext_WaitSet::attach(
     for (size_t i = 0; i < gcs->guard_condition_count; ++i) {
       RMW_Connext_GuardCondition * const gcond =
         reinterpret_cast<RMW_Connext_GuardCondition *>(gcs->guard_conditions[i]);
-      wait_active = wait_active || gcond->has_triggered();
+      std::lock_guard<std::mutex> lock(gcond->mutex_internal);
+      wait_active = wait_active || gcond->trigger_value;
       if (wait_active) {
         return;
       }
@@ -372,20 +353,16 @@ RMW_Connext_WaitSet::detach(
   rmw_services_t * const srvs,
   rmw_clients_t * const cls,
   rmw_events_t * const evs,
-  size_t & active_conditions,
-  std::unique_lock<std::mutex> & wait_lock)
+  size_t & active_conditions)
 {
   if (nullptr != subs) {
     for (size_t i = 0; i < subs->subscriber_count; ++i) {
       RMW_Connext_Subscriber * const sub =
         reinterpret_cast<RMW_Connext_Subscriber *>(subs->subscribers[i]);
-      sub->condition()->detach();
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      const bool has_data = sub->has_data();
-      wait_lock.lock();
-      if (!has_data) {
+      RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      cond->detach();
+      if (!cond->triggered_data) {
         subs->subscribers[i] = nullptr;
       } else {
         RMW_CONNEXT_LOG_DEBUG_A(
@@ -400,13 +377,10 @@ RMW_Connext_WaitSet::detach(
     for (size_t i = 0; i < cls->client_count; ++i) {
       RMW_Connext_Client * const client =
         reinterpret_cast<RMW_Connext_Client *>(cls->clients[i]);
-      client->subscriber()->condition()->detach();
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      const bool has_data = client->subscriber()->has_data();
-      wait_lock.lock();
-      if (!has_data) {
+      RMW_Connext_SubscriberStatusCondition * const cond = client->subscriber()->condition();
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      cond->detach();
+      if (!cond->triggered_data) {
         cls->clients[i] = nullptr;
       } else {
         RMW_CONNEXT_LOG_DEBUG_A(
@@ -421,13 +395,10 @@ RMW_Connext_WaitSet::detach(
     for (size_t i = 0; i < srvs->service_count; ++i) {
       RMW_Connext_Service * const svc =
         reinterpret_cast<RMW_Connext_Service *>(srvs->services[i]);
-      svc->subscriber()->condition()->detach();
-      // Call Subscriber::has_data() outside of WaitSet's mutex to prevent
-      // deadlock with entity listeners.
-      wait_lock.unlock();
-      const bool has_data = svc->subscriber()->has_data();
-      wait_lock.lock();
-      if (!has_data) {
+      RMW_Connext_SubscriberStatusCondition * const cond = svc->subscriber()->condition();
+      std::lock_guard<std::mutex> lock(cond->mutex_internal);
+      cond->detach();
+      if (!cond->triggered_data) {
         srvs->services[i] = nullptr;
       } else {
         RMW_CONNEXT_LOG_DEBUG_A(
@@ -444,8 +415,10 @@ RMW_Connext_WaitSet::detach(
         reinterpret_cast<rmw_event_t *>(evs->events[i]);
       if (RMW_Connext_Event::reader_event(event)) {
         auto sub = RMW_Connext_Event::subscriber(event);
-        sub->condition()->detach();
-        if (!sub->condition()->has_status(event->event_type)) {
+        RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        cond->detach();
+        if (!cond->has_status(event->event_type)) {
           evs->events[i] = nullptr;
         } else {
           RMW_CONNEXT_LOG_DEBUG_A(
@@ -455,8 +428,9 @@ RMW_Connext_WaitSet::detach(
         }
       } else {
         auto pub = RMW_Connext_Event::publisher(event);
-        pub->condition()->detach();
-        if (!pub->condition()->has_status(event->event_type)) {
+        RMW_Connext_PublisherStatusCondition * const cond = pub->condition();
+        std::lock_guard<std::mutex> lock(cond->mutex_internal);
+        if (!cond->has_status(event->event_type)) {
           evs->events[i] = nullptr;
         } else {
           RMW_CONNEXT_LOG_DEBUG_A(
@@ -472,8 +446,11 @@ RMW_Connext_WaitSet::detach(
     for (size_t i = 0; i < gcs->guard_condition_count; ++i) {
       RMW_Connext_GuardCondition * const gcond =
         reinterpret_cast<RMW_Connext_GuardCondition *>(gcs->guard_conditions[i]);
+      std::lock_guard<std::mutex> lock(gcond->mutex_internal);
       gcond->detach();
-      if (!gcond->trigger_check()) {
+      bool triggered = gcond->trigger_value;
+      gcond->trigger_value = false;
+      if (!triggered) {
         gcs->guard_conditions[i] = nullptr;
       } else {
         RMW_CONNEXT_LOG_DEBUG_A(
@@ -510,7 +487,7 @@ RMW_Connext_WaitSet::wait(
     });
 
   bool already_active = false;
-  this->attach(subs, gcs, srvs, cls, evs, already_active, lock);
+  this->attach(subs, gcs, srvs, cls, evs, already_active);
 
   bool timedout = false;
 
@@ -531,9 +508,9 @@ RMW_Connext_WaitSet::wait(
       (nullptr != evs) ? evs->event_count : 0);
 
     auto on_condition_active =
-      [self = this, subs, gcs, srvs, cls, evs, &lock]()
+      [self = this, subs, gcs, srvs, cls, evs]()
       {
-        return self->on_condition_active(subs, gcs, srvs, cls, evs, lock);
+        return self->on_condition_active(subs, gcs, srvs, cls, evs);
       };
 
     if (nullptr == wait_timeout || rmw_time_equal(*wait_timeout, RMW_DURATION_INFINITE)) {
@@ -549,7 +526,7 @@ RMW_Connext_WaitSet::wait(
   }
 
   size_t active_conditions = 0;
-  this->detach(subs, gcs, srvs, cls, evs, active_conditions, lock);
+  this->detach(subs, gcs, srvs, cls, evs, active_conditions);
 
   RMW_CONNEXT_ASSERT(active_conditions > 0 || timedout);
 
@@ -642,25 +619,10 @@ RMW_Connext_SubscriberStatusCondition::~RMW_Connext_SubscriberStatusCondition()
   }
 }
 
-void
-RMW_Connext_SubscriberStatusCondition::on_data()
-{
-  this->notify_waitset();
-
-  // Update loan guard condition's trigger value for internal endpoints
-  if (nullptr != this->loan_guard_condition) {
-    rmw_ret_t rc = this->trigger_loan_guard_condition(true);
-    UNUSED_ARG(rc);
-  }
-}
-
 bool
 RMW_Connext_SubscriberStatusCondition::has_status(
   const rmw_event_type_t event_type)
 {
-  // This function is always called from within WaitSet::wait(), so it
-  // doesn't need to take waitset_mutex.
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
   switch (event_type) {
     case RMW_EVENT_LIVELINESS_CHANGED:
       {
@@ -825,9 +787,6 @@ bool
 RMW_Connext_PublisherStatusCondition::has_status(
   const rmw_event_type_t event_type)
 {
-  // This function is always called from within WaitSet::wait(), so it
-  // doesn't need to take waitset_mutex.
-  std::lock_guard<std::mutex> lock(this->mutex_internal);
   switch (event_type) {
     case RMW_EVENT_LIVELINESS_LOST:
       {

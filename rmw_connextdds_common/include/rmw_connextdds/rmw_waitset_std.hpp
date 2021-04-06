@@ -81,7 +81,6 @@ public:
     std::mutex * const waitset_mutex,
     std::condition_variable * const waitset_condition)
   {
-    // std::lock_guard<std::mutex> lock(this->mutex_internal);
     this->waitset_mutex = waitset_mutex;
     this->waitset_condition = waitset_condition;
   }
@@ -89,7 +88,6 @@ public:
   void
   detach()
   {
-    // std::lock_guard<std::mutex> lock(this->mutex_internal);
     this->waitset_mutex = nullptr;
     this->waitset_condition = nullptr;
   }
@@ -585,6 +583,19 @@ public:
   on_data()
   {
     {
+      // If condition is attached to a waitset, lock its mutex to prevent
+      // modification of the `triggered_*` flags concurrently with WaitSet::wait().
+      std::mutex * waitset_mutex = this->waitset_mutex;
+      auto scope_exit = rcpputils::make_scope_exit(
+        [waitset_mutex]()
+        {
+          if (nullptr != waitset_mutex) {
+            waitset_mutex->unlock();
+          }
+        });
+      if (nullptr != waitset_mutex) {
+        waitset_mutex->lock();
+      }
       std::lock_guard<std::mutex> lock(this->mutex_internal);
       this->triggered_data = true;
     }
@@ -623,6 +634,19 @@ public:
   set_data_available(const bool available)
   {
     {
+      // If condition is attached to a waitset, lock its mutex to prevent
+      // modification of the `triggered_*` flags concurrently with WaitSet::wait().
+      std::mutex * waitset_mutex = this->waitset_mutex;
+      auto scope_exit = rcpputils::make_scope_exit(
+        [waitset_mutex]()
+        {
+          if (nullptr != waitset_mutex) {
+            waitset_mutex->unlock();
+          }
+        });
+      if (nullptr != waitset_mutex) {
+        waitset_mutex->lock();
+      }
       std::lock_guard<std::mutex> lock(this->mutex_internal);
       this->triggered_data = available;
     }

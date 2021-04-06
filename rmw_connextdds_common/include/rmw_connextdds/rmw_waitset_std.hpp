@@ -76,23 +76,51 @@ public:
     waitset_condition(nullptr)
   {}
 
+  template<typename FunctorT>
   void
   attach(
     std::mutex * const waitset_mutex,
-    std::condition_variable * const waitset_condition)
+    std::condition_variable * const waitset_condition,
+    bool & already_active,
+    FunctorT && check_trigger)
   {
-    this->waitset_mutex = waitset_mutex;
-    this->waitset_condition = waitset_condition;
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    already_active = check_trigger();
+    if (!already_active) {
+      this->waitset_mutex = waitset_mutex;
+      this->waitset_condition = waitset_condition;
+    }
   }
 
+  template<typename FunctorT>
   void
-  detach()
+  detach(FunctorT && on_detached)
   {
+    std::lock_guard<std::mutex> lock(this->mutex_internal);
     this->waitset_mutex = nullptr;
     this->waitset_condition = nullptr;
+    on_detached();
   }
 
   virtual bool owns(DDS_Condition * const cond) = 0;
+
+  template<typename FunctorT>
+  void
+  update_state(FunctorT && update_condition, const bool notify)
+  {
+    std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
+
+    if (nullptr != this->waitset_mutex) {
+      std::lock_guard<std::mutex> lock(*this->waitset_mutex);
+      update_condition();
+    } else {
+      update_condition();
+    }
+
+    if (notify && nullptr != this->waitset_condition) {
+      this->waitset_condition->notify_one();
+    }
+  }
 
 protected:
   std::mutex mutex_internal;
@@ -129,28 +157,6 @@ protected:
     return RMW_RET_OK;
   }
 
-  void
-  notify_waitset()
-  {
-    // We don't protect access to `waitset_mutex` with `mutex_internal` because
-    // we could still potentially miss the situation where the condition is
-    // being attached to the waitset (i.e. the application is inside
-    // WaitSet::wait(), possibly owning `waitset_mutex`) but `waitset_mutex`
-    // has not been set yet, in which case this notification will not be
-    // received by the waitset.
-    std::mutex * waitset_mutex = this->waitset_mutex;
-
-    if (nullptr != waitset_mutex) {
-      // Always take the WaitSet's mutex first to prevent deadlocks with
-      // concurrent WaitSet::wait().
-      std::lock_guard<std::mutex> lock_mutex(*waitset_mutex);
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      if (nullptr != this->waitset_condition) {
-        this->waitset_condition->notify_one();
-      }
-    }
-  }
-
   friend class RMW_Connext_WaitSet;
   friend class RMW_Connext_Event;
 };
@@ -184,13 +190,6 @@ public:
     return this->gcond;
   }
 
-  bool
-  has_triggered()
-  {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
-    return this->trigger_value;
-  }
-
   rmw_ret_t
   trigger()
   {
@@ -206,25 +205,10 @@ public:
       return RMW_RET_OK;
     }
 
-    // If condition is attached to a waitset, lock its mutex to prevent
-    // modification of the `triggered_*` flags concurrently with WaitSet::wait().
-    std::mutex * waitset_mutex = this->waitset_mutex;
-    auto scope_exit = rcpputils::make_scope_exit(
-      [waitset_mutex]()
-      {
-        if (nullptr != waitset_mutex) {
-          waitset_mutex->unlock();
-        }
-      });
-    if (nullptr != waitset_mutex) {
-      waitset_mutex->lock();
-    }
-
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
-    this->trigger_value = true;
-    if (nullptr != this->waitset_condition) {
-      this->waitset_condition->notify_one();
-    }
+    update_state(
+      [this]() {
+        this->trigger_value = true;
+      }, true /* notify */);
 
     return RMW_RET_OK;
   }
@@ -423,15 +407,16 @@ public:
   inline rmw_ret_t
   get_liveliness_lost_status(rmw_liveliness_lost_status_t * const status)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    update_state(
+      [this, status]() {
+        this->triggered_liveliness = false;
 
-    this->triggered_liveliness = false;
+        status->total_count = this->status_liveliness.total_count;
+        status->total_count_change = this->status_liveliness.total_count_change;
 
-    status->total_count = this->status_liveliness.total_count;
-    status->total_count_change = this->status_liveliness.total_count_change;
-
-    this->status_liveliness.total_count_change = 0;
-    this->status_liveliness_last = this->status_liveliness;
+        this->status_liveliness.total_count_change = 0;
+        this->status_liveliness_last = this->status_liveliness;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -440,15 +425,16 @@ public:
   get_offered_deadline_missed_status(
     rmw_offered_deadline_missed_status_t * const status)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    update_state(
+      [this, status]() {
+        this->triggered_deadline = false;
 
-    this->triggered_deadline = false;
+        status->total_count = this->status_deadline.total_count;
+        status->total_count_change = this->status_deadline.total_count_change;
 
-    status->total_count = this->status_deadline.total_count;
-    status->total_count_change = this->status_deadline.total_count_change;
-
-    this->status_deadline.total_count_change = 0;
-    this->status_deadline_last = this->status_deadline;
+        this->status_deadline.total_count_change = 0;
+        this->status_deadline_last = this->status_deadline;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -457,17 +443,18 @@ public:
   get_offered_qos_incompatible_status(
     rmw_offered_qos_incompatible_event_status_t * const status)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    update_state(
+      [this, status]() {
+        this->triggered_qos = false;
 
-    this->triggered_qos = false;
+        status->total_count = this->status_qos.total_count;
+        status->total_count_change = this->status_qos.total_count_change;
+        status->last_policy_kind =
+        dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
 
-    status->total_count = this->status_qos.total_count;
-    status->total_count_change = this->status_qos.total_count_change;
-    status->last_policy_kind =
-      dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
-
-    this->status_qos.total_count_change = 0;
-    this->status_qos_last = this->status_qos;
+        this->status_qos.total_count_change = 0;
+        this->status_qos_last = this->status_qos;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -482,9 +469,9 @@ protected:
   void update_status_qos(
     const DDS_OfferedIncompatibleQosStatus * const status);
 
-  bool triggered_deadline;
-  bool triggered_liveliness;
-  bool triggered_qos;
+  bool triggered_deadline{false};
+  bool triggered_liveliness{false};
+  bool triggered_qos{false};
 
   DDS_OfferedDeadlineMissedStatus status_deadline;
   DDS_OfferedIncompatibleQosStatus status_qos;
@@ -580,39 +567,6 @@ public:
   install(RMW_Connext_Subscriber * const sub);
 
   void
-  on_data()
-  {
-    {
-      // If condition is attached to a waitset, lock its mutex to prevent
-      // modification of the `triggered_*` flags concurrently with WaitSet::wait().
-      std::mutex * waitset_mutex = this->waitset_mutex;
-      auto scope_exit = rcpputils::make_scope_exit(
-        [waitset_mutex]()
-        {
-          if (nullptr != waitset_mutex) {
-            waitset_mutex->unlock();
-          }
-        });
-      if (nullptr != waitset_mutex) {
-        waitset_mutex->lock();
-      }
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->triggered_data = true;
-    }
-
-    this->notify_waitset();
-
-    // Update loan guard condition's trigger value for internal endpoints
-    if (nullptr != this->loan_guard_condition) {
-      if (DDS_RETCODE_OK !=
-        DDS_GuardCondition_set_trigger_value(this->loan_guard_condition, DDS_BOOLEAN_TRUE))
-      {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to set internal reader condition's trigger")
-      }
-    }
-  }
-
-  void
   on_requested_deadline_missed(
     const DDS_RequestedDeadlineMissedStatus * const status);
 
@@ -633,23 +587,11 @@ public:
   rmw_ret_t
   set_data_available(const bool available)
   {
-    {
-      // If condition is attached to a waitset, lock its mutex to prevent
-      // modification of the `triggered_*` flags concurrently with WaitSet::wait().
-      std::mutex * waitset_mutex = this->waitset_mutex;
-      auto scope_exit = rcpputils::make_scope_exit(
-        [waitset_mutex]()
-        {
-          if (nullptr != waitset_mutex) {
-            waitset_mutex->unlock();
-          }
-        });
-      if (nullptr != waitset_mutex) {
-        waitset_mutex->lock();
-      }
-      std::lock_guard<std::mutex> lock(this->mutex_internal);
-      this->triggered_data = available;
-    }
+    update_state(
+      [this, available]() {
+        this->triggered_data = available;
+      }, true /* notify */);
+
     if (nullptr != this->loan_guard_condition) {
       if (DDS_RETCODE_OK !=
         DDS_GuardCondition_set_trigger_value(this->loan_guard_condition, available))
@@ -698,18 +640,19 @@ public:
   inline rmw_ret_t
   get_liveliness_changed_status(rmw_liveliness_changed_status_t * const status)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    update_state(
+      [this, status]() {
+        this->triggered_liveliness = false;
 
-    this->triggered_liveliness = false;
+        status->alive_count = this->status_liveliness.alive_count;
+        status->alive_count_change = this->status_liveliness.alive_count_change;
+        status->not_alive_count = this->status_liveliness.not_alive_count;
+        status->not_alive_count_change = this->status_liveliness.not_alive_count_change;
 
-    status->alive_count = this->status_liveliness.alive_count;
-    status->alive_count_change = this->status_liveliness.alive_count_change;
-    status->not_alive_count = this->status_liveliness.not_alive_count;
-    status->not_alive_count_change = this->status_liveliness.not_alive_count_change;
-
-    this->status_liveliness.alive_count_change = 0;
-    this->status_liveliness.not_alive_count_change = 0;
-    this->status_liveliness_last = this->status_liveliness;
+        this->status_liveliness.alive_count_change = 0;
+        this->status_liveliness.not_alive_count_change = 0;
+        this->status_liveliness_last = this->status_liveliness;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -718,15 +661,16 @@ public:
   get_requested_deadline_missed_status(
     rmw_requested_deadline_missed_status_t * const status)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    update_state(
+      [this, status]() {
+        this->triggered_deadline = false;
 
-    this->triggered_deadline = false;
+        status->total_count = this->status_deadline.total_count;
+        status->total_count_change = this->status_deadline.total_count_change;
 
-    status->total_count = this->status_deadline.total_count;
-    status->total_count_change = this->status_deadline.total_count_change;
-
-    this->status_deadline.total_count_change = 0;
-    this->status_deadline_last = this->status_deadline;
+        this->status_deadline.total_count_change = 0;
+        this->status_deadline_last = this->status_deadline;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -736,17 +680,18 @@ public:
   get_requested_qos_incompatible_status(
     rmw_requested_qos_incompatible_event_status_t * const status)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    update_state(
+      [this, status]() {
+        this->triggered_qos = false;
 
-    this->triggered_qos = false;
+        status->total_count = this->status_qos.total_count;
+        status->total_count_change = this->status_qos.total_count_change;
+        status->last_policy_kind =
+        dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
 
-    status->total_count = this->status_qos.total_count;
-    status->total_count_change = this->status_qos.total_count_change;
-    status->last_policy_kind =
-      dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
-
-    this->status_qos.total_count_change = 0;
-    this->status_qos_last = this->status_qos;
+        this->status_qos.total_count_change = 0;
+        this->status_qos_last = this->status_qos;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -754,24 +699,18 @@ public:
   inline rmw_ret_t
   get_message_lost_status(rmw_message_lost_status_t * const status)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    update_state(
+      [this, status]() {
+        this->triggered_sample_lost = false;
 
-    this->triggered_sample_lost = false;
+        status->total_count = this->status_sample_lost.total_count;
+        status->total_count_change = this->status_sample_lost.total_count_change;
 
-    status->total_count = this->status_sample_lost.total_count;
-    status->total_count_change = this->status_sample_lost.total_count_change;
-
-    this->status_sample_lost.total_count_change = 0;
-    this->status_sample_lost_last = this->status_sample_lost;
+        this->status_sample_lost.total_count_change = 0;
+        this->status_sample_lost_last = this->status_sample_lost;
+      }, false /* notify */);
 
     return RMW_RET_OK;
-  }
-
-  bool
-  has_data()
-  {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
-    return this->triggered_data;
   }
 
 protected:
@@ -789,11 +728,11 @@ protected:
 
   DDS_GuardCondition * const loan_guard_condition;
 
-  bool triggered_deadline;
-  bool triggered_liveliness;
-  bool triggered_qos;
-  bool triggered_sample_lost;
-  bool triggered_data;
+  bool triggered_deadline{false};
+  bool triggered_liveliness{false};
+  bool triggered_qos{false};
+  bool triggered_sample_lost{false};
+  bool triggered_data{false};
 
   DDS_RequestedDeadlineMissedStatus status_deadline;
   DDS_RequestedIncompatibleQosStatus status_qos;

@@ -368,13 +368,13 @@ public:
   qos(rmw_qos_profile_t * const qos);
 
   rmw_ret_t
-  loan_messages();
+  loan_messages(const bool update_condition = true);
 
   rmw_ret_t
   return_messages();
 
   rmw_ret_t
-  loan_messages_if_needed()
+  loan_messages_if_needed(const bool update_condition = true)
   {
     rmw_ret_t rc = RMW_RET_OK;
 
@@ -389,7 +389,7 @@ public:
         }
       }
       /* loan messages from reader */
-      rc = this->loan_messages();
+      rc = this->loan_messages(update_condition);
       if (RMW_RET_OK != rc) {
         return rc;
       }
@@ -437,7 +437,9 @@ public:
   has_data()
   {
     std::lock_guard<std::mutex> lock(this->loan_mutex);
-    if (RMW_RET_OK != this->loan_messages_if_needed()) {
+    if (RMW_RET_OK !=
+      this->loan_messages_if_needed(false /* update_condition */))
+    {
       RMW_CONNEXT_LOG_ERROR("failed to check loaned messages")
       return false;
     }

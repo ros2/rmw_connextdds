@@ -1489,7 +1489,7 @@ RMW_Connext_Subscriber::take_serialized(
 }
 
 rmw_ret_t
-RMW_Connext_Subscriber::loan_messages()
+RMW_Connext_Subscriber::loan_messages(const bool update_condition)
 {
   /* this function should only be called once all previously
      loaned messages have been returned */
@@ -1506,7 +1506,11 @@ RMW_Connext_Subscriber::loan_messages()
     "[%s] loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
-  return this->status_condition.set_data_available(this->loan_len > 0);
+  if (update_condition) {
+    return this->status_condition.set_data_available(this->loan_len > 0);
+  } else {
+    return RMW_RET_OK;
+  }
 }
 
 rmw_ret_t
@@ -2966,21 +2970,6 @@ RMW_Connext_SubscriberStatusCondition::get_status(
 {
   rmw_ret_t rc = RMW_RET_ERROR;
 
-  // If condition is attached to a waitset, lock its mutex to prevent
-  // modification of the `triggered_*` flags concurrently with WaitSet::wait().
-  std::mutex * waitset_mutex = this->waitset_mutex;
-  auto scope_exit = rcpputils::make_scope_exit(
-    [waitset_mutex]()
-    {
-      if (nullptr != waitset_mutex) {
-        waitset_mutex->unlock();
-      }
-    });
-
-  if (nullptr != waitset_mutex) {
-    waitset_mutex->lock();
-  }
-
   switch (event_type) {
     case RMW_EVENT_LIVELINESS_CHANGED:
       {
@@ -3031,21 +3020,6 @@ RMW_Connext_PublisherStatusCondition::get_status(
   const rmw_event_type_t event_type, void * const event_info)
 {
   rmw_ret_t rc = RMW_RET_ERROR;
-
-  // If condition is attached to a waitset, lock its mutex to prevent
-  // modification of the `triggered_*` flags concurrently with WaitSet::wait().
-  std::mutex * waitset_mutex = this->waitset_mutex;
-  auto scope_exit = rcpputils::make_scope_exit(
-    [waitset_mutex]()
-    {
-      if (nullptr != waitset_mutex) {
-        waitset_mutex->unlock();
-      }
-    });
-
-  if (nullptr != waitset_mutex) {
-    waitset_mutex->lock();
-  }
 
   switch (event_type) {
     case RMW_EVENT_LIVELINESS_LOST:

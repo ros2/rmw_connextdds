@@ -52,23 +52,6 @@ RMW_Connext_Event::disable(rmw_event_t * const event)
   }
 }
 
-// This method is not actually used by this implementation (only by the DDS one)
-bool
-RMW_Connext_Event::active(rmw_event_t * const event)
-{
-  if (RMW_Connext_Event::reader_event(event)) {
-    RMW_Connext_SubscriberStatusCondition * const cond =
-      RMW_Connext_Event::subscriber(event)->condition();
-    std::lock_guard<std::mutex> lock(cond->mutex_internal);
-    return cond->has_status(event->event_type);
-  } else {
-    RMW_Connext_PublisherStatusCondition * const cond =
-      RMW_Connext_Event::publisher(event)->condition();
-    std::lock_guard<std::mutex> lock(cond->mutex_internal);
-    return cond->has_status(event->event_type);
-  }
-}
-
 /******************************************************************************
  * StdWaitSet
  ******************************************************************************/
@@ -496,7 +479,6 @@ RMW_Connext_WaitSet::wait(
   rmw_events_t * const evs,
   const rmw_time_t * const wait_timeout)
 {
-  // std::unique_lock<std::mutex> lock(this->mutex_internal);
   {
     std::lock_guard<std::mutex> lock(this->mutex_internal);
     if (this->waiting) {

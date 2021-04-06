@@ -764,10 +764,6 @@ public:
   disable(rmw_event_t * const event);
 
   static
-  bool
-  active(rmw_event_t * const event);
-
-  static
   DDS_Condition *
   condition(const rmw_event_t * const event);
 

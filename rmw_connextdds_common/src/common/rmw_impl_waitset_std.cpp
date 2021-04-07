@@ -358,6 +358,7 @@ RMW_Connext_WaitSet::detach(
       const bool data_available = sub->has_data();
       cond->detach(
         [cond, subs, sub, &active_conditions, i, data_available]() {
+          UNUSED_ARG(sub);
           cond->triggered_data = data_available;
           if (!cond->triggered_data) {
             subs->subscribers[i] = nullptr;
@@ -379,6 +380,7 @@ RMW_Connext_WaitSet::detach(
       const bool data_available = client->subscriber()->has_data();
       cond->detach(
         [cond, cls, client, &active_conditions, i, data_available]() {
+          UNUSED_ARG(client);
           cond->triggered_data = data_available;
           if (!cond->triggered_data) {
             cls->clients[i] = nullptr;
@@ -400,6 +402,7 @@ RMW_Connext_WaitSet::detach(
       const bool data_available = svc->subscriber()->has_data();
       cond->detach(
         [cond, srvs, svc, &active_conditions, i, data_available]() {
+          UNUSED_ARG(svc);
           cond->triggered_data = data_available;
           if (!cond->triggered_data) {
             srvs->services[i] = nullptr;

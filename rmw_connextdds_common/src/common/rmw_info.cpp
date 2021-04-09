@@ -235,6 +235,19 @@ rmw_api_connextdds_count_publishers(
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(count, RMW_RET_INVALID_ARGUMENT);
 
+  int validation_result = RMW_TOPIC_VALID;
+  rmw_ret_t ret =
+    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_TOPIC_VALID != validation_result) {
+    const char * reason =
+      rmw_full_topic_name_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+
   auto common_context = &node->context->impl->common;
   const std::string mangled_topic_name =
     rmw_connextdds_create_topic_name(
@@ -258,6 +271,19 @@ rmw_api_connextdds_count_subscribers(
     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(count, RMW_RET_INVALID_ARGUMENT);
+
+  int validation_result = RMW_TOPIC_VALID;
+  rmw_ret_t ret =
+    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
+  if (RMW_RET_OK != ret) {
+    return ret;
+  }
+  if (RMW_TOPIC_VALID != validation_result) {
+    const char * reason =
+      rmw_full_topic_name_validation_result_string(validation_result);
+    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
+    return RMW_RET_INVALID_ARGUMENT;
+  }
 
   auto common_context = &node->context->impl->common;
   const std::string mangled_topic_name =

@@ -263,14 +263,14 @@
  * In order to reduce the time to cleanup a participant (Node), we use the
  * advice from
  * https://community.rti.com/static/documentation/connext-dds/5.3.1/doc/api/connext_dds/api_cpp/structDDS__DomainParticipantQos.html
- * and reduce the shutdown_cleanup_period to 50 milliseconds.
+ * and reduce the shutdown_cleanup_period to 10 milliseconds.
  ******************************************************************************/
 #ifndef RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC
 #define RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC   0
 #endif /* RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC */
 
 #ifndef RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC
-#define RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC   50000000
+#define RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC   10000000
 #endif /* RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_NSEC */
 
 /******************************************************************************

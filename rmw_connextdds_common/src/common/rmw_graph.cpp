@@ -27,6 +27,7 @@ rmw_connextdds_graph_add_entityEA(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
+  const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
@@ -726,6 +727,7 @@ rmw_connextdds_graph_add_entityEA(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
+  const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
@@ -744,7 +746,7 @@ rmw_connextdds_graph_add_entityEA(
 
   if (RMW_RET_OK !=
     rmw_connextdds_readerwriter_qos_to_ros(
-      nullptr /* history */,
+      history,
       reliability,
       durability,
       deadline,
@@ -873,6 +875,7 @@ rmw_connextdds_graph_add_local_publisherEA(
     &dp_guid,
     topic_name,
     pub->message_type_support()->type_name(),
+    &dw_qos.history,
     &dw_qos.reliability,
     &dw_qos.durability,
     &dw_qos.deadline,
@@ -943,6 +946,7 @@ rmw_connextdds_graph_add_local_subscriberEA(
     &dp_guid,
     topic_name,
     sub->message_type_support()->type_name(),
+    &dr_qos.history,
     &dr_qos.reliability,
     &dr_qos.durability,
     &dr_qos.deadline,
@@ -984,6 +988,7 @@ rmw_connextdds_graph_add_remote_entity(
     dp_guid,
     topic_name,
     type_name,
+    nullptr /* history (not propagated via discovery) */,
     reliability,
     durability,
     deadline,

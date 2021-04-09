@@ -72,7 +72,6 @@ class RMW_Connext_Subscriber;
 class RMW_Connext_Client;
 class RMW_Connext_Service;
 
-#include "rmw_connextdds/rmw_waitset_dds.hpp"
 #include "rmw_connextdds/rmw_waitset_std.hpp"
 
 /******************************************************************************

@@ -14,7 +14,6 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
-#if RMW_CONNEXT_CPP_STD_WAITSETS
 /******************************************************************************
  * Event
  ******************************************************************************/
@@ -876,4 +875,3 @@ RMW_Connext_PublisherStatusCondition::update_status_qos(
   this->status_qos.total_count_change = this->status_qos.total_count;
   this->status_qos.total_count_change -= this->status_qos_last.total_count;
 }
-#endif /* !RMW_CONNEXT_CPP_STD_WAITSETS */

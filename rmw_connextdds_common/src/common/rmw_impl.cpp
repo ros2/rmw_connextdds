@@ -617,12 +617,10 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
   status_condition(dds_writer)
 {
   rmw_connextdds_get_entity_gid(this->dds_writer, this->ros_gid);
-#if RMW_CONNEXT_CPP_STD_WAITSETS
   if (RMW_RET_OK != this->status_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on writer")
     throw std::runtime_error("failed to install condition on writer");
   }
-#endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
 }
 
 RMW_Connext_Publisher *
@@ -1106,12 +1104,10 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   this->loan_info = def_info_seq;
   this->loan_len = 0;
   this->loan_next = 0;
-#if RMW_CONNEXT_CPP_STD_WAITSETS
   if (RMW_RET_OK != this->status_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on reader")
     throw std::runtime_error("failed to install condition on reader");
   }
-#endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
 }
 
 RMW_Connext_Subscriber *

@@ -17,7 +17,6 @@
 
 #include "rmw_connextdds/context.hpp"
 
-#if RMW_CONNEXT_CPP_STD_WAITSETS
 /******************************************************************************
  * Alternative implementation of WaitSets and Conditions using C++ std
  ******************************************************************************/
@@ -795,5 +794,4 @@ public:
     return reinterpret_cast<RMW_Connext_Subscriber *>(event->data);
   }
 };
-#endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
 #endif  // RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_

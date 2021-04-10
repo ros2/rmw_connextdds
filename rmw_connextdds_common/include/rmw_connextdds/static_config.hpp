@@ -85,6 +85,11 @@
   "RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS"
 #endif /* RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS */
 
+#ifndef RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS
+#define RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS \
+  "RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS"
+#endif /* RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS */
+
 // TODO(security-wg): These are intended to be temporary, and need to be
 // refactored into a proper abstraction.
 #ifndef RMW_CONNEXT_ENV_SECURITY_LOG_FILE
@@ -225,6 +230,58 @@
 #ifndef RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE
 #define RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE   65000
 #endif /* RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE */
+
+/******************************************************************************
+ * Customize the RTPS reliability protocol to speed up its responsiveness.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+#define RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS     1
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
+
+/******************************************************************************
+ * Regular hearbeat period used by any reliable RTPS Writer.
+ * This is an initializer for an instance of type DDS_Duration_t.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD
+#define RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD       {0, 100000000}   /* 100ms */
+#endif /* RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD */
+
+/******************************************************************************
+ * Fast hearbeat period used by any reliable RTPS Writer to allow
+ * late joiners and out of sync readers to catch up.
+ * This is an initializer for an instance of type DDS_Duration_t.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD_FAST
+#define RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD_FAST  {0, 20000000}   /* 20ms */
+#endif /* RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD_FAST */
+
+/******************************************************************************
+ * When a DataWriter receives a request for missing DDS samples from a
+ * DataReader and responds by resending the requested DDS samples, it will
+ * ignore additional requests for the same DDS samples during the time period
+ * max_nack_response_delay. We decrease this to be less than the HB period.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_MAX_NACK_RESPONSE_DELAY
+#define RMW_CONNEXT_DEFAULT_MAX_NACK_RESPONSE_DELAY  {0, 10000000}   /* 10ms */
+#endif /* RMW_CONNEXT_DEFAULT_MAX_NACK_RESPONSE_DELAY */
+
+/******************************************************************************
+ * Maximum number of periodic heartbeats gone unanswered after which a
+ * DataWriter will consider a DataReader as inactive.
+ *
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_MAX_HEARTBEATS
+#define RMW_CONNEXT_DEFAULT_MAX_HEARTBEATS    (10 * 60) /* 1m @ 10hz */
+#endif /* RMW_CONNEXT_DEFAULT_MAX_HEARTBEATS */
+
+/******************************************************************************
+ * When a reliable reader receives a heartbeat from a remote writer and finds
+ * out that it needs to send back an ACK/NACK message, the reader can choose to
+ * delay a while. We set this delay to be compatible with the HB period.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_MAX_HEARTBEAT_RESPONSE_DELAY
+#define RMW_CONNEXT_DEFAULT_MAX_HEARTBEAT_RESPONSE_DELAY  {0, 10000000} /* 10ms */
+#endif /* RMW_CONNEXT_DEFAULT_MAX_HEARTBEAT_RESPONSE_DELAY */
 
 /******************************************************************************
  * Automatically tune DataWriterQos to better handle reliable "large data".

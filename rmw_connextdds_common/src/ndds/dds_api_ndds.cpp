@@ -501,6 +501,27 @@ rmw_connextdds_get_datawriter_qos(
     qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
   }
 
+#if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+  // The default settings for the RTPS reliability protocol are not very
+  // responsive, and they cause some unit tests to fail. These optimizations
+  // increase the Heartbeat period from 3s (default) to 100ms. Other vendors
+  // seem to be in a similar range. We also lower the period for "late joiners"
+  // and the "fast" period (used to speed up recovery of readers that reached
+  // the "high watermark" of unacked samples -- 1 by default) to 20ms.
+  if (ctx->optimize_reliability) {
+    qos->protocol.rtps_reliable_writer.heartbeat_period =
+      RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD;
+    qos->protocol.rtps_reliable_writer.late_joiner_heartbeat_period =
+      RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD_FAST;
+    qos->protocol.rtps_reliable_writer.fast_heartbeat_period =
+      RMW_CONNEXT_DEFAULT_HEARTBEAT_PERIOD_FAST;
+    qos->protocol.rtps_reliable_writer.max_heartbeat_retries =
+      RMW_CONNEXT_DEFAULT_MAX_HEARTBEATS;
+    qos->protocol.rtps_reliable_writer.max_nack_response_delay =
+      RMW_CONNEXT_DEFAULT_MAX_NACK_RESPONSE_DELAY;
+  }
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
+
 #if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
   // Unless disabled, optimize the DataWriter's reliability protocol to
   // better handle large data samples. These are *bounded* types whose
@@ -586,6 +607,17 @@ rmw_connextdds_get_datareader_qos(
       return RMW_RET_ERROR;
     }
   }
+
+#if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+  // The default settings for the RTPS reliability protocol are not very
+  // responsive, and they cause some unit tests to fail. These optimizations
+  // are dual to those applied in rmw_connextdds_get_datawriter_qos().
+  if (ctx->optimize_reliability) {
+    qos->protocol.rtps_reliable_reader.min_heartbeat_response_delay = DDS_DURATION_ZERO;
+    qos->protocol.rtps_reliable_reader.max_heartbeat_response_delay =
+      RMW_CONNEXT_DEFAULT_MAX_HEARTBEAT_RESPONSE_DELAY;
+  }
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
 
 #if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
   // Unless disabled, optimize the DataReader's reliability protocol to

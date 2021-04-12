@@ -216,9 +216,9 @@ rmw_connextdds_initialize_participant_qos_impl(
   // to create new entities in C++11, even though the participant was created
   // using the C API. If these settings are not specified, an application will
   // receive a SIGSEGV when trying to create one of these entities.
-  dp_qos->user_object.flow_controller_user_object.size = sizeof(void*);
-  dp_qos->user_object.topic_user_object.size = sizeof(void*);
-  dp_qos->user_object.content_filtered_topic_user_object.size = sizeof(void*);
+  dp_qos->user_object.flow_controller_user_object.size = sizeof(void *);
+  dp_qos->user_object.topic_user_object.size = sizeof(void *);
+  dp_qos->user_object.content_filtered_topic_user_object.size = sizeof(void *);
 #endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
 
   return RMW_RET_OK;

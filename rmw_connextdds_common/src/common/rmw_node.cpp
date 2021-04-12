@@ -30,8 +30,6 @@ rmw_api_connextdds_create_node(
   const char * ns,
   size_t domain_id,
   const rmw_node_security_options_t * security_options,
-  size_t domain_id,
-  const rmw_node_security_options_t * security_options,
   bool localhost_only)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(context, nullptr);

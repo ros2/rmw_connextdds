@@ -21,7 +21,7 @@ ament_export_dependencies(ament_cmake_core)
 ament_export_dependencies(rcpputils)
 ament_export_dependencies(rcutils)
 ament_export_dependencies(rmw)
-ament_export_dependencies(rosidl_default_runtime)
+ament_export_dependencies(rmw_dds_common_typesupports)
 
 rosidl_generate_interfaces(
   ${PROJECT_NAME}
@@ -39,7 +39,7 @@ ament_target_dependencies(${PROJECT_NAME}_library
   "rcpputils"
   "rcutils"
   "rmw"
-  "rosidl_runtime_cpp")
+  "rmw_dds_common_typesupports")
 add_dependencies(${PROJECT_NAME}_library
   ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}_library

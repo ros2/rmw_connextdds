@@ -16,7 +16,7 @@
   <depend>rcutils</depend>
   <depend>rcpputils</depend>
   <depend>rmw</depend>
-  <depend>rosidl_runtime_cpp</depend>
+  <depend>rmw_dds_common_typesupports</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>ament_lint_auto</test_depend>

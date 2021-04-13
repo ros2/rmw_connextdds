@@ -17,16 +17,13 @@
 
 #include "rmw_connextdds/context.hpp"
 
-#if RMW_CONNEXT_CPP_STD_WAITSETS
 /******************************************************************************
  * Alternative implementation of WaitSets and Conditions using C++ std
  ******************************************************************************/
 class RMW_Connext_WaitSet
 {
 public:
-  RMW_Connext_WaitSet()
-  : waiting(false)
-  {}
+  RMW_Connext_WaitSet() {}
 
   rmw_ret_t
   wait(
@@ -64,10 +61,9 @@ protected:
     rmw_clients_t * const cls,
     rmw_events_t * const evs);
 
+  bool waiting{false};
   std::mutex mutex_internal;
-  bool waiting;
   std::condition_variable condition;
-  std::mutex condition_mutex;
 };
 
 class RMW_Connext_Condition
@@ -79,25 +75,51 @@ public:
     waitset_condition(nullptr)
   {}
 
+  template<typename FunctorT>
   void
   attach(
     std::mutex * const waitset_mutex,
-    std::condition_variable * const waitset_condition)
+    std::condition_variable * const waitset_condition,
+    bool & already_active,
+    FunctorT && check_trigger)
   {
     std::lock_guard<std::mutex> lock(this->mutex_internal);
-    this->waitset_mutex = waitset_mutex;
-    this->waitset_condition = waitset_condition;
+    already_active = check_trigger();
+    if (!already_active) {
+      this->waitset_mutex = waitset_mutex;
+      this->waitset_condition = waitset_condition;
+    }
   }
 
+  template<typename FunctorT>
   void
-  detach()
+  detach(FunctorT && on_detached)
   {
     std::lock_guard<std::mutex> lock(this->mutex_internal);
     this->waitset_mutex = nullptr;
     this->waitset_condition = nullptr;
+    on_detached();
   }
 
   virtual bool owns(DDS_Condition * const cond) = 0;
+
+  template<typename FunctorT>
+  void
+  update_state(FunctorT && update_condition, const bool notify)
+  {
+    std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
+
+    if (nullptr != this->waitset_mutex) {
+      std::lock_guard<std::mutex> lock(*this->waitset_mutex);
+      update_condition();
+    } else {
+      update_condition();
+    }
+
+    if (notify && nullptr != this->waitset_condition) {
+      this->waitset_condition->notify_one();
+    }
+  }
 
 protected:
   std::mutex mutex_internal;
@@ -133,6 +155,9 @@ protected:
     }
     return RMW_RET_OK;
   }
+
+  friend class RMW_Connext_WaitSet;
+  friend class RMW_Connext_Event;
 };
 
 class RMW_Connext_GuardCondition : public RMW_Connext_Condition
@@ -164,18 +189,6 @@ public:
     return this->gcond;
   }
 
-  bool
-  trigger_check()
-  {
-    return this->trigger_value.exchange(false);
-  }
-
-  bool
-  has_triggered()
-  {
-    return this->trigger_value;
-  }
-
   rmw_ret_t
   trigger()
   {
@@ -184,23 +197,17 @@ public:
         DDS_GuardCondition_set_trigger_value(
           this->gcond, DDS_BOOLEAN_TRUE))
       {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to trigger guard condition")
+        RMW_CONNEXT_LOG_ERROR_SET("failed to trigger internal guard condition")
         return RMW_RET_ERROR;
       }
 
       return RMW_RET_OK;
     }
 
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
-
-    if (this->waitset_mutex != nullptr) {
-      std::unique_lock<std::mutex> clock(*this->waitset_mutex);
-      this->trigger_value = true;
-      clock.unlock();
-      this->waitset_condition->notify_one();
-    } else {
-      this->trigger_value = true;
-    }
+    update_state(
+      [this]() {
+        this->trigger_value = true;
+      }, true /* notify */);
 
     return RMW_RET_OK;
   }
@@ -223,9 +230,11 @@ public:
   }
 
 protected:
-  std::atomic_bool trigger_value;
+  bool trigger_value;
   bool internal;
   DDS_GuardCondition * gcond;
+
+  friend class RMW_Connext_WaitSet;
 };
 
 class RMW_Connext_StatusCondition : public RMW_Connext_Condition
@@ -321,6 +330,9 @@ public:
     return RMW_RET_OK;
   }
 
+  virtual bool
+  has_status(const rmw_event_type_t event_type) = 0;
+
 protected:
   DDS_StatusCondition * scond;
 };
@@ -348,7 +360,7 @@ class RMW_Connext_PublisherStatusCondition : public RMW_Connext_StatusCondition
 public:
   explicit RMW_Connext_PublisherStatusCondition(DDS_DataWriter * const writer);
 
-  bool
+  virtual bool
   has_status(const rmw_event_type_t event_type);
 
   virtual rmw_ret_t
@@ -394,11 +406,16 @@ public:
   inline rmw_ret_t
   get_liveliness_lost_status(rmw_liveliness_lost_status_t * const status)
   {
-    status->total_count = this->status_liveliness.total_count;
-    status->total_count_change = this->status_liveliness.total_count_change;
+    update_state(
+      [this, status]() {
+        this->triggered_liveliness = false;
 
-    this->status_liveliness.total_count_change = 0;
-    this->triggered_liveliness = false;
+        status->total_count = this->status_liveliness.total_count;
+        status->total_count_change = this->status_liveliness.total_count_change;
+
+        this->status_liveliness.total_count_change = 0;
+        this->status_liveliness_last = this->status_liveliness;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -407,11 +424,16 @@ public:
   get_offered_deadline_missed_status(
     rmw_offered_deadline_missed_status_t * const status)
   {
-    status->total_count = this->status_deadline.total_count;
-    status->total_count_change = this->status_deadline.total_count_change;
+    update_state(
+      [this, status]() {
+        this->triggered_deadline = false;
 
-    this->status_deadline.total_count_change = 0;
-    this->triggered_deadline = false;
+        status->total_count = this->status_deadline.total_count;
+        status->total_count_change = this->status_deadline.total_count_change;
+
+        this->status_deadline.total_count_change = 0;
+        this->status_deadline_last = this->status_deadline;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -420,13 +442,18 @@ public:
   get_offered_qos_incompatible_status(
     rmw_offered_qos_incompatible_event_status_t * const status)
   {
-    status->total_count = this->status_qos.total_count;
-    status->total_count_change = this->status_qos.total_count_change;
-    status->last_policy_kind =
-      dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
+    update_state(
+      [this, status]() {
+        this->triggered_qos = false;
 
-    this->status_qos.total_count_change = 0;
-    this->triggered_qos = false;
+        status->total_count = this->status_qos.total_count;
+        status->total_count_change = this->status_qos.total_count_change;
+        status->last_policy_kind =
+        dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
+
+        this->status_qos.total_count_change = 0;
+        this->status_qos_last = this->status_qos;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -441,13 +468,17 @@ protected:
   void update_status_qos(
     const DDS_OfferedIncompatibleQosStatus * const status);
 
-  bool triggered_deadline;
-  bool triggered_liveliness;
-  bool triggered_qos;
+  bool triggered_deadline{false};
+  bool triggered_liveliness{false};
+  bool triggered_qos{false};
 
   DDS_OfferedDeadlineMissedStatus status_deadline;
   DDS_OfferedIncompatibleQosStatus status_qos;
   DDS_LivelinessLostStatus status_liveliness;
+
+  DDS_OfferedDeadlineMissedStatus status_deadline_last;
+  DDS_OfferedIncompatibleQosStatus status_qos_last;
+  DDS_LivelinessLostStatus status_liveliness_last;
 
   RMW_Connext_Publisher * pub;
 };
@@ -491,7 +522,7 @@ public:
 
   virtual ~RMW_Connext_SubscriberStatusCondition();
 
-  bool
+  virtual bool
   has_status(const rmw_event_type_t event_type);
 
   virtual rmw_ret_t
@@ -534,15 +565,6 @@ public:
   rmw_ret_t
   install(RMW_Connext_Subscriber * const sub);
 
-  bool
-  on_data_triggered()
-  {
-    return this->triggered_data.exchange(false);
-  }
-
-  void
-  on_data();
-
   void
   on_requested_deadline_missed(
     const DDS_RequestedDeadlineMissedStatus * const status);
@@ -564,31 +586,28 @@ public:
   rmw_ret_t
   set_data_available(const bool available)
   {
-    UNUSED_ARG(available);
-    return RMW_RET_OK;
-  }
+    update_state(
+      [this, available]() {
+        this->triggered_data = available;
+      }, true /* notify */);
 
-  // Methods for "internal" subscribers only
-  inline rmw_ret_t
-  trigger_loan_guard_condition(const bool trigger_value)
-  {
-    if (nullptr == this->_loan_guard_condition) {
-      return RMW_RET_ERROR;
-    }
-    if (DDS_RETCODE_OK != DDS_GuardCondition_set_trigger_value(
-        this->_loan_guard_condition, trigger_value))
-    {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to set internal reader condition's trigger")
-      return RMW_RET_ERROR;
+    if (nullptr != this->loan_guard_condition) {
+      if (DDS_RETCODE_OK !=
+        DDS_GuardCondition_set_trigger_value(this->loan_guard_condition, available))
+      {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to set internal reader condition's trigger")
+        return RMW_RET_ERROR;
+      }
     }
     return RMW_RET_OK;
   }
 
-  DDS_Condition *
-  loan_guard_condition() const
+  virtual bool
+  owns(DDS_Condition * const cond)
   {
-    return (nullptr != this->_loan_guard_condition) ?
-           DDS_GuardCondition_as_condition(this->_loan_guard_condition) : nullptr;
+    return RMW_Connext_StatusCondition::owns(cond) ||
+           (nullptr != this->loan_guard_condition &&
+           cond == DDS_GuardCondition_as_condition(this->loan_guard_condition));
   }
 
   virtual rmw_ret_t _attach(DDS_WaitSet * const waitset)
@@ -597,9 +616,9 @@ public:
     if (RMW_RET_OK != rc) {
       return rc;
     }
-    if (nullptr != this->_loan_guard_condition) {
+    if (nullptr != this->loan_guard_condition) {
       return RMW_Connext_Condition::_attach(
-        waitset, DDS_GuardCondition_as_condition(this->_loan_guard_condition));
+        waitset, DDS_GuardCondition_as_condition(this->loan_guard_condition));
     }
     return RMW_RET_OK;
   }
@@ -609,9 +628,9 @@ public:
     if (RMW_RET_OK != rc) {
       return rc;
     }
-    if (nullptr != this->_loan_guard_condition) {
+    if (nullptr != this->loan_guard_condition) {
       return RMW_Connext_Condition::_detach(
-        waitset, DDS_GuardCondition_as_condition(this->_loan_guard_condition));
+        waitset, DDS_GuardCondition_as_condition(this->loan_guard_condition));
     }
     return RMW_RET_OK;
   }
@@ -620,14 +639,19 @@ public:
   inline rmw_ret_t
   get_liveliness_changed_status(rmw_liveliness_changed_status_t * const status)
   {
-    status->alive_count = this->status_liveliness.alive_count;
-    status->alive_count_change = this->status_liveliness.alive_count_change;
-    status->not_alive_count = this->status_liveliness.not_alive_count;
-    status->not_alive_count_change = this->status_liveliness.not_alive_count_change;
+    update_state(
+      [this, status]() {
+        this->triggered_liveliness = false;
 
-    this->status_liveliness.alive_count_change = 0;
-    this->status_liveliness.not_alive_count_change = 0;
-    this->triggered_liveliness = false;
+        status->alive_count = this->status_liveliness.alive_count;
+        status->alive_count_change = this->status_liveliness.alive_count_change;
+        status->not_alive_count = this->status_liveliness.not_alive_count;
+        status->not_alive_count_change = this->status_liveliness.not_alive_count_change;
+
+        this->status_liveliness.alive_count_change = 0;
+        this->status_liveliness.not_alive_count_change = 0;
+        this->status_liveliness_last = this->status_liveliness;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -636,11 +660,16 @@ public:
   get_requested_deadline_missed_status(
     rmw_requested_deadline_missed_status_t * const status)
   {
-    status->total_count = this->status_deadline.total_count;
-    status->total_count_change = this->status_deadline.total_count_change;
+    update_state(
+      [this, status]() {
+        this->triggered_deadline = false;
 
-    this->status_deadline.total_count_change = 0;
-    this->triggered_deadline = false;
+        status->total_count = this->status_deadline.total_count;
+        status->total_count_change = this->status_deadline.total_count_change;
+
+        this->status_deadline.total_count_change = 0;
+        this->status_deadline_last = this->status_deadline;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -650,13 +679,18 @@ public:
   get_requested_qos_incompatible_status(
     rmw_requested_qos_incompatible_event_status_t * const status)
   {
-    status->total_count = this->status_qos.total_count;
-    status->total_count_change = this->status_qos.total_count_change;
-    status->last_policy_kind =
-      dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
+    update_state(
+      [this, status]() {
+        this->triggered_qos = false;
 
-    this->status_qos.total_count_change = 0;
-    this->triggered_qos = false;
+        status->total_count = this->status_qos.total_count;
+        status->total_count_change = this->status_qos.total_count_change;
+        status->last_policy_kind =
+        dds_qos_policy_to_rmw_qos_policy(this->status_qos.last_policy_id);
+
+        this->status_qos.total_count_change = 0;
+        this->status_qos_last = this->status_qos;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -664,11 +698,16 @@ public:
   inline rmw_ret_t
   get_message_lost_status(rmw_message_lost_status_t * const status)
   {
-    status->total_count = this->status_sample_lost.total_count;
-    status->total_count_change = this->status_sample_lost.total_count_change;
+    update_state(
+      [this, status]() {
+        this->triggered_sample_lost = false;
 
-    this->status_sample_lost.total_count_change = 0;
-    this->triggered_sample_lost = false;
+        status->total_count = this->status_sample_lost.total_count;
+        status->total_count_change = this->status_sample_lost.total_count_change;
+
+        this->status_sample_lost.total_count_change = 0;
+        this->status_sample_lost_last = this->status_sample_lost;
+      }, false /* notify */);
 
     return RMW_RET_OK;
   }
@@ -686,20 +725,27 @@ protected:
   void update_status_sample_lost(
     const DDS_SampleLostStatus * const status);
 
-  std::atomic_bool triggered_deadline;
-  std::atomic_bool triggered_liveliness;
-  std::atomic_bool triggered_qos;
-  std::atomic_bool triggered_sample_lost;
-  std::atomic_bool triggered_data;
+  DDS_GuardCondition * const loan_guard_condition;
 
-  DDS_GuardCondition * _loan_guard_condition;
+  bool triggered_deadline{false};
+  bool triggered_liveliness{false};
+  bool triggered_qos{false};
+  bool triggered_sample_lost{false};
+  bool triggered_data{false};
 
   DDS_RequestedDeadlineMissedStatus status_deadline;
   DDS_RequestedIncompatibleQosStatus status_qos;
   DDS_LivelinessChangedStatus status_liveliness;
   DDS_SampleLostStatus status_sample_lost;
 
+  DDS_RequestedDeadlineMissedStatus status_deadline_last;
+  DDS_RequestedIncompatibleQosStatus status_qos_last;
+  DDS_LivelinessChangedStatus status_liveliness_last;
+  DDS_SampleLostStatus status_sample_lost_last;
+
   RMW_Connext_Subscriber * sub;
+
+  friend class RMW_Connext_WaitSet;
 };
 
 /******************************************************************************
@@ -715,10 +761,6 @@ public:
   static
   rmw_ret_t
   disable(rmw_event_t * const event);
-
-  static
-  bool
-  active(rmw_event_t * const event);
 
   static
   DDS_Condition *
@@ -752,5 +794,4 @@ public:
     return reinterpret_cast<RMW_Connext_Subscriber *>(event->data);
   }
 };
-#endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
 #endif  // RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_

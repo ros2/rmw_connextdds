@@ -569,12 +569,10 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
   status_condition(dds_writer)
 {
   rmw_connextdds_get_entity_gid(this->dds_writer, this->ros_gid);
-#if RMW_CONNEXT_CPP_STD_WAITSETS
   if (RMW_RET_OK != this->status_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on writer")
     throw std::runtime_error("failed to install condition on writer");
   }
-#endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
 }
 
 RMW_Connext_Publisher *
@@ -1052,12 +1050,10 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   this->loan_info = def_info_seq;
   this->loan_len = 0;
   this->loan_next = 0;
-#if RMW_CONNEXT_CPP_STD_WAITSETS
   if (RMW_RET_OK != this->status_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on reader")
     throw std::runtime_error("failed to install condition on reader");
   }
-#endif /* RMW_CONNEXT_CPP_STD_WAITSETS */
 }
 
 RMW_Connext_Subscriber *
@@ -1413,7 +1409,7 @@ RMW_Connext_Subscriber::take_serialized(
 }
 
 rmw_ret_t
-RMW_Connext_Subscriber::loan_messages()
+RMW_Connext_Subscriber::loan_messages(const bool update_condition)
 {
   /* this function should only be called once all previously
      loaned messages have been returned */
@@ -1430,11 +1426,11 @@ RMW_Connext_Subscriber::loan_messages()
     "[%s] loaned messages: %lu",
     this->type_support->type_name(), this->loan_len)
 
-  if (this->loan_len > 0) {
-    return this->status_condition.set_data_available(true);
+  if (update_condition) {
+    return this->status_condition.set_data_available(this->loan_len > 0);
+  } else {
+    return RMW_RET_OK;
   }
-
-  return RMW_RET_OK;
 }
 
 rmw_ret_t
@@ -2337,10 +2333,49 @@ RMW_Connext_Client::enable()
 rmw_ret_t
 RMW_Connext_Client::is_service_available(bool & available)
 {
-  /* TODO(asorbini): check that we actually have at least one service matched by both
-     request writer and response reader */
-  available = (this->request_pub->subscriptions_count() > 0 &&
-    this->reply_sub->publications_count() > 0);
+  // mark service as available if we have at least one writer and one reader
+  // matched from the same remote DomainParticipant.
+  struct DDS_InstanceHandleSeq matched_req_subs = DDS_SEQUENCE_INITIALIZER,
+    matched_rep_pubs = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_seqs = rcpputils::make_scope_exit(
+    [&matched_req_subs, &matched_rep_pubs]()
+    {
+      if (!DDS_InstanceHandleSeq_finalize(&matched_req_subs)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize req instance handle sequence")
+      }
+      if (!DDS_InstanceHandleSeq_finalize(&matched_rep_pubs)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize rep instance handle sequence")
+      }
+    });
+
+  DDS_ReturnCode_t dds_rc =
+    DDS_DataWriter_get_matched_subscriptions(this->request_pub->writer(), &matched_req_subs);
+  if (DDS_RETCODE_OK != dds_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched subscriptions: dds_rc=%d", dds_rc)
+    return RMW_RET_ERROR;
+  }
+
+  dds_rc =
+    DDS_DataReader_get_matched_publications(this->reply_sub->reader(), &matched_rep_pubs);
+  if (DDS_RETCODE_OK != dds_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched publications: dds_rc=%d", dds_rc)
+    return RMW_RET_ERROR;
+  }
+
+  const DDS_Long subs_len = DDS_InstanceHandleSeq_get_length(&matched_req_subs),
+    pubs_len = DDS_InstanceHandleSeq_get_length(&matched_rep_pubs);
+
+  for (DDS_Long i = 0; i < subs_len && !available; i++) {
+    DDS_InstanceHandle_t * const sub_ih =
+      DDS_InstanceHandleSeq_get_reference(&matched_req_subs, i);
+
+    for (DDS_Long j = 0; j < pubs_len && !available; j++) {
+      DDS_InstanceHandle_t * const pub_ih =
+        DDS_InstanceHandleSeq_get_reference(&matched_rep_pubs, j);
+      available = DDS_InstanceHandle_compare_prefix(sub_ih, pub_ih) == 0;
+    }
+  }
+
   return RMW_RET_OK;
 }
 

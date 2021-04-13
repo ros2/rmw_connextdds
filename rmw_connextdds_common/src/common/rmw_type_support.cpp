@@ -538,8 +538,25 @@ RMW_Connext_MessageTypeSupport::get_type_support_fastrtps(
     get_message_typesupport_handle(
     type_supports, RMW_FASTRTPS_CPP_TYPESUPPORT_C);
   if (nullptr == type_support) {
+    // Reset error string since this is not (yet) an error
+    // (see https://github.com/ros2/rosidl_typesupport/pull/102)
+    rcutils_error_string_t prev_error_string = rcutils_get_error_string();
+    rcutils_reset_error();
+
     type_support = get_message_typesupport_handle(
       type_supports, RMW_FASTRTPS_CPP_TYPESUPPORT_CPP);
+    if (nullptr == type_support) {
+      rcutils_error_string_t error_string = rcutils_get_error_string();
+      rcutils_reset_error();
+
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to load required fastrtps message type support. \n"
+        "Received these errors:\n"
+        "C: '%s'\n"
+        "CPP: '%s'",
+        prev_error_string.str,
+        error_string.str);
+    }
   }
   return type_support;
 }
@@ -553,12 +570,28 @@ RMW_Connext_MessageTypeSupport::get_type_support_intro(
     get_message_typesupport_handle(
     type_supports, rosidl_typesupport_introspection_c__identifier);
   if (nullptr == type_support) {
+    // Reset error string since this is not (yet) an error
+    // (see https://github.com/ros2/rosidl_typesupport/pull/102)
+    rcutils_error_string_t prev_error_string = rcutils_get_error_string();
+    rcutils_reset_error();
+
     type_support =
       get_message_typesupport_handle(
       type_supports,
       rosidl_typesupport_introspection_cpp::typesupport_identifier);
     if (nullptr != type_support) {
       cpp_version = true;
+    } else {
+      rcutils_error_string_t error_string = rcutils_get_error_string();
+      rcutils_reset_error();
+
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to load required introspection message type support. \n"
+        "Received these errors:\n"
+        "C: '%s'\n"
+        "CPP: '%s'",
+        prev_error_string.str,
+        error_string.str);
     }
   } else {
     cpp_version = false;
@@ -676,12 +709,28 @@ RMW_Connext_ServiceTypeSupportWrapper::get_type_support_intro(
     type_supports, rosidl_typesupport_introspection_c__identifier);
 
   if (nullptr == type_support) {
+    // Reset error string since this is not (yet) an error
+    // (see https://github.com/ros2/rosidl_typesupport/pull/102)
+    rcutils_error_string_t prev_error_string = rcutils_get_error_string();
+    rcutils_reset_error();
+
     type_support =
       get_service_typesupport_handle(
       type_supports,
       rosidl_typesupport_introspection_cpp::typesupport_identifier);
     if (nullptr != type_support) {
       cpp_version = true;
+    } else {
+      rcutils_error_string_t error_string = rcutils_get_error_string();
+      rcutils_reset_error();
+
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to load required introspection service type support. \n"
+        "Received these errors:\n"
+        "C: '%s'\n"
+        "CPP: '%s'",
+        prev_error_string.str,
+        error_string.str);
     }
   }
 
@@ -697,8 +746,26 @@ RMW_Connext_ServiceTypeSupportWrapper::get_type_support_fastrtps(
     type_supports, RMW_FASTRTPS_CPP_TYPESUPPORT_C);
 
   if (nullptr == type_support) {
+    // Reset error string since this is not (yet) an error
+    // (see https://github.com/ros2/rosidl_typesupport/pull/102)
+    rcutils_error_string_t prev_error_string = rcutils_get_error_string();
+    rcutils_reset_error();
+
     type_support = get_service_typesupport_handle(
       type_supports, RMW_FASTRTPS_CPP_TYPESUPPORT_CPP);
+
+    if (nullptr == type_support) {
+      rcutils_error_string_t error_string = rcutils_get_error_string();
+      rcutils_reset_error();
+
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to load required fastrtps service type support. \n"
+        "Received these errors:\n"
+        "C: '%s'\n"
+        "CPP: '%s'",
+        prev_error_string.str,
+        error_string.str);
+    }
   }
 
   return type_support;

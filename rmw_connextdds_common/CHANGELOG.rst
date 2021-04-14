@@ -2,6 +2,21 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use rmw_qos_profile_unknown when adding entity to graph (`#28 <https://github.com/rticommunity/rmw_connextdds/issues/28>`_)
+* Resolve issues identified while investigating `#21 <https://github.com/rticommunity/rmw_connextdds/issues/21>`_ (`#22 <https://github.com/rticommunity/rmw_connextdds/issues/22>`_)
+* Use Rolling in README's Quick Start
+* Improved implementation of client::is_service_available for Connext Pro
+* Only add request header to typecode with Basic req/rep profile
+* Remove commented/unused code
+* Avoid topic name validation in get_info functions
+* Reduce shutdown period to 10ms
+* Pass HistoryQosPolicy to graph cache
+* Reset error string after looking up type support
+* Remove DDS-based WaitSet implementation
+* Contributors: Andrea Sorbini, Ivan Santiago Paunovic
+
 0.5.0 (2021-04-06)
 ------------------
 * Merge pull request `#13 <https://github.com/rticommunity/rmw_connextdds/issues/13>`_ from Ericsson/unique_network_flows

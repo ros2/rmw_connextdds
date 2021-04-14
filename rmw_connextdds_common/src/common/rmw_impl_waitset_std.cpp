@@ -641,10 +641,6 @@ RMW_Connext_SubscriberStatusCondition::has_status(
       {
         return this->triggered_deadline;
       }
-    case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
-      {
-        return this->triggered_qos;
-      }
     default:
       {
         RMW_CONNEXT_ASSERT(0)
@@ -797,10 +793,6 @@ RMW_Connext_PublisherStatusCondition::has_status(
     case RMW_EVENT_OFFERED_DEADLINE_MISSED:
       {
         return this->triggered_deadline;
-      }
-    case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
-      {
-        return this->triggered_qos;
       }
     default:
       RMW_CONNEXT_ASSERT(0)

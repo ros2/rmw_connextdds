@@ -683,7 +683,7 @@ void RMW_Connext_MessageTypeSupport::type_info(
 
   unbounded = !full_bounded;
 
-  if (unbounded && serialized_size_max == 0) {
+  if (full_bounded && serialized_size_max == 0) {
     /* Empty message */
     empty = true;
     serialized_size_max = 1;

@@ -538,19 +538,6 @@ rmw_api_connextdds_get_publishers_info_by_topic(
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(publishers_info, RMW_RET_INVALID_ARGUMENT);
 
-  int validation_result = RMW_TOPIC_VALID;
-  rmw_ret_t ret =
-    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
-  if (RMW_RET_OK != ret) {
-    return ret;
-  }
-  if (RMW_TOPIC_VALID != validation_result) {
-    const char * reason =
-      rmw_full_topic_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
-    return RMW_RET_INVALID_ARGUMENT;
-  }
-
   RCUTILS_CHECK_ALLOCATOR_WITH_MSG(
     allocator, "allocator argument is invalid", return RMW_RET_INVALID_ARGUMENT);
 
@@ -592,19 +579,6 @@ rmw_api_connextdds_get_subscriptions_info_by_topic(
   RMW_CHECK_ARGUMENT_FOR_NULL(allocator, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(topic_name, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_ARGUMENT_FOR_NULL(subscriptions_info, RMW_RET_INVALID_ARGUMENT);
-
-  int validation_result = RMW_TOPIC_VALID;
-  rmw_ret_t ret =
-    rmw_validate_full_topic_name(topic_name, &validation_result, nullptr);
-  if (RMW_RET_OK != ret) {
-    return ret;
-  }
-  if (RMW_TOPIC_VALID != validation_result) {
-    const char * reason =
-      rmw_full_topic_name_validation_result_string(validation_result);
-    RMW_CONNEXT_LOG_ERROR_A_SET("invalid topic name: %s", reason)
-    return RMW_RET_INVALID_ARGUMENT;
-  }
 
   RCUTILS_CHECK_ALLOCATOR_WITH_MSG(
     allocator, "allocator argument is invalid", return RMW_RET_INVALID_ARGUMENT);

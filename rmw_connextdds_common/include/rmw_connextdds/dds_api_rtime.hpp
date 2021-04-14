@@ -66,4 +66,8 @@ struct DDS_LifespanQosPolicy;
 // the guid with 0's.
 #define DDS_SampleIdentity_UNKNOWN      DDS_SAMPLE_IDENTITY_UNKNOWN
 
+// Convenience function to compare the first 12 bytes of the handle
+#define DDS_InstanceHandle_compare_prefix(ih_a_, ih_b_) \
+  memcmp((ih_a_)->octet, (ih_b_)->octet, 12)
+
 #endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

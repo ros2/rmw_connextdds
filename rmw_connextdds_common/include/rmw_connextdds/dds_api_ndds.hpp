@@ -41,4 +41,8 @@ typedef RMW_Connext_Uint8ArrayPtrSeq RMW_Connext_UntypedSampleSeq;
 // the guid with 0's.
 #define DDS_SampleIdentity_UNKNOWN      DDS_SAMPLEIDENTITY_DEFAULT
 
+// Convenience function to compare the first 12 bytes of the handle
+#define DDS_InstanceHandle_compare_prefix(ih_a_, ih_b_) \
+  memcmp((ih_a_)->keyHash.value, (ih_b_)->keyHash.value, 12)
+
 #endif  // RMW_CONNEXTDDS__DDS_API_NDDS_HPP_

@@ -740,7 +740,7 @@ rmw_connextdds_graph_add_entityEA(
   rmw_connextdds_guid_to_gid(*endp_guid, gid);
   rmw_connextdds_guid_to_gid(*dp_guid, dp_gid);
 
-  rmw_qos_profile_t qos_profile = rmw_qos_profile_default;
+  rmw_qos_profile_t qos_profile = rmw_qos_profile_unknown;
 
   if (RMW_RET_OK !=
     rmw_connextdds_readerwriter_qos_to_ros(

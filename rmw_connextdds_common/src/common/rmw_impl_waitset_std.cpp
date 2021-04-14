@@ -526,7 +526,7 @@ RMW_Connext_WaitSet::wait(
         return self->on_condition_active(subs, gcs, srvs, cls, evs);
       };
 
-    if (nullptr == wait_timeout || rmw_time_equal(*wait_timeout, RMW_DURATION_INFINITE)) {
+    if (nullptr == wait_timeout) {
       this->condition.wait(lock, on_condition_active);
     } else if (wait_timeout->sec > 0 || wait_timeout->nsec > 0) {
       auto n = std::chrono::duration_cast<std::chrono::nanoseconds>(

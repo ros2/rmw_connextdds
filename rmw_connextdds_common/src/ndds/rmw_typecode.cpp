@@ -257,8 +257,8 @@ GUID_get_typecode(
   tc_member->type = tc_octet_array;
 
   DDS_TypeCode * const tc_guid =
-    DDS_TypeCodeFactory_create_struct_tc(
-    tc_factory, "DDS_GUID_t", &tc_guid_members, &ex);
+    DDS_TypeCodeFactory_create_struct_tc_ex(
+    tc_factory, "DDS_GUID_t", DDS_FINAL_EXTENSIBILITY, &tc_guid_members, &ex);
   if (nullptr == tc_guid || DDS_NO_EXCEPTION_CODE != ex) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create TypeCode for DDS_GUID_t: %d", ex)
@@ -330,8 +330,8 @@ SequenceNumber_get_typecode(
   tc_member->type = &DDS_g_tc_ulong;
 
   DDS_TypeCode * const tc_sn =
-    DDS_TypeCodeFactory_create_struct_tc(
-    tc_factory, "DDS_SequenceNumber_t", &tc_sn_members, &ex);
+    DDS_TypeCodeFactory_create_struct_tc_ex(
+    tc_factory, "DDS_SequenceNumber_t", DDS_FINAL_EXTENSIBILITY, &tc_sn_members, &ex);
   if (nullptr == tc_sn || DDS_NO_EXCEPTION_CODE != ex) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create TypeCode for DDS_SequenceNumber_t: %d", ex)
@@ -408,8 +408,8 @@ SampleIdentity_get_typecode(
   tc_member->type = tc_sn;
 
   DDS_TypeCode * const tc_sampleid =
-    DDS_TypeCodeFactory_create_struct_tc(
-    tc_factory, "DDS_SampleIdentity_t", &tc_sampleid_members, &ex);
+    DDS_TypeCodeFactory_create_struct_tc_ex(
+    tc_factory, "DDS_SampleIdentity_t", DDS_FINAL_EXTENSIBILITY, &tc_sampleid_members, &ex);
   if (nullptr == tc_sampleid || DDS_NO_EXCEPTION_CODE != ex) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create TypeCode for DDS_SampleIdentity_t: %d", ex)
@@ -499,8 +499,8 @@ RequestHeader_get_typecode(
   tc_member->type = tc_instancename;
 
   DDS_TypeCode * const tc_reqheader =
-    DDS_TypeCodeFactory_create_struct_tc(
-    tc_factory, "RequestHeader", &tc_reqheader_members, &ex);
+    DDS_TypeCodeFactory_create_struct_tc_ex(
+    tc_factory, "RequestHeader", DDS_FINAL_EXTENSIBILITY, &tc_reqheader_members, &ex);
   if (nullptr == tc_reqheader || DDS_NO_EXCEPTION_CODE != ex) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create TypeCode for RequestHeader: %d", ex)
@@ -577,8 +577,8 @@ ReplyHeader_get_typecode(
   tc_member->type = &DDS_g_tc_long;
 
   DDS_TypeCode * const tc_repheader =
-    DDS_TypeCodeFactory_create_struct_tc(
-    tc_factory, "ReplyHeader", &tc_repheader_members, &ex);
+    DDS_TypeCodeFactory_create_struct_tc_ex(
+    tc_factory, "ReplyHeader", DDS_FINAL_EXTENSIBILITY, &tc_repheader_members, &ex);
   if (nullptr == tc_repheader || DDS_NO_EXCEPTION_CODE != ex) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create TypeCode for ReplyHeader: %d", ex)
@@ -658,8 +658,8 @@ CycloneRequestHeader_get_typecode(
   tc_member->type = tc_ulonglong;
 
   DDS_TypeCode * const tc_cycloneheader =
-    DDS_TypeCodeFactory_create_struct_tc(
-    tc_factory, "ReplyHeader", &tc_cycloneheader_members, &ex);
+    DDS_TypeCodeFactory_create_struct_tc_ex(
+    tc_factory, "ReplyHeader", DDS_FINAL_EXTENSIBILITY, &tc_cycloneheader_members, &ex);
   if (nullptr == tc_cycloneheader || DDS_NO_EXCEPTION_CODE != ex) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create TypeCode for CycloneRequestHeader: %d", ex)
@@ -1157,8 +1157,8 @@ rmw_connextdds_create_typecode(
 
   DDS_ExceptionCode_t ex = DDS_NO_EXCEPTION_CODE;
   DDS_TypeCode * tc =
-    DDS_TypeCodeFactory_create_struct_tc(
-    tc_factory, type_name, &tc_members, &ex);
+    DDS_TypeCodeFactory_create_struct_tc_ex(
+    tc_factory, type_name, DDS_FINAL_EXTENSIBILITY, &tc_members, &ex);
   if (nullptr == tc) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create type code for %s",

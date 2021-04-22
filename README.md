@@ -294,6 +294,9 @@ options will be modified.
 If the variable is set to `never`, then no settings will be modified and the
 DomainParticipantQos will be used as is.
 
+Note that values `basic` and `never` will disable the same endpoint discovery
+optimizations controlled by [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY).
+
 ### RMW_CONNEXT_REQUEST_REPLY_MAPPING
 
 The [DDS-RPC specification](https://www.omg.org/spec/DDS-RPC/About-DDS-RPC/)

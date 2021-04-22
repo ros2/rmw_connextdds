@@ -153,6 +153,7 @@ variables.
 - [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_INITIAL_PEERS](#RMW_CONNEXT_INITIAL_PEERS)
 - [RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE](#RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE)
+- [RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#RMW_CONNEXT_REQUEST_REPLY_MAPPING)
 - [RMW_CONNEXT_UDP_INTERFACE](#RMW_CONNEXT_UDP_INTERFACE)
 - [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE)
@@ -275,6 +276,23 @@ a "compatibility" mode with these older implementation.
 In particular, when this mode is enabled, `rmw_connextdds` will revert to adding
 a suffix (`_`) to the end of the names of the attributes of the ROS2 data types
 propagated via DDS discovery.
+
+### RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY
+
+Control how `rmw_connextdds` will override the default DomainParticipantQos obtained
+from Connext.
+
+If this variable is unspecified, or set to `all`, then `rmw_connextdds` will modify
+the default DomainParticipantQos with settings derived from ROS 2 options (e.g.
+"localhost only", or "node enclave"), and some additional optimizations meant to
+improve the out of the box experiene (e.g. speed up endpoint discovery, and increase
+the size of type information shared via discovery).
+
+If the variable is set to `basic`, then only those settings associated with ROS 2
+options will be modified.
+
+If the variable is set to `never`, then no settings will be modified and the
+DomainParticipantQos will be used as is.
 
 ### RMW_CONNEXT_REQUEST_REPLY_MAPPING
 

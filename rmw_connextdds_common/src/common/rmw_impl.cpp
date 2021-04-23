@@ -19,6 +19,8 @@
 #include <vector>
 #include <stdexcept>
 
+#include "rmw_dds_common/time_utils.hpp"
+
 #include "rmw_connextdds/graph_cache.hpp"
 
 #define ROS_SERVICE_REQUESTER_PREFIX_STR "rq"
@@ -244,6 +246,34 @@ dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id)
   return RMW_QOS_POLICY_INVALID;
 }
 
+static
+DDS_Duration_t
+rmw_time_to_dds_duration(const rmw_time_t & time)
+{
+  if (rmw_time_equal(time, RMW_DURATION_INFINITE)) {
+    return DDS_DURATION_INFINITE;
+  }
+  // Use rmw_dds_common::clamp_rmw_time_to_dds_time() to make sure value doesn't
+  // exceed the valid domain for DDS_Duration_t.
+  const rmw_time_t ctime = rmw_dds_common::clamp_rmw_time_to_dds_time(time);
+  DDS_Duration_t duration;
+  duration.sec = static_cast<DDS_Long>(ctime.sec);
+  duration.nanosec = static_cast<DDS_UnsignedLong>(ctime.nsec);
+  return duration;
+}
+
+static
+rmw_time_t
+dds_duration_to_rmw_time(const DDS_Duration_t & duration)
+{
+  if (DDS_Duration_is_infinite(&duration)) {
+    return RMW_DURATION_INFINITE;
+  }
+  assert(duration.sec > 0);
+  rmw_time_t result = {static_cast<uint64_t>(duration.sec), duration.nanosec};
+  return result;
+}
+
 rmw_ret_t
 rmw_connextdds_get_readerwriter_qos(
   const bool writer_qos,
@@ -360,21 +390,13 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-  if (qos_policies->deadline.sec != 0 || qos_policies->deadline.nsec != 0) {
-    deadline->period.sec =
-      static_cast<DDS_Long>(qos_policies->deadline.sec);
-    deadline->period.nanosec =
-      static_cast<DDS_UnsignedLong>(qos_policies->deadline.nsec);
+  if (!rmw_time_equal(qos_policies->deadline, RMW_DURATION_UNSPECIFIED)) {
+    deadline->period = rmw_time_to_dds_duration(qos_policies->deadline);
   }
 
-  if (qos_policies->liveliness_lease_duration.sec != 0 ||
-    qos_policies->liveliness_lease_duration.nsec != 0)
-  {
-    liveliness->lease_duration.sec =
-      static_cast<DDS_Long>(qos_policies->liveliness_lease_duration.sec);
-    liveliness->lease_duration.nanosec =
-      static_cast<DDS_UnsignedLong>(
-      qos_policies->liveliness_lease_duration.nsec);
+  if (!rmw_time_equal(qos_policies->liveliness_lease_duration, RMW_DURATION_UNSPECIFIED)) {
+    liveliness->lease_duration =
+      rmw_time_to_dds_duration(qos_policies->liveliness_lease_duration);
   }
 
   switch (qos_policies->liveliness) {
@@ -401,32 +423,16 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-  if (nullptr != lifespan &&
-    (qos_policies->lifespan.sec != 0 || qos_policies->lifespan.nsec != 0))
-  {
+  if (!rmw_time_equal(qos_policies->lifespan, RMW_DURATION_UNSPECIFIED)) {
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    lifespan->duration.sec = static_cast<DDS_Long>(qos_policies->lifespan.sec);
-    lifespan->duration.nanosec =
-      static_cast<DDS_UnsignedLong>(qos_policies->lifespan.nsec);
+    assert(nullptr != lifespan);
+    lifespan->duration = rmw_time_to_dds_duration(qos_policies->lifespan);
 #else
+    // Print a warning when lifespan is not supported but was customized by user.
+    assert(nullptr == lifespan);
     RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
 #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   }
-
-  // Make sure that resource limits are consistent with history qos
-  // TODO(asorbini): do not overwrite if using non-default QoS
-  // if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
-  //   history->depth > 1 &&
-  //   resource_limits->max_samples_per_instance == DDS_LENGTH_UNLIMITED)
-  // {
-  //   resource_limits->max_samples_per_instance = history->depth;
-  //   if (resource_limits->max_samples != DDS_LENGTH_UNLIMITED &&
-  //     resource_limits->max_samples < resource_limits->max_samples_per_instance)
-  //   {
-  //     resource_limits->max_samples =
-  //       resource_limits->max_samples_per_instance;
-  //   }
-  // }
 
   return RMW_RET_OK;
 }
@@ -501,13 +507,10 @@ rmw_connextdds_readerwriter_qos_to_ros(
       }
   }
 
-  qos_policies->deadline.sec = deadline->period.sec;
-  qos_policies->deadline.nsec = deadline->period.nanosec;
+  qos_policies->deadline = dds_duration_to_rmw_time(deadline->period);
 
-  qos_policies->liveliness_lease_duration.sec =
-    liveliness->lease_duration.sec;
-  qos_policies->liveliness_lease_duration.nsec =
-    liveliness->lease_duration.nanosec;
+  qos_policies->liveliness_lease_duration =
+    dds_duration_to_rmw_time(liveliness->lease_duration);
 
   switch (liveliness->kind) {
     case DDS_AUTOMATIC_LIVELINESS_QOS:
@@ -530,10 +533,11 @@ rmw_connextdds_readerwriter_qos_to_ros(
 
   if (nullptr != lifespan) {
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    qos_policies->lifespan.sec = lifespan->duration.sec;
-    qos_policies->lifespan.nsec = lifespan->duration.nanosec;
+    qos_policies->lifespan = dds_duration_to_rmw_time(lifespan->duration);
 #else
-    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
+    // Only emit a debug message in this case, since we don't want to pollute the
+    // output too much. We print a warning when going from ROS to DDS.
+    RMW_CONNEXT_LOG_DEBUG("lifespan qos policy not supported")
 #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   }
 

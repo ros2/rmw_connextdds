@@ -423,14 +423,18 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-  if (!rmw_time_equal(qos_policies->lifespan, RMW_DURATION_UNSPECIFIED)) {
+  // LifespanQosPolicy is a writer-only policy, so `lifespan` might be NULL.
+  // Micro does not support this policy, so the value will always be NULL.
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  assert(nullptr == lifespan);
+#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO */
+  if (lifespan != nullptr &&
+    !rmw_time_equal(qos_policies->lifespan, RMW_DURATION_UNSPECIFIED))
+  {
+    // Guard access to type since it's not defined by Micro (only forward declared
+    // by rmw_connextdds/dds_api_rtime.hpp)
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    assert(nullptr != lifespan);
     lifespan->duration = rmw_time_to_dds_duration(qos_policies->lifespan);
-#else
-    // Print a warning when lifespan is not supported but was customized by user.
-    assert(nullptr == lifespan);
-    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
 #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   }
 

@@ -95,7 +95,6 @@ rmw_connextdds_initialize_participant_qos(
     rmw_context_impl_t::participant_qos_override_policy_t::All &&
     DDS_StringSeq_get_length(&ctx->initial_peers) > 0)
   {
-    printf("custom peers!\n");
     if (!DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &ctx->initial_peers)) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to copy initial peers sequence")
       return RMW_RET_ERROR;

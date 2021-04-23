@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/5.3.1/rti_dds_qos_profiles.xsd" version="5.3.1">
+  <qos_library name="my_node">
+    <qos_profile name="Default" is_default_qos="true" base_name="rmw_connextdds::Default">
+      <datareader_qos topic_filter="rt/chatter">
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>10</depth>
+        </history>
+      </datareader_qos>
+      <datawriter_qos topic_filter="rt/chatter">
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>7</depth>
+        </history>
+      </datawriter_qos>
+    </qos_profile>
+  </qos_library>
+</dds>

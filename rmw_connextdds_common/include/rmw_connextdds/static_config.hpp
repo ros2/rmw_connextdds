@@ -285,6 +285,14 @@
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
 /******************************************************************************
+ * Modify DomainParticipantQos to allow sharing of DDS entities created with
+ * the Connext C API with applications using the C++11 API.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP
+#define RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP     1
+#endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
+
+/******************************************************************************
  * Override dds.transport.UDPv4.builtin.ignore_loopback_interface in
  * DomainParticipantQos to force communication over loopback (in addition to
  * other transports, e.g. shared memory).

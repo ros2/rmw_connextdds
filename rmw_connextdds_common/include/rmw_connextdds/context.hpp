@@ -89,6 +89,25 @@ struct rmw_context_impl_t
   bool optimize_large_data{true};
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
+  enum class participant_qos_override_policy_t
+  {
+    // Always override the default DomainParticipantQoS obtained at runtime from
+    // Connext with RMW-specific configuration. This will include settings derived
+    // from ROS 2 configuration parameters (e.g. "localhost_only", or "enclave"),
+    // but also some additional configurations that the RMW performs arbitrarly
+    // to improve the out of the box experience. Note that some of these customizations
+    // can also be disabled individually (e.g. fast endpoint discovery).
+    All,
+    // Only perform basic modifications on the default DomainParticipantQos value
+    // based on ROS 2 configuration parameters (e.g. "localhost only", and "enclave").
+    // All other RMW-specific customizations will not be applied.
+    Basic,
+    // Use the default DomainParticipantQoS returned by Connext without any modification.
+    Never,
+  };
+
+  participant_qos_override_policy_t participant_qos_override_policy;
+
   enum class endpoint_qos_override_policy_t
   {
     // Use default QoS policy got from the DDS qos profile file applying topic filters
@@ -105,6 +124,8 @@ struct rmw_context_impl_t
 
   endpoint_qos_override_policy_t endpoint_qos_override_policy;
   std::regex endpoint_qos_override_policy_topics_regex;
+
+  struct DDS_StringSeq initial_peers = DDS_SEQUENCE_INITIALIZER;
 
   /* Participant reference count*/
   size_t node_count{0};

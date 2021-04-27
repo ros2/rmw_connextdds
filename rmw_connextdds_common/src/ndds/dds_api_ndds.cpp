@@ -88,41 +88,43 @@ rmw_connextdds_initialize_participant_qos_impl(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos * const dp_qos)
 {
-  if (ctx->localhost_only) {
-    if (DDS_RETCODE_OK !=
-      DDS_PropertyQosPolicyHelper_assert_property(
-        &dp_qos->property,
-        "dds.transport.UDPv4.builtin.parent.allow_interfaces",
-        RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
-        DDS_BOOLEAN_FALSE /* propagate */))
-    {
-      RMW_CONNEXT_LOG_ERROR_A_SET(
-        "failed to assert property on participant: %s",
-        "dds.transport.UDPv4.builtin.parent.allow_interfaces")
-      return RMW_RET_ERROR;
-    }
+  switch (ctx->participant_qos_override_policy) {
+    case rmw_context_impl_t::participant_qos_override_policy_t::All:
+    case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
+      {
+        // Parse and apply QoS parameters derived from ROS 2 configuration options.
+
+        if (ctx->localhost_only) {
+          if (DDS_RETCODE_OK !=
+            DDS_PropertyQosPolicyHelper_assert_property(
+              &dp_qos->property,
+              "dds.transport.UDPv4.builtin.parent.allow_interfaces",
+              RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
+              DDS_BOOLEAN_FALSE /* propagate */))
+          {
+            RMW_CONNEXT_LOG_ERROR_A_SET(
+              "failed to assert property on participant: %s",
+              "dds.transport.UDPv4.builtin.parent.allow_interfaces")
+            return RMW_RET_ERROR;
+          }
+        }
+
+        break;
+      }
+    default:
+      {
+        // No customization of DomainParticipantQos request, return immediately.
+        RMW_CONNEXT_LOG_DEBUG("using default Connext's DomainParticipantQos")
+        return RMW_RET_OK;
+      }
   }
 
-#if RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE
-  // TODO(asorbini) Setting this property causes the middleware to send data
-  // over loopback, even if a better transport is available (e.g. shmem).
-  // This property is added to improve interoperability with other vendors.
-  // For this reason, it might be better to make this an optional behavior,
-  // based on an environment variable, and have the default not set it,
-  // to improve OOTB performance.
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &dp_qos->property,
-      "dds.transport.UDPv4.builtin.ignore_loopback_interface",
-      "0",
-      DDS_BOOLEAN_FALSE /* propagate */))
+  if (rmw_context_impl_t::participant_qos_override_policy_t::Basic ==
+    ctx->participant_qos_override_policy)
   {
-    RMW_CONNEXT_LOG_ERROR_SET(
-      "failed to assert property on participant: "
-      "dds.transport.UDPv4.builtin.ignore_loopback_interface")
-    return RMW_RET_ERROR;
+    RMW_CONNEXT_LOG_DEBUG("applied only ROS 2 configuration to DomainParticipantQos")
+    return RMW_RET_OK;
   }
-#endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
 
 #if RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID
   dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;

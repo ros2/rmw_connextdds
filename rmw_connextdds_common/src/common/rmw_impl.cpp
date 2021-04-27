@@ -1097,7 +1097,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   dds_topic_cft(dds_topic_cft),
   type_support(type_support),
   created_topic(created_topic),
-  status_condition(new RMW_Connext_SubscriberStatusCondition(dds_reader, ignore_local, internal)),
+  status_condition(dds_reader, ignore_local, internal),
   node(node),
   qos_policies(*qos_policies),
   subscriber_options(*subscriber_options)
@@ -1368,9 +1368,6 @@ RMW_Connext_Subscriber::finalize(const bool reset_cft)
     return RMW_RET_ERROR;
   }
 
-  // Make sure subscriber's condition is detached from any waitset
-  this->status_condition->invalidate();
-
   {
     std::lock_guard<std::mutex> lock(this->loan_mutex);
     if (this->loan_len > 0) {
@@ -1392,44 +1389,49 @@ RMW_Connext_Subscriber::finalize(const bool reset_cft)
   }
   this->dds_reader = nullptr;
 
-  if (!reset_cft) {
-    if (nullptr != this->dds_topic_cft) {
-      rmw_ret_t cft_rc = rmw_connextdds_delete_contentfilteredtopic(
-        this->ctx, participant, this->dds_topic_cft);
+  if (nullptr != this->dds_topic_cft) {
+    rmw_ret_t cft_rc = rmw_connextdds_delete_contentfilteredtopic(
+      this->ctx, participant, this->dds_topic_cft);
 
-      if (RMW_RET_OK != cft_rc) {
-        return cft_rc;
-      }
-      this->dds_topic_cft = nullptr;
+    if (RMW_RET_OK != cft_rc) {
+      return cft_rc;
     }
-
-    if (this->created_topic) {
-      DDS_Topic * const topic = this->dds_topic;
-
-      RMW_CONNEXT_LOG_DEBUG_A(
-        "deleting topic: name=%s",
-        DDS_TopicDescription_get_name(
-          DDS_Topic_as_topicdescription(topic)))
-
-      DDS_ReturnCode_t rc =
-        DDS_DomainParticipant_delete_topic(participant, topic);
-
-      if (DDS_RETCODE_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS Topic")
-        return RMW_RET_ERROR;
-      }
-    }
-
-    rmw_ret_t rc = RMW_Connext_MessageTypeSupport::unregister_type_support(
-      this->ctx, participant, this->type_support->type_name());
-
-    if (RMW_RET_OK != rc) {
-      return rc;
-    }
-
-    delete this->type_support;
-    this->type_support = nullptr;
+    this->dds_topic_cft = nullptr;
   }
+
+  // If we are finalizing the reader because we want to change its CFT settings
+  // we are done and can return without deleting the base topic.
+  if (reset_cft) {
+    return RMW_RET_OK;
+  }
+
+  if (this->created_topic) {
+    DDS_Topic * const topic = this->dds_topic;
+
+    RMW_CONNEXT_LOG_DEBUG_A(
+      "deleting topic: name=%s",
+      DDS_TopicDescription_get_name(
+        DDS_Topic_as_topicdescription(topic)))
+
+    DDS_ReturnCode_t rc =
+      DDS_DomainParticipant_delete_topic(participant, topic);
+
+    if (DDS_RETCODE_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS Topic")
+      return RMW_RET_ERROR;
+    }
+  }
+
+  rmw_ret_t rc = RMW_Connext_MessageTypeSupport::unregister_type_support(
+    this->ctx, participant, this->type_support->type_name());
+
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+
+  delete this->type_support;
+  this->type_support = nullptr;
+
   return RMW_RET_OK;
 }
 
@@ -1555,92 +1557,110 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
   RMW_CONNEXT_ASSERT(!this->internal)
   RMW_CONNEXT_ASSERT(nullptr != this->node)
 
-  rmw_ret_t ret;
-  std::lock_guard<std::mutex> lock(this->cft_mutex);
   const bool filter_expression_empty = (*filter_expression == '\0');
-  if (nullptr == this->dds_topic_cft && filter_expression_empty) {
+  const bool has_cft = nullptr != this->dds_topic_cft;
+  if (!has_cft && filter_expression_empty) {
     // allow to call set filter_expresson even if cft not exist
     RMW_CONNEXT_LOG_DEBUG("current subscriber has no content filter topic")
     return RMW_RET_OK;
-  } else if (nullptr != this->dds_topic_cft && !filter_expression_empty) {
+  } else if (has_cft && !filter_expression_empty) {
     // set filter expre if cft exist
     return rmw_connextdds_set_cft_filter_expression(
       this->dds_topic_cft, filter_expression, expression_parameters);
   }
 
-  DDS_DomainParticipant * const dp = this->dds_participant();
-  DDS_Subscriber * const sub = this->dds_subscriber();
-  DDS_TopicDescription * sub_topic = DDS_Topic_as_topicdescription(this->dds_topic);
-  std::string fqtopic_name = DDS_TopicDescription_get_name(sub_topic);
+  // At this point we are going to delete the current data reader, and replace it
+  // with a new one because either:
+  // - the current data reader is associated with a CFT and the user requested no CFT, or
+  // - the current data reader is not on a CFT and we must create one for it.
+  //
+  // Perform the actual swap of data reader using RMW_Connext_Condition::exec_when_detach()
+  // to make sure that it doesn't overlap with any concurrent WaitSet::wait() calls.
+  rmw_ret_t rc = RMW_RET_OK;
+  auto replace_reader = [this, has_cft, filter_expression, expression_parameters, &rc]() {
+      DDS_TopicDescription * topic_desc = DDS_Topic_as_topicdescription(this->dds_topic);
+      std::string fqtopic_name = DDS_TopicDescription_get_name(topic_desc);
 
-  // finalization to remove the old data reader
-  ret = this->finalize(true /* reset_cft */);
-  if (RMW_RET_OK != ret) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to finalize subscriber with resetting cft flag")
-    return ret;
-  }
+      rmw_ret_t ret = rmw_connextdds_graph_on_subscriber_deleted(this->ctx, this->node, this);
+      if (RMW_RET_OK != ret) {
+        RMW_CONNEXT_LOG_ERROR("failed to update graph for old subscriber")
+        rc = ret;
+        return;
+      }
 
-  if (nullptr == this->dds_topic_cft) {
-    // create a new cft topic, and then use cft topic to create a new reader
-    std::string cft_topic_name =
-      fqtopic_name + ROS_CFT_TOPIC_NAME_INFIX + RMW_Connext_Subscriber::get_atomic_id();
+      // finalize old data reader, and delete existing CFT, don't delete base topic
+      ret = this->finalize(true /* reset_cft */);
+      if (RMW_RET_OK != ret) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize subscriber with resetting cft flag")
+        rc = ret;
+        return;
+      }
 
-    ret = rmw_connextdds_create_contentfilteredtopic(
-      this->ctx, dp, this->dds_topic, cft_topic_name.c_str(),
-      filter_expression,
-      expression_parameters, &sub_topic);
+      if (!has_cft) {
+        // create a new cft topic, and then use cft topic to create a new reader
+        std::string cft_topic_name =
+          fqtopic_name + ROS_CFT_TOPIC_NAME_INFIX + RMW_Connext_Subscriber::get_atomic_id();
 
-    if (RMW_RET_OK != ret) {
-      RMW_CONNEXT_LOG_ERROR("failed to create content filter topic")
-      return ret;
-    }
+        ret = rmw_connextdds_create_contentfilteredtopic(
+          this->ctx,
+          this->dds_participant(),
+          this->dds_topic,
+          cft_topic_name.c_str(),
+          filter_expression,
+          expression_parameters,
+          &this->dds_topic_cft);
 
-    this->dds_topic_cft = sub_topic;
-  } else {
-    // delete cft, and then use the existing parent topic to create a new reader
-    ret = rmw_connextdds_delete_contentfilteredtopic(
-      this->ctx, dp, this->dds_topic_cft);
+        if (RMW_RET_OK != ret) {
+          RMW_CONNEXT_LOG_ERROR("failed to create content filter topic")
+          rc = ret;
+          return;
+        }
 
-    if (RMW_RET_OK != ret) {
-      return ret;
-    }
-    this->dds_topic_cft = nullptr;
-  }
+        topic_desc = this->dds_topic_cft;
+      }
 
-  DDS_DataReader * dds_reader = RMW_Connext_Subscriber::initialize_datareader(
-    this->ctx,
-    dp,
-    sub,
-    fqtopic_name,
-    &this->qos_policies,
-    this->type_support,
-    &this->subscriber_options,
-    this->internal,
-    sub_topic);
+      this->dds_reader = RMW_Connext_Subscriber::initialize_datareader(
+        this->ctx,
+        this->dds_participant(),
+        this->dds_subscriber(),
+        fqtopic_name,
+        &this->qos_policies,
+        this->type_support,
+        &this->subscriber_options,
+        this->internal,
+        topic_desc);
 
-  if (nullptr == dds_reader) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS reader")
-    return RMW_RET_ERROR;
-  }
+      if (nullptr == this->dds_reader) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS reader")
+        rc = RMW_RET_ERROR;
+        return;
+      }
 
-  this->dds_reader = dds_reader;
+      ret = this->status_condition.update_reader(this->dds_reader);
+      if (RMW_RET_OK != ret) {
+        RMW_CONNEXT_LOG_ERROR("failed to update reader on status condition")
+        rc = ret;
+        return;
+      }
 
-  this->status_condition.reset(
-    new RMW_Connext_SubscriberStatusCondition(
-      this->dds_reader, this->ignore_local, this->internal));
-  rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
+      rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
 
-  ret = this->enable();
-  if (RMW_RET_OK != ret) {
-    RMW_CONNEXT_LOG_ERROR("failed to enable subscription")
-    return ret;
-  }
+      ret = this->enable();
+      if (RMW_RET_OK != ret) {
+        RMW_CONNEXT_LOG_ERROR("failed to enable subscription")
+        rc = ret;
+        return;
+      }
 
-  ret = rmw_connextdds_graph_on_subscriber_created(this->ctx, this->node, this);
-  if (RMW_RET_OK != ret) {
-    RMW_CONNEXT_LOG_ERROR("failed to update graph for subscriber")
-    return ret;
-  }
+      ret = rmw_connextdds_graph_on_subscriber_created(this->ctx, this->node, this);
+      if (RMW_RET_OK != ret) {
+        RMW_CONNEXT_LOG_ERROR("failed to update graph for new subscriber")
+        rc = ret;
+        return;
+      }
+    };
+
+  this->status_condition.exec_when_detached(replace_reader);
 
   return RMW_RET_OK;
 }
@@ -1650,14 +1670,21 @@ RMW_Connext_Subscriber::get_cft_expression_parameters(
   char ** const filter_expression,
   rcutils_string_array_t * const expression_parameters)
 {
-  std::lock_guard<std::mutex> lock(this->cft_mutex);
-  if (nullptr == this->dds_topic_cft) {
-    RMW_CONNEXT_LOG_ERROR_SET("this subscriber has not created a contentfilteredtopic")
-    return RMW_RET_ERROR;
-  }
+  rmw_ret_t rc = RMW_RET_OK;
 
-  return rmw_connextdds_get_cft_filter_expression(
-    this->dds_topic_cft, filter_expression, expression_parameters);
+  auto get_params = [this, filter_expression, expression_parameters, &rc]() {
+      if (nullptr == this->dds_topic_cft) {
+        RMW_CONNEXT_LOG_ERROR_SET("this subscriber has not created a contentfilteredtopic")
+        rc = RMW_RET_ERROR;
+        return;
+      }
+      rc = rmw_connextdds_get_cft_filter_expression(
+        this->dds_topic_cft, filter_expression, expression_parameters);
+    };
+
+  this->status_condition.update_state(get_params, false /* notify */);
+
+  return rc;
 }
 
 rmw_ret_t
@@ -1704,7 +1731,7 @@ RMW_Connext_Subscriber::return_messages()
   this->loan_len = 0;
   this->loan_next = 0;
 
-  rc = this->status_condition->set_data_available(false);
+  rc = this->status_condition.set_data_available(false);
   if (RMW_RET_OK != rc) {
     rc_result = rc;
   }

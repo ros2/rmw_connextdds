@@ -83,12 +83,29 @@ public:
     bool & already_active,
     FunctorT && check_trigger)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    // Concurrent waits should already be avoided by WaitSet::wait() and
+    // by the fact that a condition (or rather, its associated "waitable") should
+    // not be passed to more than one WaitSet at a time.
+    RMW_CONNEXT_ASSERT(nullptr == this->waitset_mutex)
+
+    std::unique_lock<std::mutex> lock(this->mutex_internal);
+
+    // Make sure that there are not concurrent calls to exec_when_detached()
+    if (this->in_ea) {
+      this->detached_condition.wait(
+        lock, [this]() {
+          return !this->in_ea;
+        });
+    }
+
     already_active = check_trigger();
     if (!already_active) {
       this->waitset_mutex = waitset_mutex;
       this->waitset_condition = waitset_condition;
     }
+
+    this->in_ea = true;
+    this->detached_condition.notify_one();
   }
 
   template<typename FunctorT>
@@ -99,6 +116,8 @@ public:
     this->waitset_mutex = nullptr;
     this->waitset_condition = nullptr;
     on_detached();
+    this->in_ea = false;
+    this->detached_condition.notify_one();
   }
 
   virtual bool owns(DDS_Condition * const cond) = 0;
@@ -121,10 +140,39 @@ public:
     }
   }
 
+  template<typename FunctorT>
+  void
+  exec_when_detached(FunctorT && on_detached)
+  {
+    std::unique_lock<std::mutex> lock(this->mutex_internal);
+
+    // Wait on internal condition variable for a state transition to detached
+    if (this->in_ea) {
+      this->detached_condition.wait(
+        lock, [this]() {
+          return !this->in_ea;
+        });
+    }
+    this->in_ea = true;
+    lock.unlock();
+
+    // This code is guaranteed to run outside of a WaitSet::wait() but not inside
+    // the condition's internal mutex, to avoid potential deadlocks in on_detached()
+    on_detached();
+
+    lock.lock();
+    this->in_ea = false;
+
+    // Notify detached_condition in case there were other threads waiting on it
+    this->detached_condition.notify_one();
+  }
+
 protected:
   std::mutex mutex_internal;
   std::mutex * waitset_mutex;
   std::condition_variable * waitset_condition;
+  std::condition_variable detached_condition;
+  bool in_ea{false};
 
   static rmw_ret_t
   _attach(
@@ -244,7 +292,6 @@ public:
     DDS_Entity * const entity)
   : scond(DDS_Entity_get_statuscondition(entity))
   {
-    this->scond = DDS_Entity_get_statuscondition(entity);
     if (nullptr == this->scond) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS entity's condition")
       throw new std::runtime_error("failed to get DDS entity's condition");
@@ -710,6 +757,29 @@ public:
       }, false /* notify */);
 
     return RMW_RET_OK;
+  }
+
+  rmw_ret_t
+  update_reader(DDS_DataReader * const dds_reader)
+  {
+    rmw_ret_t rc = RMW_RET_OK;
+    update_state(
+      [this, dds_reader, &rc]() {
+        this->status_deadline_last = DDS_RequestedDeadlineMissedStatus_INITIALIZER;
+        this->status_qos_last = DDS_RequestedIncompatibleQosStatus_INITIALIZER;
+        this->status_liveliness_last = DDS_LivelinessChangedStatus_INITIALIZER;
+        this->status_sample_lost_last = DDS_SampleLostStatus_INITIALIZER;
+        // Update cached StatusCondition even though this function should never
+        // be called on an internal reader (which are the only one that use the
+        // cached StatusCondition to attach it to an actual DDS_WaitSet).
+        this->scond = DDS_Entity_get_statuscondition(DDS_DataReader_as_entity(dds_reader));
+        if (nullptr == this->scond) {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS entity's condition")
+          rc = RMW_RET_ERROR;
+          return;
+        }
+      }, false /* notify */);
+    return rc;
   }
 
 protected:

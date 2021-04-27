@@ -354,7 +354,7 @@ public:
   RMW_Connext_SubscriberStatusCondition *
   condition()
   {
-    return this->status_condition.get();
+    return &this->status_condition;
   }
 
   const rmw_gid_t * gid() const
@@ -500,13 +500,12 @@ private:
   RMW_Connext_MessageTypeSupport * type_support;
   rmw_gid_t ros_gid;
   const bool created_topic;
-  std::shared_ptr<RMW_Connext_SubscriberStatusCondition> status_condition;
+  RMW_Connext_SubscriberStatusCondition status_condition;
   RMW_Connext_UntypedSampleSeq loan_data;
   DDS_SampleInfoSeq loan_info;
   size_t loan_len;
   size_t loan_next;
   std::mutex loan_mutex;
-  std::mutex cft_mutex;
   const rmw_node_t * const node;
   rmw_qos_profile_t qos_policies;
   rmw_subscription_options_t subscriber_options;

@@ -109,43 +109,6 @@ rmw_connextdds_initialize_participant_qos_impl(
           }
         }
 
-        const size_t user_data_len_in =
-          DDS_OctetSeq_get_length(&dp_qos->user_data.value);
-
-        if (user_data_len_in != 0) {
-          RMW_CONNEXT_LOG_WARNING(
-            "DomainParticipant's USER_DATA will be overwritten to "
-            "propagate node enclave")
-        }
-
-        const char * const user_data_fmt = "enclave=%s;";
-
-        const int user_data_len =
-          std::snprintf(
-          nullptr, 0, user_data_fmt, ctx->base->options.enclave) + 1;
-
-        if (!DDS_OctetSeq_ensure_length(
-            &dp_qos->user_data.value, user_data_len, user_data_len))
-        {
-          RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data length")
-          return RMW_RET_ERROR;
-        }
-
-        char * const user_data_ptr =
-          reinterpret_cast<char *>(
-          DDS_OctetSeq_get_contiguous_buffer(&dp_qos->user_data.value));
-
-        const int user_data_rc =
-          std::snprintf(
-          user_data_ptr,
-          user_data_len,
-          user_data_fmt,
-          ctx->base->options.enclave);
-
-        if (user_data_rc < 0 || user_data_rc != user_data_len - 1) {
-          RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data")
-          return RMW_RET_ERROR;
-        }
         break;
       }
     default:

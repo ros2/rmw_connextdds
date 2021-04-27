@@ -15,6 +15,10 @@
 #ifndef RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_
 #define RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include "rmw_connextdds/context.hpp"
 
 /******************************************************************************
@@ -70,9 +74,7 @@ class RMW_Connext_Condition
 {
 public:
   RMW_Connext_Condition()
-  : mutex_internal(),
-    waitset_mutex(nullptr),
-    waitset_condition(nullptr)
+  : mutex_internal()
   {}
 
   template<typename FunctorT>
@@ -86,18 +88,27 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
     already_active = check_trigger();
     if (!already_active) {
-      this->waitset_mutex = waitset_mutex;
-      this->waitset_condition = waitset_condition;
+      waitset_conditions.push_back({waitset_mutex, waitset_condition});
     }
   }
 
   template<typename FunctorT>
   void
-  detach(FunctorT && on_detached)
+  detach(
+    std::mutex * const waitset_mutex,
+    std::condition_variable * const waitset_condition,
+    FunctorT && on_detached)
   {
     std::lock_guard<std::mutex> lock(this->mutex_internal);
-    this->waitset_mutex = nullptr;
-    this->waitset_condition = nullptr;
+    auto it = std::find_if(
+      waitset_conditions.begin(),
+      waitset_conditions.end(),
+      [waitset_mutex, waitset_condition](const auto & cond) {
+        return cond.first == waitset_mutex && cond.second == waitset_condition;
+      });
+    if (it != waitset_conditions.end()) {
+      waitset_conditions.erase(it);
+    }
     on_detached();
   }
 
@@ -109,22 +120,20 @@ public:
   {
     std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
 
-    if (nullptr != this->waitset_mutex) {
-      std::lock_guard<std::mutex> lock(*this->waitset_mutex);
-      update_condition();
-    } else {
-      update_condition();
-    }
-
-    if (notify && nullptr != this->waitset_condition) {
-      this->waitset_condition->notify_one();
+    for (auto & cond : waitset_conditions) {
+      {
+        std::lock_guard<std::mutex> lock(*cond.first);
+        update_condition();
+      }
+      if (notify) {
+        cond.second->notify_one();
+      }
     }
   }
 
 protected:
   std::mutex mutex_internal;
-  std::mutex * waitset_mutex;
-  std::condition_variable * waitset_condition;
+  std::vector<std::pair<std::mutex *, std::condition_variable *>> waitset_conditions;
 
   static rmw_ret_t
   _attach(

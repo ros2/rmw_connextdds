@@ -356,6 +356,7 @@ RMW_Connext_WaitSet::detach(
       RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
       const bool data_available = sub->has_data();
       cond->detach(
+        &this->mutex_internal, &this->condition,
         [cond, subs, sub, &active_conditions, i, data_available]() {
           UNUSED_ARG(sub);
           cond->triggered_data = data_available;
@@ -378,6 +379,7 @@ RMW_Connext_WaitSet::detach(
       RMW_Connext_SubscriberStatusCondition * const cond = client->subscriber()->condition();
       const bool data_available = client->subscriber()->has_data();
       cond->detach(
+        &this->mutex_internal, &this->condition,
         [cond, cls, client, &active_conditions, i, data_available]() {
           UNUSED_ARG(client);
           cond->triggered_data = data_available;
@@ -400,6 +402,7 @@ RMW_Connext_WaitSet::detach(
       RMW_Connext_SubscriberStatusCondition * const cond = svc->subscriber()->condition();
       const bool data_available = svc->subscriber()->has_data();
       cond->detach(
+        &this->mutex_internal, &this->condition,
         [cond, srvs, svc, &active_conditions, i, data_available]() {
           UNUSED_ARG(svc);
           cond->triggered_data = data_available;
@@ -423,6 +426,7 @@ RMW_Connext_WaitSet::detach(
         auto sub = RMW_Connext_Event::subscriber(event);
         RMW_Connext_SubscriberStatusCondition * const cond = sub->condition();
         cond->detach(
+          &this->mutex_internal, &this->condition,
           [cond, evs, event, &active_conditions, i]() {
             if (!cond->has_status(event->event_type)) {
               evs->events[i] = nullptr;
@@ -437,6 +441,7 @@ RMW_Connext_WaitSet::detach(
         auto pub = RMW_Connext_Event::publisher(event);
         RMW_Connext_PublisherStatusCondition * const cond = pub->condition();
         cond->detach(
+          &this->mutex_internal, &this->condition,
           [cond, evs, event, &active_conditions, i]() {
             if (!cond->has_status(event->event_type)) {
               evs->events[i] = nullptr;
@@ -456,6 +461,7 @@ RMW_Connext_WaitSet::detach(
       RMW_Connext_GuardCondition * const gcond =
         reinterpret_cast<RMW_Connext_GuardCondition *>(gcs->guard_conditions[i]);
       gcond->detach(
+        &this->mutex_internal, &this->condition,
         [gcond, gcs, &active_conditions, i]() {
           bool triggered = gcond->trigger_value;
           gcond->trigger_value = false;

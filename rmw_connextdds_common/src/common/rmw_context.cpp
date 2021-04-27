@@ -772,13 +772,13 @@ rmw_api_connextdds_init(
     return RMW_RET_ERROR;
   }
 
-  rc = rmw_connextdds_parse_participant_qos_override_policy(
+  rmw_ret_t rc = rmw_connextdds_parse_participant_qos_override_policy(
     participant_qos_policy, ctx->participant_qos_override_policy);
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to parse value for environment variable {%s}",
       RMW_CONNEXT_ENV_PARTICIPANT_QOS_OVERRIDE_POLICY);
-    return RMW_RET_ERROR;
+    return rc;
   }
 
   // Check if the user specified a custom override policy for endpoint qos.

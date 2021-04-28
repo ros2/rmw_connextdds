@@ -88,6 +88,24 @@ rmw_connextdds_initialize_participant_qos_impl(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos * const dp_qos)
 {
+#if RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP
+  // UserObjectQosPolicy is an internal, undocumented Connext policy used by the
+  // implementations of different language bindings to control the memory
+  // representations of various objects created by user applications. In this
+  // case, the settings match the requirements of the "modern C++" API, and they
+  // allow the DomainParticipant to be used directly by applications that want
+  // to create new entities in C++11, even though the participant was created
+  // using the C API. If these settings are not specified, an application will
+  // receive a SIGSEGV when trying to create one of these entities.
+  //
+  // The customizations are always applied regardless of the QoS override policy
+  // because UserObjectQosPolicy cannot be modified from XML.
+  //
+  dp_qos->user_object.flow_controller_user_object.size = sizeof(void *);
+  dp_qos->user_object.topic_user_object.size = sizeof(void *);
+  dp_qos->user_object.content_filtered_topic_user_object.size = sizeof(void *);
+#endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
+
   switch (ctx->participant_qos_override_policy) {
     case rmw_context_impl_t::participant_qos_override_policy_t::All:
     case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
@@ -207,20 +225,6 @@ rmw_connextdds_initialize_participant_qos_impl(
     dp_qos->discovery_config.subscription_writer.max_heartbeat_retries = 300;
   }
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
-
-#if RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP
-  // UserObjectQosPolicy is an internal, undocumented Connext policy used by the
-  // implementations of different language bindings to control the memory
-  // representations of various objects created by user applications. In this
-  // case, the settings match the requirements of the "modern C++" API, and they
-  // allow the DomainParticipant to be used directly by applications that want
-  // to create new entities in C++11, even though the participant was created
-  // using the C API. If these settings are not specified, an application will
-  // receive a SIGSEGV when trying to create one of these entities.
-  dp_qos->user_object.flow_controller_user_object.size = sizeof(void *);
-  dp_qos->user_object.topic_user_object.size = sizeof(void *);
-  dp_qos->user_object.content_filtered_topic_user_object.size = sizeof(void *);
-#endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
 
   return RMW_RET_OK;
 }

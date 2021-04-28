@@ -217,7 +217,9 @@ for different topics, but you have to use the mangled topic names
 In case this variable is set to `never`, the QoS settings will be loaded from
 the default profile as before but the ros QoS profile will be ignored.
 Be aware of configuring the QoS of rcl topics (`rt/rosout`, `rt/parameter_events`,
-etc.) and the rmw internal topic `ros_discovery_info` correctly.
+etc.) and the rmw internal topic `ros_discovery_info` correctly. This can
+be achieved using the profiles defined by XML file [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml)
+(e.g. `ros2::rmw_connextdds.base_application`).
 
 This variable can also be set to `dds_topics: <regex>`, e.g.:
  `dds_topics: rt/my_topic|rt/my_ns/another_topic`.
@@ -296,6 +298,10 @@ DomainParticipantQos will be used as is.
 
 Note that values `basic` and `never` will disable the same endpoint discovery
 optimizations controlled by [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY).
+
+When using these values, you may replicate the default QoS configuration using
+the profiles defined by XML file [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml)
+(e.g. `ros2::rmw_connextdds.base_application`).
 
 ### RMW_CONNEXT_REQUEST_REPLY_MAPPING
 

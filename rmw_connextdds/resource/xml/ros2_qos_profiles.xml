@@ -162,8 +162,8 @@
       </datawriter_qos>
 
       <!-- Endpoints for topic "parameter_events" -->
-      <datareader_qos topic_filter="rq/*/parameter_events" base_name="rcl.node_parameters"/>
-      <datawriter_qos topic_filter="rq/*/parameter_events" base_name="rcl.node_parameters">
+      <datareader_qos topic_filter="rt/parameter_events" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rt/parameter_events" base_name="rcl.node_parameters">
         <publish_mode>
           <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
         </publish_mode>

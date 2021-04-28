@@ -1,0 +1,89 @@
+################################################################################
+# (c) 2021 Copyright, Real-Time Innovations, Inc. (RTI)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+#
+# This file was automatically generated from template
+# `rmw_connextdds/env_hook/rmw_connextdds_resources.sh.in`
+#
+# The script will perform the following environment customizations:
+#
+# - Extend variable NDDS_QOS_PROFILES to load `ros2_qos_profiles.xml`.
+#
+################################################################################
+
+################################################################################
+# Determine path to rmw_connextdds' share/ directory
+################################################################################
+_rmw_connextdds_find_sharedir()
+{
+  (
+    IFS=":"
+    for pfx_dir in ${AMENT_PREFIX_PATH}; do
+      sharedir="${pfx_dir}/share/rmw_connextdds"
+      if [ -d "${sharedir}" ]; then
+        cd "${sharedir}" && pwd
+        break
+      fi
+    done
+  )
+}
+
+_rmw_connextdds_dir="$(_rmw_connextdds_find_sharedir)"
+_rmw_connextdds_xml_dir="${_rmw_connextdds_dir}/xml"
+
+_ros2_qos_profiles="${_rmw_connextdds_xml_dir}/ros2_qos_profiles.xml"
+
+################################################################################
+# Update NDDS_QOS_PROFILES
+################################################################################
+_rmw_connextdds_append_profile()
+{
+  local already_added=$(
+    IFS=";"
+    for qos_profile_pfx in ${NDDS_QOS_PROFILES}; do
+      qos_profile="${qos_profile_pfx#file://}"
+      qos_profile_dir=$(dirname ${qos_profile})
+      qos_profile_name=$(basename ${qos_profile})
+      cd ${qos_profile_dir} || continue
+      if [ "$(pwd)" = "${_rmw_connextdds_xml_dir}" -a \
+        "${qos_profile_name}" = "ros2_qos_profiles.xml" ]; then
+        printf "%s" "${qos_profile}"
+        break;
+      fi
+    done
+  ) 2>/dev/null
+
+  if [ -z "${NDDS_QOS_PROFILES}" ]; then
+    export NDDS_QOS_PROFILES="file://${_ros2_qos_profiles}"
+  elif [ -z "${already_added}" ]; then
+    export NDDS_QOS_PROFILES="${NDDS_QOS_PROFILES};file://${_ros2_qos_profiles}"
+  fi
+}
+
+if [ ! -f "${_ros2_qos_profiles}" ]; then
+  printf "[@PROJECT_NAME@][WARNING] file ros2_qos_profiles.xml NOT FOUND\n" 1>&2
+  printf "[@PROJECT_NAME@][WARNING] Custom built-in QoS profiles will not be available, unless you manually load them into the enviroment with variable NDDS_QOS_PROFILES.\n" 1>&2
+else
+  _rmw_connextdds_append_profile
+fi
+
+################################################################################
+# Clean up environment
+################################################################################
+unset _rmw_connextdds_dir \
+      _rmw_connextdds_xml_dir \
+      _ros2_qos_profiles \
+      _rmw_connextdds_append_profile \
+      _rmw_connextdds_find_sharedir

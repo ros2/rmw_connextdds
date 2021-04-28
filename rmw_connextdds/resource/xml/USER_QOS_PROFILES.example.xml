@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/5.3.1/rti_dds_qos_profiles.xsd" version="5.3.1">
-  <qos_library name="my_node">
-    <qos_profile name="Default" is_default_qos="true" base_name="rmw_connextdds::Default">
+  <qos_library name="my_application">
+    <qos_profile name="MyProcess" is_default_qos="true" base_name="ros2::rmw_connextdds.base_application">
       <datareader_qos topic_filter="rt/chatter">
         <reliability>
           <kind>RELIABLE_RELIABILITY_QOS</kind>

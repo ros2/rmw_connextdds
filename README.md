@@ -24,16 +24,16 @@ For any questions or direct feedback, feel free to reach out to robotics@rti.com
 - [RTI Connext DDS Requirements](#rti-connext-dds-requirements)
   - [Multiple versions of RTI Connext DDS Professional](#multiple-versions-of-rti-connext-dds-professional)
 - [RMW Runtime Configuration](#rmw-runtime-configuration)
-  - [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#rmw-connext-cyclone-compatibility-mode)
-  - [RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS](#rmw-connext-disable-large-data-optimizations)
-  - [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#rmw-connext-disable-fast-endpoint-discovery)
-  - [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#rmw-connext-endpoint-qos-override-policy)
-  - [RMW_CONNEXT_INITIAL_PEERS](#rmw-connext-initial-peers)
-  - [RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE](#rmw-connext-legacy-rmw-compatibility-mode)
-  - [RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY](#rmw-connext-participant-qos-override-policy)
-  - [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#rmw-connext-request-reply-mapping)
-  - [RMW_CONNEXT_UDP_INTERFACE](#rmw-connext-udp-interface)
-  - [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#rmw-connext-use-default-publish-mode)
+  - [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#rmw_connext_cyclone_compatibility_mode)
+  - [RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS](#rmw_connext_disable_large_data_optimizations)
+  - [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#rmw_connext_disable_fast_endpoint_discovery)
+  - [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#rmw_connext_endpoint_qos_override_policy)
+  - [RMW_CONNEXT_INITIAL_PEERS](#rmw_connext_initial_peers)
+  - [RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE](#rmw_connext_legacy_rmw_compatibility_mode)
+  - [RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY](#rmw_connext_participant_qos_override_policy)
+  - [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#rmw_connext_request_reply_mapping)
+  - [RMW_CONNEXT_UDP_INTERFACE](#rmw_connext_udp_interface)
+  - [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#rmw_connext_use_default_publish_mode)
 - [DDS Quality of Service Configuration](#dds-quality-of-service-configuration)
   - [Customize QoS via XML](#customize-qos-via-xml)
   - [Customize DomainParticipant QoS](#customize-domainparticipant-qos)
@@ -896,7 +896,7 @@ to customize the QoS of the DomainParticipant from an external XML file:
 By default, `rmw_connextdds` will always overwrite certain fields of the default
 DomainParticipant QoS (see [DomainParticipant creation](#domainparticipant-creation)).
 These "hard-coded" customizations may be disabled using the "QoS override" policies
-selected with variable [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy).
+selected with variable [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw_connext_participant_qos_override_policy).
 
 The customization may also be replicated in XML by using the QoS profiles contained
 in [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml),
@@ -956,7 +956,7 @@ ovewritten with values coming from the ROS QoS profile.
 
 You can disable this behavior altogether or selectively for specific topics by
 selecting one of the alternative "QoS override" policies available via
-environment variable [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#rmw-connext-endpoint-qos-override-policy).
+environment variable [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#rmw_connext_endpoint_qos_override_policy).
 
 For example, after saving the XML file presented earlier as `./USER_QOS_PROFILES.xml`,
 it would be possible to run a `demo_nodes_cpp/talker` instance, and completely disable
@@ -1095,14 +1095,14 @@ Profile `ros2::rmw_connextdds.base_participant` models the DomainParticipan QoS
 settings used by `rmw_connextdds` to change some of Connext's "out of the box"
 QoS, and make it more amenable to use with ROS 2 applications.
 
-These settings are only applied by `rmw_connextdds` when [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy)
+These settings are only applied by `rmw_connextdds` when [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw_connext_participant_qos_override_policy)
 is either not set, or set to `all`.
 
 #### ros2::rmw_connextdds.base_application
 
 Use profile `ros2::rmw_connextdds.base_application` as the base profile when
-[`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw-connext-endpoint-qos-override-policy)
-is set to `never` and/or [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy) is set to a value other than `all`.
+[`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw_connext_endpoint_qos_override_policy)
+is set to `never` and/or [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw_connext_participant_qos_override_policy) is set to a value other than `all`.
 
 This profile will configure the DomainParticipant and all "built-in" endpoints with
 the same settings normally used by `rmw_connextdds`.
@@ -1126,7 +1126,7 @@ maximum serialized size of at least 1MB.
 The configuration is derived from Connext's built-in profile `Generic.KeepLastReliable.LargeData`.
 
 These optimizations are always applied by `rmw_connextdds` to all "qualified" endpoints,
-unless variable [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw-connext-disable-large-data-optimizations) is used to disabled them.
+unless variable [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw_connext_disable_large_data_optimizations) is used to disabled them.
 
 #### ros2::rmw_connextdds.opt.unbounded_data
 
@@ -1218,7 +1218,7 @@ operations will also be performed:
 - Register the default Writer History plugin.
 - Register the default Reader History plugin.
 - Unregister the UDP Transport plugin.
-- Configure the UDP Transport plugin to use the interface specified by [`RMW_CONNEXT_UDP_INTERFACE`](#rmw-connext-udp-interface).
+- Configure the UDP Transport plugin to use the interface specified by [`RMW_CONNEXT_UDP_INTERFACE`](#rmw_connext_udp_interface).
 - Re-register the UDP Transport plugin.
 - Register the Shared-memory Transport plugin.
 - Configure the DPDE Discovery plugin with the following settings:
@@ -1269,7 +1269,7 @@ Upon initialization of a context, the following operations will be performed:
 
 - Determine the default `DomainParticipantQoS` by calling
   [`DDS_DomainParticipantFactory_get_default_participant_qos()`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/group__DDSDomainParticipantFactoryModule.html#gaf85e5146fe9f1bd10e11fdf871f66c24).
-- In the case of `rmw_connextdds`,  based on [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy):
+- In the case of `rmw_connextdds`,  based on [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw_connext_participant_qos_override_policy):
   - Tune internal policy `DomainParticipantQos::user_object` to enable sharing of
     DomainParticipants created by `rmw_connextdds` with Connext's C API with C++ applications
     using Connext's C++11 API.
@@ -1293,7 +1293,7 @@ Upon initialization of a context, the following operations will be performed:
       to support propagation of "larger" types (i.e. consisting of many, possibly nested, members).
   - Reduce Connext's "shutdown period" to speed up finalization of a DomainParticipant.
     - Set [`DomainParticipantQos::database::shutdown_cleanup_period`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__DatabaseQosPolicy.html#a17dc46e4dd757576e6cc68487379f6fa) to 10ms.
-  - Enable quicker endpoint discovery (depending on [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#rmw-connext-disable-fast-endpoint-discovery)).
+  - Enable quicker endpoint discovery (depending on [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#rmw_connext_disable_fast_endpoint_discovery)).
     - Update [`DomainParticipantQos::discovery_config::publication_writer`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__DiscoveryConfigQosPolicy.html#a4dd350ea9eb8f9a2cae267bb5e019981):
       - Set `fast_heartbeat_period` to 100ms.
       - Set `late_joiner_heartbeat_period` to 100ms.
@@ -1528,10 +1528,10 @@ will perform the following operations:
   - Since XML-based configuration is not available with RTI Connext DDS Micro,
     `rmw_connextddsmicro` will fall back to [`DDS_Publisher_get_default_datawriter_qos()`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/group__DDSPublisherModule.html#ga777a869f4f8d435be23dea15f949f4bf).
 - In the case of `rmw_connextdds`:
-  - Based on [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw-connext-endpoint-qos-override-policy),
+  - Based on [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw_connext_endpoint_qos_override_policy),
     apply the ROS 2 QoS profile on top of the default QoS policy, and overwrite
     them unless the corresponding ROS 2 policies are set to `SYSTEM_DEFAULT`.
-  - Based on [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw-connext-disable-large-data-optimizations), and if the DataWriter's data type
+  - Based on [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw_connext_disable_large_data_optimizations), and if the DataWriter's data type
     qualifies as "large data", tune the RTPS reliability protocol settings to
     provide better "out of the box" behavior for these types by updating
     [`DataWriterQos::protocol.rtps_reliable_writer`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__DataWriterProtocolQosPolicy.html#a073f347f5d06730a44c411e5ce25fe6a):
@@ -1545,7 +1545,7 @@ will perform the following operations:
     - Set [`high_watermark`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__RtpsReliableWriterProtocol__t.html#a7dc8a8bb8168a5acc3041f8970e95665) to `10`.
     - Set [`low_watermark`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__RtpsReliableWriterProtocol__t.html#ab603712e435cc4369366afa770700b80) to `0`.
     - Set [`max_heartbeat_retries`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__RtpsReliableWriterProtocol__t.html#a5be67d978618b5995cb517b51231d39d) to `500` (10s @ 50Hz).
-  - Based on [`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE`](#rmw-connext-use-default-publish-mode),
+  - Based on [`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE`](#rmw_connext_use_default_publish_mode),
     overwrite `DataWriterQos::publish_mode::kind` to `ASYNCHRONOUS_PUBLISH_MODE`.
     - The "asynchronous publish mode" is required by RTI Connext DDS to publish data samples
       which require fragmentation because they exceed the underlying transport's MTU.
@@ -1632,10 +1632,10 @@ will perform the following operations:
   - Since XML-based configuration is not available with RTI Connext DDS Micro,
     `rmw_connextddsmicro` will fall back to [`DDS_Subscriber_get_default_datawriter_qos()`]().
 - In the case of `rmw_connextdds`:
-  - Based on [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw-connext-endpoint-qos-override-policy),
+  - Based on [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw_connext_endpoint_qos_override_policy),
     apply the ROS 2 QoS profile on top of the default QoS policy, and overwrite
     them unless the corresponding ROS 2 policies are set to `SYSTEM_DEFAULT`.
-  - Based on [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw-connext-disable-large-data-optimizations), and if the DataReader's data type
+  - Based on [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw_connext_disable_large_data_optimizations), and if the DataReader's data type
     qualifies as "large data", tune the RTPS reliability protocol settings to
     provide better "out of the box" behavior for these types.
     - Update [`DataReaderQos::protocol.rtps_reliable_reader`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__DataReaderProtocolQosPolicy.html#ac962c1b10fbf15c0a68d975f9e95d995):

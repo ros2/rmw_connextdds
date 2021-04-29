@@ -35,6 +35,7 @@ For any questions or feedback, feel free to reach out to robotics@rti.com.
   - [RMW_CONNEXT_UDP_INTERFACE](#rmw-connext-udp-interface)
   - [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#rmw-connext-use-default-publish-mode)
 - [DDS Quality of Service Configuration](#dds-quality-of-service-configuration)
+  - [Customize QoS via XML](#customize-qos-via-xml)
   - [Customize DomainParticipant QoS](#customize-domainparticipant-qos)
   - [Customize Endpoint QoS](#customize-endpoint-qos)
   - [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles)

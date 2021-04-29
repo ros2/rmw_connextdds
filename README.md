@@ -47,6 +47,11 @@ For any questions or direct feedback, feel free to reach out to robotics@rti.com
   - [Topic](#topic)
   - [DataWriter](#datawriter)
   - [DataReader](#datareader)
+- [RTI Connext DDS Documentation](#rti-connext-dds-documentation)
+- [Other RTI Connext DDS Resources](#other-rti-connext-dds-resources)
+  - [Free Trial](#free-trial)
+  - [RTI Community](#rti-community)
+  - [RTI Labs](#rti-labs)
 
 ## Quick Start
 
@@ -696,7 +701,7 @@ the value of several other policies which are not exposed by the ROS 2 API.
 For example, Connext's default settings controlling the heartbeat-based protocol
 performed between reliable readers and writers are not tuned for fast-paced
 communications and they might cause significant delays in the "repair" of samples
-missed by a reader. In this cae, it might be necessary to update parameters in
+missed by a reader. In this case, it might be necessary to update parameters in
 `DataWriterQos::protocol::reliable_writer` and `DataReadeQos::protocol::reliable_reader`
 to make applications using this type of communication more responsive.
 
@@ -1671,3 +1676,99 @@ using [`DDS_Subscriber_delete_datareader()`](https://community.rti.com/static/do
 
 See [Topic Deletion](#topic-deletion) for information on how the Topic associated
 with the DataReader will be disposed.
+
+## RTI Connext DDS Documentation
+
+RTI Connext DDS and other RTI products come with extensive documentation manuals
+and API references to guide users through the many available features and configuration options.
+
+All documentation is available online, and can be easily consulted using the
+links found in the [Documentation section of the RTI Community portal](https://community.rti.com/documentation).
+
+For quick reference, here's a list of useful documentation resources for
+ROS 2/DDS users:
+
+- **RTI Connext DDS** (6.0.1)
+  - [Getting Started Guide](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/getting_started/index.html)
+  - [Installation Guide](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/RTI_ConnextDDS_InstallationGuide.html)
+  - [Core Libraries User's Manual](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/RTI_ConnextDDS_CoreLibraries_UsersManual.html)
+  - [Core Libraries Release Notes](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/RTI_ConnextDDS_CoreLibraries_ReleaseNotes.html)
+  - [Core Libraries What's New](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/RTI_ConnextDDS_CoreLibraries_WhatsNew.html)
+  - [C API Reference](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/index.html)
+  - [C++11 API Reference](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_cpp2/index.html)
+  - [QoS Policy Reference Guide (cheat-sheet)](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/RTI_ConnextDDS_CoreLibraries_QoS_Reference_Guide.pdf)
+  - [Property Qos Policy Reference Guide (cheat-sheet)](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/property_qos_reference_guide/index.html)
+  - [Extensible Types Addendum](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/getting_started_extras/html_files/RTI_ConnextDDS_CoreLibraries_GettingStarted_ExtensibleAddendum/index.htm)
+  - [Migration Guide from 5.3.1 to 6.0.1](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/migration_guide/index.html)
+  - [Getting Started (video tutorials)](https://www.rti.com/gettingstarted)
+  - [RTI Tech Talks (YouTube)](https://www.youtube.com/channel/UChF68q4RQSEv-a-fmqMV9BA/videos)
+- **RTI Connext DDS Micro** (3.0.3)
+  - [User's Manual](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/html/usersmanual/index.html)
+  - [Release Notes](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/html/release/index.html)
+  - [C API Reference](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/index.html)
+  - [C++ API Reference](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_cpp/html/index.html)
+
+The portal also includes documentation for older versions of RTI Connext DDS,
+like [RTI Connext DDS 5.3.1](https://community.rti.com/documentation/rti-connext-dds-531), and going as far back as [RTI Connext DDS 4.5c](https://community.rti.com/documentation/rti-dds-45c).
+
+## Other RTI Connext DDS Resources
+
+Beside [documentation resources](#rti-connext-dds-documentation), RTI Connext DDS
+users have several other resources available at their disposal to receive
+help in using RTI Connext DDS, and to discover other tools in the RTI Connext DDS
+family that may prove useful during different phases of the development
+of their applications.
+
+### Free Trial
+
+RTI offers all users the ability to request a [free 30-day trial license](https://www.rti.com/free-trial), which will grant them access to a fully-functional version of Connext DDS and all of its many companion tools, such as [Admin Console](https://www.rti.com/products/tools/admin-console), [Routing Service](https://www.rti.com/products/is/routing-service),
+and the [Security Plugins](https://www.rti.com/products/connext-dds-secure).
+
+University researchers, professors, and other non-commercial programs may be 
+eligible for a free license. Plaese visit the [University Program](https://www.rti.com/free-trial/university-program) page for details.
+
+### RTI Community
+
+The [RTI Community](https://community.rti.com) portal is designed to be the
+first and main point of reference for any user of RTI Connext DDS and any other RTI-developed technology.
+
+Users may find help by posting questions in one of the available [forums](https://community.rti.com/forum), or explore a list of useful [ROS 2-related resources](https://community.rti.com/ros),
+such as technical articles, and webinar recordings.
+
+The portal includes a [documentation archive](https://community.rti.com/documentation) for all versions of RTI products (current and old).
+
+The portal also includes an extensive collection of [code examples](https://community.rti.com/examples), ["best practices"](https://community.rti.com/best-practices), ["HOWTOs"](https://community.rti.com/howto), and ["solutions"](https://community.rti.com/solutions) which users should
+refer to for learning more about the use of RTI Connext DDS, and to help with
+the troubleshooting of any issue.
+
+Finally, RTI Community provides [links to the download and project pages](https://community.rti.com/content/page/downloads) of many helpful tools which are
+free for use by RTI Connext DDS users, for example:
+
+- [nano-client](https://github.com/rticommunity/nano-client)
+- [nano-agent](https://github.com/rticommunity/nano-agent)
+- [rticonnextdds-connector](https://github.com/rticommunity/rticonnextdds-connector)
+- [rticonnextdds-examples](https://github.com/rticommunity/rticonnextdds-examples)
+- [rticonnextdds-gateway](https://github.com/rticommunity/rticonnextdds-gateway)
+- [rticonnextdds-usecases](https://github.com/rticommunity/rticonnextdds-usecases)
+- [RTI DDS Performance Test](https://community.rti.com/downloads/rti-connext-dds-performance-test)
+- [Wireshark for RTI Connext DDS](https://community.rti.com/downloads/rti-wireshark)
+
+### RTI Labs
+
+The [RTI Labs](https://www.rti.com/developers/rti-labs) portal offers early
+access to new technologies developed by RTI which are still in [early experimental and pre-productization stages](https://www.rti.com/developers/rti-labs/experimental-product-faq).
+
+The various projects listed on RTI Labs not only offer users an opportunity to
+try new technologies, but they also allow anyone to provide feedback via the [RTI Community forums](https://community.rti.com/forum) and influence RTI's
+future product roadmap.
+
+Please refer to the [RTI Labs](https://www.rti.com/developers/rti-labs) page for 
+an always up-to-date list of all latest projects.
+
+The following is a list of some projects which might be of particular interest
+to ROS 2/DDS users:
+
+- [RTI System Designer](https://www.rti.com/developers/rti-labs/manage-complexity-and-simplify-configuration-with-system-designer)
+- [RTI Python API](https://www.rti.com/developers/rti-labs/python-api)
+- [Cloud Discovery Service](https://www.rti.com/developers/rti-labs/discover-data-in-cloud-services-with-cloud-discovery-service)
+- [Heap Analyzer](https://www.rti.com/developers/rti-labs/visualize-dynamic-memory-with-heap-analyzer)

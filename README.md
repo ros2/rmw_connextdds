@@ -15,11 +15,6 @@ Package `rmw_connextdds` is meant to be a replacement for [`rmw_connext_cpp`](ht
 This new implementation resolves several performance issues, and it improves out-of-the-box
 interoperability with DDS applications.
 
-*The repository is undergoing stabilization, with some features still in
-active development.
-Please consider reporting any [issue](https://github.com/rticommunity/rmw_connextdds/issues)
-that you may experience, while monitoring the repository for frequent updates.*
-
 For any questions or feedback, feel free to reach out to robotics@rti.com.
 
 ## Table of Contents
@@ -251,7 +246,7 @@ exchanged at a fast periodic pace.
 Variable `RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS` may be used to disable
 these automatic optimizations, and revert to Connext's default behavior.
 
-Note that these optimizations will only be applied to any endpoint whose type has a
+Note that these optimizations will only be applied to those endpoints whose type has a
 *static* maximum serialized size of at least 1MB. "Unbounded" types (i.e. types
 which include at least one variable-length fields without a maximum) will most likely
 not be included in these optimizations, since only their "bounded" part will
@@ -688,7 +683,7 @@ automatically override `DDS_DataWriterQos::publish_mode::kind`.
 
 One of the key aspects that a developer must address during design and implementation
 of a ROS 2/DDS application is the analysis of the Quality of Service requirements
-of the application.
+of their application and overall distributed system.
 
 The DDS specification offers a rich set of standard QoS policies, which are further
 expanded by RTI Connext DDS with several proprietary and implementation-specific
@@ -706,7 +701,8 @@ missed by a reader. In this cae, it might be necessary to update parameters in
 to make applications using this type of communication more responsive.
 
 Since these parameters are not exposed by the ROS 2 API, users must rely on
-the XML-based configuration facility offered by RTI Connext DDS.
+the XML-based configuration facility offered by RTI Connext DDS to modify them
+when creating DDS entities with this API.
 
 The following sections provide more information about different aspects of
 QoS configuration applicable to `rmw_connextdds`.
@@ -727,18 +723,19 @@ The QoS configuration can be expressed in an XML file containing one or more
 
 Each `<qos_profile>` may contain:
 
-- `0..*` `<participant_qos>` to customize `DomainParticipantQos`
-- `0..*` `<publisher_qos>` to customize `PublisherQos`
-- `0..*` `<subscriber_qos>` to customize `PublisherQos`
-- `0..*` `<topic_qos>` to customize `TopicQos` (not often used).
-- `0..*` `<datawriter_qos>` to customize `DataWriterQos`
-- `0..*` `<datareader_qos>` to customize `DataReaderQos`
+- `0..*` `<participant_qos>` to customize `DomainParticipantQos` policies.
+- `0..*` `<publisher_qos>` to customize `PublisherQos` policies.
+- `0..*` `<subscriber_qos>` to customize `SubscriberQos` policies.
+- `0..*` `<topic_qos>` to customize `TopicQos` policies.
+- `0..*` `<datawriter_qos>` to customize `DataWriterQos` policies.
+- `0..*` `<datareader_qos>` to customize `DataReaderQos` policies.
 
-All elements (libraries, profiles, and individual policies) may be assigned names
-which can be used to easily derive them and compose them into new configurations.
+All elements (libraries, profiles, and individual policies) may be assigned unique
+names, which can later be used to easily extend them and compose them into new
+configurations.
 
-For example, profile inheritance may be used to easily create a single configuration
-by composing multiple profile, while overriding selected parameters for specific elements:
+For example, profile inheritance may be used to create a single configuration
+out of multiple profiles:
 
 ```xml
 <dds>
@@ -869,21 +866,51 @@ You might also be interested in learning more about [topic filters](https://comm
 
 ### Customize DomainParticipant QoS
 
-TODO
+`rmw_connextdds` will create a single DomainParticipant for each ROS context, which
+will be shared by all Nodes associated with that context (typically all Nodes created
+by a process).
 
-### Customize Endpoint QoS
-
-`rmw_connextdds` will include the topic name when querying for the default QoS for
-an endpoint. This allows you to take advantage of [topic filters](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Topic_Filters.htm)
-in your QoS XML files to set different defaults for different topics.
-
-The only caveat is that you must use the mangled version of the topic names
-to target specific DDS endpoints associated with your ROS 2 entities:
+Since only one DomainParticipant will be typically be created by each ROS 2 process,
+users may rely on Connext's default QoS configuration to customize the QoS
+of the DomainParticipant from an external XML file:
 
 ```xml
 <dds>
   <qos_library name="my_profiles">
-    <qos_profile is_default_qos="true">
+    <qos_profile name="a_profile" is_default_qos="true">
+      <participant_qos>
+        <participant_name>
+          <name>MyRos2DomainParticipant</name>
+        </participant_name>
+      </participant_qos>
+    <qos_profile>
+  </qos_library>
+</dds>
+```
+
+By default, `rmw_connextdds` will always overwrite certain fields of the default
+DomainParticipant QoS (see [DomainParticipant creation](#domainparticipant-creation)).
+These "hard-coded" customizations may be disabled using the "QoS override" policies
+selected with variable [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy).
+
+The customization may also be replicated in XML by using the QoS profiles contained
+in [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml),
+for example, `ros2::rmw_connextdds.base_participant`. See [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles) for more information about these QoS profiles
+and how to use them.
+
+### Customize Endpoint QoS
+
+`rmw_connextdds` will include the topic name when querying for the default QoS values
+to use for a new DDS endpoint. This allows users to take advantage of [topic filters](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Topic_Filters.htm)
+in QoS XML files to set different defaults for different topics.
+
+The only caveat is that filters must be expressed using the mangled version of the
+topic names:
+
+```xml
+<dds>
+  <qos_library name="my_profiles">
+    <qos_profile name="a_profile" is_default_qos="true">
       <!-- Customize QoS for Publishers and Subscriptions on topic "chatter" -->
       <datawriter_qos topic_filter="rt/chatter">
         ...
@@ -928,7 +955,7 @@ environment variable [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#rmw-connext-end
 
 For example, using the XML file above with a `demo_nodes_cpp/talker` instance,
 it is possible to completely disable all ROS QoS settings for the customized
-topics even if the application was not designed to the `SYSTEM_DEFAULT` special
+topics even if the application was not designed to use the `SYSTEM_DEFAULT` special
 value:
 
 ```sh
@@ -937,7 +964,19 @@ RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY="dds_topics: ^(rt/chatter|(rq|rr)/.*/de
 ros2 run demo_nodes_cpp talker
 ```
 
-### Built-in QoS Profiles
+A similar result can also be achieved using the `never` "QoS override" policy,
+but the XML QoS profile would require some modifications, for example by making it
+extend profile `ros2::rmw_connextdds.base_application`, for all the application
+to remain compatible with other applications using the default ROS 2 QoS profiles.
+
+See [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles) for more information
+about this and other useful QoS profiles contained in file [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml).
+
+### Built-in ROS 2 QoS Profiles
+
+TODO
+
+### Built-in Connext QoS Profiles
 
 TODO
 
@@ -1048,14 +1087,15 @@ Upon initialization of a context, the following operations will be performed:
 - Determine the default `DomainParticipantQoS` by calling
   [`DDS_DomainParticipantFactory_get_default_participant_qos()`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/group__DDSDomainParticipantFactoryModule.html#gaf85e5146fe9f1bd10e11fdf871f66c24).
 - In the case of `rmw_connextdds`,  based on [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy):
-  - Tune internal policy `DomainParticipantQos::user_object` to enable sharing of a
-    a DomainParticipant created with the Connext's C API with application using
-    Connext's C++11 API.
+  - Tune internal policy `DomainParticipantQos::user_object` to enable sharing of
+    DomainParticipants created by `rmw_connextdds` with Connext's C API with C++ applications
+    using Connext's C++11 API.
   - Configure ROS 2 options:
     - If "localhost only" communication was requested, set property
       [`"dds.transport.UDPv4.builtin.parent.allow_interfaces_list"`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Setting_Builtin_Transport_Properties_wit.htm#transports_4033894139_848314) to `"127.0.0.1"`.
     - If an "enclave" was specified, store its value in [`DomainParticipantQos::user_data`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__DomainParticipantQos.html#ad25fbfa462bf8a35bc8f3f97078d9b5f)
-      as a string with format `enclave=${ENCLAVE}`.
+      as a string with format `enclave=${ENCLAVE}`, so that it may be shared with
+      DDS discovery data.
   - Reduce the chance of RTPS GUID collisions when DomainParticipants are created
     and destroyed in rapid sequence (as in the case of some ROS 2 unit tests).
     - Set [`DomainParticipantQos::wire_protocol::rtps_auto_id_kind`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__WireProtocolQosPolicy.html#a7818ef96ca05c3f01d7b55fa18a5f6cb) to `RTPS_AUTO_ID_FROM_UUID`.
@@ -1089,7 +1129,7 @@ Upon initialization of a context, the following operations will be performed:
       `{"_udp://", "_shmem://"}`.
   - Select DPDE as the discovery plugin.
     - Set [`DomainParticipantQos::discovery::discovery`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__DiscoveryQosPolicy.html#a74d4b6f27bdbc9dd1bd27bcc9fc78e80) to `"dpde"`.
-  - Increase default resource limits to allow for the creation of larger number of
+  - Increase default resource limits to allow for the creation of a larger number of
     local entities (types, topics, readers, writers), and the discovery of more
     remote entities (participants, writers, readers):
     - Update [`DomainParticipantQos::resource_limits`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__DomainParticipantResourceLimitsQosPolicy.html):
@@ -1104,9 +1144,9 @@ Upon initialization of a context, the following operations will be performed:
       - Set `remote_reader_allocation` to `32`.
       - Set `matching_reader_writer_pair_allocation` to `32768`.
       - Set `matching_writer_reader_pair_allocation` to `32768`.
-  - Determine the DomainParticipant's domain id.
-    - Refer to the ROS 2 documentation for information on [how to configure the domain id](https://docs.ros.org/en/rolling/Concepts/About-Domain-ID.html) in a ROS 2 application.
-  - Create the DomainParticipant using [`DDS_DomainParticipant_create_participant()`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/group__DDSDomainParticipantFactoryModule.html#ga325cf8f97a2752b6f486b7b1c3faf5b8).
+- Determine the DomainParticipant's domain id.
+  - Refer to the ROS 2 documentation for information on [how to configure the domain id](https://docs.ros.org/en/rolling/Concepts/About-Domain-ID.html) in a ROS 2 application.
+- Create the DomainParticipant using [`DDS_DomainParticipant_create_participant()`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/group__DDSDomainParticipantFactoryModule.html#ga325cf8f97a2752b6f486b7b1c3faf5b8).
 
 #### DomainParticipant Deletion
 
@@ -1125,7 +1165,7 @@ is a container of DataWriters, and it is responsible for
 disseminating the samples they write to matching DataReaders.
 
 `rmw_connextdds` and `rmw_connextddsmicro` create a single Publisher which is
-sharead by all DataWriters they create.
+shared by all DataWriters they create.
 
 The lifecycle of this Publisher is the same as its parent DomainParticipant.
 
@@ -1152,11 +1192,11 @@ both `rmw_connextdds` and `rmw_connextddsmicro` will perform the following opera
 
 A [Subscriber](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/group__DDSSubscriberModule.html#ga2755712602505786a23baef5a42d6782)
 is a container of DataReaders, and it is the entity responsible for
-delivering received samples into their caches and inform applications of their
-availability.
+delivering received samples into their caches and informing applications of the
+availability of new data.
 
 `rmw_connextdds` and `rmw_connextddsmicro` create a single Subscriber which is
-sharead by all DataReaders they create.
+shared by all DataReaders they create.
 
 The lifecycle of this Subscriber is the same as its parent DomainParticipant.
 
@@ -1198,8 +1238,8 @@ defined by the [DDS-XTYPES](https://www.omg.org/spec/DDS-XTypes/About-DDS-XTypes
 specification.
 
 This might cause endpoints to be matched and communicate even if their types are
-slightly different (e.g. they have been registered with a different names, and/or
-they have an altogether different, but still "assignable", definition). See
+slightly different (e.g. they have been registered with different names, and/or
+they have altogether different, but still "assignable", definitions). See
 [Connext's documentation about "type assignability"](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/getting_started_extras/html_files/RTI_ConnextDDS_CoreLibraries_GettingStarted_ExtensibleAddendum/index.htm#ExtensibleTypesAddendum/Verifying_Type_Consistency__Type_Assignabilit.htm#2.2_Verifying_Type_Consistency__Type_Assignability%3FTocPath%3D2.%2520Type%2520Safety%2520and%2520System%2520Evolution%7C_____2) for more information
 on how different types may still be considered "assignable".
 
@@ -1209,18 +1249,18 @@ the same.
 
 `rmw_connextdds` and `rmw_connextddsmicro` will automatically create and reuse
 Topics based on the DataWriters and DataReaders created by an application (and
-the "internal" endpoints it creates for RMW management).
+the "internal" endpoints they create for RMW management).
 
-The RMWs will also take care of [automatically registering the "type plugin"](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/UsingGenTypeswithoutStandalo.htm#datatypes_842270378_428342%3FTocPath%3DPart%25202%253A%2520Core%2520Concepts%7C3.%2520Data%2520Types%2520and%2520DDS%2520Data%2520Samples%7C3.7%2520Using%2520Generated%2520Types%2520without%2520Connext%2520DDS%2520(Standalone)%7C_____0)
+The RMWs will also take care of [automatically registering "type plugins"](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/UsingGenTypeswithoutStandalo.htm#datatypes_842270378_428342%3FTocPath%3DPart%25202%253A%2520Core%2520Concepts%7C3.%2520Data%2520Types%2520and%2520DDS%2520Data%2520Samples%7C3.7%2520Using%2520Generated%2520Types%2520without%2520Connext%2520DDS%2520(Standalone)%7C_____0)
 for the data types used by each endpoint.
 
-Topic entities, and their associated "type plugins", will be automatically unregisted
+Topic entities, and their associated "type plugins", will be automatically unregistered
 and deleted once every endpoint associated with them has been deleted.
 
 #### Topic Creation
 
-Upon creation of a DataWriter or DataReader, `rmw_connextdds` and `rmw_connextddsmicro`
-will perform the following operations:
+Upon creation of a [DataWriter](#datawriter-creation) or [DataReader](#datareader-creation),
+ `rmw_connextdds` and `rmw_connextddsmicro` will perform the following operations:
 
 - Determine the name of the data type used by the endpoint.
   - Data types are registered by appending `::dds_` to the type's package name,
@@ -1244,8 +1284,8 @@ will perform the following operations:
 
 #### Topic Deletion
 
-Upon deletion of DataWriter or DataReader, `rmw_connextdds` and `rmw_connextddsmicro`
-will perform the following operations:
+Upon deletion of [DataWriter](#datawriter-deletion) or [DataReader](#datareader-deletion),
+`rmw_connextdds` and `rmw_connextddsmicro` will perform the following operations:
 
 - Delete the Topic associated with the deleted endpoint by calling
   [`DDS_DomainParticipant_delete_topic()`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/group__DDSDomainParticipantModule.html#ga024006f63f750771cddd5f6524ce6034).
@@ -1261,8 +1301,8 @@ A [DataWriter](https://community.rti.com/static/documentation/connext-dds/6.0.1/
 is the entity used by DDS applications to set the value of the data to be published
 under a given [Topic](#topic).
 
-DataWriters are uniquely associated with a single parent Publisher, and a single
-Topic.
+DataWriters are uniquely associated with a single parent [Publisher](#publisher),
+and a single Topic.
 
 This means that each DataWriter will only be able to publish samples of a single
 data types (the one used by their Topic).
@@ -1276,7 +1316,7 @@ and [ResourceLimitsQosPolicy](https://community.rti.com/static/documentation/con
 Depending on QoS configuration (specifically when DurabilityQosPolicy is set
 to a `kind` equal or greater to `TRANSIENT_LOCAL`), a DataWriter may distribute
 the samples available in its cache to "late joiner" DataReaders (i.e. DataReaders
-that were matched after the samples were added to the cache).
+that are matched after the samples were added to the cache).
 
 `rmw_connextdds` and `rmw_connextddsmicro` will create a DataWriter to support
 several ROS entities:
@@ -1288,7 +1328,8 @@ several ROS entities:
 The DataWriters (and their associated Topics) will be automatically finalized
 when the associated ROS entity is deleted.
 
-All DataWriters will be created in the same parent Publisher.
+All DataWriters will be created by `rmw_connextdds` and `rmw_connextddsmicro`
+in a single parent Publisher.
 
 #### DataWriter Creation
 
@@ -1306,7 +1347,7 @@ will perform the following operations:
 - In the case of `rmw_connextdds`:
   - Based on [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw-connext-endpoint-qos-override-policy),
     apply the ROS 2 QoS profile on top of the default QoS policy, and overwrite
-    them, unless the ROS 2 policy is set to `SYSTEM_DEFAULT`.
+    them unless the corresponding ROS 2 policies are set to `SYSTEM_DEFAULT`.
   - Based on [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw-connext-disable-large-data-optimizations), and if the DataWriter's data type
     qualifies as "large data", tune the RTPS reliability protocol settings to
     provide better "out of the box" behavior for these types by updating
@@ -1323,10 +1364,10 @@ will perform the following operations:
     - Set [`max_heartbeat_retries`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__RtpsReliableWriterProtocol__t.html#a5be67d978618b5995cb517b51231d39d) to `500` (10s @ 50Hz).
   - Based on [`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE`](#rmw-connext-use-default-publish-mode),
     overwrite `DataWriterQos::publish_mode::kind` to `ASYNCHRONOUS_PUBLISH_MODE`.
-    - The "asynchronous publish mode" is required to publish data samples which require
-      fragmentation because they exceed the underlying transport's MTU.
+    - The "asynchronous publish mode" is required by RTI Connext DDS to publish data samples
+      which require fragmentation because they exceed the underlying transport's MTU.
     - In "asynchronous publish mode", samples are added to a queue and disseminated to
-      DataReader from a separate thread.
+      DataReaders from a separate thread.
   - If the data type is "unbounded" (i.e. it contains at least one variable-length field
     without a fixed maximum length), then Connext must be configured to always
     dynamically allocate samples for the DataWriter.
@@ -1334,7 +1375,7 @@ will perform the following operations:
      and it is overcome by setting property `"dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"` to `0`.
 - In the case of `rmw_connextddsmicro`:
   - Apply the ROS 2 QoS profile on top of the default QoS values, and overwrite
-    them, unless the ROS 2 policy is set to `SYSTEM_DEFAULT`.
+    them unless the corresponding ROS 2 policies are set to `SYSTEM_DEFAULT`.
   - Based on [`DataWriterQos::history::depth`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__HistoryQosPolicy.html#aef0fb3fd3579866be17d1a936f5e3729), update [`DataWriterQos::resource_limits`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__DataWriterQos.html#acba41cd24991ce678ad133bcc276b55c) to be compatible:
     - Update [`max_samples`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__ResourceLimitsQosPolicy.html#a90db906a3958146c5e22557db648e7ff) to make sure that `max_samples >= MAX(DataWriterQos::history::depth, 10)`.
     - Set [`max_samples_per_instance`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__ResourceLimitsQosPolicy.html#ae3d9339bebf4c7163cf6dff82882cbef) to `max_samples`.
@@ -1391,7 +1432,8 @@ several ROS entities:
 The DataReaers (and their associated Topics) will be automatically finalized
 when the associated ROS entity is deleted.
 
-All DataReaders will be created in the same parent Subscriber.
+All DataReaders will be created by `rmw_connextdds` and `rmw_connextddsmicro`
+in a single parent Subscriber.
 
 #### DataReader Creation
 
@@ -1409,7 +1451,7 @@ will perform the following operations:
 - In the case of `rmw_connextdds`:
   - Based on [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw-connext-endpoint-qos-override-policy),
     apply the ROS 2 QoS profile on top of the default QoS policy, and overwrite
-    them, unless the ROS 2 policy is set to `SYSTEM_DEFAULT`.
+    them unless the corresponding ROS 2 policies are set to `SYSTEM_DEFAULT`.
   - Based on [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw-connext-disable-large-data-optimizations), and if the DataReader's data type
     qualifies as "large data", tune the RTPS reliability protocol settings to
     provide better "out of the box" behavior for these types.
@@ -1426,7 +1468,7 @@ will perform the following operations:
      and it is overcome by setting property `"dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"` to `0`.
 - In the case of `rmw_connextddsmicro`:
   - Apply the ROS 2 QoS profile on top of the default QoS values, and overwrite
-    them, unless the ROS 2 policy is set to `SYSTEM_DEFAULT`
+    them unless the corresponding ROS 2 policies are set to `SYSTEM_DEFAULT`.
   - Based on [`DataReaderQos::history::depth`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__HistoryQosPolicy.html#aef0fb3fd3579866be17d1a936f5e3729), update [`DataReaderQos::resource_limits`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__DataReaderQos.html#a27f550c1f22be54dfe3b69e007fabad2) to be compatible:
     - Update [`max_samples`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__ResourceLimitsQosPolicy.html#a90db906a3958146c5e22557db648e7ff) to make sure that `max_samples >= MAX(DataReaderQos::history::depth, 10)`.
     - Set [`max_samples_per_instance`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/structDDS__ResourceLimitsQosPolicy.html#ae3d9339bebf4c7163cf6dff82882cbef) to `max_samples`.

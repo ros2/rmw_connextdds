@@ -38,7 +38,6 @@ For any questions or feedback, feel free to reach out to robotics@rti.com.
   - [Customize DomainParticipant QoS](#customize-domainparticipant-qos)
   - [Customize Endpoint QoS](#customize-endpoint-qos)
   - [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles)
-  - [Built-in Connext QoS Profiles](#built-in-connext-qos-profiles)
 - [DDS Entities Created by the RMW Layer](#dds-entities-created-by-the-rmw-layer)
   - [DomainParticipantFactory](#domainparticipantfactory)
   - [DomainParticipant](#domainparticipant)
@@ -870,9 +869,9 @@ You might also be interested in learning more about [topic filters](https://comm
 will be shared by all Nodes associated with that context (typically all Nodes created
 by a process).
 
-Since only one DomainParticipant will be typically be created by each ROS 2 process,
-users may rely on Connext's default QoS configuration to customize the QoS
-of the DomainParticipant from an external XML file:
+Since only one DomainParticipant will be typically created by each ROS 2 process,
+users may rely on Connext's [default QoS configuration](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Overwriting_Default_QoS_Values.htm?Highlight=is_default_qos)
+to customize the QoS of the DomainParticipant from an external XML file:
 
 ```xml
 <dds>
@@ -901,7 +900,7 @@ and how to use them.
 ### Customize Endpoint QoS
 
 `rmw_connextdds` will include the topic name when querying for the default QoS values
-to use for a new DDS endpoint. This allows users to take advantage of [topic filters](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Topic_Filters.htm)
+used by a new DDS endpoint. This allows users to take advantage of [topic filters](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Topic_Filters.htm)
 in QoS XML files to set different defaults for different topics.
 
 The only caveat is that filters must be expressed using the mangled version of the
@@ -953,10 +952,10 @@ You can disable this behavior altogether or selectively for specific topics by
 selecting one of the alternative "QoS override" policies available via
 environment variable [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#rmw-connext-endpoint-qos-override-policy).
 
-For example, using the XML file above with a `demo_nodes_cpp/talker` instance,
-it is possible to completely disable all ROS QoS settings for the customized
-topics even if the application was not designed to use the `SYSTEM_DEFAULT` special
-value:
+For example, after saving the XML file presented earlier as `./USER_QOS_PROFILES.xml`,
+it would be possible to run a `demo_nodes_cpp/talker` instance, and completely disable
+all ROS QoS settings for the selected topics, even though the application was not built
+to use the `SYSTEM_DEFAULT` ROS QoS policy values:
 
 ```sh
 RMW_IMPLEMENTATION=rmw_connextdds \
@@ -966,19 +965,197 @@ ros2 run demo_nodes_cpp talker
 
 A similar result can also be achieved using the `never` "QoS override" policy,
 but the XML QoS profile would require some modifications, for example by making it
-extend profile `ros2::rmw_connextdds.base_application`, for all the application
-to remain compatible with other applications using the default ROS 2 QoS profiles.
+extend profile `ros2::rmw_connextdds.base_application`. Otherwise, the application
+would not be able to communicatedd with other applications using the default
+ROS 2 QoS profiles over the "built-in" endpoints created by the RMW and `rcl`
+layers.
 
 See [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles) for more information
-about this and other useful QoS profiles contained in file [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml).
+about some useful QoS profiles contained in file [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml) that can be used to automatically configure "built-in"
+endpoints and to replicate several of the QoS optimizations applied by
+`rmw_connextdds`.
 
 ### Built-in ROS 2 QoS Profiles
 
-TODO
+#### ros2_qos_profiles.xml
 
-### Built-in Connext QoS Profiles
+File [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml)
+contains various QoS profiles that model the default configuration applied
+by `rmw_connextdds` and other ROS 2 core packages, such as `rcl`.
 
-TODO
+Users of `rmw_connextdds` on a shell (ie. not on Windows) may refer to any of the
+included profiles in their own QoS configuration files without any further configuration,
+because the file is automatically loaded into their shell environment by hooks installed
+by `rmw_connextdds` using variable `NDDS_QOS_PROFILES`.
+
+On other platforms, or for use with any non-ROS 2 Connext application, you should
+manually export the file's path using variable `NDDS_QOS_PROFILES`:
+
+```sh
+export NDDS_QOS_PROFILES="file:///path/to/ros2_qos_profiles.xml"
+```
+
+When `rmw_connextdds` is built from source, the file will be automatically installed
+under `<install-prefix>/rmw_connextdds/share/rmw_connextdds/xml/ros2_qos_profiles.xml`.
+
+You could also make these profiles available to any application sharing the same
+Connext installation by copying the file (or its contents) to
+`${NDDSHOME}/resource/xml/NDDS_QOS_PROFILES.xml`.
+
+`ros2_qos_profiles.xml` contains a single QoS library named `ros2`, and containing
+the following QoS profiles:
+
+- [`ros2::rmw.ros_discovery_info`](#ros2--rmwros-discovery-info)
+- [`ros2::rcl.node_parameters`](#ros2--rclnode-parameters)
+- [`ros2::rcl.log`](#ros2--rcllog)
+- [`ros2::rcl.builtin_endpoints`](#ros2--rclbuiltin-endpoints)
+- [`ros2::rmw_connextdds.base_participant`](#ros2--rmw-connextddsbase-participant)
+- [`ros2::rmw_connextdds.base_application`](#ros2--rmw-connextddsbase-application)
+- [`ros2::rmw_connextdds.opt.large_data`](#ros2--rmw-connextddsoptlarge-data)
+- [`ros2::rmw_connextdds.opt.unbounded_data`](#ros2--rmw-connextddsoptunbounded-data)
+- [`ros2::rmw_connextdds.opt.content_filtered_topic_property`](#ros2--rmw-connextddsoptcontent-filtered-topic-property)
+- [`ros2::rmw_connextdds.opt.localhost_only`](#ros2--rmw-connextddsoptlocalhost-only)
+- [`ros2::rmw_connextdds.opt.fast_endpoint_discovery`](#ros2--rmw-connextddsoptfast-endpoint-discovery)
+
+Most users should consider using profile [`ros2::rmw_connextdds.base_application`](#ros2--rmw-connextddsbase-application) as the base profile to begin
+customization of the DDS QoS used by their applications.
+
+This profile will provide the same QoS settings used by default by `rmw_connextdds`
+(i.e. when no custom [runtime configuration](#rmw-runtime-configuration) is specified).
+
+Alternatively, profiles [`ros2::rcl.builtin_endpoints`](#ros2--rclbuiltin-endpoints)
+and [`ros2::rmw_connextdds.base_participant`](#ros2--rmw-connextddsbase-participant),
+which are both already included in the inheritance chain of [`ros2::rmw_connextdds.base_application`](#ros2--rmw-connextddsbase-application), may be used directly
+to, respectively, configure the QoS of all "built-in" endpoints created by the
+RMW and `rcl` layers, and to configure the QoS of the DomainParticipant created
+by `rmw_connextdds`.
+
+QoS profiles in the `ros2::rmw_connextdds.opt.*` namespace describe various
+configurations that are applied optionally by `rmw_connextdds`.
+
+These profiles include:
+
+- configurations that are applied automatically based on the characteristics
+  of a topic's data type (e.g. maximum serialized size, or "unbounded-ness").
+
+- configurations that are applied based on ROS 2 options (e.g. "localhost only").
+
+- configurations that can be disabled via environment variables (e.g.
+  "fast endpoints discovery").
+
+Other QoS profiles, like the ones in the `ros2::rmw.*` `ros2::rmw.*` namespaces,
+should only be used as reference.
+
+#### ros2::rmw.ros_discovery_info
+
+Profile `ros2::rmw.ros_discovery_info` can be used to customize the QoS for
+endpoints on the internal RMW topic `"ros_discovery_info"`.
+
+For the equivalent RMW code, see `rmw_connextdds_graph_initialize()`
+in [rmw_graph.cpp](rmw_connextdds_common/src/common/rmw_graph.cpp).
+
+#### ros2::rcl.node_parameters
+
+Profile `ros2::rcl.node_parameters` defines the QoS used by endpoints on 
+various topics used for management of node parameters.
+
+See `rmw_qos_profile_parameters` from [rmw/include/rmw/qos_profiles.h](https://github.com/ros2/rmw/blob/master/rmw/include/rmw/qos_profiles.h)
+for the equivalent code implementation.
+
+#### ros2::rcl.log
+
+Profile `ros2::rcl.log` defines the QoS used by endpoints on the ROS logging topic
+`"rosout"`.
+
+See `rcl_qos_profile_rosout_default` from [rcl/include/rcl/logging_rosout.h](https://github.com/ros2/rcl/blob/master/rcl/include/rcl/logging_rosout.h)
+for the equivalent code implementation.
+
+#### ros2::rcl.builtin_endpoints
+
+Profile `rcl.builtin_endpoints` provides QoS settings for all "built-in"
+endpoints created by the RMW and `rcl` layers for every ROS 2 Node.
+
+These "built-in" endpoints include:
+
+- Endpoints on topic `"ros_discovery_info"` (configured using profile [`ros2::rmw.ros_discovery_info`](#ros2--rmwros-discovery-info)).
+- Endpoints on topics used for node parameters (configured using profile [`ros2::rcl.node_parameters`](#ros2--rclnode-parameters)).
+- Endpoints on the ROS logging topic `"rosout"` (configured using profile [`ros2::rcl.log`](#ros2--rcllog)).
+
+The parent profiles are applied using "topic filters" that select all required topics.
+
+#### ros2::rmw_connextdds.base_participant
+
+Profile `ros2::rmw_connextdds.base_participant` models the DomainParticipan QoS
+settings used by `rmw_connextdds` to change some of Connext's "out of the box"
+QoS, and make it more amenable to use with ROS 2 applications.
+
+These settings are only applied by `rmw_connextdds` when [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy)
+is either not set, or set to `all`.
+
+#### ros2::rmw_connextdds.base_application
+
+Use profile `ros2::rmw_connextdds.base_application` as the base profile when
+[`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw-connext-endpoint-qos-override-policy)
+is set to `never` and/or [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY`](#rmw-connext-participant-qos-override-policy) is set to a value other than `all`.
+
+This profile will configure the DomainParticipant and all "built-in" endpoints with
+the same settings normally used by `rmw_connextdds`.
+
+Note that contrary to the code, the profile does not set the default value for
+`DataWriterQos::publish_mode::kind` to `ASYNCHRONOUS_PUBLISH_MODE`, leaving it up
+to the user to configure this policy as needed in their own profiles.
+
+The asynchronous publish mode is still used for all "built-in" writers to allow them
+to continue to operate like "out of the box", even when writing large messages.
+
+You might also consider inheriting directly from profile [`ros2::rcl.builtin_endpoints`](#ros2--rclbuiltin-endpoints),
+if you only want to configure the built-in endpoints but not the DomainParticipant QoS.
+
+#### ros2::rmw_connextdds.opt.large_data
+
+Profile `ros2::rmw_connextdds.opt.large_data` describes the "large data" optimizations
+that `rmw_connextdds` applies to endpoints whose type is detected to have a static
+maximum serialized size of at least 1MB.
+
+The configuration is derived from Connext's built-in profile `Generic.KeepLastReliable.LargeData`.
+
+These optimizations are always applied by `rmw_connextdds` to all "qualified" endpoints,
+unless variable [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS`](#rmw-connext-disable-large-data-optimizations) is used to disabled them.
+
+#### ros2::rmw_connextdds.opt.unbounded_data
+
+The settings from profile `ros2::rmw_connextdds.opt.unbounded_data` are used by
+`rmw_connextdds` to disable preallocation of samples for endpoints whose
+data type is "unbounded". This includes any data type containing a string or a
+sequence with an unlimited maximum length.
+
+The properties set by this profile *must* be set to `0` on any of these type of
+endpoints for things to work properly, and `rmw_connextdds` will try to
+automatically assert them upon endpoint creation.
+
+The profile is provide only documentation purposes, since there is no way to
+disable this behavior in `rmw_connextdds`.
+
+#### ros2::rmw_connextdds.opt.content_filtered_topic_property
+
+Profile `ros2::rmw_connextdds.opt.content_filtered_topic_property` is applied by
+`rmw_connextdds` when policy [`DomainParticipantQos::resource_limits::contentfilter_property_max_length`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/structDDS__DomainParticipantResourceLimitsQosPolicy.html#aef1ff851202f5777d31528a52d528e4f)
+is detected to be less than `1024`.
+
+#### ros2::rmw_connextdds.opt.localhost_only
+
+Profile `ros2::rmw_connextdds.opt.localhost_only` describes the configuration
+applied by `rmw_connextdds` to the DomainParticipant QoS when "localhost only"
+communication is requested by the user.
+
+#### ros2::rmw_connextdds.opt.fast_endpoint_discovery
+
+Profile `ros2::rmw_connextdds.opt.fast_endpoint_discovery` models the QoS 
+configuration applied by `rmw_connextdds` to speed up the process of endpoint
+discovery.
+
+This is achieved by increasing the period at which Heartbeats are sent by the
+built-in DDS discovery writers.
 
 ## DDS Entities Created by the RMW Layer
 

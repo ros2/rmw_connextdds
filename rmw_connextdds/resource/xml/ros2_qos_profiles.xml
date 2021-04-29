@@ -3,7 +3,7 @@
   This file contains various QoS profiles that model the default configuration applied
   by `rmw_connextdds` and other ROS 2 core packages.
 
-  Users of `rmw_connextdds` on shell (ie. not on Windows) may refer to any of the
+  Users of `rmw_connextdds` on a shell (ie. not on Windows) may refer to any of the
   included profiles in their own QoS configuration files without any further configuration,
   because the file is automatically loaded into their shell environment by hooks installed
   by `rmw_connextdds` using variable NDDS_QOS_PROFILES.
@@ -15,7 +15,7 @@
   export NDDS_QOS_PROFILES="file:///path/to/ros2_qos_profiles.xml"
   ```
 
-  You can also aake these profiles available to any application using a certain 
+  You could also make these profiles available to any application sharing the same
   Connext installation by copying the file (or its contents) to
   `${NDDSHOME}/resource/xml/NDDS_QOS_PROFILES.xml`.
 
@@ -79,10 +79,12 @@
       </datawriter_qos>
     </qos_profile>
 
-    <!-- Profile `rcl.node_parameters` defines the QoS used by endpoints on topics
-         related to node parameters.
-         See `rmw_qos_profile_parameters` from `rmw/include/rmw/qos_profiles.h` for
-         the equivalent code implementation. -->
+    <!-- 
+      Profile `rcl.node_parameters` defines the QoS used by endpoints on topics
+      related to node parameters.
+      See `rmw_qos_profile_parameters` from `rmw/include/rmw/qos_profiles.h` for
+      the equivalent code implementation.
+    -->
     <qos_profile name="rcl.node_parameters">
       <datareader_qos>
         <reliability>
@@ -104,9 +106,11 @@
       </datawriter_qos>
     </qos_profile>
 
-    <!-- Profile `rcl.log` defines the QoS used by endpoints on topic "rt/rosout".
-         See `rcl_qos_profile_rosout_default` from `rcl/include/rcl/logging_rosout.h`
-         for the equivalent code implementation. -->
+    <!-- 
+      Profile `rcl.log` defines the QoS used by endpoints on topic "rt/rosout".
+      See `rcl_qos_profile_rosout_default` from `rcl/include/rcl/logging_rosout.h`
+      for the equivalent code implementation.
+    -->
     <qos_profile name="rcl.log">
       <datareader_qos>
         <durability>
@@ -370,12 +374,10 @@
       unlimited maximum length).
    
       These properties MUST be set to 0 on any of these endpoints for things
-      to work properly, and rmw_connextdds will try to automatically assert them,
-      but not overwrite if they are already set. For this reason, it is important
-      that you make sure to either not set them or set them to 0 for any endpoint
-      that uses an unbounded data type. This includes all built-in endpoints,
-      for which the property is not set by profile `rmw_connextdds::builtin_endpoints`
-      so that they may be configured automatically by `rmw_connextdds`.
+      to work properly, and rmw_connextdds will always assert them to this value.
+
+      The profile is provide only documentation purposes, since there is no way
+      to disable this behavior in `rmw_connextdds`.
     -->
     <qos_profile name="rmw_connextdds.opt.unbounded_data">
       <datareader_qos>

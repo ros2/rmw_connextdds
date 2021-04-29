@@ -35,9 +35,11 @@ For any questions or direct feedback, feel free to reach out to robotics@rti.com
   - [RMW_CONNEXT_UDP_INTERFACE](#rmw_connext_udp_interface)
   - [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#rmw_connext_use_default_publish_mode)
 - [DDS Quality of Service Configuration](#dds-quality-of-service-configuration)
-  - [Customize QoS via XML](#customize-qos-via-xml)
-  - [Customize DomainParticipant QoS](#customize-domainparticipant-qos)
-  - [Customize DataWriter and DataReader QoS](#customize-datawriter-and-datareader-qos)
+  - [Customizing QoS via XML](#customizing-qos-via-xml)
+  - [Loading Custom QoS Profiles](#loading-custom-qos-profiles)
+  - [DomainParticipant QoS](#domainparticipant-qos)
+  - [DataWriter and DataReader QoS](#datawriter-and-datareader-qos)
+  - [Configuring QoS Using Only XML Files](#configuring-qos-using-only-xml-files)
   - [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles)
 - [DDS Entities Created by the RMW Layer](#dds-entities-created-by-the-rmw-layer)
   - [DomainParticipantFactory](#domainparticipantfactory)
@@ -715,7 +717,7 @@ QoS configuration applicable to `rmw_connextdds`.
 Since RTI Connext DDS Micro does not support external QoS configuration, most of
 these customizations are not yet available to users of `rmw_connextddsmicro`.
 
-### Customize QoS via XML
+### Customizing QoS via XML
 
 `rmw_connextdds` supports the specification of most of its initialization parameters,
 [including Quality of Service configuration](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/XMLConfiguration.htm),
@@ -869,7 +871,11 @@ Connext 6.x).
 
 You might also be interested in learning more about [topic filters](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Topic_Filters.htm), and [how to overwrite default QoS values](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Overwriting_Default_QoS_Values.htm?Highlight=is_default_qos).
 
-### Customize DomainParticipant QoS
+### Loading Custom QoS Profiles
+
+TODO
+
+### DomainParticipant QoS
 
 `rmw_connextdds` will create a single DomainParticipant for each ROS context, which
 will be shared by all Nodes associated with that context (typically all Nodes created
@@ -903,7 +909,7 @@ in [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml),
 for example, `ros2::rmw_connextdds.base_participant`. See [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles) for more information about these QoS profiles
 and how to use them.
 
-### Customize DataWriter and DataReader QoS
+### DataWriter and DataReader QoS
 
 `rmw_connextdds` will include the topic name when querying for the default QoS values
 used by a new DDS endpoint. This allows users to take advantage of [topic filters](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Topic_Filters.htm)
@@ -980,6 +986,28 @@ See [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles) for more informa
 about some useful QoS profiles contained in file [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml) that can be used to automatically configure "built-in"
 endpoints and to replicate several of the QoS optimizations applied by
 `rmw_connextdds`.
+
+### Configuring QoS Using Only XML Files
+
+If you want to completely disable all QoS customizations applied by
+`rmw_connextdds` in code, and rely only on QoS configurations specified in
+XML files, you should set the following envirionment variable:
+
+- [`RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY=never`](#rmw_connext_participant_qos_override_policy)
+- [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY=never`](#rmw_connext_endpoint_qos_override_policy)
+- [`RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS=y`](#rmw_connext_disable_large_data_optimizations)
+- [`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE=y`](#rmw_connext_use_default_publish_mode)
+
+For example:
+
+```sh
+RMW_IMPLEMENTATION=rmw_connextdds \
+RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY=never \
+RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY=never \
+RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS=y \
+RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE=y \
+ros2 run demo_nodes_cpp talker
+```
 
 ### Built-in ROS 2 QoS Profiles
 
@@ -1162,6 +1190,10 @@ discovery.
 
 This is achieved by increasing the period at which Heartbeats are sent by the
 built-in DDS discovery writers.
+
+#### USER_QOS_PROFILES.example.xml
+
+TODO
 
 ## DDS Entities Created by the RMW Layer
 
@@ -1630,7 +1662,7 @@ will perform the following operations:
   - This operation is only available in `rmw_connextdds`, and it allows for "topic filters"
     to be taken into consideration when determining the default QoS.
   - Since XML-based configuration is not available with RTI Connext DDS Micro,
-    `rmw_connextddsmicro` will fall back to [`DDS_Subscriber_get_default_datawriter_qos()`]().
+    `rmw_connextddsmicro` will fall back to [`DDS_Subscriber_get_default_datareader_qos()`](https://community.rti.com/static/documentation/connext-micro/3.0.3/doc/api_c/html/group__DDSSubscriberModule.html#gab34681872803713ab97a63be91794fbd).
 - In the case of `rmw_connextdds`:
   - Based on [`RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY`](#rmw_connext_endpoint_qos_override_policy),
     apply the ROS 2 QoS profile on top of the default QoS policy, and overwrite

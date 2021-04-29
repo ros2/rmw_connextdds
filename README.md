@@ -1744,14 +1744,16 @@ the troubleshooting of any issue.
 Finally, RTI Community provides [links to the download and project pages](https://community.rti.com/content/page/downloads) of many helpful tools which are
 free for use by RTI Connext DDS users, for example:
 
-- [nano-client](https://github.com/rticommunity/nano-client)
-- [nano-agent](https://github.com/rticommunity/nano-agent)
-- [rticonnextdds-connector](https://github.com/rticommunity/rticonnextdds-connector)
-- [rticonnextdds-examples](https://github.com/rticommunity/rticonnextdds-examples)
-- [rticonnextdds-gateway](https://github.com/rticommunity/rticonnextdds-gateway)
-- [rticonnextdds-usecases](https://github.com/rticommunity/rticonnextdds-usecases)
-- [RTI DDS Performance Test](https://community.rti.com/downloads/rti-connext-dds-performance-test)
-- [Wireshark for RTI Connext DDS](https://community.rti.com/downloads/rti-wireshark)
+| Tool | Description |
+|------|-------------|
+|[nano-client](https://github.com/rticommunity/nano-client)| A multi-platform, open-source [DDS-XRCE](https://www.omg.org/spec/DDS-XRCE) Client API. |
+|[nano-agent](https://github.com/rticommunity/nano-agent)| A [DDS-XRCE](https://www.omg.org/spec/DDS-XRCE) Agent implementation using RTI Connext DDS. |
+|[rticonnextdds-connector](https://github.com/rticommunity/rticonnextdds-connector)| RTI Connector for Connext DDS is a lightweight technology that enables DDS data to be accessed with Javascript (Node.js), Python, Go, C# and Lua. |
+|[rticonnextdds-examples](https://github.com/rticommunity/rticonnextdds-examples)| A repository of examples that demonstrate how to use specific features of RTI Connext DDS.|
+|[rticonnextdds-gateway](https://github.com/rticommunity/rticonnextdds-gateway)| A software component based on Routing Service which enables the integration of different connectivity protocols (such as MQTT and Modbus) with DDS. |
+|[rticonnextdds-usecases](https://github.com/rticommunity/rticonnextdds-usecases)| A collection of examples illustrating specific RTI Connext DDS use cases, such as vehicle tracking, real-time data over a WAN or distributing video data to many receivers.  |
+|[RTI DDS Performance Test](https://community.rti.com/downloads/rti-connext-dds-performance-test)| A command-line application that measures the Latency and Throughput in various scenarios, using both RTI Connext DDS and RTI Connext DDS Micro. |
+|[Wireshark for RTI Connext DDS](https://community.rti.com/downloads/rti-wireshark)| A network protocol analyzer which allows you to look at all the packets in a DDS/RTPS network and capture the ones you want. |
 
 ### RTI Labs
 
@@ -1768,7 +1770,9 @@ an always up-to-date list of all latest projects.
 The following is a list of some projects which might be of particular interest
 to ROS 2/DDS users:
 
-- [RTI System Designer](https://www.rti.com/developers/rti-labs/manage-complexity-and-simplify-configuration-with-system-designer)
-- [RTI Python API](https://www.rti.com/developers/rti-labs/python-api)
-- [Cloud Discovery Service](https://www.rti.com/developers/rti-labs/discover-data-in-cloud-services-with-cloud-discovery-service)
-- [Heap Analyzer](https://www.rti.com/developers/rti-labs/visualize-dynamic-memory-with-heap-analyzer)
+| Tool | Description |
+|------|-------------|
+|[RTI System Designer](https://www.rti.com/developers/rti-labs/manage-complexity-and-simplify-configuration-with-system-designer)| A graphical tool that allows users to define and configure Connext DDS systems, including data types, QoS profiles, and entity creation configurations.|
+|[RTI Python API](https://www.rti.com/developers/rti-labs/python-api)| The RTI Python API provides Python programmers with a fully-featured API for RTI Connext DDS. |
+|[Cloud Discovery Service](https://www.rti.com/developers/rti-labs/discover-data-in-cloud-services-with-cloud-discovery-service)| A stand-alone application needed to deploy RTI Connext DDS applications in dynamic environments where UDP/IP multicast is not available |
+|[Heap Analyzer](https://www.rti.com/developers/rti-labs/visualize-dynamic-memory-with-heap-analyzer)| A debugging tool that allows you to visualize and analyze the memory used by Connext DDS in your application. |

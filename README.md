@@ -37,7 +37,7 @@ For any questions or feedback, feel free to reach out to robotics@rti.com.
 - [DDS Quality of Service Configuration](#dds-quality-of-service-configuration)
   - [Customize QoS via XML](#customize-qos-via-xml)
   - [Customize DomainParticipant QoS](#customize-domainparticipant-qos)
-  - [Customize Endpoint QoS](#customize-endpoint-qos)
+  - [Customize DataWriter and DataReader QoS](#customize-datawriter-and-datareader-qos)
   - [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles)
 - [DDS Entities Created by the RMW Layer](#dds-entities-created-by-the-rmw-layer)
   - [DomainParticipantFactory](#domainparticipantfactory)
@@ -898,7 +898,7 @@ in [ros2_qos_profiles.xml](rmw_connextdds/resource/xml/ros2_qos_profiles.xml),
 for example, `ros2::rmw_connextdds.base_participant`. See [Built-in ROS 2 QoS Profiles](#built-in-ros-2-qos-profiles) for more information about these QoS profiles
 and how to use them.
 
-### Customize Endpoint QoS
+### Customize DataWriter and DataReader QoS
 
 `rmw_connextdds` will include the topic name when querying for the default QoS values
 used by a new DDS endpoint. This allows users to take advantage of [topic filters](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/index.htm#UsersManual/Topic_Filters.htm)
@@ -1454,7 +1454,7 @@ Upon creation of a [DataWriter](#datawriter-creation) or [DataReader](#datareade
     are able to let Connext manipulate ROS 2 messages without any additional data
     representation conversion (as was for exaple the case with the previous
     implementation, `rmw_connext_cpp`).
-- Determine the mangled version of the topic name (see [Customize Endpoint QoS](#customize-endpoint-qos) 
+- Determine the mangled version of the topic name (see [Customize DataWriter and DataReader QoS](#customize-datawriter-and-datareader-qos) 
   for a summary of the name mangling rules).
 - Check if a Topic with the specific name and data type has already been created
   by calling [`DDS_DomainParticipant_find_topic()`](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/api/connext_dds/api_c/group__DDSDomainParticipantModule.html#ga5d03738356707f3375ffddc7d1669161).

@@ -15,7 +15,7 @@ Package `rmw_connextdds` is meant to be a replacement for [`rmw_connext_cpp`](ht
 This new implementation resolves several performance issues, and it improves out-of-the-box
 interoperability with DDS applications.
 
-For any questions or feedback, feel free to reach out to robotics@rti.com.
+For any questions or direct feedback, feel free to reach out to robotics@rti.com.
 
 ## Table of Contents
 
@@ -1006,27 +1006,27 @@ Connext installation by copying the file (or its contents) to
 `ros2_qos_profiles.xml` contains a single QoS library named `ros2`, and containing
 the following QoS profiles:
 
-- [`ros2::rmw.ros_discovery_info`](#ros2--rmwros-discovery-info)
-- [`ros2::rcl.node_parameters`](#ros2--rclnode-parameters)
-- [`ros2::rcl.log`](#ros2--rcllog)
-- [`ros2::rcl.builtin_endpoints`](#ros2--rclbuiltin-endpoints)
-- [`ros2::rmw_connextdds.base_participant`](#ros2--rmw-connextddsbase-participant)
-- [`ros2::rmw_connextdds.base_application`](#ros2--rmw-connextddsbase-application)
-- [`ros2::rmw_connextdds.opt.large_data`](#ros2--rmw-connextddsoptlarge-data)
-- [`ros2::rmw_connextdds.opt.unbounded_data`](#ros2--rmw-connextddsoptunbounded-data)
-- [`ros2::rmw_connextdds.opt.content_filtered_topic_property`](#ros2--rmw-connextddsoptcontent-filtered-topic-property)
-- [`ros2::rmw_connextdds.opt.localhost_only`](#ros2--rmw-connextddsoptlocalhost-only)
-- [`ros2::rmw_connextdds.opt.fast_endpoint_discovery`](#ros2--rmw-connextddsoptfast-endpoint-discovery)
+- [`ros2::rmw.ros_discovery_info`](#ros2rmwros_discovery_info)
+- [`ros2::rcl.node_parameters`](#ros2rclnode_parameters)
+- [`ros2::rcl.log`](#ros2rcllog)
+- [`ros2::rcl.builtin_endpoints`](#ros2rclbuiltin_endpoints)
+- [`ros2::rmw_connextdds.base_participant`](#ros2rmw_connextddsbase_participant)
+- [`ros2::rmw_connextdds.base_application`](#ros2rmw_connextddsbase_application)
+- [`ros2::rmw_connextdds.opt.large_data`](#ros2rmw_connextddsoptlarge_data)
+- [`ros2::rmw_connextdds.opt.unbounded_data`](#ros2rmw_connextddsoptunbounded_data)
+- [`ros2::rmw_connextdds.opt.content_filtered_topic_property`](#ros2rmw_connextddsoptcontent_filtered_topic_property)
+- [`ros2::rmw_connextdds.opt.localhost_only`](#ros2rmw_connextddsoptlocalhost_only)
+- [`ros2::rmw_connextdds.opt.fast_endpoint_discovery`](#ros2rmw_connextddsoptfast_endpoint_discovery)
 
-Most users should consider using profile [`ros2::rmw_connextdds.base_application`](#ros2--rmw-connextddsbase-application) as the base profile to begin
+Most users should consider using profile [`ros2::rmw_connextdds.base_application`](#ros2rmw_connextddsbase_application) as the base profile to begin
 customization of the DDS QoS used by their applications.
 
 This profile will provide the same QoS settings used by default by `rmw_connextdds`
 (i.e. when no custom [runtime configuration](#rmw-runtime-configuration) is specified).
 
-Alternatively, profiles [`ros2::rcl.builtin_endpoints`](#ros2--rclbuiltin-endpoints)
-and [`ros2::rmw_connextdds.base_participant`](#ros2--rmw-connextddsbase-participant),
-which are both already included in the inheritance chain of [`ros2::rmw_connextdds.base_application`](#ros2--rmw-connextddsbase-application), may be used directly
+Alternatively, profiles [`ros2::rcl.builtin_endpoints`](#ros2rclbuiltin_endpoints)
+and [`ros2::rmw_connextdds.base_participant`](#ros2rmw_connextddsbase_participant),
+which are both already included in the inheritance chain of [`ros2::rmw_connextdds.base_application`](#ros2rmw_connextddsbase_application), may be used directly
 to, respectively, configure the QoS of all "built-in" endpoints created by the
 RMW and `rcl` layers, and to configure the QoS of the DomainParticipant created
 by `rmw_connextdds`.
@@ -1078,9 +1078,9 @@ endpoints created by the RMW and `rcl` layers for every ROS 2 Node.
 
 These "built-in" endpoints include:
 
-- Endpoints on topic `"ros_discovery_info"` (configured using profile [`ros2::rmw.ros_discovery_info`](#ros2--rmwros-discovery-info)).
-- Endpoints on topics used for node parameters (configured using profile [`ros2::rcl.node_parameters`](#ros2--rclnode-parameters)).
-- Endpoints on the ROS logging topic `"rosout"` (configured using profile [`ros2::rcl.log`](#ros2--rcllog)).
+- Endpoints on topic `"ros_discovery_info"` (configured using profile [`ros2::rmw.ros_discovery_info`](#ros2rmwros_discovery_info)).
+- Endpoints on topics used for node parameters (configured using profile [`ros2::rcl.node_parameters`](#ros2rclnode_parameters)).
+- Endpoints on the ROS logging topic `"rosout"` (configured using profile [`ros2::rcl.log`](#ros2rcllog)).
 
 The parent profiles are applied using "topic filters" that select all required topics.
 
@@ -1109,7 +1109,7 @@ to the user to configure this policy as needed in their own profiles.
 The asynchronous publish mode is still used for all "built-in" writers to allow them
 to continue to operate like "out of the box", even when writing large messages.
 
-You might also consider inheriting directly from profile [`ros2::rcl.builtin_endpoints`](#ros2--rclbuiltin-endpoints),
+You might also consider inheriting directly from profile [`ros2::rcl.builtin_endpoints`](#ros2rclbuiltin_endpoints),
 if you only want to configure the built-in endpoints but not the DomainParticipant QoS.
 
 #### ros2::rmw_connextdds.opt.large_data

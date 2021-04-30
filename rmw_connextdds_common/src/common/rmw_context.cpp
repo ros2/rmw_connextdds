@@ -20,7 +20,7 @@
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#include "rcutils/get_env.h"
+#include "rcutils/env.h"
 #include "rcutils/filesystem.h"
 
 /******************************************************************************

@@ -20,7 +20,7 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#include "rcutils/get_env.h"
+#include "rcutils/env.h"
 
 struct RMW_Connext_BuiltinListener;
 

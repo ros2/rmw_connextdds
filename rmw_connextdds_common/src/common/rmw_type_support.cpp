@@ -678,8 +678,15 @@ void RMW_Connext_MessageTypeSupport::type_info(
      but assumes full_bounded == true by default */
   bool full_bounded = true;
 
+#ifdef ROSIDL_TYPESUPPORT_FASTRTPS_HAS_PLAIN_TYPES
+  char bounds_info;
+  serialized_size_max =
+    static_cast<uint32_t>(callbacks->max_serialized_size(bounds_info));
+  full_bounded = 0 != (bounds_info & ROSIDL_TYPESUPPORT_FASTRTPS_BOUNDED_TYPE);
+#else
   serialized_size_max =
     static_cast<uint32_t>(callbacks->max_serialized_size(full_bounded));
+#endif
 
   unbounded = !full_bounded;
 

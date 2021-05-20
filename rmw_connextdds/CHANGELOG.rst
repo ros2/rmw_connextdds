@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.1 (2021-04-26)
 ------------------
 

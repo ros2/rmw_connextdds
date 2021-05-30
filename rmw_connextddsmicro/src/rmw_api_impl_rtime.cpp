@@ -424,7 +424,7 @@ rmw_publisher_wait_for_all_acked(
 }
 
 
-mw_ret_t
+rmw_ret_t
 rmw_publisher_get_actual_qos(
   const rmw_publisher_t * publisher,
   rmw_qos_profile_t * qos)

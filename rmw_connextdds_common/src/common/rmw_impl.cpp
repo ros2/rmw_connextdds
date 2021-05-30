@@ -221,16 +221,17 @@ rmw_connextdds_find_string_in_list(
   return false;
 }
 
-rmw_ret_t
+DDS_Duration_t
 rmw_connextdds_duration_from_ros_time(
   DDS_Duration_t * const duration,
   const rmw_time_t * const ros_time)
 {
   rmw_time_t in_time = rmw_dds_common::clamp_rmw_time_to_dds_time(*ros_time);
 
-  duration->sec = static_cast<DDS_Long>(in_time.sec);
-  duration->nanosec = static_cast<DDS_UnsignedLong>(in_time.nsec);
-  return RMW_RET_OK;
+  DDS_Duration_t duration;
+  duration.sec = static_cast<DDS_Long>(in_time.sec);
+  duration.nanosec = static_cast<DDS_UnsignedLong>(in_time.nsec);
+  return duration;
 }
 
 /******************************************************************************
@@ -945,7 +946,7 @@ RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
   DDS_Duration_t timeout = DDS_DURATION_INFINITE;
 
   if (!rmw_time_equal(wait_timeout, RMW_DURATION_INFINITE)) {
-    rmw_connextdds_duration_from_ros_time(&timeout, &wait_timeout);
+    timeout = rmw_connextdds_duration_from_ros_time(&wait_timeout);
   }
 
   const DDS_ReturnCode_t dds_rc =

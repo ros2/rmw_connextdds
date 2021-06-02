@@ -286,6 +286,12 @@ rmw_api_connextdds_publisher_assert_liveliness(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
+rmw_api_connextdds_publisher_wait_for_all_acked(
+  const rmw_publisher_t * publisher,
+  rmw_time_t wait_timeout);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
 rmw_api_connextdds_publisher_get_actual_qos(
   const rmw_publisher_t * publisher,
   rmw_qos_profile_t * qos);

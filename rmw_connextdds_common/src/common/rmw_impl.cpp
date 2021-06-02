@@ -221,6 +221,22 @@ rmw_connextdds_find_string_in_list(
   return false;
 }
 
+DDS_Duration_t
+rmw_connextdds_duration_from_ros_time(
+  const rmw_time_t * const ros_time)
+{
+  if (rmw_time_equal(*ros_time, RMW_DURATION_INFINITE)) {
+    return DDS_DURATION_INFINITE;
+  }
+
+  rmw_time_t in_time = rmw_dds_common::clamp_rmw_time_to_dds_time(*ros_time);
+
+  DDS_Duration_t duration;
+  duration.sec = static_cast<DDS_Long>(in_time.sec);
+  duration.nanosec = static_cast<DDS_UnsignedLong>(in_time.nsec);
+  return duration;
+}
+
 /******************************************************************************
  * Qos Helpers
  ******************************************************************************/
@@ -925,6 +941,28 @@ RMW_Connext_Publisher::assert_liveliness()
   }
 
   return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
+{
+  DDS_Duration_t timeout = rmw_connextdds_duration_from_ros_time(&wait_timeout);
+
+  const DDS_ReturnCode_t dds_rc =
+    DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout);
+
+  switch (dds_rc) {
+    case DDS_RETCODE_OK:
+      return RMW_RET_OK;
+    case DDS_RETCODE_TIMEOUT:
+      return RMW_RET_TIMEOUT;
+    default:
+      {
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "failed to wait for reader acknowledgements: dds_rc=%d", dds_rc)
+        return RMW_RET_ERROR;
+      }
+  }
 }
 
 rmw_ret_t

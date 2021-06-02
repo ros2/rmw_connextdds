@@ -70,4 +70,7 @@ struct DDS_LifespanQosPolicy;
 #define DDS_InstanceHandle_compare_prefix(ih_a_, ih_b_) \
   memcmp((ih_a_)->octet, (ih_b_)->octet, 12)
 
+// Not available function
+#define DDS_DataWriter_wait_for_acknowledgments(writer_, timeout_)    DDS_RETCODE_UNSUPPORTED
+
 #endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

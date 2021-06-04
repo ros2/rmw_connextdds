@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.0 (2021-06-04)
+------------------
 * Add rmw_publisher_wait_for_all_acked support. (`#20 <https://github.com/rticommunity/rmw_connextdds/issues/20>`_)
 * Support extended signature for `message_type_support_callbacks_t::max_serialized_size()` from `rosidl_typesupport_fastrtps_cpp`. (`#14 <https://github.com/rticommunity/rmw_connextdds/issues/14>`_)
 * Update includes after rcutils/get_env.h deprecation. (`#55 <https://github.com/rticommunity/rmw_connextdds/issues/55>`_)

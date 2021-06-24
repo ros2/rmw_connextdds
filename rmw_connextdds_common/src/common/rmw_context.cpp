@@ -15,10 +15,13 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
+
+#include "rmw_dds_common/security.hpp"
 
 #include "rcutils/env.h"
 #include "rcutils/filesystem.h"
@@ -1117,10 +1120,6 @@ rmw_connextdds_configure_security(
     return rc;
   }
 
-  rcutils_allocator_t allocator = rcutils_get_default_allocator();
-  rcutils_allocator_t * const allocator_ptr = &allocator;
-  std::ostringstream ss;
-  std::string prop_uri;
 #if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   static const char * const uri_prefix = "file:";
 #else
@@ -1128,168 +1127,97 @@ rmw_connextdds_configure_security(
   static const char * const uri_prefix = "";
 #endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
-  char * const prop_identity_ca =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "identity_ca.cert.pem",
-    allocator);
-  auto scope_exit_prop_identity_ca = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_identity_ca]()
-    {
-      allocator_ptr->deallocate(prop_identity_ca, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_identity_ca;
-  prop_uri = ss.str();
-  ss.str("");
+  std::unordered_map<std::string, std::string> security_files;
+  if (!rmw_dds_common::get_security_files(
+      uri_prefix, ctx->base->options.security_options.security_root_path, security_files))
+  {
+    RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
+    return RMW_RET_ERROR;
+  }
+
   /* X509 Certificate of the Identity CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_IDENTITY_CA_PROPERTY,
-      prop_uri.c_str(),
+      security_files["IDENTITY_CA"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CA_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_IDENTITY_CA_PROPERTY, security_files["IDENTITY_CA"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_perm_ca =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "permissions_ca.cert.pem",
-    allocator);
-  auto scope_exit_prop_perm_ca = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_perm_ca]()
-    {
-      allocator_ptr->deallocate(prop_perm_ca, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_perm_ca;
-  prop_uri = ss.str();
-  ss.str("");
   /* X509 Certificate of the Permissions CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
-      prop_uri.c_str(),
+      security_files["PERMISSIONS_CA"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, security_files["PERMISSIONS_CA"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_peer_key =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "key.pem",
-    allocator);
-  auto scope_exit_prop_peer_key = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_peer_key]()
-    {
-      allocator_ptr->deallocate(prop_peer_key, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_peer_key;
-  prop_uri = ss.str();
-  ss.str("");
   /* Private Key of the DomainParticipant's identity */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PRIVATE_KEY_PROPERTY,
-      prop_uri.c_str(),
+      security_files["PRIVATE_KEY"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY, security_files["PRIVATE_KEY"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_peer_cert =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "cert.pem",
-    allocator);
-  auto scope_exit_prop_peer_cert = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_peer_cert]()
-    {
-      allocator_ptr->deallocate(prop_peer_cert, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_peer_cert;
-  prop_uri = ss.str();
-  ss.str("");
   /* Public certificate of the DomainParticipant's identity, signed
    * by the Certificate Authority */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
-      prop_uri.c_str(),
+      security_files["CERTIFICATE"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, security_files["CERTIFICATE"].c_str())
     return RMW_RET_ERROR;
   }
-
-  char * const prop_governance =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "governance.p7s",
-    allocator);
-  auto scope_exit_prop_governance = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_governance]()
-    {
-      allocator_ptr->deallocate(prop_governance, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_governance;
-  prop_uri = ss.str();
-  ss.str("");
   /* XML file containing domain governance configuration, signed by
    * the Permission CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_GOVERNANCE_PROPERTY,
-      prop_uri.c_str(),
+      security_files["GOVERNANCE"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_GOVERNANCE_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_GOVERNANCE_PROPERTY, security_files["GOVERNANCE"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_permissions =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "permissions.p7s",
-    allocator);
-  auto scope_exit_prop_permissions = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_permissions]()
-    {
-      allocator_ptr->deallocate(prop_permissions, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_permissions;
-  prop_uri = ss.str();
-  ss.str("");
   /* XML file containing domain permissions configuration, signed by
    * the Permission CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PERMISSIONS_PROPERTY,
-      prop_uri.c_str(),
+      security_files["PERMISSIONS"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_PERMISSIONS_PROPERTY, security_files["PERMISSIONS"].c_str())
     return RMW_RET_ERROR;
   }
 

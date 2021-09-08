@@ -58,7 +58,7 @@ enum class RMW_Connext_RequestReplyMapping
   Extended
 };
 
-struct rmw_context_impl_t
+struct rmw_context_impl_s
 {
   rmw_dds_common::Context common;
   rmw_context_t * base;
@@ -148,7 +148,7 @@ struct rmw_context_impl_t
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
   std::mutex endpoint_mutex;
 
-  explicit rmw_context_impl_t(rmw_context_t * const base)
+  explicit rmw_context_impl_s(rmw_context_t * const base)
   : common(),
     base(base),
     factory(nullptr),
@@ -168,7 +168,7 @@ struct rmw_context_impl_t
     common.sub = nullptr;
   }
 
-  ~rmw_context_impl_t()
+  ~rmw_context_impl_s()
   {
     if (0u != this->node_count) {
       RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)

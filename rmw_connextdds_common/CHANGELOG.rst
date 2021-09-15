@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.0 (2021-09-15)
+------------------
 * Update rmw_context_impl_t definition (`#65 <https://github.com/ros2/rmw_connextdds/issues/65>`_)
 * Use the new rmw_dds_common::get_security_files API (`#61 <https://github.com/ros2/rmw_connextdds/issues/61>`_)
 * Contributors: Chris Lalancette, Michel Hidalgo

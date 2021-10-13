@@ -2623,6 +2623,45 @@ RMW_Connext_Client::send_request(
 }
 
 rmw_ret_t
+RMW_Connext_Client::qos(rmw_qos_profile_t * const qos)
+{
+  rmw_qos_profile_t pub_qos = rmw_qos_profile_default;
+  rmw_qos_profile_t sub_qos = rmw_qos_profile_default;
+
+  rmw_ret_t rc = this->reply_sub->qos(&sub_qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get client's subscription qos");
+    return rc;
+  }
+  rc = this->request_pub->qos(&pub_qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get client's publisher qos");
+    return rc;
+  }
+
+  // Check if the QoS of the client's pub/sub match
+  // LifespanQosPolicy is a writer-only policy, so don't take into
+  // acount in this comparison
+  if (pub_qos.history == sub_qos.history &&
+    pub_qos.depth == sub_qos.depth &&
+    pub_qos.reliability == sub_qos.reliability &&
+    pub_qos.durability == sub_qos.durability &&
+    pub_qos.liveliness == sub_qos.liveliness &&
+    pub_qos.deadline.sec == sub_qos.deadline.sec &&
+    pub_qos.deadline.nsec == sub_qos.deadline.nsec &&
+    pub_qos.liveliness_lease_duration.sec == sub_qos.liveliness_lease_duration.sec &&
+    pub_qos.liveliness_lease_duration.nsec == sub_qos.liveliness_lease_duration.nsec)
+  {
+    // The client has a single QoS, set it as the client's publisher QoS since
+    // it includes the lifespan policy.
+    return this->request_pub->qos(qos);
+  } else {
+    RMW_SET_ERROR_MSG("client's publisher QoS does not match client's subscription QoS");
+    return RMW_RET_ERROR;
+  }
+}
+
+rmw_ret_t
 RMW_Connext_Client::finalize()
 {
   if (nullptr != this->request_pub) {
@@ -2871,6 +2910,45 @@ RMW_Connext_Service::send_response(
     rr_msg.sn)
 
   return this->reply_pub->write(&rr_msg, false /* serialized */);
+}
+
+rmw_ret_t
+RMW_Connext_Service::qos(rmw_qos_profile_t * const qos)
+{
+  rmw_qos_profile_t pub_qos = rmw_qos_profile_default;
+  rmw_qos_profile_t sub_qos = rmw_qos_profile_default;
+
+  rmw_ret_t rc = this->request_sub->qos(&sub_qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get service's subscription qos");
+    return rc;
+  }
+  rc = this->reply_pub->qos(&pub_qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get service's publisher qos");
+    return rc;
+  }
+
+  // Check if the QoS of the service's pub/sub match
+  // LifespanQosPolicy is a writer-only policy, so don't take into
+  // acount in this comparison
+  if (pub_qos.history == sub_qos.history &&
+    pub_qos.depth == sub_qos.depth &&
+    pub_qos.reliability == sub_qos.reliability &&
+    pub_qos.durability == sub_qos.durability &&
+    pub_qos.liveliness == sub_qos.liveliness &&
+    pub_qos.deadline.sec == sub_qos.deadline.sec &&
+    pub_qos.deadline.nsec == sub_qos.deadline.nsec &&
+    pub_qos.liveliness_lease_duration.sec == sub_qos.liveliness_lease_duration.sec &&
+    pub_qos.liveliness_lease_duration.nsec == sub_qos.liveliness_lease_duration.nsec)
+  {
+    // The service has a single QoS, set it as the service's publisher QoS since
+    // it includes the lifespan policy.
+    return this->reply_pub->qos(qos);
+  } else {
+    RMW_SET_ERROR_MSG("service's publisher QoS does not match service's subscription QoS");
+    return RMW_RET_ERROR;
+  }
 }
 
 rmw_ret_t

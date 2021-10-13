@@ -1022,7 +1022,7 @@ rmw_api_connextdds_init(
     if (RMW_RET_OK !=
       rmw_connextdds_initialize_participant_factory_qos(ctx))
     {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to set DDS participant factory QoS")
+      RMW_CONNEXT_LOG_ERROR_SET("failed to initialize DDS participant factory QoS")
       return RMW_RET_ERROR;
     }
 

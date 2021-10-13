@@ -65,10 +65,6 @@ install(
     RUNTIME DESTINATION bin
 )
 
-if(NOT WIN32)
-  ament_environment_hooks(env_hook/rmw_connextdds_resources.sh.in)
-endif()
-
 install(
   FILES
     resource/xml/ros2_qos_profiles.xml

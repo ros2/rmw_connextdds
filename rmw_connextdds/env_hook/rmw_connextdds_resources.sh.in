@@ -70,6 +70,8 @@ _rmw_connextdds_append_profile()
   elif [ -z "${already_added}" ]; then
     export NDDS_QOS_PROFILES="${NDDS_QOS_PROFILES};file://${_ros2_qos_profiles}"
   fi
+
+  export RMW_CONNEXT_QOS_PROFILES="${_ros2_qos_profiles}"
 }
 
 if [ ! -f "${_ros2_qos_profiles}" ]; then

@@ -29,6 +29,7 @@
 const char * const ROS_TOPIC_PREFIX = "rt";
 const char * const ROS_SERVICE_REQUESTER_PREFIX = ROS_SERVICE_REQUESTER_PREFIX_STR;
 const char * const ROS_SERVICE_RESPONSE_PREFIX = ROS_SERVICE_RESPONSE_PREFIX_STR;
+const char * const ROS_CFT_TOPIC_NAME_INFIX = "_ContentFilterTopic";
 
 std::string
 rmw_connextdds_create_topic_name(
@@ -1129,6 +1130,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   const bool ignore_local,
   const bool created_topic,
   DDS_TopicDescription * const dds_topic_cft,
+  const char * const cft_expression,
   const bool internal)
 : internal(internal),
   ignore_local(ignore_local),
@@ -1136,6 +1138,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   dds_reader(dds_reader),
   dds_topic(dds_topic),
   dds_topic_cft(dds_topic_cft),
+  cft_expression(cft_expression),
   type_support(type_support),
   created_topic(created_topic),
   status_condition(dds_reader, ignore_local, internal)
@@ -1256,19 +1259,40 @@ RMW_Connext_Subscriber::create(
     });
 
   DDS_TopicDescription * sub_topic = DDS_Topic_as_topicdescription(topic);
+  std::string sub_cft_name;
+  const char * sub_cft_expr = "";
+  const rcutils_string_array_t * sub_cft_params = nullptr;
 
   if (nullptr != cft_name) {
-    rmw_ret_t cft_rc =
-      rmw_connextdds_create_contentfilteredtopic(
-      ctx, dp, topic, cft_name, cft_filter, &cft_topic);
-
-    if (RMW_RET_OK != cft_rc) {
-      if (RMW_RET_UNSUPPORTED != cft_rc) {
-        return nullptr;
-      }
-    } else {
-      sub_topic = cft_topic;
+    sub_cft_name = cft_name;
+    sub_cft_expr = cft_filter;
+  } else {
+    sub_cft_name =
+      fqtopic_name + ROS_CFT_TOPIC_NAME_INFIX + RMW_Connext_Subscriber::get_atomic_id();
+    if (nullptr != subscriber_options->content_filtered_topic_options) {
+      sub_cft_expr =
+        subscriber_options->content_filtered_topic_options->filter_expression;
+      sub_cft_params =
+        subscriber_options->content_filtered_topic_options->expression_parameters;
     }
+  }
+
+  rmw_ret_t cft_rc =
+    rmw_connextdds_create_contentfilteredtopic(
+    ctx,
+    dp,
+    topic,
+    sub_cft_name.c_str(),
+    sub_cft_expr,
+    sub_cft_params,
+    &cft_topic);
+
+  if (RMW_RET_OK != cft_rc) {
+    if (RMW_RET_UNSUPPORTED != cft_rc) {
+      return nullptr;
+    }
+  } else {
+    sub_topic = cft_topic;
   }
 
   // The following initialization generates warnings when built
@@ -1337,6 +1361,7 @@ RMW_Connext_Subscriber::create(
     subscriber_options->ignore_local_publications,
     topic_created,
     cft_topic,
+    sub_cft_expr,
     internal);
 
   if (nullptr == rmw_sub_impl) {
@@ -1527,6 +1552,37 @@ RMW_Connext_Subscriber::take_serialized(
     *taken = taken_count > 0;
   }
   return rc;
+}
+
+
+rmw_ret_t
+RMW_Connext_Subscriber::set_cft_expression_parameters(
+  const rmw_subscription_content_filtered_topic_options_t * const options)
+{
+  const char * const filter_expression =
+    (nullptr != options && nullptr != options->filter_expression) ?
+    options->filter_expression : "";
+
+  const rcutils_string_array_t * filter_params =
+    (nullptr != options) ? options->expression_parameters : nullptr;
+
+  rmw_ret_t rc = rmw_connextdds_set_cft_filter_expression(
+    this->dds_topic_cft, filter_expression, filter_params);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+
+  this->cft_expression = filter_expression;
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Subscriber::get_cft_expression_parameters(
+  rcutils_allocator_t * allocator,
+  rmw_subscription_content_filtered_topic_options_t * const options)
+{
+  return rmw_connextdds_get_cft_filter_expression(this->dds_topic_cft, allocator, options);
 }
 
 rmw_ret_t
@@ -1815,6 +1871,7 @@ rmw_connextdds_create_subscriber(
     topic_name_len + 1);
   rmw_subscriber->options = *subscriber_options;
   rmw_subscriber->can_loan_messages = false;
+  rmw_subscriber->is_cft_enabled = rmw_sub_impl->is_cft_enabled();
 
   if (!internal) {
     if (RMW_RET_OK != rmw_sub_impl->enable()) {

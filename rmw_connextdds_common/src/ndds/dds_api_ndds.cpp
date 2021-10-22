@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "rmw/impl/cpp/key_value.hpp"
+#include "rti_connext_dds_custom_sql_filter/custom_sql_filter.hpp"
 
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
@@ -230,12 +231,53 @@ rmw_connextdds_initialize_participant_qos_impl(
 }
 
 rmw_ret_t
+rmw_connextdds_configure_participant(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const participant)
+{
+  UNUSED_ARG(ctx);
+
+  if (DDS_RETCODE_OK !=
+    rti_connext_dds_custom_sql_filter::register_content_filter(participant))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register custom SQL filter")
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+static
+rmw_ret_t
+rmw_connextdds_initialize_cft_parameters(
+  struct DDS_StringSeq * const cft_parameters,
+  const rcutils_string_array_t * const cft_expression_parameters)
+{
+  if (!DDS_StringSeq_ensure_length(
+      cft_parameters, cft_expression_parameters->size, cft_expression_parameters->size))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to ensure length for cft parameters sequence")
+    return RMW_RET_ERROR;
+  }
+  if (!DDS_StringSeq_from_array(
+      cft_parameters,
+      const_cast<const char **>(cft_expression_parameters->data),
+      cft_expression_parameters->size))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to copy data for cft parameters sequence")
+    return RMW_RET_ERROR;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 rmw_connextdds_create_contentfilteredtopic(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipant * const dp,
   DDS_Topic * const base_topic,
   const char * const cft_name,
   const char * const cft_filter,
+  const rcutils_string_array_t * const cft_expression_parameters,
   DDS_TopicDescription ** const cft_out)
 {
   UNUSED_ARG(ctx);
@@ -243,13 +285,28 @@ rmw_connextdds_create_contentfilteredtopic(
   RMW_CONNEXT_ASSERT(nullptr != cft_filter)
 
   struct DDS_StringSeq cft_parameters = DDS_SEQUENCE_INITIALIZER;
-  DDS_StringSeq_ensure_length(&cft_parameters, 0, 0);
+  auto scope_exit_cft_params = rcpputils::make_scope_exit(
+    [&cft_parameters]() {
+      if (!DDS_StringSeq_finalize(&cft_parameters)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize cft parameters sequence")
+      }
+    });
+  if (cft_expression_parameters) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_cft_parameters(&cft_parameters, cft_expression_parameters))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_connextdds_initialize_cft_parameters")
+      return RMW_RET_ERROR;
+    }
+  }
 
   *cft_out = nullptr;
 
   DDS_ContentFilteredTopic * cft_topic =
-    DDS_DomainParticipant_create_contentfilteredtopic(
-    dp, cft_name, base_topic, cft_filter, &cft_parameters);
+    DDS_DomainParticipant_create_contentfilteredtopic_with_filter(
+    dp, cft_name, base_topic, cft_filter, &cft_parameters,
+    rti_connext_dds_custom_sql_filter::PLUGIN_NAME);
+
   if (nullptr == cft_topic) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create content-filtered topic: "
@@ -570,7 +627,6 @@ rmw_connextdds_write_message(
       // enable WriteParams::replace_auto to retrieve SN of published message
       write_params.replace_auto = DDS_BOOLEAN_TRUE;
     }
-
     if (DDS_RETCODE_OK !=
       DDS_DataWriter_write_w_params_untypedI(
         pub->writer(), message, &write_params))
@@ -1238,6 +1294,102 @@ rmw_connextdds_enable_security(
       "RTI_Security_PluginSuite_create",
       RTI_FALSE))
   {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * const cft_expression,
+  const rcutils_string_array_t * const cft_expression_parameters)
+{
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(topic_desc);
+
+  struct DDS_StringSeq cft_parameters = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_cft_parameters = rcpputils::make_scope_exit(
+    [&cft_parameters]() {
+      if (!DDS_StringSeq_finalize(&cft_parameters)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize cft parameters sequence")
+      }
+    });
+  if (nullptr != cft_expression_parameters) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_cft_parameters(&cft_parameters, cft_expression_parameters))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_connextdds_initialize_cft_parameters")
+      return RMW_RET_ERROR;
+    }
+  }
+
+  DDS_ReturnCode_t ret =
+    DDS_ContentFilteredTopic_set_expression(cft_topic, cft_expression, &cft_parameters);
+  if (DDS_RETCODE_OK != ret) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set content-filtered topic")
+    return RMW_RET_ERROR;
+  }
+  return RMW_RET_OK;
+}
+
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  rcutils_allocator_t * const allocator,
+  rmw_subscription_content_filtered_topic_options_t * const options)
+{
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(topic_desc);
+
+  // get filter_expression
+  const char * filter_expression = DDS_ContentFilteredTopic_get_filter_expression(cft_topic);
+  if (!filter_expression) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get filter expression")
+    return RMW_RET_ERROR;
+  }
+
+  // get parameters
+  struct DDS_StringSeq parameters = DDS_SEQUENCE_INITIALIZER;
+  DDS_ReturnCode_t status =
+    DDS_ContentFilteredTopic_get_expression_parameters(cft_topic, &parameters);
+  if (DDS_RETCODE_OK != status) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get expression parameters")
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_parameters_delete =
+    rcpputils::make_scope_exit(
+    [&parameters]()
+    {
+      DDS_StringSeq_finalize(&parameters);
+    });
+
+  const DDS_Long parameters_len = DDS_StringSeq_get_length(&parameters);
+  std::vector<const char *> expression_parameters;
+  expression_parameters.reserve(parameters_len);
+
+  for (DDS_Long i = 0; i < parameters_len; ++i) {
+    const char * ref = *DDS_StringSeq_get_reference(&parameters, i);
+    if (!ref) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to get a reference for parameters with index %d", i)
+      return RMW_RET_ERROR;
+    }
+
+    expression_parameters.push_back(ref);
+  }
+
+  if (RMW_RET_OK != rmw_subscription_content_filtered_topic_options_init(
+      filter_expression,
+      expression_parameters.size(),
+      expression_parameters.data(),
+      allocator,
+      options))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_subscription_content_filtered_topic_options_init")
     return RMW_RET_ERROR;
   }
 

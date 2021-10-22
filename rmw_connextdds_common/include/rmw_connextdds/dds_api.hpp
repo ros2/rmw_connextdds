@@ -66,12 +66,18 @@ rmw_connextdds_initialize_participant_qos_impl(
   DDS_DomainParticipantQos * const dp_qos);
 
 rmw_ret_t
+rmw_connextdds_configure_participant(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const participant);
+
+rmw_ret_t
 rmw_connextdds_create_contentfilteredtopic(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipant * const dp,
   DDS_Topic * const base_topic,
   const char * const cft_name,
   const char * const cft_filter,
+  const rcutils_string_array_t * const cft_expression_parameters,
   DDS_TopicDescription ** const cft_out);
 
 rmw_ret_t
@@ -257,5 +263,17 @@ rmw_connextdds_enable_security(
 #define DDS_SECURITY_LOGGING_LEVEL_PROPERTY \
   DDS_SECURITY_PROPERTY_PREFIX ".logging.log_level"
 #endif /* DDS_SECURITY_LOGGING_LEVEL_PROPERTY */
+
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * const cft_expression,
+  const rcutils_string_array_t * const cft_expression_parameters);
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  rcutils_allocator_t * const allocator,
+  rmw_subscription_content_filtered_topic_options_t * const options);
 
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

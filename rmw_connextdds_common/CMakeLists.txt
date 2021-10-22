@@ -112,7 +112,8 @@ set(RMW_CONNEXT_DEPS
     rosidl_typesupport_fastrtps_cpp
     rosidl_typesupport_introspection_c
     rosidl_typesupport_introspection_cpp
-    rti_connext_dds_cmake_module)
+    rti_connext_dds_cmake_module
+    rti_connext_dds_custom_sql_filter)
 
 foreach(pkg_dep ${RMW_CONNEXT_DEPS})
     find_package(${pkg_dep} REQUIRED)

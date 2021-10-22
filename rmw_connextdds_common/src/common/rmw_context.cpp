@@ -218,6 +218,12 @@ rmw_context_impl_t::initialize_participant(const bool localhost_only)
     return RMW_RET_ERROR;
   }
 
+  rmw_ret_t cfg_rc = rmw_connextdds_configure_participant(this, this->participant);
+  if (RMW_RET_OK != cfg_rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to configure DDS participant")
+    return cfg_rc;
+  }
+
   /* Create DDS publisher/subscriber objects that will be used for all DDS
      writers/readers created to support RMW publishers/subscriptions. */
 

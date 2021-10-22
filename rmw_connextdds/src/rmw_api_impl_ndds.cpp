@@ -647,6 +647,24 @@ rmw_subscription_get_actual_qos(
   return rmw_api_connextdds_subscription_get_actual_qos(subscription, qos);
 }
 
+rmw_ret_t
+rmw_subscription_set_cft_expression_parameters(
+  rmw_subscription_t * subscription,
+  const rmw_subscription_content_filtered_topic_options_t * options)
+{
+  return rmw_api_connextdds_subscription_set_cft_expression_parameters(
+    subscription, options);
+}
+
+rmw_ret_t
+rmw_subscription_get_cft_expression_parameters(
+  const rmw_subscription_t * subscription,
+  rcutils_allocator_t * allocator,
+  rmw_subscription_content_filtered_topic_options_t * options)
+{
+  return rmw_api_connextdds_subscription_get_cft_expression_parameters(
+    subscription, allocator, options);
+}
 
 rmw_ret_t
 rmw_destroy_subscription(

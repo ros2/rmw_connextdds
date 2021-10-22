@@ -11,6 +11,7 @@
   <buildtool_export_depend>ament_cmake</buildtool_export_depend>
 
   <depend>rti_connext_dds_cmake_module</depend>
+  <depend>rti_connext_dds_custom_sql_filter</depend>
   <depend>fastcdr</depend>
   <depend>rcutils</depend>
   <depend>rcpputils</depend>

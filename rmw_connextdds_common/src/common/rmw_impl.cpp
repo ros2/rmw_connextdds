@@ -1559,21 +1559,14 @@ rmw_ret_t
 RMW_Connext_Subscriber::set_cft_expression_parameters(
   const rmw_subscription_content_filtered_topic_options_t * const options)
 {
-  const char * const filter_expression =
-    (nullptr != options && nullptr != options->filter_expression) ?
-    options->filter_expression : "";
-
-  const rcutils_string_array_t * filter_params =
-    (nullptr != options) ? options->expression_parameters : nullptr;
-
-  rmw_ret_t rc = rmw_connextdds_set_cft_filter_expression(
-    this->dds_topic_cft, filter_expression, filter_params);
-  if (RMW_RET_OK != rc) {
+  if (RMW_RET_OK !=
+    rmw_connextdds_set_cft_filter_expression(
+      this->dds_topic_cft, options->filter_expression, options->expression_parameters))
+  {
     return rc;
   }
 
-  this->cft_expression = filter_expression;
-
+  this->cft_expression = options->filter_expression;
   return RMW_RET_OK;
 }
 

@@ -652,7 +652,7 @@ rmw_subscription_set_cft_expression_parameters(
   rmw_subscription_t * subscription,
   const rmw_subscription_content_filtered_topic_options_t * options)
 {
-  return rmw_api_connextdds_subscription_set_cft_expression_parameters(
+  return rmw_api_connextdds_subscription_set_content_filter(
     subscription, options);
 }
 
@@ -662,7 +662,7 @@ rmw_subscription_get_cft_expression_parameters(
   rcutils_allocator_t * allocator,
   rmw_subscription_content_filtered_topic_options_t * options)
 {
-  return rmw_api_connextdds_subscription_get_cft_expression_parameters(
+  return rmw_api_connextdds_subscription_get_content_filter(
     subscription, allocator, options);
 }
 

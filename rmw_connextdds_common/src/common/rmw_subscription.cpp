@@ -167,7 +167,7 @@ rmw_api_connextdds_subscription_get_actual_qos(
 }
 
 rmw_ret_t
-rmw_api_connextdds_subscription_set_cft_expression_parameters(
+rmw_api_connextdds_subscription_set_content_filter(
   rmw_subscription_t * subscription,
   const rmw_subscription_content_filtered_topic_options_t * options)
 {
@@ -182,7 +182,7 @@ rmw_api_connextdds_subscription_set_cft_expression_parameters(
   RMW_Connext_Subscriber * const sub_impl =
     reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
 
-  rmw_ret_t rc = sub_impl->set_cft_expression_parameters(options);
+  rmw_ret_t rc = sub_impl->set_content_filter(options);
   subscription->is_cft_enabled = sub_impl->is_cft_enabled();
 
   return rc;
@@ -190,7 +190,7 @@ rmw_api_connextdds_subscription_set_cft_expression_parameters(
 
 
 rmw_ret_t
-rmw_api_connextdds_subscription_get_cft_expression_parameters(
+rmw_api_connextdds_subscription_get_content_filter(
   const rmw_subscription_t * subscription,
   rcutils_allocator_t * const allocator,
   rmw_subscription_content_filtered_topic_options_t * options)
@@ -207,9 +207,12 @@ rmw_api_connextdds_subscription_get_cft_expression_parameters(
   RMW_Connext_Subscriber * const sub_impl =
     reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
 
-  rmw_ret_t rc = sub_impl->get_cft_expression_parameters(allocator, options);
+  if (!sub_impl->is_cft_enabled()) {
+    RMW_CONNEXT_LOG_ERROR_SET("no content-filter associated with subscription")
+    return RMW_RET_ERROR;
+  }
 
-  return rc;
+  return sub_impl->get_content_filter(allocator, options);
 }
 
 rmw_ret_t

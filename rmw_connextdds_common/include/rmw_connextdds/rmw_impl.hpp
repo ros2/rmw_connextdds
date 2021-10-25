@@ -439,11 +439,11 @@ public:
     bool * const taken);
 
   rmw_ret_t
-  set_cft_expression_parameters(
+  set_content_filter(
     const rmw_subscription_content_filtered_topic_options_t * const options);
 
   rmw_ret_t
-  get_cft_expression_parameters(
+  get_content_filter(
     rcutils_allocator_t * allocator,
     rmw_subscription_content_filtered_topic_options_t * const options);
 

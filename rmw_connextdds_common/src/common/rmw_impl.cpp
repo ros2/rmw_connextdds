@@ -1556,7 +1556,7 @@ RMW_Connext_Subscriber::take_serialized(
 
 
 rmw_ret_t
-RMW_Connext_Subscriber::set_cft_expression_parameters(
+RMW_Connext_Subscriber::set_content_filter(
   const rmw_subscription_content_filtered_topic_options_t * const options)
 {
   if (RMW_RET_OK !=
@@ -1571,7 +1571,7 @@ RMW_Connext_Subscriber::set_cft_expression_parameters(
 }
 
 rmw_ret_t
-RMW_Connext_Subscriber::get_cft_expression_parameters(
+RMW_Connext_Subscriber::get_content_filter(
   rcutils_allocator_t * allocator,
   rmw_subscription_content_filtered_topic_options_t * const options)
 {

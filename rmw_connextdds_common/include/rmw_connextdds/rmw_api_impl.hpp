@@ -437,13 +437,13 @@ rmw_api_connextdds_subscription_get_actual_qos(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_subscription_set_cft_expression_parameters(
+rmw_api_connextdds_subscription_set_content_filter(
   rmw_subscription_t * subscription,
   const rmw_subscription_content_filtered_topic_options_t * options);
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_subscription_get_cft_expression_parameters(
+rmw_api_connextdds_subscription_get_content_filter(
   const rmw_subscription_t * subscription,
   rcutils_allocator_t * const allocator,
   rmw_subscription_content_filtered_topic_options_t * options);

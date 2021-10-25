@@ -392,7 +392,7 @@ rmw_context_impl_t::finalize_participant()
   if (nullptr != this->participant) {
     // If we are cleaning up after some RMW failure, it is possible for some
     // DataWriter to not have been deleted.
-    // Call DDS_Publisher_delete_contained_entities() to make sure we can
+    // Call DDS_DomainParticipant_delete_contained_entities() to make sure we can
     // dispose the publisher.
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipant_delete_contained_entities(this->participant))
@@ -408,6 +408,7 @@ rmw_context_impl_t::finalize_participant()
       RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS participant")
       return RMW_RET_ERROR;
     }
+
     this->participant = nullptr;
   }
 

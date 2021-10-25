@@ -649,6 +649,8 @@ rmw_connextdds_finalize_participant_factory_context(
   RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_fv_FactoryContext)
   rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
 
+  RMW_Connext_fv_FactoryContext = nullptr;
+
   RT_Registry_T * registry =
     DDS_DomainParticipantFactory_get_registry(
     RMW_Connext_gv_DomainParticipantFactory);

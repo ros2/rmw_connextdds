@@ -77,54 +77,52 @@ struct RTI_CustomSqlFilterReaderData
   }
 };
 
-struct RTI_CustomSqlFilterData
-{
-  DDS_SqlFilterGeneratorQos base;
+using RTI_CustomSqlFilterData = rti_connext_dds_custom_sql_filter::CustomSqlFilterData;
 
-  RTI_CustomSqlFilterData()
+RTI_CustomSqlFilterData::CustomSqlFilterData()
   : base(DDS_SQLFILTER_QOS_DEFAULT)
-  {}
+{
+}
 
-  DDS_ReturnCode_t
-  set_memory_management_property(
-    const DDS_DomainParticipantQos & dp_qos)
-  {
-    static const DDS_SqlFilterMemoryManagementQos DEFAULT =
-      DDS_SqlFilterMemoryManagementQos_INITIALIZER;
-    this->base.memory_management = DEFAULT;
+DDS_ReturnCode_t
+RTI_CustomSqlFilterData::set_memory_management_property(
+  const DDS_DomainParticipantQos & dp_qos)
+{
+  static const DDS_SqlFilterMemoryManagementQos DEFAULT =
+    DDS_SqlFilterMemoryManagementQos_INITIALIZER;
+  this->base.memory_management = DEFAULT;
 
-    auto properties = const_cast<DDS_PropertyQosPolicy *>(&dp_qos.property);
+  auto properties = const_cast<DDS_PropertyQosPolicy *>(&dp_qos.property);
 
-    const DDS_Property_t * property = DDS_PropertyQosPolicyHelper_lookup_property(
-      properties,
-      DDS_CONTENT_FILTER_SQL_DESERIALIZED_SAMPLE_MIN_BUFFER_SIZE_PROPERTY_NAME);
+  const DDS_Property_t * property = DDS_PropertyQosPolicyHelper_lookup_property(
+    properties,
+    DDS_CONTENT_FILTER_SQL_DESERIALIZED_SAMPLE_MIN_BUFFER_SIZE_PROPERTY_NAME);
 
-    if (nullptr != property) {
-      if (!sscanf(
-          property->value, "%d",
-          &this->base.memory_management.buffer_min_size))
-      {
-        // TODO(asorbini) log error
-        return DDS_RETCODE_ERROR;
-      }
+  if (nullptr != property) {
+    if (!sscanf(
+        property->value, "%d",
+        &this->base.memory_management.buffer_min_size))
+    {
+      // TODO(asorbini) log error
+      return DDS_RETCODE_ERROR;
     }
-
-    property = DDS_PropertyQosPolicyHelper_lookup_property(
-      properties,
-      DDS_CONTENT_FILTER_SQL_DESERIALIZED_SAMPLE_TRIM_TO_SIZE_PROPERTY_NAME);
-
-    if (nullptr != property) {
-      if (!REDAString_iCompare(property->value, "1") ||
-        !REDAString_iCompare(property->value, "true") ||
-        !REDAString_iCompare(property->value, "yes"))
-      {
-        this->base.memory_management.trim_buffer = DDS_BOOLEAN_TRUE;
-      }
-    }
-
-    return DDS_RETCODE_OK;
   }
-};
+
+  property = DDS_PropertyQosPolicyHelper_lookup_property(
+    properties,
+    DDS_CONTENT_FILTER_SQL_DESERIALIZED_SAMPLE_TRIM_TO_SIZE_PROPERTY_NAME);
+
+  if (nullptr != property) {
+    if (!REDAString_iCompare(property->value, "1") ||
+      !REDAString_iCompare(property->value, "true") ||
+      !REDAString_iCompare(property->value, "yes"))
+    {
+      this->base.memory_management.trim_buffer = DDS_BOOLEAN_TRUE;
+    }
+  }
+
+  return DDS_RETCODE_OK;
+}
 
 static
 int
@@ -276,6 +274,16 @@ RTI_CustomSqlFilter_writer_detach(
     static_cast<RTI_CustomSqlFilterWriterData *>(writer_filter_data);
 
   DDS_SqlFilter_writerDetach(&cft_data->base, writer_data->base);
+
+  REDASkiplistNode * node = nullptr;
+  REDASkiplist_gotoTopNode(&writer_data->readers, &node);
+  while (REDASkiplist_gotoNextNode(&writer_data->readers, &node)) {
+    RTI_CustomSqlFilterReaderData * const rdata =
+      static_cast<RTI_CustomSqlFilterReaderData *>(REDASkiplistNode_getUserData(node));
+    delete rdata;
+  }
+
+  REDASkiplist_deleteDefaultAllocator(&writer_data->readers_desc);
   delete writer_data;
 }
 
@@ -666,7 +674,8 @@ RTI_CustomSqlFilter_query(void * filter_data, void * handle)
 
 DDS_ReturnCode_t
 rti_connext_dds_custom_sql_filter::register_content_filter(
-  DDS_DomainParticipant * const participant)
+  DDS_DomainParticipant * const participant,
+  rti_connext_dds_custom_sql_filter::CustomSqlFilterData * const filter_data)
 {
   DDS_DomainParticipantQos dp_qos = DDS_DomainParticipantQos_INITIALIZER;
   auto scope_exit_qos = rcpputils::make_scope_exit(
@@ -683,17 +692,7 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
     return DDS_RETCODE_ERROR;
   }
 
-  RTI_CustomSqlFilterData * cft_data = new (std::nothrow) RTI_CustomSqlFilterData();
-  if (nullptr == cft_data) {
-    // TODO(asorbini) log error
-    return DDS_RETCODE_ERROR;
-  }
-  auto scope_exit_data = rcpputils::make_scope_exit(
-    [cft_data]()
-    {
-      delete cft_data;
-    });
-  DDS_ReturnCode_t rc = cft_data->set_memory_management_property(dp_qos);
+  DDS_ReturnCode_t rc = filter_data->set_memory_management_property(dp_qos);
   if (DDS_RETCODE_OK != rc) {
     // TODO(asorbini) log error
     return rc;
@@ -709,7 +708,7 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
   filter.writer_return_loan = RTI_CustomSqlFilter_writer_return_loan;
   filter.evaluate = RTI_CustomSqlFilter_evaluate;
   filter.finalize = RTI_CustomSqlFilter_finalize;
-  filter.filter_data = cft_data;
+  filter.filter_data = filter_data;
 
   rc = DDS_ContentFilter_register_filter(
     participant,
@@ -724,7 +723,6 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
     return DDS_RETCODE_ERROR;
   }
 
-  scope_exit_data.cancel();
   return DDS_RETCODE_OK;
 }
 

@@ -1368,9 +1368,9 @@ RMW_Connext_Subscriber::create(
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate RMW subscriber")
     return nullptr;
   }
-  scope_exit_type_unregister.cancel();
-  scope_exit_topic_delete.cancel();
   scope_exit_dds_reader_delete.cancel();
+  scope_exit_topic_delete.cancel();
+  scope_exit_type_unregister.cancel();
 
   return rmw_sub_impl;
 }

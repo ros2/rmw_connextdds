@@ -20,9 +20,22 @@
 namespace rti_connext_dds_custom_sql_filter
 {
 
+struct CustomSqlFilterData
+{
+  DDS_SqlFilterGeneratorQos base;
+
+  CustomSqlFilterData();
+
+  DDS_ReturnCode_t
+  set_memory_management_property(
+    const DDS_DomainParticipantQos & dp_qos);
+};
+
 RTI_CONNEXTDDS_CUSTOM_SQL_FILTER_PUBLIC
 DDS_ReturnCode_t
-register_content_filter(DDS_DomainParticipant * const participant);
+register_content_filter(
+  DDS_DomainParticipant * const participant,
+  CustomSqlFilterData * const filter_data);
 
 RTI_CONNEXTDDS_CUSTOM_SQL_FILTER_PUBLIC
 extern const char * const PLUGIN_NAME;

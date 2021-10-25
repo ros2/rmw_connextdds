@@ -26,6 +26,13 @@
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextdds";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 
+struct rmw_connextdds_api_pro
+{
+  rti_connext_dds_custom_sql_filter::CustomSqlFilterData custom_filter_data;
+};
+
+rmw_connextdds_api_pro * RMW_Connext_fv_FactoryContext = nullptr;
+
 rmw_ret_t
 rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
 {
@@ -70,9 +77,28 @@ rmw_ret_t
 rmw_connextdds_initialize_participant_factory_context(
   rmw_context_impl_t * const ctx)
 {
+  RMW_CONNEXT_ASSERT(RMW_Connext_fv_FactoryContext == nullptr)
+  // RMW_Connext_gv_DomainParticipantFactory is initialized by
+  // rmw_api_connextdds_init().
   RMW_CONNEXT_ASSERT(RMW_Connext_gv_DomainParticipantFactory == nullptr)
   UNUSED_ARG(ctx);
-  // Nothing to do
+
+  rmw_connextdds_api_pro * ctx_api = nullptr;
+  auto scope_exit_api_delete = rcpputils::make_scope_exit(
+    [ctx_api]()
+    {
+      if (nullptr != ctx_api) {
+        delete ctx_api;
+      }
+    });
+
+  ctx_api = new (std::nothrow) rmw_connextdds_api_pro();
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
+
+  scope_exit_api_delete.cancel();
+  RMW_Connext_fv_FactoryContext = ctx_api;
   return RMW_RET_OK;
 }
 
@@ -80,6 +106,60 @@ rmw_ret_t
 rmw_connextdds_finalize_participant_factory_context(
   rmw_context_impl_t * const ctx)
 {
+  RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_fv_FactoryContext)
+  rmw_connextdds_api_pro * const ctx_api = RMW_Connext_fv_FactoryContext;
+  RMW_Connext_fv_FactoryContext = nullptr;
+
+  delete ctx_api;
+
+  // There might be some DomainParticipants left-over from a ("failed context
+  // initialization" + "failed participant finalization"), so let's try to
+  // clean them up.
+  DDS_DomainParticipantSeq participants = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_seq = rcpputils::make_scope_exit(
+    [&participants]()
+    {
+      DDS_DomainParticipantSeq_finalize(&participants);
+    });
+
+  if (DDS_RETCODE_OK !=
+    DDS_DomainParticipantFactory_get_participants(
+      RMW_Connext_gv_DomainParticipantFactory, &participants))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to list existing participants")
+    return RMW_RET_ERROR;
+  }
+
+  const DDS_Long pending = DDS_DomainParticipantSeq_get_length(&participants);
+  for (DDS_Long i = 0; i < pending; i++) {
+    DDS_DomainParticipant * const participant =
+      *DDS_DomainParticipantSeq_get_reference(&participants, i);
+
+    if (DDS_RETCODE_OK !=
+      DDS_Entity_enable(DDS_DomainParticipant_as_entity(participant)))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "failed to enable pending DomainParticipant before deletion")
+      return RMW_RET_ERROR;
+    }
+
+    if (DDS_RETCODE_OK !=
+      DDS_DomainParticipant_delete_contained_entities(participant))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "failed to delete pending DomainParticipant's entities")
+      return RMW_RET_ERROR;
+    }
+
+    if (DDS_RETCODE_OK !=
+      DDS_DomainParticipantFactory_delete_participant(
+        RMW_Connext_gv_DomainParticipantFactory, participant))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete pending DomainParticipant")
+      return RMW_RET_ERROR;
+    }
+  }
+
   UNUSED_ARG(ctx);
   return RMW_RET_OK;
 }
@@ -238,7 +318,8 @@ rmw_connextdds_configure_participant(
   UNUSED_ARG(ctx);
 
   if (DDS_RETCODE_OK !=
-    rti_connext_dds_custom_sql_filter::register_content_filter(participant))
+    rti_connext_dds_custom_sql_filter::register_content_filter(
+      participant, &RMW_Connext_fv_FactoryContext->custom_filter_data))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to register custom SQL filter")
     return RMW_RET_ERROR;

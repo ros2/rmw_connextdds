@@ -1563,7 +1563,7 @@ RMW_Connext_Subscriber::set_content_filter(
     rmw_connextdds_set_cft_filter_expression(
       this->dds_topic_cft, options->filter_expression, options->expression_parameters))
   {
-    return rc;
+    return RMW_RET_ERROR;
   }
 
   this->cft_expression = options->filter_expression;

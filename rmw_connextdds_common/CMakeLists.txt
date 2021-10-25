@@ -62,6 +62,11 @@ function(rtirmw_add_library)
     ament_target_dependencies(${_rti_build_NAME}
         ${_rti_build_DEPS})
 
+    set(_extra_defines)
+    if("${CMAKE_BUILD_TYPE}" MATCHES "[dD]ebug")
+      list(APPEND _extra_defines "RMW_CONNEXT_DEBUG=1")
+    endif()
+
     target_compile_definitions(${_rti_build_NAME}
         PUBLIC
             RMW_VERSION_MAJOR=${rmw_VERSION_MAJOR}
@@ -69,6 +74,7 @@ function(rtirmw_add_library)
             RMW_VERSION_PATCH=${rmw_VERSION_PATCH}
             RMW_CONNEXT_DDS_API=RMW_CONNEXT_DDS_API_${_rti_build_API}
             ${_rti_build_DEFINES}
+            ${_extra_defines}
     )
 
     set(private_defines)

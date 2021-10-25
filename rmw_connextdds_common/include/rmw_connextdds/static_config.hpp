@@ -16,6 +16,13 @@
 #define RMW_CONNEXTDDS__STATIC_CONFIG_HPP_
 
 /******************************************************************************
+ * Debug flags
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEBUG
+#define RMW_CONNEXT_DEBUG                          0
+#endif  // RMW_CONNEXT_DEBUG
+
+/******************************************************************************
  * Default User Configuration
  ******************************************************************************/
 #ifndef RMW_CONNEXT_DEFAULT_DOMAIN

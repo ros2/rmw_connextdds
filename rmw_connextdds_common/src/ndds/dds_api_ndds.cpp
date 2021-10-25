@@ -134,7 +134,13 @@ rmw_connextdds_finalize_participant_factory_context(
   for (DDS_Long i = 0; i < pending; i++) {
     DDS_DomainParticipant * const participant =
       *DDS_DomainParticipantSeq_get_reference(&participants, i);
-
+#if RMW_CONNEXT_DEBUG
+    // If we are building in Debug mode, an issue in Connext may prevent the
+    // participant from being able to delete any content-filtered topic if
+    // the participant has not been enabled.
+    // For this reason, make sure to enable the participant before trying to
+    // finalize it.
+    // TODO(asorbini) reconsider the need for this code in Connext > 6.1.0
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_DomainParticipant_as_entity(participant)))
     {
@@ -142,7 +148,7 @@ rmw_connextdds_finalize_participant_factory_context(
         "failed to enable pending DomainParticipant before deletion")
       return RMW_RET_ERROR;
     }
-
+#endif  // RMW_CONNEXT_DEBUG
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipant_delete_contained_entities(participant))
     {

@@ -390,6 +390,21 @@ rmw_context_impl_t::finalize_participant()
   }
 
   if (nullptr != this->participant) {
+#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+    // If we are building in Debug mode, an issue in Connext may prevent the
+    // participant from being able to delete any content-filtered topic if
+    // the participant has not been enabled.
+    // For this reason, make sure to enable the participant before trying to
+    // finalize it.
+    // TODO(asorbini) reconsider the need for this code in Connext > 6.1.0
+    if (DDS_RETCODE_OK !=
+      DDS_Entity_enable(DDS_DomainParticipant_as_entity(participant)))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "failed to enable pending DomainParticipant before deletion")
+      return RMW_RET_ERROR;
+    }
+#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     // If we are cleaning up after some RMW failure, it is possible for some
     // DataWriter to not have been deleted.
     // Call DDS_DomainParticipant_delete_contained_entities() to make sure we can

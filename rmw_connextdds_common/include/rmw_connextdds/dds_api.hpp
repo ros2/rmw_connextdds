@@ -274,6 +274,6 @@ rmw_ret_t
 rmw_connextdds_get_cft_filter_expression(
   DDS_TopicDescription * const topic_desc,
   rcutils_allocator_t * const allocator,
-  rmw_subscription_content_filtered_topic_options_t * const options);
+  rmw_subscription_content_filter_options_t * const options);
 
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

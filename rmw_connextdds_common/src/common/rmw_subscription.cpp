@@ -169,7 +169,7 @@ rmw_api_connextdds_subscription_get_actual_qos(
 rmw_ret_t
 rmw_api_connextdds_subscription_set_content_filter(
   rmw_subscription_t * subscription,
-  const rmw_subscription_content_filtered_topic_options_t * options)
+  const rmw_subscription_content_filter_options_t * options)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
@@ -193,7 +193,7 @@ rmw_ret_t
 rmw_api_connextdds_subscription_get_content_filter(
   const rmw_subscription_t * subscription,
   rcutils_allocator_t * const allocator,
-  rmw_subscription_content_filtered_topic_options_t * options)
+  rmw_subscription_content_filter_options_t * options)
 {
   RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(

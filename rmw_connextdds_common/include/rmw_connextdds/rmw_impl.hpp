@@ -440,12 +440,12 @@ public:
 
   rmw_ret_t
   set_content_filter(
-    const rmw_subscription_content_filtered_topic_options_t * const options);
+    const rmw_subscription_content_filter_options_t * const options);
 
   rmw_ret_t
   get_content_filter(
     rcutils_allocator_t * allocator,
-    rmw_subscription_content_filtered_topic_options_t * const options);
+    rmw_subscription_content_filter_options_t * const options);
 
   bool
   has_data()

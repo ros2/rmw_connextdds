@@ -1269,11 +1269,11 @@ RMW_Connext_Subscriber::create(
   } else {
     sub_cft_name =
       fqtopic_name + ROS_CFT_TOPIC_NAME_INFIX + RMW_Connext_Subscriber::get_atomic_id();
-    if (nullptr != subscriber_options->content_filtered_topic_options) {
+    if (nullptr != subscriber_options->content_filter_options) {
       sub_cft_expr =
-        subscriber_options->content_filtered_topic_options->filter_expression;
+        subscriber_options->content_filter_options->filter_expression;
       sub_cft_params =
-        subscriber_options->content_filtered_topic_options->expression_parameters;
+        subscriber_options->content_filter_options->expression_parameters;
     }
   }
 
@@ -1557,7 +1557,7 @@ RMW_Connext_Subscriber::take_serialized(
 
 rmw_ret_t
 RMW_Connext_Subscriber::set_content_filter(
-  const rmw_subscription_content_filtered_topic_options_t * const options)
+  const rmw_subscription_content_filter_options_t * const options)
 {
   if (RMW_RET_OK !=
     rmw_connextdds_set_cft_filter_expression(
@@ -1573,7 +1573,7 @@ RMW_Connext_Subscriber::set_content_filter(
 rmw_ret_t
 RMW_Connext_Subscriber::get_content_filter(
   rcutils_allocator_t * allocator,
-  rmw_subscription_content_filtered_topic_options_t * const options)
+  rmw_subscription_content_filter_options_t * const options)
 {
   return rmw_connextdds_get_cft_filter_expression(this->dds_topic_cft, allocator, options);
 }

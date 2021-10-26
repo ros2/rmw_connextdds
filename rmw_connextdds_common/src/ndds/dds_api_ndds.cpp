@@ -1427,7 +1427,7 @@ rmw_ret_t
 rmw_connextdds_get_cft_filter_expression(
   DDS_TopicDescription * const topic_desc,
   rcutils_allocator_t * const allocator,
-  rmw_subscription_content_filtered_topic_options_t * const options)
+  rmw_subscription_content_filter_options_t * const options)
 {
   DDS_ContentFilteredTopic * const cft_topic =
     DDS_ContentFilteredTopic_narrow(topic_desc);
@@ -1469,14 +1469,14 @@ rmw_connextdds_get_cft_filter_expression(
     expression_parameters.push_back(ref);
   }
 
-  if (RMW_RET_OK != rmw_subscription_content_filtered_topic_options_init(
+  if (RMW_RET_OK != rmw_subscription_content_filter_options_init(
       filter_expression,
       expression_parameters.size(),
       expression_parameters.data(),
       allocator,
       options))
   {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_subscription_content_filtered_topic_options_init")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_subscription_content_filter_options_init")
     return RMW_RET_ERROR;
   }
 

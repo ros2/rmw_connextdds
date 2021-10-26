@@ -1820,7 +1820,6 @@ rmw_connextdds_create_subscriber(
       "failed to allocate RMW_Connext_Subscriber")
     return nullptr;
   }
-
   auto scope_exit_rmw_reader_impl_delete =
     rcpputils::make_scope_exit(
     [rmw_sub_impl]()
@@ -1831,6 +1830,25 @@ rmw_connextdds_create_subscriber(
       }
       delete rmw_sub_impl;
     });
+#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+  auto scope_exit_enable_participant_on_error =
+    rcpputils::make_scope_exit(
+    [ctx]()
+    {
+      // If we are building in Debug mode, an issue in Connext may prevent the
+      // participant from being able to delete any content-filtered topic if
+      // the participant has not been enabled.
+      // For this reason, make sure to enable the participant before trying to
+      // finalize it.
+      // TODO(asorbini) reconsider the need for this code in Connext > 6.1.0
+      if (DDS_RETCODE_OK !=
+      DDS_Entity_enable(DDS_DomainParticipant_as_entity(ctx->participant)))
+      {
+        RMW_CONNEXT_LOG_ERROR_SET(
+          "failed to enable DomainParticipant on subscriber creation error")
+      }
+    });
+#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
   rmw_subscription_t * rmw_subscriber = rmw_subscription_allocate();
   if (nullptr == rmw_subscriber) {
@@ -1881,6 +1899,9 @@ rmw_connextdds_create_subscriber(
     }
   }
 
+#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+  scope_exit_enable_participant_on_error.cancel();
+#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
   scope_exit_rmw_reader_impl_delete.cancel();
   scope_exit_rmw_reader_delete.cancel();
   return rmw_subscriber;

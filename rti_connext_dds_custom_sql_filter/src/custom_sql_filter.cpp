@@ -513,7 +513,6 @@ RTI_CustomSqlFilter_writer_evaluate(
       &cft_data->base, writer_data->base, sample, meta_data);
     if (nullptr == sql_matched) {
       // TODO(asorbini) log error
-      printf("RTI_CustomSqlFilter_writer_evaluate >> ERROR!!!\n");
       return nullptr;
     }
   }
@@ -645,9 +644,6 @@ RTI_CustomSqlFilter_writer_evaluate_on_serialized(
       &cft_data->base, writer_data->base, sample, meta_data);
     if (nullptr == sql_matched) {
       // TODO(asorbini) log error
-      printf(
-        "DDS_SqlFilter_writerEvaluateOnSerialized FAILED (%lu)\n",
-        writer_data->filtered_readers_count);
       return nullptr;
     }
   }

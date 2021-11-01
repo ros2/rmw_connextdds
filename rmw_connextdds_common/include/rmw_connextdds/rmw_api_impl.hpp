@@ -382,7 +382,13 @@ rmw_api_connextdds_create_client(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_client_get_actual_qos(
+rmw_api_connextdds_client_request_publisher_get_actual_qos(
+  const rmw_client_t * client,
+  rmw_qos_profile_t * qos);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_client_response_subscription_get_actual_qos(
   const rmw_client_t * client,
   rmw_qos_profile_t * qos);
 
@@ -400,10 +406,15 @@ rmw_api_connextdds_create_service(
   const char * service_name,
   const rmw_qos_profile_t * qos_policies);
 
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_service_response_publisher_get_actual_qos(
+  const rmw_service_t * service,
+  rmw_qos_profile_t * qos);
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
-rmw_api_connextdds_service_get_actual_qos(
+rmw_api_connextdds_service_request_subscription_get_actual_qos(
   const rmw_service_t * service,
   rmw_qos_profile_t * qos);
 

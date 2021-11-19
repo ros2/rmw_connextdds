@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add client/service QoS getters. (`#67 <https://github.com/rticommunity/rmw_connextdds/issues/67>`_)
+* Contributors: mauropasse
+
 0.8.0 (2021-09-15)
 ------------------
 * Update rmw_context_impl_t definition (`#65 <https://github.com/ros2/rmw_connextdds/issues/65>`_)

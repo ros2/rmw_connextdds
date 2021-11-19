@@ -567,6 +567,25 @@ rmw_create_client(
 
 
 rmw_ret_t
+rmw_client_request_publisher_get_actual_qos(
+  const rmw_client_t * client,
+  rmw_qos_profile_t * qos)
+{
+  return rmw_api_connextdds_client_request_publisher_get_actual_qos(
+    client, qos);
+}
+
+
+rmw_ret_t
+rmw_client_response_subscription_get_actual_qos(
+  const rmw_client_t * client,
+  rmw_qos_profile_t * qos)
+{
+  return rmw_api_connextdds_client_response_subscription_get_actual_qos(
+    client, qos);
+}
+
+rmw_ret_t
 rmw_destroy_client(
   rmw_node_t * node,
   rmw_client_t * client)
@@ -584,6 +603,26 @@ rmw_create_service(
 {
   return rmw_api_connextdds_create_service(
     node, type_supports, service_name, qos_policies);
+}
+
+
+rmw_ret_t
+rmw_service_response_publisher_get_actual_qos(
+  const rmw_service_t * service,
+  rmw_qos_profile_t * qos)
+{
+  return rmw_api_connextdds_service_response_publisher_get_actual_qos(
+    service, qos);
+}
+
+
+rmw_ret_t
+rmw_service_request_subscription_get_actual_qos(
+  const rmw_service_t * service,
+  rmw_qos_profile_t * qos)
+{
+  return rmw_api_connextdds_service_request_subscription_get_actual_qos(
+    service, qos);
 }
 
 

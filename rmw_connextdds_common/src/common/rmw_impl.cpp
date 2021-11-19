@@ -2623,6 +2623,28 @@ RMW_Connext_Client::send_request(
 }
 
 rmw_ret_t
+RMW_Connext_Client::request_publisher_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->request_pub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get client's request publisher qos");
+    return rc;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Client::response_subscription_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->reply_sub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get client's response subscription qos");
+    return rc;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 RMW_Connext_Client::finalize()
 {
   if (nullptr != this->request_pub) {
@@ -2871,6 +2893,28 @@ RMW_Connext_Service::send_response(
     rr_msg.sn)
 
   return this->reply_pub->write(&rr_msg, false /* serialized */);
+}
+
+rmw_ret_t
+RMW_Connext_Service::response_publisher_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->reply_pub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get service's response publisher qos");
+    return rc;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Service::request_subscription_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->request_sub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get service's request subscription qos");
+    return rc;
+  }
+  return RMW_RET_OK;
 }
 
 rmw_ret_t

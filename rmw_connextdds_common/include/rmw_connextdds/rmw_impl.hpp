@@ -604,6 +604,12 @@ public:
 
   rmw_ret_t
   enable();
+
+  rmw_ret_t
+  request_publisher_qos(rmw_qos_profile_t * const qos);
+
+  rmw_ret_t
+  response_subscription_qos(rmw_qos_profile_t * const qos);
 };
 
 class RMW_Connext_Service
@@ -651,6 +657,12 @@ public:
 
   rmw_ret_t
   enable();
+
+  rmw_ret_t
+  response_publisher_qos(rmw_qos_profile_t * const qos);
+
+  rmw_ret_t
+  request_subscription_qos(rmw_qos_profile_t * const qos);
 };
 
 /******************************************************************************

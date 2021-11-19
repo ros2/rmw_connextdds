@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.1 (2021-11-19)
+------------------
 * Add client/service QoS getters. (`#67 <https://github.com/rticommunity/rmw_connextdds/issues/67>`_)
 * Contributors: mauropasse
 

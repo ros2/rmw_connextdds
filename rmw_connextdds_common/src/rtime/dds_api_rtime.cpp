@@ -923,7 +923,7 @@ rmw_connextdds_get_qos_policies(
   size_t max_samples = RMW_CONNEXT_LIMIT_SAMPLES_MAX;
 
   if (DDS_LENGTH_UNLIMITED != history->depth &&
-    (size_t)history->depth > max_samples)
+    static_cast<size_t>(history->depth) > max_samples)
   {
     max_samples = history->depth;
   }

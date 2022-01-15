@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.8.2 (2022-01-14)
+------------------
+* Fix cpplint errors (`#69 <https://github.com/ros2/rmw_connextdds/issues/69>`_)
+* Contributors: Jacob Perron
+
 0.8.1 (2021-11-19)
 ------------------
 * Add client/service QoS getters. (`#67 <https://github.com/rticommunity/rmw_connextdds/issues/67>`_)

@@ -736,85 +736,121 @@ rmw_connextdds_initialize_participant_qos_impl(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos * const dp_qos)
 {
-  UNUSED_ARG(ctx);
+  if (nullptr != ctx->base->options.impl) {
+    const DDS_DomainParticipantQos * const user_qos =
+      reinterpret_cast<const DDS_DomainParticipantQos *>(ctx->base->options.impl);
+    if (DDS_RETCODE_OK != DDS_DomainParticipantQos_copy(dp_qos, user_qos)) {
+      RMW_CONNEXT_LOG_ERROR("failed to copy participant qos")
+      return RMW_RET_ERROR;
+    }
+  }
 
-  /* TODO(asorbini:) Store enclave's name in USER_DATA field */
+  switch (ctx->participant_qos_override_policy) {
+    case rmw_context_impl_t::participant_qos_override_policy_t::All:
+    case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
+      {
 
-  /*  TODO(asorbini) Configure DDS Security options */
+        /* TODO(asorbini:) Store enclave's name in USER_DATA field */
 
-  size_t max_transports = 1;
-#if RMW_CONNEXT_TRANSPORT_SHMEM
-  max_transports += 1;
-#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+        /*  TODO(asorbini) Configure DDS Security options */
 
-  /* Mark only UDP transport as enabled, and skip INTRA */
-  if (!REDA_StringSeq_set_maximum(
-      &dp_qos->transports.enabled_transports, max_transports))
+        size_t max_transports = 1;
+      #if RMW_CONNEXT_TRANSPORT_SHMEM
+        max_transports += 1;
+      #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+
+        /* Mark only UDP transport as enabled, and skip INTRA */
+        if (!REDA_StringSeq_set_maximum(
+            &dp_qos->transports.enabled_transports, max_transports))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to set transports.enabled_transports maximum")
+          return RMW_RET_ERROR;
+        }
+        if (!REDA_StringSeq_set_length(
+            &dp_qos->transports.enabled_transports, max_transports))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to set transports.enabled_transports length")
+          return RMW_RET_ERROR;
+        }
+        char ** seq_ref =
+          REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 0);
+        *seq_ref = REDA_String_dup(NETIO_DEFAULT_UDP_NAME);
+        if (nullptr == *seq_ref) {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string for transports.enabled_transports")
+          return RMW_RET_ERROR;
+        }
+
+      #if RMW_CONNEXT_TRANSPORT_SHMEM
+        seq_ref =
+          REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 1);
+        *seq_ref = REDA_String_dup(NETIO_DEFAULT_SHMEM_NAME);
+        if (nullptr == *seq_ref) {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to get transports.enabled_transports reference")
+          return RMW_RET_ERROR;
+        }
+      #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+
+        if (!REDA_StringSeq_set_maximum(
+            &dp_qos->user_traffic.enabled_transports, max_transports))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to set user_traffic.enabled_transports maximum")
+          return RMW_RET_ERROR;
+        }
+        if (!REDA_StringSeq_set_length(
+            &dp_qos->user_traffic.enabled_transports, max_transports))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to set user_traffic.enabled_transports length")
+          return RMW_RET_ERROR;
+        }
+
+        seq_ref =
+          REDA_StringSeq_get_reference(
+          &dp_qos->user_traffic.enabled_transports, 0);
+
+        std::ostringstream udp_ss;
+        udp_ss << NETIO_DEFAULT_UDP_NAME << "://";
+
+        *seq_ref = REDA_String_dup(udp_ss.str().c_str());
+        if (nullptr == *seq_ref) {
+          return RMW_RET_ERROR;
+        }
+
+      #if RMW_CONNEXT_TRANSPORT_SHMEM
+        seq_ref =
+          REDA_StringSeq_get_reference(
+          &dp_qos->user_traffic.enabled_transports, 1);
+        std::ostringstream shmem_ss;
+        shmem_ss << NETIO_DEFAULT_SHMEM_NAME << "://";
+
+        *seq_ref = REDA_String_dup(shmem_ss.str().c_str());
+        if (nullptr == *seq_ref) {
+          return RMW_RET_ERROR;
+        }
+      #endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
+
+        if (!RT_ComponentFactoryId_set_name(
+            &dp_qos->discovery.discovery.name, "dpde"))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to set discovery plugin name")
+          return RMW_RET_ERROR;
+        }
+
+        break;
+      }
+    default:
+      {
+        // No customization of DomainParticipantQos request, return immediately.
+        RMW_CONNEXT_LOG_DEBUG("using default Connext's DomainParticipantQos")
+        return RMW_RET_OK;
+      }
+  }
+
+  if (rmw_context_impl_t::participant_qos_override_policy_t::Basic ==
+    ctx->participant_qos_override_policy)
   {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set transports.enabled_transports maximum")
-    return RMW_RET_ERROR;
+    RMW_CONNEXT_LOG_DEBUG("applied only ROS 2 configuration to DomainParticipantQos")
+    return RMW_RET_OK;
   }
-  if (!REDA_StringSeq_set_length(
-      &dp_qos->transports.enabled_transports, max_transports))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set transports.enabled_transports length")
-    return RMW_RET_ERROR;
-  }
-  char ** seq_ref =
-    REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 0);
-  *seq_ref = REDA_String_dup(NETIO_DEFAULT_UDP_NAME);
-  if (nullptr == *seq_ref) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string for transports.enabled_transports")
-    return RMW_RET_ERROR;
-  }
-
-#if RMW_CONNEXT_TRANSPORT_SHMEM
-  seq_ref =
-    REDA_StringSeq_get_reference(&dp_qos->transports.enabled_transports, 1);
-  *seq_ref = REDA_String_dup(NETIO_DEFAULT_SHMEM_NAME);
-  if (nullptr == *seq_ref) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get transports.enabled_transports reference")
-    return RMW_RET_ERROR;
-  }
-#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
-
-  if (!REDA_StringSeq_set_maximum(
-      &dp_qos->user_traffic.enabled_transports, max_transports))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_traffic.enabled_transports maximum")
-    return RMW_RET_ERROR;
-  }
-  if (!REDA_StringSeq_set_length(
-      &dp_qos->user_traffic.enabled_transports, max_transports))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set user_traffic.enabled_transports length")
-    return RMW_RET_ERROR;
-  }
-
-  seq_ref =
-    REDA_StringSeq_get_reference(
-    &dp_qos->user_traffic.enabled_transports, 0);
-
-  std::ostringstream udp_ss;
-  udp_ss << NETIO_DEFAULT_UDP_NAME << "://";
-
-  *seq_ref = REDA_String_dup(udp_ss.str().c_str());
-  if (nullptr == *seq_ref) {
-    return RMW_RET_ERROR;
-  }
-
-#if RMW_CONNEXT_TRANSPORT_SHMEM
-  seq_ref =
-    REDA_StringSeq_get_reference(
-    &dp_qos->user_traffic.enabled_transports, 1);
-  std::ostringstream shmem_ss;
-  shmem_ss << NETIO_DEFAULT_SHMEM_NAME << "://";
-
-  *seq_ref = REDA_String_dup(shmem_ss.str().c_str());
-  if (nullptr == *seq_ref) {
-    return RMW_RET_ERROR;
-  }
-#endif /* RMW_CONNEXT_TRANSPORT_SHMEM */
 
   /* Increate Participant resource limits */
   dp_qos->resource_limits.local_type_allocation =
@@ -851,13 +887,6 @@ rmw_connextdds_initialize_participant_qos_impl(
     dp_qos->resource_limits.local_writer_allocation *
     dp_qos->resource_limits.remote_reader_allocation *
     dp_qos->resource_limits.remote_participant_allocation;
-
-  if (!RT_ComponentFactoryId_set_name(
-      &dp_qos->discovery.discovery.name, "dpde"))
-  {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to set discovery plugin name")
-    return RMW_RET_ERROR;
-  }
 
   return RMW_RET_OK;
 }
@@ -1003,8 +1032,36 @@ rmw_connextdds_get_datawriter_qos(
   UNUSED_ARG(ctx);
   UNUSED_ARG(topic);
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_get_readerwriter_qos(
+  bool ignore_ros_profile = (
+    ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::Never);
+
+  const char * topic_name = DDS_TopicDescription_get_name(DDS_Topic_as_topicdescription(topic));
+  ignore_ros_profile = ignore_ros_profile || (ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics &&
+    std::regex_match(topic_name, ctx->endpoint_qos_override_policy_topics_regex));
+
+  if (!ignore_ros_profile) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_get_readerwriter_qos(
+        true /* writer_qos */,
+        type_support,
+        &qos->history,
+        &qos->reliability,
+        &qos->durability,
+        &qos->deadline,
+        &qos->liveliness,
+        &qos->resource_limits,
+        &qos->publish_mode,
+        nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
+        qos_policies,
+        pub_options,
+        nullptr /* sub_options */))
+    {
+      return RMW_RET_ERROR;
+    }
+
+    return rmw_connextdds_get_qos_policies(
       true /* writer_qos */,
       type_support,
       &qos->history,
@@ -1013,31 +1070,16 @@ rmw_connextdds_get_datawriter_qos(
       &qos->deadline,
       &qos->liveliness,
       &qos->resource_limits,
-      &qos->publish_mode,
-      nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
+      nullptr /* reader_resource_limits */,
+      &qos->writer_resource_limits,
+      nullptr /* reader protocol */,
+      &qos->protocol,
       qos_policies,
       pub_options,
-      nullptr /* sub_options */))
-  {
-    return RMW_RET_ERROR;
+      nullptr /* sub_options */);
   }
 
-  return rmw_connextdds_get_qos_policies(
-    true /* writer_qos */,
-    type_support,
-    &qos->history,
-    &qos->reliability,
-    &qos->durability,
-    &qos->deadline,
-    &qos->liveliness,
-    &qos->resource_limits,
-    nullptr /* reader_resource_limits */,
-    &qos->writer_resource_limits,
-    nullptr /* reader protocol */,
-    &qos->protocol,
-    qos_policies,
-    pub_options,
-    nullptr /* sub_options */);
+  return RMW_RET_OK;
 }
 
 rmw_ret_t
@@ -1052,8 +1094,35 @@ rmw_connextdds_get_datareader_qos(
   UNUSED_ARG(ctx);
   UNUSED_ARG(topic_desc);
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_get_readerwriter_qos(
+  bool ignore_ros_profile = (
+    ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::Never);
+
+  const char * topic_name = DDS_TopicDescription_get_name(topic_desc);
+  ignore_ros_profile = ignore_ros_profile || (ctx->endpoint_qos_override_policy ==
+    rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics &&
+    std::regex_match(topic_name, ctx->endpoint_qos_override_policy_topics_regex));
+
+  if (!ignore_ros_profile) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_get_readerwriter_qos(
+        false /* writer_qos */,
+        type_support,
+        &qos->history,
+        &qos->reliability,
+        &qos->durability,
+        &qos->deadline,
+        &qos->liveliness,
+        &qos->resource_limits,
+        nullptr /* publish_mode */,
+        nullptr /* Lifespan is a writer-only qos policy */,
+        qos_policies,
+        nullptr /* pub_options */,
+        sub_options))
+    {
+      return RMW_RET_ERROR;
+    }
+    return rmw_connextdds_get_qos_policies(
       false /* writer_qos */,
       type_support,
       &qos->history,
@@ -1062,30 +1131,16 @@ rmw_connextdds_get_datareader_qos(
       &qos->deadline,
       &qos->liveliness,
       &qos->resource_limits,
-      nullptr /* publish_mode */,
-      nullptr /* Lifespan is a writer-only qos policy */,
+      &qos->reader_resource_limits,
+      nullptr /* writer_resource_limits */,
+      &qos->protocol,
+      nullptr /* writer protocol */,
       qos_policies,
       nullptr /* pub_options */,
-      sub_options))
-  {
-    return RMW_RET_ERROR;
+      sub_options);
   }
-  return rmw_connextdds_get_qos_policies(
-    false /* writer_qos */,
-    type_support,
-    &qos->history,
-    &qos->reliability,
-    &qos->durability,
-    &qos->deadline,
-    &qos->liveliness,
-    &qos->resource_limits,
-    &qos->reader_resource_limits,
-    nullptr /* writer_resource_limits */,
-    &qos->protocol,
-    nullptr /* writer protocol */,
-    qos_policies,
-    nullptr /* pub_options */,
-    sub_options);
+
+  return RMW_RET_OK;
 }
 
 DDS_DataWriter *
@@ -1103,6 +1158,16 @@ rmw_connextdds_create_datawriter(
   UNUSED_ARG(ctx);
   UNUSED_ARG(participant);
   UNUSED_ARG(internal);
+
+  if (nullptr != publisher_options->rmw_specific_publisher_payload) {
+    const DDS_DataWriterQos * const user_qos =
+      static_cast<const DDS_DataWriterQos *>(
+        publisher_options->rmw_specific_publisher_payload);
+    if (DDS_RETCODE_OK != DDS_DataWriterQos_copy(dw_qos, user_qos)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to copy writer qos")
+      return nullptr;
+    }
+  }
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datawriter_qos(
@@ -1134,6 +1199,16 @@ rmw_connextdds_create_datareader(
   UNUSED_ARG(ctx);
   UNUSED_ARG(participant);
   UNUSED_ARG(internal);
+
+  if (nullptr != subscriber_options->rmw_specific_subscription_payload) {
+    const DDS_DataReaderQos * const user_qos =
+      static_cast<const DDS_DataReaderQos *>(
+        subscriber_options->rmw_specific_subscription_payload);
+    if (DDS_RETCODE_OK != DDS_DataReaderQos_copy(dr_qos, user_qos)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to copy reader qos")
+      return nullptr;
+    }
+  }
 
   if (RMW_RET_OK !=
     rmw_connextdds_get_datareader_qos(

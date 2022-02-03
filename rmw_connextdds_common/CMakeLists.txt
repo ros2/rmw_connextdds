@@ -149,6 +149,7 @@ set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_subscription.cpp
     src/common/rmw_waitset.cpp
     src/common/rmw_type_support.cpp
+    src/common/rmw_user_resource_limits.cpp
     src/common/demangle.cpp)
 
 set(RMW_CONNEXT_COMMON_SOURCE_HPP

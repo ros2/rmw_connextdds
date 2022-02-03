@@ -58,6 +58,19 @@ enum class RMW_Connext_RequestReplyMapping
   Extended
 };
 
+// Helper API to load custom resource limits to be used by Connext Micro,
+// without requiring any changes to application source code.
+class RMW_Connext_UserResourceLimits
+{
+  std::map<std::string, size_t> serialized_size_max_;
+
+public:
+  rmw_ret_t load(const DDS_StringSeq *const file_names);
+
+  size_t get_serialized_size_max(const char * const type_name);
+};
+
+
 // Definition of struct rmw_context_impl_s as declared in rmw/init.h
 struct rmw_context_impl_s
 {
@@ -134,6 +147,11 @@ struct rmw_context_impl_s
   std::regex endpoint_qos_override_policy_topics_regex;
 
   struct DDS_StringSeq initial_peers = DDS_SEQUENCE_INITIALIZER;
+
+  // "user resource limits" files that will be loaded by rmw_connextddsmicro
+  // to customize some configuration parameters.
+  struct DDS_StringSeq user_resource_limits_files = DDS_SEQUENCE_INITIALIZER;
+  RMW_Connext_UserResourceLimits user_resource_limits;
 
   /* Participant reference count*/
   size_t node_count{0};

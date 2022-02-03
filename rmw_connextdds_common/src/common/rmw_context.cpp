@@ -439,6 +439,16 @@ rmw_context_impl_t::finalize()
     "finalizing RMW context: %p",
     reinterpret_cast<void *>(this))
 
+  if (!DDS_StringSeq_finalize(&this->initial_peers)) {
+    RMW_CONNEXT_LOG_ERROR("failed to finalize initial_peers sequence")
+    return RMW_RET_ERROR;
+  }
+
+  if (!DDS_StringSeq_finalize(&this->user_resource_limits_files)) {
+    RMW_CONNEXT_LOG_ERROR("failed to finalize user_resource_limits_files sequence")
+    return RMW_RET_ERROR;
+  }
+
   RMW_CONNEXT_ASSERT(RMW_Connext_gv_ContextCount > 0)
   RMW_Connext_gv_ContextCount -= 1;
 
@@ -1020,6 +1030,43 @@ rmw_api_connextdds_init(
       return rc;
     }
     RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
+  }
+
+  /* Lookup and configure "user resource limits" from environment */
+  const char * user_resource_limits_env = nullptr;
+  lookup_rc =
+    rcutils_get_env(RMW_CONNEXT_ENV_USER_RESOURCE_LIMITS, &user_resource_limits_env);
+
+  if (nullptr != lookup_rc || nullptr == user_resource_limits_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_USER_RESOURCE_LIMITS,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  if ('\0' != user_resource_limits_env[0]) {
+    rmw_ret_t rc = rmw_connextdds_parse_string_list(
+      user_resource_limits_env,
+      &ctx->user_resource_limits_files,
+      ',' /* delimiter */,
+      true /* trim_elements */,
+      false /* allow_empty_elements */,
+      false /* append_values */);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR_A(
+        "failed to parse user resource limits files: '%s'", user_resource_limits_env)
+      return rc;
+    }
+    RMW_CONNEXT_LOG_DEBUG_A("user resource limits files: %s", user_resource_limits_env)
+
+    rc = ctx->user_resource_limits.load(&ctx->user_resource_limits_files);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to load user resource limits files")
+      return rc;
+    }
   }
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {

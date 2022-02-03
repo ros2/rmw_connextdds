@@ -271,6 +271,11 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
       RMW_Connext_RequestReplyMapping_Basic_serialized_size_max(this);
   }
 
+  // Check if the user specified a custom maximum serialized size, otherwise use
+  // default value reported by the generated ROS 2 type support.
+  this->_serialized_size_max_user =
+    ctx->user_resource_limits.get_serialized_size_max(this->type_name());
+
   RMW_CONNEXT_LOG_DEBUG_A(
     "[type support] new %s: "
     "type.unbounded=%d, "
@@ -521,6 +526,14 @@ uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
       /* Add request header to serialized payload */
       serialized_size +=
         RMW_Connext_RequestReplyMapping_Basic_serialized_size_max(this);
+    }
+    if (this->_serialized_size_max_user > 0 &&
+      serialized_size > this->_serialized_size_max_user)
+    {
+      RMW_CONNEXT_LOG_WARNING_A(
+        "%s sample's serialized size exceeds custom max: size=%u, max=%u",
+        this->_type_name.c_str(), serialized_size, this->_serialized_size_max_user)
+      serialized_size = this->_serialized_size_max_user;
     }
     RMW_CONNEXT_LOG_TRACE_A(
       "[type support] %s serialized size_MAX: %u",

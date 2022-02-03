@@ -443,6 +443,7 @@ rmw_connextdds_get_readerwriter_qos(
   // LifespanQosPolicy is a writer-only policy, so `lifespan` might be NULL.
   // Micro does not support this policy, so the value will always be NULL.
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  (void)lifespan;
   assert(nullptr == lifespan);
 #else /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   if (lifespan != nullptr &&
@@ -2573,6 +2574,35 @@ RMW_Connext_Client::is_service_available(bool & available)
       }
     });
 
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  /* Micro does not support get_matched_[subscriptions,publications](), so we
+     must rely on the [subscription,publication]_matched status, which only
+     reports the match count.
+     Mark service as "available" if we have at least one subscription and one
+     publication matched on the two endpoints.
+     TODO(asorbini) remove this logic once/if Micro starts supporting the
+     required APIs. */
+  DDS_SubscriptionMatchedStatus sub_match_status = DDS_SubscriptionMatchedStatus_INITIALIZER;
+  DDS_PublicationMatchedStatus pub_match_status = DDS_PublicationMatchedStatus_INITIALIZER;
+
+  DDS_ReturnCode_t dds_rc =
+    DDS_DataWriter_get_publication_matched_status(
+      this->request_pub->writer(), &pub_match_status);
+  if (DDS_RETCODE_OK != dds_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to get publication matched status: dds_rc=%d", dds_rc)
+    return RMW_RET_ERROR;
+  }
+
+  dds_rc =
+    DDS_DataReader_get_subscription_matched_status(
+      this->reply_sub->reader(), &sub_match_status);
+  if (DDS_RETCODE_OK != dds_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to get subscription matched status: dds_rc=%d", dds_rc)
+    return RMW_RET_ERROR;
+  }
+
+  available = sub_match_status.current_count >= 1 && pub_match_status.current_count >= 1;
+#else  // if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
   DDS_ReturnCode_t dds_rc =
     DDS_DataWriter_get_matched_subscriptions(this->request_pub->writer(), &matched_req_subs);
   if (DDS_RETCODE_OK != dds_rc) {
@@ -2600,6 +2630,7 @@ RMW_Connext_Client::is_service_available(bool & available)
       available = DDS_InstanceHandle_compare_prefix(sub_ih, pub_ih) == 0;
     }
   }
+#endif  // if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
 
   return RMW_RET_OK;
 }

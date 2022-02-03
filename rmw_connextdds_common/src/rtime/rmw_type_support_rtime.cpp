@@ -28,13 +28,13 @@ extern struct DDS_TypePluginI RMW_Connext_fv_TypePluginI;
 struct RMW_Connext_RtimeTypePluginI
 {
   struct DDS_TypePluginI base;
-  RMW_Connext_MessageTypeSupport * _type_support;
+  RMW_Connext_MessageTypeSupport * type_support_;
 
   RMW_Connext_RtimeTypePluginI(
     RMW_Connext_MessageTypeSupport * const type_support)
   {
     this->base = RMW_Connext_fv_TypePluginI;
-    this->_type_support = type_support;
+    this->type_support_ = type_support;
   }
 
   static
@@ -47,7 +47,7 @@ struct RMW_Connext_RtimeTypePluginI
     const RMW_Connext_RtimeTypePluginI * const intf =
       reinterpret_cast<const RMW_Connext_RtimeTypePluginI *>(plugin->_parent._intf);
 
-    return intf->_type_support;
+    return intf->type_support_;
   }
 };
 
@@ -366,15 +366,13 @@ RMW_Connext_EncapsulationPlugin_get_serialized_sample_size(
   struct DDS_TypeEncapsulationPlugin * ep,
   RTI_UINT32 current_alignment)
 {
-  UNUSED_ARG(ep);
   auto type_support = RMW_Connext_RtimeTypePluginI::type_support(plugin);
-
+  UNUSED_ARG(ep);
   RTI_UINT32 tot_alignment = current_alignment;
-
   // For unbounded types this call will only report the size of the
-  // "bounded" part of the type.
+  // "bounded" part of the type, unless the user specified a custom
+  // resource limit.
   tot_alignment += type_support->type_serialized_size_max();
-
   return tot_alignment - current_alignment;
 }
 

@@ -53,6 +53,7 @@ class RMW_Connext_MessageTypeSupport
   bool _unbounded;
   bool _empty;
   uint32_t _serialized_size_max;
+  uint32_t _serialized_size_max_user;
   std::string _type_name;
   RMW_Connext_MessageType _message_type;
   rmw_context_impl_t * const _ctx;
@@ -84,12 +85,16 @@ public:
 
   uint32_t type_serialized_size_max() const
   {
-    return this->_serialized_size_max;
+    if (this->_serialized_size_max_user > 0) {
+      return this->_serialized_size_max_user;
+    } else {
+      return this->_serialized_size_max;
+    }
   }
 
   bool unbounded() const
   {
-    return this->_unbounded;
+    return this->_unbounded && this->_serialized_size_max_user == 0;
   }
 
   bool empty() const

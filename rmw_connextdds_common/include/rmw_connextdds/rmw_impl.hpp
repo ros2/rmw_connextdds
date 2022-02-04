@@ -113,6 +113,7 @@ public:
   static RMW_Connext_Publisher *
   create(
     rmw_context_impl_t * const ctx,
+    const rmw_node_t * const node,
     DDS_DomainParticipant * const dp,
     DDS_Publisher * const pub,
     const rosidl_message_type_support_t * const type_supports,
@@ -271,6 +272,7 @@ public:
   static RMW_Connext_Subscriber *
   create(
     rmw_context_impl_t * const ctx,
+    const rmw_node_t * const node,
     DDS_DomainParticipant * const dp,
     DDS_Subscriber * const sub,
     const rosidl_message_type_support_t * const type_supports,
@@ -566,6 +568,7 @@ public:
   static RMW_Connext_Client *
   create(
     rmw_context_impl_t * const ctx,
+    const rmw_node_t * const node,
     DDS_DomainParticipant * const dp,
     DDS_Publisher * const pub,
     DDS_Subscriber * const sub,
@@ -622,6 +625,7 @@ public:
   static RMW_Connext_Service *
   create(
     rmw_context_impl_t * const ctx,
+    const rmw_node_t * const node,
     DDS_DomainParticipant * const dp,
     DDS_Publisher * const pub,
     DDS_Subscriber * const sub,

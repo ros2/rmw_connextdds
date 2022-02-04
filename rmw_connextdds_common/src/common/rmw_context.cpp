@@ -26,6 +26,8 @@
 #include "rcutils/env.h"
 #include "rcutils/filesystem.h"
 
+#include "rcpputils/find_library.hpp"
+
 /******************************************************************************
  * Global reference to the Domain Participant Factory.
  * The first context to be initialized will set this reference, and the first
@@ -201,6 +203,15 @@ rmw_context_impl_t::initialize_participant(const bool localhost_only)
   if (RMW_RET_OK != rmw_connextdds_configure_security(this, &dp_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to configure DDS Security")
     return RMW_RET_ERROR;
+  }
+
+  if (nullptr != ctx->user_qos)
+  {
+    if (RMW_RET_OK != ctx->user_qos->configure_context(ctx->base, dp_qos))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to customize participant qos")
+      return RMW_RET_ERROR;
+    }
   }
 
   RMW_CONNEXT_LOG_DEBUG_A(
@@ -1066,6 +1077,62 @@ rmw_api_connextdds_init(
     if (RMW_RET_OK != rc) {
       RMW_CONNEXT_LOG_ERROR("failed to load user resource limits files")
       return rc;
+    }
+  }
+
+  /* Lookup and configure "user qos" object from environment */
+  const char * user_qos_lib_env = nullptr;
+  const char * user_qos_fn_env = nullptr;
+  lookup_rc =
+    rcutils_get_env(RMW_CONNEXT_ENV_USER_QOS_LIBRARY, &user_qos_lib_env);
+
+  if (nullptr != lookup_rc || nullptr == user_qos_lib_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_USER_QOS_LIBRARY,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  if ('\0' != user_qos_lib_env[0]) {
+    lookup_rc =
+      rcutils_get_env(RMW_CONNEXT_ENV_USER_QOS_FUNCTION, &user_qos_fn_env);
+
+    if (nullptr != lookup_rc || nullptr == user_qos_fn_env) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to lookup from environment: "
+        "var=%s, "
+        "rc=%s ",
+        RMW_CONNEXT_ENV_USER_QOS_FUNCTION,
+        lookup_rc)
+      return RMW_RET_ERROR;
+    }
+
+    if ('\0' == user_qos_fn_env[0]) {
+      user_qos_fn_env = "load_user_qos";
+    }
+
+    const auto user_qos_lib_path = rcpputils::find_library_path(user_qos_lib_env);
+    if (user_qos_lib_path.empty()) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to find path for user qos library: '%s'", user_qos_lib_env)
+      return RMW_RET_ERROR;
+    }
+    ctx->user_qos_lib = std::make_shared<rcpputils::SharedLibrary>(user_qos_lib_path);
+    ctx->user_qos_fn =
+      reinterpret_cast<rmw_connextdds::UserQosLoadFn>(ctx->user_qos_lib->get_symbol(user_qos_fn_env));
+    if (nullptr == ctx->user_qos_fn) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to look up function from user_qos library: %s", user_qos_fn_env)
+      return RMW_RET_ERROR;
+    }
+
+    ctx->user_qos = ctx->user_qos_fn();
+    if (nullptr == ctx->user_qos) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to create user_qos object")
+      return RMW_RET_ERROR;
     }
   }
 

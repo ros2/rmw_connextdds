@@ -651,6 +651,7 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
 RMW_Connext_Publisher *
 RMW_Connext_Publisher::create(
   rmw_context_impl_t * const ctx,
+  const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
   DDS_Publisher * const pub,
   const rosidl_message_type_support_t * const type_supports,
@@ -773,6 +774,7 @@ RMW_Connext_Publisher::create(
   DDS_DataWriter * const dds_writer =
     rmw_connextdds_create_datawriter(
     ctx,
+    node,
     dp,
     pub,
     qos_policies,
@@ -1017,6 +1019,7 @@ rmw_connextdds_create_publisher(
   RMW_Connext_Publisher * rmw_pub_impl =
     RMW_Connext_Publisher::create(
     ctx,
+    node,
     dp,
     pub,
     type_supports,
@@ -1169,6 +1172,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
 RMW_Connext_Subscriber *
 RMW_Connext_Subscriber::create(
   rmw_context_impl_t * const ctx,
+  const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
   DDS_Subscriber * const sub,
   const rosidl_message_type_support_t * const type_supports,
@@ -1334,6 +1338,7 @@ RMW_Connext_Subscriber::create(
   DDS_DataReader * dds_reader =
     rmw_connextdds_create_datareader(
     ctx,
+    node,
     dp,
     sub,
     qos_policies,
@@ -1815,6 +1820,7 @@ rmw_connextdds_create_subscriber(
   RMW_Connext_Subscriber * rmw_sub_impl =
     RMW_Connext_Subscriber::create(
     ctx,
+    node,
     dp,
     sub,
     type_supports,
@@ -2386,6 +2392,7 @@ rmw_connextdds_client_content_filter(
 RMW_Connext_Client *
 RMW_Connext_Client::create(
   rmw_context_impl_t * const ctx,
+  const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
   DDS_Publisher * const pub,
   DDS_Subscriber * const sub,
@@ -2467,6 +2474,7 @@ RMW_Connext_Client::create(
   client_impl->request_pub =
     RMW_Connext_Publisher::create(
     ctx,
+    node,
     dp,
     pub,
     type_support_req,
@@ -2517,6 +2525,7 @@ RMW_Connext_Client::create(
   client_impl->reply_sub =
     RMW_Connext_Subscriber::create(
     ctx,
+    node,
     dp,
     sub,
     type_support_res,
@@ -2792,6 +2801,7 @@ RMW_Connext_Client::finalize()
 RMW_Connext_Service *
 RMW_Connext_Service::create(
   rmw_context_impl_t * const ctx,
+  const rmw_node_t * const node,
   DDS_DomainParticipant * const dp,
   DDS_Publisher * const pub,
   DDS_Subscriber * const sub,
@@ -2873,6 +2883,7 @@ RMW_Connext_Service::create(
   svc_impl->reply_pub =
     RMW_Connext_Publisher::create(
     ctx,
+    node,
     dp,
     pub,
     type_support_res,
@@ -2900,6 +2911,7 @@ RMW_Connext_Service::create(
   svc_impl->request_sub =
     RMW_Connext_Subscriber::create(
     ctx,
+    node,
     dp,
     sub,
     type_support_req,

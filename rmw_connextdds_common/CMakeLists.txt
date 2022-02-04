@@ -167,6 +167,7 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
     include/rmw_connextdds/scope_exit.hpp
     include/rmw_connextdds/static_config.hpp
     include/rmw_connextdds/type_support.hpp
+    include/rmw_connextdds/user_qos.hpp
     include/rmw_connextdds/visibility_control.h)
 
 set(RMW_CONNEXT_COMMON_SOURCE

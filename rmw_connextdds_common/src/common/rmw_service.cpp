@@ -162,6 +162,7 @@ rmw_api_connextdds_create_client(
   RMW_Connext_Client * const client_impl =
     RMW_Connext_Client::create(
     ctx,
+    node,
     ctx->participant,
     ctx->dds_pub,
     ctx->dds_sub,
@@ -357,6 +358,7 @@ rmw_api_connextdds_create_service(
   RMW_Connext_Service * const svc_impl =
     RMW_Connext_Service::create(
     ctx,
+    node,
     ctx->participant,
     ctx->dds_pub,
     ctx->dds_sub,

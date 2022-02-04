@@ -107,6 +107,7 @@ rmw_connextdds_get_datareader_qos(
 DDS_DataWriter *
 rmw_connextdds_create_datawriter(
   rmw_context_impl_t * const ctx,
+  const rmw_node_t * const node,
   DDS_DomainParticipant * const participant,
   DDS_Publisher * const pub,
   const rmw_qos_profile_t * const qos_policies,
@@ -119,6 +120,7 @@ rmw_connextdds_create_datawriter(
 DDS_DataReader *
 rmw_connextdds_create_datareader(
   rmw_context_impl_t * const ctx,
+  const rmw_node_t * const node,
   DDS_DomainParticipant * const participant,
   DDS_Subscriber * const sub,
   const rmw_qos_profile_t * const qos_policies,

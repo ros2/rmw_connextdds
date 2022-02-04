@@ -25,6 +25,7 @@
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
+#include "rmw_connextdds/user_qos.hpp"
 
 #include "rmw/error_handling.h"
 #include "rmw/impl/cpp/macros.hpp"
@@ -42,7 +43,7 @@
 #include "rmw_dds_common/qos.hpp"
 
 #include "rcutils/strdup.h"
-
+#include "rcpputils/shared_library.hpp"
 #include "rcpputils/scope_exit.hpp"
 
 #include "rmw/get_network_flow_endpoints.h"
@@ -152,6 +153,10 @@ struct rmw_context_impl_s
   // to customize some configuration parameters.
   struct DDS_StringSeq user_resource_limits_files = DDS_SEQUENCE_INITIALIZER;
   RMW_Connext_UserResourceLimits user_resource_limits;
+
+  std::shared_ptr<rcpputils::SharedLibrary> user_qos_lib;
+  rmw_connextdds::UserQosLoadFn user_qos_fn = nullptr;
+  std::shared_ptr<rmw_connextdds::UserQos> user_qos;
 
   /* Participant reference count*/
   size_t node_count{0};

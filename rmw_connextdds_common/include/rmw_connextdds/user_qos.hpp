@@ -40,6 +40,7 @@ public:
   rmw_ret_t configure_subscription(
     const rmw_context_t * const context,
     const rmw_node_t * const node,
+    DDS_TopicDescription * const topic_desc,
     DDS_DataReaderQos & qos) = 0;
 
   RMW_CONNEXTDDS_PUBLIC
@@ -47,6 +48,7 @@ public:
   rmw_ret_t configure_publisher(
     const rmw_context_t * const context,
     const rmw_node_t * const node,
+    DDS_Topic * const topic,
     DDS_DataWriterQos & qos) = 0;
 };
 

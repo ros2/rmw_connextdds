@@ -1181,7 +1181,7 @@ rmw_connextdds_create_datawriter(
   if (nullptr != ctx->user_qos)
   {
     if (RMW_RET_OK !=
-      ctx->user_qos->configure_publisher(ctx->base, node, *dw_qos))
+      ctx->user_qos->configure_publisher(ctx->base, node, topic, *dw_qos))
     {
       RMW_CONNEXT_LOG_ERROR_SET("failed to customize writer qos")
       return nullptr;
@@ -1233,7 +1233,7 @@ rmw_connextdds_create_datareader(
   if (nullptr != ctx->user_qos)
   {
     if (RMW_RET_OK !=
-      ctx->user_qos->configure_subscription(ctx->base, node, *dr_qos))
+      ctx->user_qos->configure_subscription(ctx->base, node, topic_desc, *dr_qos))
     {
       RMW_CONNEXT_LOG_ERROR_SET("failed to customize reader qos")
       return nullptr;

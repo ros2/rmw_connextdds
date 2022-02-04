@@ -953,11 +953,7 @@ rmw_ret_t
 RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
 {
   DDS_Duration_t timeout = rmw_connextdds_duration_from_ros_time(&wait_timeout);
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-  // Avoid warnings for unused variable in micro, since wait_for_ack() is
-  // mapped to an empty call.
-  UNUSED_ARG(timeout);
-#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  (void)timeout;
 
   const DDS_ReturnCode_t dds_rc =
     DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout);

@@ -33,21 +33,21 @@ public:
   virtual
   rmw_ret_t configure_context(
     const rmw_context_t * const context,
-    DDS_DomainParticipantQos & qos);
+    DDS_DomainParticipantQos & qos) = 0;
 
   RMW_CONNEXTDDS_PUBLIC
   virtual
   rmw_ret_t configure_subscription(
     const rmw_context_t * const context,
     const rmw_node_t * const node,
-    DDS_DataReaderQos & qos);
+    DDS_DataReaderQos & qos) = 0;
 
   RMW_CONNEXTDDS_PUBLIC
   virtual
   rmw_ret_t configure_publisher(
     const rmw_context_t * const context,
     const rmw_node_t * const node,
-    DDS_DataWriterQos & qos);
+    DDS_DataWriterQos & qos) = 0;
 };
 
 typedef std::shared_ptr<UserQos> (*UserQosLoadFn)(void);

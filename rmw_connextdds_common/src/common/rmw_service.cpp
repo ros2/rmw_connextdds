@@ -267,6 +267,48 @@ rmw_api_connextdds_destroy_client(
 }
 
 
+rmw_ret_t
+rmw_api_connextdds_client_request_publisher_get_actual_qos(
+  const rmw_client_t * client,
+  rmw_qos_profile_t * qos)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(client, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    client,
+    client->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
+
+  RMW_Connext_Client * const client_impl =
+    reinterpret_cast<RMW_Connext_Client *>(client->data);
+
+  return client_impl->request_publisher_qos(qos);
+}
+
+
+rmw_ret_t
+rmw_api_connextdds_client_response_subscription_get_actual_qos(
+  const rmw_client_t * client,
+  rmw_qos_profile_t * qos)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(client, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    client,
+    client->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
+
+  RMW_Connext_Client * const client_impl =
+    reinterpret_cast<RMW_Connext_Client *>(client->data);
+
+  return client_impl->response_subscription_qos(qos);
+}
+
+
 rmw_service_t *
 rmw_api_connextdds_create_service(
   const rmw_node_t * node,
@@ -371,6 +413,48 @@ rmw_api_connextdds_create_service(
 
   scope_exit_svc_impl_delete.cancel();
   return rmw_service;
+}
+
+
+rmw_ret_t
+rmw_api_connextdds_service_response_publisher_get_actual_qos(
+  const rmw_service_t * service,
+  rmw_qos_profile_t * qos)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(service, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    service,
+    service->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
+
+  RMW_Connext_Service * const svc_impl =
+    reinterpret_cast<RMW_Connext_Service *>(service->data);
+
+  return svc_impl->response_publisher_qos(qos);
+}
+
+
+rmw_ret_t
+rmw_api_connextdds_service_request_subscription_get_actual_qos(
+  const rmw_service_t * service,
+  rmw_qos_profile_t * qos)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(service, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    service,
+    service->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos, RMW_RET_INVALID_ARGUMENT);
+
+  RMW_Connext_Service * const svc_impl =
+    reinterpret_cast<RMW_Connext_Service *>(service->data);
+
+  return svc_impl->request_subscription_qos(qos);
 }
 
 

@@ -15,12 +15,15 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#include "rcutils/get_env.h"
+#include "rmw_dds_common/security.hpp"
+
+#include "rcutils/env.h"
 #include "rcutils/filesystem.h"
 
 /******************************************************************************
@@ -91,35 +94,14 @@ rmw_connextdds_initialize_participant_qos(
     return RMW_RET_ERROR;
   }
 
-  /* Lookup and configure initial peer from environment */
-  const char * initial_peers = nullptr;
-  const char * lookup_rc =
-    rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);
-
-  if (nullptr != lookup_rc || nullptr == initial_peers) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_INITIAL_PEERS,
-      lookup_rc)
-    return RMW_RET_ERROR;
-  }
-
-  if ('\0' != initial_peers[0]) {
-    rmw_ret_t rc = rmw_connextdds_parse_string_list(
-      initial_peers,
-      &dp_qos.discovery.initial_peers,
-      ',' /* delimiter */,
-      true /* trim_elements */,
-      false /* allow_empty_elements */,
-      false /* append_values */);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR_A(
-        "failed to parse initial peers: '%s'", initial_peers)
-      return rc;
+  if (ctx->participant_qos_override_policy ==
+    rmw_context_impl_t::participant_qos_override_policy_t::All &&
+    DDS_StringSeq_get_length(&ctx->initial_peers) > 0)
+  {
+    if (!DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &ctx->initial_peers)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to copy initial peers sequence")
+      return RMW_RET_ERROR;
     }
-    RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
   }
 
   return RMW_RET_OK;
@@ -175,59 +157,12 @@ rmw_context_impl_t::initialize_node(
   return RMW_RET_OK;
 }
 
-
 rmw_ret_t
 rmw_context_impl_t::initialize_participant(const bool localhost_only)
 {
   RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipant")
 
   this->localhost_only = localhost_only;
-
-  /* Lookup RMW_CONNEXT_ENV_ALLOW_TOPIC_QOS_PROFILES env variable.*/
-  const char * endpoint_qos_policy = nullptr;
-  const char * lookup_rc = rcutils_get_env(
-    RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY, &endpoint_qos_policy);
-
-  if (nullptr != lookup_rc || nullptr == endpoint_qos_policy) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY,
-      lookup_rc)
-    return RMW_RET_ERROR;
-  }
-
-  this->endpoint_qos_override_policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Always;
-  const char dds_topic_policy_prefix[] = "dds_topics: ";
-  const char never_policy[] = "never";
-  const char always_policy[] = "always";
-  if (
-    0 == strncmp(
-      endpoint_qos_policy, dds_topic_policy_prefix, sizeof(dds_topic_policy_prefix) - 1u))
-  {
-    this->endpoint_qos_override_policy =
-      rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics;
-    try {
-      this->endpoint_qos_override_policy_topics_regex =
-        &endpoint_qos_policy[sizeof(dds_topic_policy_prefix) - 1u];
-    } catch (std::regex_error & err) {
-      RMW_CONNEXT_LOG_ERROR_A_SET(
-        "regex expression provided in {%s} environment variable is invalid: %s\n",
-        RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY,
-        err.what());
-      return RMW_RET_ERROR;
-    }
-  } else if (0 == strcmp(endpoint_qos_policy, never_policy)) {
-    this->endpoint_qos_override_policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Never;
-  } else if (endpoint_qos_policy[0] != '\0' && strcmp(endpoint_qos_policy, always_policy) != 0) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "Environment variable {%s} has an unexpected value {%s}. "
-      "Allowed values are {always}, {never} or {dds_topics: <regex_expression>}.\n",
-      RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY,
-      endpoint_qos_policy);
-    return RMW_RET_ERROR;
-  }
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_ERROR("DDS DomainParticipantFactory not initialized")
@@ -708,6 +643,69 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
   return ret;
 }
 
+static
+rmw_ret_t
+rmw_connextdds_parse_participant_qos_override_policy(
+  const char * const user_input,
+  rmw_context_impl_t::participant_qos_override_policy_t & policy)
+{
+  static const char pfx_never[] = "never";
+  static const char pfx_all[] = "all";
+  static const char pfx_basic[] = "basic";
+
+  policy = rmw_context_impl_t::participant_qos_override_policy_t::All;
+
+  if (0 == strcmp(user_input, pfx_never)) {
+    policy = rmw_context_impl_t::participant_qos_override_policy_t::Never;
+  } else if (0 == strcmp(user_input, pfx_basic)) {
+    policy = rmw_context_impl_t::participant_qos_override_policy_t::Basic;
+  } else if (user_input[0] != '\0' && strcmp(user_input, pfx_all) != 0) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "unexpected value for participant qos override policy. "
+      "Allowed values are {all}, {basic}, or {never}: %s",
+      user_input);
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+static
+rmw_ret_t
+rmw_connextdds_parse_endpoint_qos_override_policy(
+  const char * const user_input,
+  rmw_context_impl_t::endpoint_qos_override_policy_t & policy,
+  std::regex & policy_regex)
+{
+  static const char pfx_dds_topics[] = "dds_topics: ";
+  static const size_t pfx_dds_topics_len = sizeof(pfx_dds_topics) - 1u;
+  static const char pfx_never[] = "never";
+  static const char pfx_always[] = "always";
+
+  policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Always;
+
+  if (0 == strncmp(user_input, pfx_dds_topics, pfx_dds_topics_len)) {
+    policy = rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics;
+    try {
+      policy_regex = &user_input[pfx_dds_topics_len];
+    } catch (std::regex_error & err) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to parse regex for endpoint qos override policy: %s",
+        err.what());
+      return RMW_RET_ERROR;
+    }
+  } else if (0 == strcmp(user_input, pfx_never)) {
+    policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Never;
+  } else if (user_input[0] != '\0' && strcmp(user_input, pfx_always) != 0) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "unexpected value for endpoint qos override policy. "
+      "Allowed values are {always}, {never} or {dds_topics: <regex_expression>}: %s",
+      user_input);
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
 
 rmw_ret_t
 rmw_api_connextdds_init(
@@ -809,6 +807,56 @@ rmw_api_connextdds_init(
     return RMW_RET_ERROR;
   }
   ctx->use_default_publish_mode = '\0' != use_default_publish_mode_env[0];
+
+  // Check if the user specified a custom override policy for participant qos.
+  const char * participant_qos_policy = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_PARTICIPANT_QOS_OVERRIDE_POLICY, &participant_qos_policy);
+
+  if (nullptr != lookup_rc || nullptr == participant_qos_policy) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_PARTICIPANT_QOS_OVERRIDE_POLICY,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  rc = rmw_connextdds_parse_participant_qos_override_policy(
+    participant_qos_policy, ctx->participant_qos_override_policy);
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to parse value for environment variable {%s}",
+      RMW_CONNEXT_ENV_PARTICIPANT_QOS_OVERRIDE_POLICY);
+    return RMW_RET_ERROR;
+  }
+
+  // Check if the user specified a custom override policy for endpoint qos.
+  const char * endpoint_qos_policy = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY, &endpoint_qos_policy);
+
+  if (nullptr != lookup_rc || nullptr == endpoint_qos_policy) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  rc = rmw_connextdds_parse_endpoint_qos_override_policy(
+    endpoint_qos_policy,
+    ctx->endpoint_qos_override_policy,
+    ctx->endpoint_qos_override_policy_topics_regex);
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to parse value for environment variable {%s}",
+      RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY);
+    return RMW_RET_ERROR;
+  }
 
   // Check if we should run in "compatibility mode" with Cyclone DDS.
   const char * cyclone_compatible_env = nullptr;
@@ -921,6 +969,37 @@ rmw_api_connextdds_init(
   }
   ctx->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
+
+  /* Lookup and configure initial peer from environment */
+  const char * initial_peers = nullptr;
+  lookup_rc =
+    rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);
+
+  if (nullptr != lookup_rc || nullptr == initial_peers) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_INITIAL_PEERS,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  if ('\0' != initial_peers[0]) {
+    rmw_ret_t rc = rmw_connextdds_parse_string_list(
+      initial_peers,
+      &ctx->initial_peers,
+      ',' /* delimiter */,
+      true /* trim_elements */,
+      false /* allow_empty_elements */,
+      false /* append_values */);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR_A(
+        "failed to parse initial peers: '%s'", initial_peers)
+      return rc;
+    }
+    RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
+  }
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")
@@ -1041,10 +1120,6 @@ rmw_connextdds_configure_security(
     return rc;
   }
 
-  rcutils_allocator_t allocator = rcutils_get_default_allocator();
-  rcutils_allocator_t * const allocator_ptr = &allocator;
-  std::ostringstream ss;
-  std::string prop_uri;
 #if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   static const char * const uri_prefix = "file:";
 #else
@@ -1052,168 +1127,97 @@ rmw_connextdds_configure_security(
   static const char * const uri_prefix = "";
 #endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
-  char * const prop_identity_ca =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "identity_ca.cert.pem",
-    allocator);
-  auto scope_exit_prop_identity_ca = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_identity_ca]()
-    {
-      allocator_ptr->deallocate(prop_identity_ca, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_identity_ca;
-  prop_uri = ss.str();
-  ss.str("");
+  std::unordered_map<std::string, std::string> security_files;
+  if (!rmw_dds_common::get_security_files(
+      uri_prefix, ctx->base->options.security_options.security_root_path, security_files))
+  {
+    RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
+    return RMW_RET_ERROR;
+  }
+
   /* X509 Certificate of the Identity CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_IDENTITY_CA_PROPERTY,
-      prop_uri.c_str(),
+      security_files["IDENTITY_CA"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CA_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_IDENTITY_CA_PROPERTY, security_files["IDENTITY_CA"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_perm_ca =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "permissions_ca.cert.pem",
-    allocator);
-  auto scope_exit_prop_perm_ca = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_perm_ca]()
-    {
-      allocator_ptr->deallocate(prop_perm_ca, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_perm_ca;
-  prop_uri = ss.str();
-  ss.str("");
   /* X509 Certificate of the Permissions CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
-      prop_uri.c_str(),
+      security_files["PERMISSIONS_CA"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, security_files["PERMISSIONS_CA"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_peer_key =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "key.pem",
-    allocator);
-  auto scope_exit_prop_peer_key = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_peer_key]()
-    {
-      allocator_ptr->deallocate(prop_peer_key, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_peer_key;
-  prop_uri = ss.str();
-  ss.str("");
   /* Private Key of the DomainParticipant's identity */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PRIVATE_KEY_PROPERTY,
-      prop_uri.c_str(),
+      security_files["PRIVATE_KEY"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY, security_files["PRIVATE_KEY"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_peer_cert =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "cert.pem",
-    allocator);
-  auto scope_exit_prop_peer_cert = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_peer_cert]()
-    {
-      allocator_ptr->deallocate(prop_peer_cert, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_peer_cert;
-  prop_uri = ss.str();
-  ss.str("");
   /* Public certificate of the DomainParticipant's identity, signed
    * by the Certificate Authority */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
-      prop_uri.c_str(),
+      security_files["CERTIFICATE"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, security_files["CERTIFICATE"].c_str())
     return RMW_RET_ERROR;
   }
-
-  char * const prop_governance =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "governance.p7s",
-    allocator);
-  auto scope_exit_prop_governance = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_governance]()
-    {
-      allocator_ptr->deallocate(prop_governance, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_governance;
-  prop_uri = ss.str();
-  ss.str("");
   /* XML file containing domain governance configuration, signed by
    * the Permission CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_GOVERNANCE_PROPERTY,
-      prop_uri.c_str(),
+      security_files["GOVERNANCE"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_GOVERNANCE_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_GOVERNANCE_PROPERTY, security_files["GOVERNANCE"].c_str())
     return RMW_RET_ERROR;
   }
 
-  char * const prop_permissions =
-    rcutils_join_path(
-    ctx->base->options.security_options.security_root_path,
-    "permissions.p7s",
-    allocator);
-  auto scope_exit_prop_permissions = rcpputils::make_scope_exit(
-    [allocator_ptr, prop_permissions]()
-    {
-      allocator_ptr->deallocate(prop_permissions, allocator_ptr->state);
-    });
-  ss << uri_prefix << prop_permissions;
-  prop_uri = ss.str();
-  ss.str("");
   /* XML file containing domain permissions configuration, signed by
    * the Permission CA */
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PERMISSIONS_PROPERTY,
-      prop_uri.c_str(),
+      security_files["PERMISSIONS"].c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_PROPERTY, prop_uri.c_str())
+      DDS_SECURITY_PERMISSIONS_PROPERTY, security_files["PERMISSIONS"].c_str())
     return RMW_RET_ERROR;
   }
 

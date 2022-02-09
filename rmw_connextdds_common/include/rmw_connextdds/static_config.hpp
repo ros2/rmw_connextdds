@@ -94,8 +94,12 @@
 
 #ifndef RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY
 #define RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY     "RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY"
-#endif /* RMW_CONNEXT_ENV_ALLOW_TOPIC_QOS_PROFILES */
+#endif /* RMW_CONNEXT_ENV_ENDPOINT_QOS_OVERRIDE_POLICY */
 
+#ifndef RMW_CONNEXT_ENV_PARTICIPANT_QOS_OVERRIDE_POLICY
+#define RMW_CONNEXT_ENV_PARTICIPANT_QOS_OVERRIDE_POLICY \
+  "RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY"
+#endif /* RMW_CONNEXT_ENV_PARTICIPANT_QOS_OVERRIDE_POLICY */
 
 /******************************************************************************
  * DDS Implementation
@@ -279,6 +283,14 @@
 #ifndef RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
 #define RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY     1
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
+
+/******************************************************************************
+ * Modify DomainParticipantQos to allow sharing of DDS entities created with
+ * the Connext C API with applications using the C++11 API.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP
+#define RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP     1
+#endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
 
 /******************************************************************************
  * Override dds.transport.UDPv4.builtin.ignore_loopback_interface in

@@ -58,7 +58,8 @@ enum class RMW_Connext_RequestReplyMapping
   Extended
 };
 
-struct rmw_context_impl_t
+// Definition of struct rmw_context_impl_s as declared in rmw/init.h
+struct rmw_context_impl_s
 {
   rmw_dds_common::Context common;
   rmw_context_t * base;
@@ -96,6 +97,25 @@ struct rmw_context_impl_t
   bool optimize_large_data{true};
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
+  enum class participant_qos_override_policy_t
+  {
+    // Always override the default DomainParticipantQoS obtained at runtime from
+    // Connext with RMW-specific configuration. This will include settings derived
+    // from ROS 2 configuration parameters (e.g. "localhost_only", or "enclave"),
+    // but also some additional configurations that the RMW performs arbitrarly
+    // to improve the out of the box experience. Note that some of these customizations
+    // can also be disabled individually (e.g. fast endpoint discovery).
+    All,
+    // Only perform basic modifications on the default DomainParticipantQos value
+    // based on ROS 2 configuration parameters (e.g. "localhost only", and "enclave").
+    // All other RMW-specific customizations will not be applied.
+    Basic,
+    // Use the default DomainParticipantQoS returned by Connext without any modification.
+    Never,
+  };
+
+  participant_qos_override_policy_t participant_qos_override_policy;
+
   enum class endpoint_qos_override_policy_t
   {
     // Use default QoS policy got from the DDS qos profile file applying topic filters
@@ -113,6 +133,8 @@ struct rmw_context_impl_t
   endpoint_qos_override_policy_t endpoint_qos_override_policy;
   std::regex endpoint_qos_override_policy_topics_regex;
 
+  struct DDS_StringSeq initial_peers = DDS_SEQUENCE_INITIALIZER;
+
   /* Participant reference count*/
   size_t node_count{0};
   std::mutex initialization_mutex;
@@ -127,7 +149,7 @@ struct rmw_context_impl_t
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
   std::mutex endpoint_mutex;
 
-  explicit rmw_context_impl_t(rmw_context_t * const base)
+  explicit rmw_context_impl_s(rmw_context_t * const base)
   : common(),
     base(base),
     factory(nullptr),
@@ -147,7 +169,7 @@ struct rmw_context_impl_t
     common.sub = nullptr;
   }
 
-  ~rmw_context_impl_t()
+  ~rmw_context_impl_s()
   {
     if (0u != this->node_count) {
       RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)

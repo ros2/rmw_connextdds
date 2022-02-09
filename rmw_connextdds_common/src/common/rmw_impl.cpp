@@ -19,6 +19,8 @@
 #include <vector>
 #include <stdexcept>
 
+#include "rmw_dds_common/time_utils.hpp"
+
 #include "rmw_connextdds/graph_cache.hpp"
 
 #define ROS_SERVICE_REQUESTER_PREFIX_STR "rq"
@@ -219,6 +221,22 @@ rmw_connextdds_find_string_in_list(
   return false;
 }
 
+DDS_Duration_t
+rmw_connextdds_duration_from_ros_time(
+  const rmw_time_t * const ros_time)
+{
+  if (rmw_time_equal(*ros_time, RMW_DURATION_INFINITE)) {
+    return DDS_DURATION_INFINITE;
+  }
+
+  rmw_time_t in_time = rmw_dds_common::clamp_rmw_time_to_dds_time(*ros_time);
+
+  DDS_Duration_t duration;
+  duration.sec = static_cast<DDS_Long>(in_time.sec);
+  duration.nanosec = static_cast<DDS_UnsignedLong>(in_time.nsec);
+  return duration;
+}
+
 /******************************************************************************
  * Qos Helpers
  ******************************************************************************/
@@ -242,6 +260,34 @@ dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id)
       break;
   }
   return RMW_QOS_POLICY_INVALID;
+}
+
+static
+DDS_Duration_t
+rmw_time_to_dds_duration(const rmw_time_t & time)
+{
+  if (rmw_time_equal(time, RMW_DURATION_INFINITE)) {
+    return DDS_DURATION_INFINITE;
+  }
+  // Use rmw_dds_common::clamp_rmw_time_to_dds_time() to make sure value doesn't
+  // exceed the valid domain for DDS_Duration_t.
+  const rmw_time_t ctime = rmw_dds_common::clamp_rmw_time_to_dds_time(time);
+  DDS_Duration_t duration;
+  duration.sec = static_cast<DDS_Long>(ctime.sec);
+  duration.nanosec = static_cast<DDS_UnsignedLong>(ctime.nsec);
+  return duration;
+}
+
+static
+rmw_time_t
+dds_duration_to_rmw_time(const DDS_Duration_t & duration)
+{
+  if (DDS_Duration_is_infinite(&duration)) {
+    return RMW_DURATION_INFINITE;
+  }
+  assert(duration.sec > 0);
+  rmw_time_t result = {static_cast<uint64_t>(duration.sec), duration.nanosec};
+  return result;
 }
 
 rmw_ret_t
@@ -360,21 +406,13 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-  if (qos_policies->deadline.sec != 0 || qos_policies->deadline.nsec != 0) {
-    deadline->period.sec =
-      static_cast<DDS_Long>(qos_policies->deadline.sec);
-    deadline->period.nanosec =
-      static_cast<DDS_UnsignedLong>(qos_policies->deadline.nsec);
+  if (!rmw_time_equal(qos_policies->deadline, RMW_DURATION_UNSPECIFIED)) {
+    deadline->period = rmw_time_to_dds_duration(qos_policies->deadline);
   }
 
-  if (qos_policies->liveliness_lease_duration.sec != 0 ||
-    qos_policies->liveliness_lease_duration.nsec != 0)
-  {
-    liveliness->lease_duration.sec =
-      static_cast<DDS_Long>(qos_policies->liveliness_lease_duration.sec);
-    liveliness->lease_duration.nanosec =
-      static_cast<DDS_UnsignedLong>(
-      qos_policies->liveliness_lease_duration.nsec);
+  if (!rmw_time_equal(qos_policies->liveliness_lease_duration, RMW_DURATION_UNSPECIFIED)) {
+    liveliness->lease_duration =
+      rmw_time_to_dds_duration(qos_policies->liveliness_lease_duration);
   }
 
   switch (qos_policies->liveliness) {
@@ -401,32 +439,19 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-  if (nullptr != lifespan &&
-    (qos_policies->lifespan.sec != 0 || qos_policies->lifespan.nsec != 0))
+  // LifespanQosPolicy is a writer-only policy, so `lifespan` might be NULL.
+  // Micro does not support this policy, so the value will always be NULL.
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  assert(nullptr == lifespan);
+#else /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
+  if (lifespan != nullptr &&
+    !rmw_time_equal(qos_policies->lifespan, RMW_DURATION_UNSPECIFIED))
   {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    lifespan->duration.sec = static_cast<DDS_Long>(qos_policies->lifespan.sec);
-    lifespan->duration.nanosec =
-      static_cast<DDS_UnsignedLong>(qos_policies->lifespan.nsec);
-#else
-    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
+    // Guard access to type since it's not defined by Micro (only forward declared
+    // by rmw_connextdds/dds_api_rtime.hpp)
+    lifespan->duration = rmw_time_to_dds_duration(qos_policies->lifespan);
   }
-
-  // Make sure that resource limits are consistent with history qos
-  // TODO(asorbini): do not overwrite if using non-default QoS
-  // if (history->kind == DDS_KEEP_LAST_HISTORY_QOS &&
-  //   history->depth > 1 &&
-  //   resource_limits->max_samples_per_instance == DDS_LENGTH_UNLIMITED)
-  // {
-  //   resource_limits->max_samples_per_instance = history->depth;
-  //   if (resource_limits->max_samples != DDS_LENGTH_UNLIMITED &&
-  //     resource_limits->max_samples < resource_limits->max_samples_per_instance)
-  //   {
-  //     resource_limits->max_samples =
-  //       resource_limits->max_samples_per_instance;
-  //   }
-  // }
+#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 
   return RMW_RET_OK;
 }
@@ -501,13 +526,10 @@ rmw_connextdds_readerwriter_qos_to_ros(
       }
   }
 
-  qos_policies->deadline.sec = deadline->period.sec;
-  qos_policies->deadline.nsec = deadline->period.nanosec;
+  qos_policies->deadline = dds_duration_to_rmw_time(deadline->period);
 
-  qos_policies->liveliness_lease_duration.sec =
-    liveliness->lease_duration.sec;
-  qos_policies->liveliness_lease_duration.nsec =
-    liveliness->lease_duration.nanosec;
+  qos_policies->liveliness_lease_duration =
+    dds_duration_to_rmw_time(liveliness->lease_duration);
 
   switch (liveliness->kind) {
     case DDS_AUTOMATIC_LIVELINESS_QOS:
@@ -530,10 +552,11 @@ rmw_connextdds_readerwriter_qos_to_ros(
 
   if (nullptr != lifespan) {
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-    qos_policies->lifespan.sec = lifespan->duration.sec;
-    qos_policies->lifespan.nsec = lifespan->duration.nanosec;
+    qos_policies->lifespan = dds_duration_to_rmw_time(lifespan->duration);
 #else
-    RMW_CONNEXT_LOG_WARNING("lifespan qos policy not supported")
+    // Only emit a debug message in this case, since we don't want to pollute the
+    // output too much. We print a warning when going from ROS to DDS.
+    RMW_CONNEXT_LOG_DEBUG("lifespan qos policy not supported")
 #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   }
 
@@ -918,6 +941,28 @@ RMW_Connext_Publisher::assert_liveliness()
   }
 
   return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
+{
+  DDS_Duration_t timeout = rmw_connextdds_duration_from_ros_time(&wait_timeout);
+
+  const DDS_ReturnCode_t dds_rc =
+    DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout);
+
+  switch (dds_rc) {
+    case DDS_RETCODE_OK:
+      return RMW_RET_OK;
+    case DDS_RETCODE_TIMEOUT:
+      return RMW_RET_TIMEOUT;
+    default:
+      {
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "failed to wait for reader acknowledgements: dds_rc=%d", dds_rc)
+        return RMW_RET_ERROR;
+      }
+  }
 }
 
 rmw_ret_t
@@ -2578,6 +2623,28 @@ RMW_Connext_Client::send_request(
 }
 
 rmw_ret_t
+RMW_Connext_Client::request_publisher_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->request_pub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get client's request publisher qos");
+    return rc;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Client::response_subscription_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->reply_sub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get client's response subscription qos");
+    return rc;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 RMW_Connext_Client::finalize()
 {
   if (nullptr != this->request_pub) {
@@ -2826,6 +2893,28 @@ RMW_Connext_Service::send_response(
     rr_msg.sn)
 
   return this->reply_pub->write(&rr_msg, false /* serialized */);
+}
+
+rmw_ret_t
+RMW_Connext_Service::response_publisher_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->reply_pub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get service's response publisher qos");
+    return rc;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Service::request_subscription_qos(rmw_qos_profile_t * const qos)
+{
+  rmw_ret_t rc = this->request_sub->qos(qos);
+  if (rc != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("coudn't get service's request subscription qos");
+    return rc;
+  }
+  return RMW_RET_OK;
 }
 
 rmw_ret_t

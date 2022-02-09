@@ -64,6 +64,9 @@ bool rmw_connextdds_find_string_in_list(
   const DDS_StringSeq * const values,
   const char * const value);
 
+DDS_Duration_t rmw_connextdds_duration_from_ros_time(
+  const rmw_time_t * const ros_time);
+
 /******************************************************************************
  * WaitSet wrapper
  ******************************************************************************/
@@ -196,6 +199,9 @@ public:
 
   rmw_ret_t
   assert_liveliness();
+
+  rmw_ret_t
+  wait_for_all_acked(rmw_time_t wait_timeout);
 
   rmw_ret_t
   qos(rmw_qos_profile_t * const qos);
@@ -576,6 +582,12 @@ public:
 
   rmw_ret_t
   enable();
+
+  rmw_ret_t
+  request_publisher_qos(rmw_qos_profile_t * const qos);
+
+  rmw_ret_t
+  response_subscription_qos(rmw_qos_profile_t * const qos);
 };
 
 class RMW_Connext_Service
@@ -623,6 +635,12 @@ public:
 
   rmw_ret_t
   enable();
+
+  rmw_ret_t
+  response_publisher_qos(rmw_qos_profile_t * const qos);
+
+  rmw_ret_t
+  request_subscription_qos(rmw_qos_profile_t * const qos);
 };
 
 /******************************************************************************

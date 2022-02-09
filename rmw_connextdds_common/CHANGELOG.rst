@@ -2,6 +2,38 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.8.2 (2022-01-14)
+------------------
+* Fix cpplint errors (`#69 <https://github.com/ros2/rmw_connextdds/issues/69>`_)
+* Contributors: Jacob Perron
+
+0.8.1 (2021-11-19)
+------------------
+* Add client/service QoS getters. (`#67 <https://github.com/rticommunity/rmw_connextdds/issues/67>`_)
+* Contributors: mauropasse
+
+0.8.0 (2021-09-15)
+------------------
+* Update rmw_context_impl_t definition (`#65 <https://github.com/ros2/rmw_connextdds/issues/65>`_)
+* Use the new rmw_dds_common::get_security_files API (`#61 <https://github.com/ros2/rmw_connextdds/issues/61>`_)
+* Contributors: Chris Lalancette, Michel Hidalgo
+
+0.7.0 (2021-06-04)
+------------------
+* Add rmw_publisher_wait_for_all_acked support. (`#20 <https://github.com/rticommunity/rmw_connextdds/issues/20>`_)
+* Support extended signature for `message_type_support_callbacks_t::max_serialized_size()` from `rosidl_typesupport_fastrtps_cpp`. (`#14 <https://github.com/rticommunity/rmw_connextdds/issues/14>`_)
+* Update includes after rcutils/get_env.h deprecation. (`#55 <https://github.com/rticommunity/rmw_connextdds/issues/55>`_)
+* Always modify UserObjectQosPolicy regardless of override policy. (`#53 <https://github.com/rticommunity/rmw_connextdds/issues/53>`_)
+* Improved conversion of time values between ROS and DDS formats. (`#43 <https://github.com/rticommunity/rmw_connextdds/issues/43>`_)
+* Allow sharing DomainParticipant with C++ applications. (`#25 <https://github.com/rticommunity/rmw_connextdds/issues/25>`_)
+* Add environment variable to control override of DomainParticipantQos. (`#41 <https://github.com/rticommunity/rmw_connextdds/issues/41>`_)
+* Contributors: Andrea Sorbini, Barry Xu, Christophe Bedard, Miguel Company
+
+0.6.1 (2021-04-26)
+------------------
+* Correctly detect empty messages (`#33 <https://github.com/rticommunity/rmw_connextdds/issues/33>`_)
+* Contributors: Andrea Sorbini
+
 0.6.0 (2021-04-11)
 ------------------
 * Use rmw_qos_profile_unknown when adding entity to graph (`#28 <https://github.com/rticommunity/rmw_connextdds/issues/28>`_)

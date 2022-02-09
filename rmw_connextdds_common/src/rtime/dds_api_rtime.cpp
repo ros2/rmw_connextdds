@@ -20,7 +20,7 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#include "rcutils/get_env.h"
+#include "rcutils/env.h"
 
 struct RMW_Connext_BuiltinListener;
 
@@ -923,7 +923,7 @@ rmw_connextdds_get_qos_policies(
   size_t max_samples = RMW_CONNEXT_LIMIT_SAMPLES_MAX;
 
   if (DDS_LENGTH_UNLIMITED != history->depth &&
-    (size_t)history->depth > max_samples)
+    static_cast<size_t>(history->depth) > max_samples)
   {
     max_samples = history->depth;
   }

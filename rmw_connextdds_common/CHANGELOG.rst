@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.8.3 (2022-02-10)
+------------------
+
 0.8.2 (2022-01-14)
 ------------------
 * Fix cpplint errors (`#69 <https://github.com/ros2/rmw_connextdds/issues/69>`_)

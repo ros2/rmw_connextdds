@@ -74,4 +74,3 @@ rmw_api_connextdds_subscription_set_on_new_message_callback(
   RMW_CONNEXT_LOG_ERROR_SET("rmw_subscription_set_on_new_message_callback not implemented")
   return RMW_RET_UNSUPPORTED;
 }
-

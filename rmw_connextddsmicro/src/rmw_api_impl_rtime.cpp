@@ -120,6 +120,15 @@ rmw_take_event(
   return rmw_api_connextdds_take_event(event_handle, event_info, taken);
 }
 
+rmw_ret_t
+rmw_event_set_callback(
+  rmw_event_t * event,
+  rmw_event_callback_t callback,
+  const void * user_data)
+{
+  return rmw_api_connextdds_event_set_callback(event, callback, user_data);
+}
+
 /*****************************************************************************
  * Info API
  *****************************************************************************/
@@ -633,6 +642,27 @@ rmw_destroy_service(
 {
   return rmw_api_connextdds_destroy_service(node, service);
 }
+
+rmw_ret_t
+rmw_service_set_on_new_request_callback(
+  rmw_service_t * rmw_service,
+  rmw_event_callback_t callback,
+  const void * user_data)
+{
+  return rmw_api_connextdds_service_set_on_new_request_callback(
+    rmw_service, callback, user_data);
+}
+
+rmw_ret_t
+rmw_client_set_on_new_response_callback(
+  rmw_client_t * rmw_client,
+  rmw_event_callback_t callback,
+  const void * user_data)
+{
+  return rmw_api_connextdds_client_set_on_new_response_callback(
+    rmw_client, callback, user_data);
+}
+
 /*****************************************************************************
  * Subscription API
  *****************************************************************************/
@@ -807,6 +837,16 @@ rmw_return_loaned_message_from_subscription(
 {
   return rmw_api_connextdds_return_loaned_message_from_subscription(
     subscription, loaned_message);
+}
+
+rmw_ret_t
+rmw_subscription_set_on_new_message_callback(
+  rmw_subscription_t * rmw_subscription,
+  rmw_event_callback_t callback,
+  const void * user_data)
+{
+  return rmw_api_connextdds_subscription_set_on_new_message_callback(
+    rmw_subscription, callback, user_data);
 }
 
 /*****************************************************************************

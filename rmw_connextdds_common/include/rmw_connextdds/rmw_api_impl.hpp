@@ -86,6 +86,13 @@ rmw_api_connextdds_take_event(
   void * event_info,
   bool * taken);
 
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_event_set_callback(
+  rmw_event_t * event,
+  rmw_event_callback_t callback,
+  const void * user_data);
+
 /*****************************************************************************
  * Info API
  *****************************************************************************/
@@ -423,6 +430,21 @@ rmw_ret_t
 rmw_api_connextdds_destroy_service(
   rmw_node_t * node,
   rmw_service_t * service);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_service_set_on_new_request_callback(
+  rmw_service_t * rmw_service,
+  rmw_event_callback_t callback,
+  const void * user_data);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_client_set_on_new_response_callback(
+  rmw_client_t * rmw_client,
+  rmw_event_callback_t callback,
+  const void * user_data);
+
 /*****************************************************************************
  * Subscription API
  *****************************************************************************/
@@ -534,6 +556,13 @@ rmw_ret_t
 rmw_api_connextdds_return_loaned_message_from_subscription(
   const rmw_subscription_t * subscription,
   void * loaned_message);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_subscription_set_on_new_message_callback(
+  rmw_subscription_t * rmw_subscription,
+  rmw_event_callback_t callback,
+  const void * user_data);
 
 /*****************************************************************************
  * WaitSet API

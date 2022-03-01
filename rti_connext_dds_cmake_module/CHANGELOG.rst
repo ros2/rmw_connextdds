@@ -2,6 +2,9 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.8.3 (2022-02-10)
 ------------------
 * Update rti-connext-dds dependency to 6.0.1. (`#71 <https://github.com/ros2/rmw_connextdds/issues/71>`_)

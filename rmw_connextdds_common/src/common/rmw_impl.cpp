@@ -1885,8 +1885,12 @@ rmw_connextdds_message_info_from_dds(
   to->source_timestamp = 0;
   to->received_timestamp = 0;
 #endif /* !RTI_WIN32 */
-  rmw_connextdds_sn_dds_to_ros(from->publication_sequence_number, to->publication_sequence_number);
-  rmw_connextdds_sn_dds_to_ros(from->reception_sequence_number, to->reception_sequence_number);
+  to->publication_sequence_number =
+    static_cast<uint64_t>((from->publication_sequence_number).high) << 32 |
+    static_cast<uint64_t>((from->publication_sequence_number).low);
+  to->reception_sequence_number =
+    static_cast<uint64_t>((from->reception_sequence_number).high) << 32 |
+    static_cast<uint64_t>((from->reception_sequence_number).low);
 }
 
 /******************************************************************************

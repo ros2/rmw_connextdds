@@ -121,6 +121,7 @@ RMW_Connext_DataReaderListener_on_data_available(
 
   UNUSED_ARG(reader);
 
+  self->notify_new_data();
   self->set_data_available(true);
 }
 
@@ -706,6 +707,8 @@ RMW_Connext_SubscriberStatusCondition::update_status_deadline(
 
   this->status_deadline.total_count_change = this->status_deadline.total_count;
   this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
+
+  this->notify_new_event();
 }
 
 void
@@ -720,6 +723,8 @@ RMW_Connext_SubscriberStatusCondition::update_status_liveliness(
   this->status_liveliness.alive_count_change -= this->status_liveliness_last.alive_count;
   this->status_liveliness.not_alive_count_change -=
     this->status_liveliness_last.not_alive_count;
+
+  this->notify_new_event();
 }
 
 void
@@ -852,6 +857,8 @@ RMW_Connext_PublisherStatusCondition::update_status_deadline(
 
   this->status_deadline.total_count_change = this->status_deadline.total_count;
   this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
+
+  this->notify_new_event();
 }
 
 void
@@ -863,6 +870,8 @@ RMW_Connext_PublisherStatusCondition::update_status_liveliness(
 
   this->status_liveliness.total_count_change = this->status_liveliness.total_count;
   this->status_liveliness.total_count_change -= this->status_liveliness_last.total_count;
+
+  this->notify_new_event();
 }
 
 void

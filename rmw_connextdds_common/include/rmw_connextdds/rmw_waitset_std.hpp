@@ -121,6 +121,22 @@ public:
     }
   }
 
+  template<typename FunctorT, typename FunctorA>
+  void
+  perform_action_and_update_state(FunctorT && update_condition, FunctorA && action)
+  {
+    std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
+
+    action();
+
+    if (nullptr != this->waitset_mutex) {
+      std::lock_guard<std::mutex> lock(*this->waitset_mutex);
+      update_condition();
+    } else {
+      update_condition();
+    }
+  }
+
 protected:
   std::mutex mutex_internal;
   std::mutex * waitset_mutex;
@@ -333,8 +349,44 @@ public:
   virtual bool
   has_status(const rmw_event_type_t event_type) = 0;
 
+  void
+  notify_new_event()
+  {
+    std::unique_lock<std::mutex> lock_mutex(new_event_mutex_);
+    if (new_event_cb_) {
+      new_event_cb_(user_data_, 1);
+    } else {
+      unread_events_count_++;
+    }
+  }
+
+  void
+  set_new_event_callback(
+    rmw_event_callback_t callback,
+    const void * user_data)
+  {
+    std::unique_lock<std::mutex> lock_mutex(new_event_mutex_);
+
+    if (callback) {
+      // Push events arrived before setting the executor's callback
+      if (unread_events_count_ > 0) {
+        callback(user_data, unread_events_count_);
+        unread_events_count_ = 0;
+      }
+      user_data_ = user_data;
+      new_event_cb_ = callback;
+    } else {
+      user_data_ = nullptr;
+      new_event_cb_ = nullptr;
+    }
+  }
+
 protected:
   DDS_StatusCondition * scond;
+  std::mutex new_event_mutex_;
+  rmw_event_callback_t new_event_cb_{nullptr};
+  const void * user_data_{nullptr};
+  uint64_t unread_events_count_ = 0;
 };
 
 void
@@ -712,6 +764,47 @@ public:
     return RMW_RET_OK;
   }
 
+  void set_on_new_data_callback(
+    const rmw_event_callback_t callback,
+    const void * const user_data)
+  {
+    std::unique_lock<std::mutex> lock(new_data_event_mutex_);
+    if (callback) {
+      if (unread_data_events_count_ > 0) {
+        callback(user_data, unread_data_events_count_);
+        unread_data_events_count_ = 0;
+      }
+      new_data_event_cb_ = callback;
+      data_event_user_data_ = user_data;
+    } else {
+      new_data_event_cb_ = nullptr;
+      data_event_user_data_ = nullptr;
+    }
+  }
+
+  void notify_new_data()
+  {
+    size_t unread_samples = 0;
+    std::unique_lock<std::mutex> lock_mutex(new_data_event_mutex_);
+    perform_action_and_update_state(
+      [this, &unread_samples]() {
+        if (unread_samples == 0) {
+          return;
+        }
+        if (new_data_event_cb_) {
+          new_data_event_cb_(data_event_user_data_, unread_samples);
+        } else {
+          unread_data_events_count_ += unread_samples;
+        }
+      },
+      [this, &unread_samples]() {
+        const rmw_ret_t rc = rmw_connextdds_count_unread_samples(this->sub, unread_samples);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to count unread samples on DDS Reader")
+        }
+      });
+  }
+
 protected:
   void update_status_deadline(
     const DDS_RequestedDeadlineMissedStatus * const status);
@@ -744,6 +837,11 @@ protected:
   DDS_SampleLostStatus status_sample_lost_last;
 
   RMW_Connext_Subscriber * sub;
+
+  std::mutex new_data_event_mutex_;
+  rmw_event_callback_t new_data_event_cb_{nullptr};
+  const void * data_event_user_data_{nullptr};
+  uint64_t unread_data_events_count_ = 0;
 
   friend class RMW_Connext_WaitSet;
 };

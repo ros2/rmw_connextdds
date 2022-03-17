@@ -750,6 +750,30 @@ RMW_Connext_SubscriberStatusCondition::update_status_sample_lost(
     this->status_sample_lost_last.total_count;
 }
 
+void
+RMW_Connext_SubscriberStatusCondition::notify_new_data()
+{
+  size_t unread_samples = 0;
+  std::unique_lock<std::mutex> lock_mutex(new_data_event_mutex_);
+  perform_action_and_update_state(
+    [this, &unread_samples]() {
+      const rmw_ret_t rc = this->sub->count_unread_samples(unread_samples);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to count unread samples on DDS Reader")
+      }
+    },
+    [this, &unread_samples]() {
+      if (unread_samples == 0) {
+        return;
+      }
+      if (new_data_event_cb_) {
+        new_data_event_cb_(data_event_user_data_, unread_samples);
+      } else {
+        unread_data_events_count_ += unread_samples;
+      }
+    });
+}
+
 rmw_ret_t
 RMW_Connext_PublisherStatusCondition::install(
   RMW_Connext_Publisher * const pub)

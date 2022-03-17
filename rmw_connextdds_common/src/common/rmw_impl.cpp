@@ -1885,6 +1885,10 @@ rmw_connextdds_message_info_from_dds(
   to->source_timestamp = 0;
   to->received_timestamp = 0;
 #endif /* !RTI_WIN32 */
+  // Currently we cannot use `rmw_connextdds_sn_dds_to_ros`, as that was used to convert to
+  // `rmw_request_id_t.sequence_number`, which is an int64_t and not an uint64_t.
+  // When rmw is updated and all sequence numbers are a `uint64_t`,
+  // rmw_connextdds_sn_dds_to_ros() should be updated and used everywhere.
   to->publication_sequence_number =
     static_cast<uint64_t>((from->publication_sequence_number).high) << 32 |
     static_cast<uint64_t>((from->publication_sequence_number).low);

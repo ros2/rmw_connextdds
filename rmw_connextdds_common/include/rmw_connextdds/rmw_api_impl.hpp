@@ -642,6 +642,7 @@ rmw_api_connextdds_subscription_get_network_flow_endpoints(
 /******************************************************************************
  * Feature support functions
  ******************************************************************************/
+RMW_CONNEXTDDS_PUBLIC
 bool
 rmw_api_connextdds_feature_supported(rmw_feature_t feature);
 

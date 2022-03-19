@@ -17,7 +17,9 @@
 
 #include "rcpputils/scope_exit.hpp"
 
-#include "rti_connext_dds_custom_sql_filter/custom_sql_filter.hpp"
+#include "rmw_connextdds/custom_sql_filter.hpp"
+
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
 extern "C" {
 // This is an internal function from RTI Connext DDS which allows a filter to
@@ -724,3 +726,5 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
 
 const char * const
 rti_connext_dds_custom_sql_filter::PLUGIN_NAME = "RTI_CONNEXTDDS_CUSTOM_SQL_FILTER";
+
+#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO

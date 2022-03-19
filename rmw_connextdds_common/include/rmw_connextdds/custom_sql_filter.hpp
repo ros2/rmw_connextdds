@@ -11,11 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef RTI_CONNEXTDDS_CUSTOM_SQL_FILTER__CUSTOM_SQL_FILTER_HPP_
-#define RTI_CONNEXTDDS_CUSTOM_SQL_FILTER__CUSTOM_SQL_FILTER_HPP_
+#ifndef RMW_CONNEXTDDS__CUSTOM_SQL_FILTER_HPP_
+#define RMW_CONNEXTDDS__CUSTOM_SQL_FILTER_HPP_
 
-#include "rti_connext_dds_custom_sql_filter/visibility_control.h"
-#include "ndds/ndds_c.h"
+#include "rmw_connextdds/dds_api.hpp"
+
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
 namespace rti_connext_dds_custom_sql_filter
 {
@@ -31,15 +32,17 @@ struct CustomSqlFilterData
     const DDS_DomainParticipantQos & dp_qos);
 };
 
-RTI_CONNEXTDDS_CUSTOM_SQL_FILTER_PUBLIC
+RMW_CONNEXTDDS_PUBLIC
 DDS_ReturnCode_t
 register_content_filter(
   DDS_DomainParticipant * const participant,
   CustomSqlFilterData * const filter_data);
 
-RTI_CONNEXTDDS_CUSTOM_SQL_FILTER_PUBLIC
+RMW_CONNEXTDDS_PUBLIC
 extern const char * const PLUGIN_NAME;
 
 }  // namespace rti_connext_dds_custom_sql_filter
+
+#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
 #endif  // RTI_CONNEXTDDS_CUSTOM_SQL_FILTER__CUSTOM_SQL_FILTER_HPP_

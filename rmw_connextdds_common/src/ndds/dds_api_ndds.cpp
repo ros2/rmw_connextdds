@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "rmw/impl/cpp/key_value.hpp"
-#include "rti_connext_dds_custom_sql_filter/custom_sql_filter.hpp"
+#include "rmw_connextdds/custom_sql_filter.hpp"
 
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"

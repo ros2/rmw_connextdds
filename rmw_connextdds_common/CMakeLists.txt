@@ -194,7 +194,6 @@ else()
     if("${CONNEXTDDS_VERSION}" VERSION_LESS "6.0.0")
       list(APPEND extra_defines "RMW_CONNEXT_DDS_API_PRO_LEGACY=1")
     endif()
-    find_package(rti_connext_dds_custom_sql_filter REQUIRED)
     rtirmw_add_library(
         NAME      ${PROJECT_NAME}_pro
         API       PRO
@@ -203,10 +202,11 @@ else()
                   src/ndds/rmw_type_support_ndds.cpp
                   src/ndds/rmw_typecode.cpp
                   src/ndds/dds_api_ndds.cpp
+                  src/ndds/custom_sql_filter.cpp
                   include/rmw_connextdds/typecode.hpp
                   include/rmw_connextdds/dds_api_ndds.hpp
+                  include/rmw_connextdds/custom_sql_filter.hpp
         DEPS      ${RMW_CONNEXT_DEPS}
-                  rti_connext_dds_custom_sql_filter
         LIBRARIES RTIConnextDDS::c_api
         DEFINES   ${extra_defines})
 endif()
@@ -291,12 +291,7 @@ endif()
 ################################################################################
 # Configure Ament package
 ################################################################################
-set(RMW_AMENT_EXPORT_DEPS ${RMW_CONNEXT_DEPS})
-if(TARGET ${PROJECT_NAME}_pro)
-  list(APPEND RMW_AMENT_EXPORT_DEPS rti_connext_dds_custom_sql_filter)
-endif()
-ament_export_dependencies(
-  ${RMW_AMENT_EXPORT_DEPS})
+ament_export_dependencies(${RMW_CONNEXT_DEPS})
 
 if(RMW_CONNEXT_BUILT)
     ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)

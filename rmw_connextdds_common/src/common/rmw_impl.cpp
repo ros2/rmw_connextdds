@@ -948,6 +948,11 @@ rmw_ret_t
 RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
 {
   DDS_Duration_t timeout = rmw_connextdds_duration_from_ros_time(&wait_timeout);
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  // Avoid warnings for unused variable in micro, since wait_for_ack() is
+  // mapped to an empty call.
+  UNUSED_ARG(timeout);
+#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
 
   const DDS_ReturnCode_t dds_rc =
     DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout);
@@ -1239,7 +1244,7 @@ RMW_Connext_Subscriber::create(
   }
 
   auto scope_exit_topic_delete = rcpputils::make_scope_exit(
-    [ctx, topic_created, dp, topic, cft_topic]()
+    [ctx, &topic_created, dp, &topic, &cft_topic]()
     {
       if (nullptr != cft_topic) {
         if (RMW_RET_OK !=
@@ -1273,7 +1278,7 @@ RMW_Connext_Subscriber::create(
       sub_cft_expr =
         subscriber_options->content_filter_options->filter_expression;
       sub_cft_params =
-        subscriber_options->content_filter_options->expression_parameters;
+        &subscriber_options->content_filter_options->expression_parameters;
     }
   }
 
@@ -1561,7 +1566,7 @@ RMW_Connext_Subscriber::set_content_filter(
 {
   if (RMW_RET_OK !=
     rmw_connextdds_set_cft_filter_expression(
-      this->dds_topic_cft, options->filter_expression, options->expression_parameters))
+      this->dds_topic_cft, options->filter_expression, &options->expression_parameters))
   {
     return RMW_RET_ERROR;
   }

@@ -867,7 +867,7 @@ rmw_connextdds_configure_participant(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipant * const participant)
 {
-  UNUSED_ARG(ctx);
+  UNUSED_ARG(participant);
   UNUSED_ARG(ctx);
 
   return RMW_RET_OK;
@@ -1984,7 +1984,7 @@ rmw_ret_t
 rmw_connextdds_get_cft_filter_expression(
   DDS_TopicDescription * const topic_desc,
   rcutils_allocator_t * const allocator,
-  rmw_subscription_content_filter_options_t * const options);
+  rmw_subscription_content_filter_options_t * const options)
 {
   UNUSED_ARG(topic_desc);
   UNUSED_ARG(allocator);

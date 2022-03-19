@@ -1422,7 +1422,6 @@ rmw_connextdds_set_cft_filter_expression(
   return RMW_RET_OK;
 }
 
-
 rmw_ret_t
 rmw_connextdds_get_cft_filter_expression(
   DDS_TopicDescription * const topic_desc,

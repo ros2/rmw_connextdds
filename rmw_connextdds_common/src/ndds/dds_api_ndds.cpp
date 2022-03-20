@@ -783,9 +783,9 @@ rmw_connextdds_take_samples(
     RMW_CONNEXT_LOG_ERROR_SET("failed to take data from DDS reader")
     return RMW_RET_ERROR;
   }
-  RMW_CONNEXT_ASSERT(data_len > 0)(void) RMW_Connext_Uint8ArrayPtrSeq_loan_contiguous(
+  RMW_CONNEXT_ASSERT(data_len > 0)(void) RMW_Connext_MessagePtrSeq_loan_contiguous(
     sub->data_seq(),
-    reinterpret_cast<rcutils_uint8_array_t **>(data_buffer),
+    reinterpret_cast<RMW_Connext_Message **>(data_buffer),
     data_len,
     data_len);
 
@@ -797,11 +797,11 @@ rmw_connextdds_return_samples(
   RMW_Connext_Subscriber * const sub)
 {
   void ** data_buffer = reinterpret_cast<void **>(
-    RMW_Connext_Uint8ArrayPtrSeq_get_contiguous_buffer(sub->data_seq()));
+    RMW_Connext_MessagePtrSeq_get_contiguous_buffer(sub->data_seq()));
   const DDS_Long data_len =
-    RMW_Connext_Uint8ArrayPtrSeq_get_length(sub->data_seq());
+    RMW_Connext_MessagePtrSeq_get_length(sub->data_seq());
 
-  if (!RMW_Connext_Uint8ArrayPtrSeq_unloan(sub->data_seq())) {
+  if (!RMW_Connext_MessagePtrSeq_unloan(sub->data_seq())) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to unloan sample sequence")
     return RMW_RET_ERROR;
   }

@@ -14,10 +14,12 @@
 #include <new>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "rcpputils/scope_exit.hpp"
 
 #include "rmw_connextdds/custom_sql_filter.hpp"
+#include "rmw_connextdds/type_support.hpp"
 
 #if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
@@ -43,6 +45,7 @@ struct RTI_CustomSqlFilterWriterData
   DDS_CookieSeq matched_readers DDS_SEQUENCE_INITIALIZER;
   REDASkiplistDescription readers_desc;
   REDASkiplist readers;
+  std::vector<uint8_t> serialize_buffer;
 };
 
 struct RTI_CustomSqlFilterReaderData
@@ -109,25 +112,6 @@ RTI_CustomSqlFilterData::set_memory_management_property(
   }
 
   return DDS_RETCODE_OK;
-}
-
-static
-int
-RTI_CustomSqlFilter_compare_reader_data(
-  const void * left,
-  const void * right)
-{
-  RTI_CustomSqlFilterReaderData * const l =
-    const_cast<RTI_CustomSqlFilterReaderData *>(
-    static_cast<const RTI_CustomSqlFilterReaderData *>(left));
-  RTI_CustomSqlFilterReaderData * const r =
-    const_cast<RTI_CustomSqlFilterReaderData *>(
-    static_cast<const RTI_CustomSqlFilterReaderData *>(right));
-
-  return RTIOsapiMemory_compare(
-    DDS_OctetSeq_get_contiguous_buffer(&l->cookie.value),
-    DDS_OctetSeq_get_contiguous_buffer(&r->cookie.value),
-    sizeof(struct REDAWeakReference));
 }
 
 static
@@ -199,6 +183,26 @@ RTI_CustomSqlFilter_compile(
 
   scope_exit_program.cancel();
   return DDS_RETCODE_OK;
+}
+
+#if !RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
+static
+int
+RTI_CustomSqlFilter_compare_reader_data(
+  const void * left,
+  const void * right)
+{
+  RTI_CustomSqlFilterReaderData * const l =
+    const_cast<RTI_CustomSqlFilterReaderData *>(
+    static_cast<const RTI_CustomSqlFilterReaderData *>(left));
+  RTI_CustomSqlFilterReaderData * const r =
+    const_cast<RTI_CustomSqlFilterReaderData *>(
+    static_cast<const RTI_CustomSqlFilterReaderData *>(right));
+
+  return RTIOsapiMemory_compare(
+    DDS_OctetSeq_get_contiguous_buffer(&l->cookie.value),
+    DDS_OctetSeq_get_contiguous_buffer(&r->cookie.value),
+    sizeof(struct REDAWeakReference));
 }
 
 static
@@ -481,6 +485,14 @@ RTI_CustomSqlFilter_writer_evaluated_result(
   return &writer_data->matched_readers;
 }
 
+static
+struct DDS_CookieSeq *
+RTI_CustomSqlFilter_writer_evaluate_on_serialized(
+  void * filter_data,
+  void * writer_filter_data,
+  const void * sample,
+  const struct DDS_FilterSampleInfo * meta_data);
+
 DDS_CookieSeq *
 RTI_CustomSqlFilter_writer_evaluate(
   void * filter_data,
@@ -488,23 +500,65 @@ RTI_CustomSqlFilter_writer_evaluate(
   const void * sample,
   const DDS_FilterSampleInfo * meta_data)
 {
-  RTI_CustomSqlFilterData * const cft_data =
-    static_cast<RTI_CustomSqlFilterData *>(filter_data);
+  // RTI_CustomSqlFilterData * const cft_data =
+  //   static_cast<RTI_CustomSqlFilterData *>(filter_data);
   RTI_CustomSqlFilterWriterData * const writer_data =
     static_cast<RTI_CustomSqlFilterWriterData *>(writer_filter_data);
 
-  DDS_CookieSeq * sql_matched = nullptr;
-
   if (writer_data->filtered_readers_count > 0) {
-    sql_matched = DDS_SqlFilter_writerEvaluate(
-      &cft_data->base, writer_data->base, sample, meta_data);
-    if (nullptr == sql_matched) {
-      // TODO(asorbini) log error
-      return nullptr;
-    }
-  }
+    // `sample` is a ROS 2 message so we can't pass it to the SQL filter's
+    // evaluate() function because the filter expects a Connext memory layout.
+    // For this reason, we must first serialize the sample to a buffer, then
+    // we can then call evaluate_on_serialized().
+    size_t serialized_size = 0;
+    const RMW_Connext_Message * const msg =
+      reinterpret_cast<const RMW_Connext_Message *>(sample);
+    const uint8_t * serialized_sample = nullptr;
 
-  return RTI_CustomSqlFilter_writer_evaluated_result(writer_data, sql_matched);
+    if (msg->serialized) {
+      const rcutils_uint8_array_t * const serialized_msg =
+        reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
+      serialized_size += static_cast<unsigned int>(serialized_msg->buffer_length);
+      serialized_sample = serialized_msg->buffer;
+    } else {
+      RMW_CONNEXT_ASSERT(nullptr != msg->type_support)
+      serialized_size +=
+        msg->type_support->serialized_size_max(
+        msg->user_data, true /* include_encapsulation */);
+      writer_data->serialize_buffer.resize(serialized_size);
+
+      rcutils_uint8_array_t data_buffer;
+      data_buffer.allocator = rcutils_get_default_allocator();
+      data_buffer.buffer = &writer_data->serialize_buffer[0];
+      data_buffer.buffer_length = serialized_size;
+      data_buffer.buffer_capacity = serialized_size;
+      rmw_ret_t rc = msg->type_support->serialize(msg->user_data, &data_buffer);
+      if (RMW_RET_OK != rc) {
+        return nullptr;
+      }
+      serialized_sample = &writer_data->serialize_buffer[0];
+    }
+
+    RTICdrStream cdr_stream;
+    RTICdrStream_init(&cdr_stream);
+    RTICdrStream_set(
+      &cdr_stream,
+      // "Cast the const away", but the buffer will not be written to.
+      reinterpret_cast<char *>(
+        const_cast<uint8_t *>(serialized_sample)),
+      serialized_size);
+    RTICdrStream_setCurrentPositionOffset(
+      &cdr_stream,
+      RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE);
+
+    return RTI_CustomSqlFilter_writer_evaluate_on_serialized(
+      filter_data,
+      writer_filter_data,
+      &cdr_stream,
+      meta_data);
+  } else {
+    return RTI_CustomSqlFilter_writer_evaluated_result(writer_data, nullptr);
+  }
 }
 
 void
@@ -551,67 +605,15 @@ RTI_CustomSqlFilter_writer_return_loan(
 {
   RTI_CustomSqlFilterData * const cft_data =
     static_cast<RTI_CustomSqlFilterData *>(filter_data);
-  (void)cft_data;
+  UNUSED_ARG(cft_data);
   RTI_CustomSqlFilterWriterData * const writer_data =
     static_cast<RTI_CustomSqlFilterWriterData *>(writer_filter_data);
-  (void)writer_data;
+  UNUSED_ARG(writer_data);
   DDS_CookieSeq_set_length(cookies, 0);
 }
 
-DDS_Boolean
-RTI_CustomSqlFilter_evaluate(
-  void * filter_data,
-  void * handle,
-  const void * sample,
-  const struct DDS_FilterSampleInfo * meta_data)
-{
 
-  RTI_CustomSqlFilterData * const cft_data =
-    static_cast<RTI_CustomSqlFilterData *>(filter_data);
-  RTI_CustomSqlFilterProgram * const program =
-    static_cast<RTI_CustomSqlFilterProgram *>(handle);
-
-  if (nullptr == program->base) {
-    return DDS_BOOLEAN_TRUE;
-  }
-
-  return DDS_SqlFilter_evaluate(&cft_data->base, program->base, sample, meta_data);
-}
-
-void
-RTI_CustomSqlFilter_finalize(void * filter_data, void * handle)
-{
-  RTI_CustomSqlFilterData * const cft_data =
-    static_cast<RTI_CustomSqlFilterData *>(filter_data);
-  RTI_CustomSqlFilterProgram * const program =
-    static_cast<RTI_CustomSqlFilterProgram *>(handle);
-
-  if (nullptr != program->base) {
-    DDS_SqlFilter_finalize(&cft_data->base, program->base);
-  }
-
-  delete program;
-}
-
-DDS_Boolean
-RTI_CustomSqlFilter_evaluate_on_serialized(
-  void * filter_data,
-  void * handle,
-  const void * sample,
-  const struct DDS_FilterSampleInfo * meta_data)
-{
-  RTI_CustomSqlFilterData * const cft_data =
-    static_cast<RTI_CustomSqlFilterData *>(filter_data);
-  RTI_CustomSqlFilterProgram * const program =
-    static_cast<RTI_CustomSqlFilterProgram *>(handle);
-  DDS_Boolean accepted = DDS_BOOLEAN_TRUE;
-  if (nullptr != program->base) {
-    accepted = DDS_SqlFilter_evaluateOnSerialized(
-      &cft_data->base, program->base, sample, meta_data);
-  }
-  return accepted;
-}
-
+static
 struct DDS_CookieSeq *
 RTI_CustomSqlFilter_writer_evaluate_on_serialized(
   void * filter_data,
@@ -634,8 +636,26 @@ RTI_CustomSqlFilter_writer_evaluate_on_serialized(
       return nullptr;
     }
   }
-
   return RTI_CustomSqlFilter_writer_evaluated_result(writer_data, sql_matched);
+}
+
+DDS_Boolean
+RTI_CustomSqlFilter_evaluate_on_serialized(
+  void * filter_data,
+  void * handle,
+  const void * sample,
+  const struct DDS_FilterSampleInfo * meta_data)
+{
+  RTI_CustomSqlFilterData * const cft_data =
+    static_cast<RTI_CustomSqlFilterData *>(filter_data);
+  RTI_CustomSqlFilterProgram * const program =
+    static_cast<RTI_CustomSqlFilterProgram *>(handle);
+  DDS_Boolean accepted = DDS_BOOLEAN_TRUE;
+  if (nullptr != program->base) {
+    accepted = DDS_SqlFilter_evaluateOnSerialized(
+      &cft_data->base, program->base, sample, meta_data);
+  }
+  return accepted;
 }
 
 DDS_Long
@@ -654,6 +674,70 @@ RTI_CustomSqlFilter_query(void * filter_data, void * handle)
 
   return DDS_SqlFilter_query(filter_data, program->base);
 }
+
+#endif  // !RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
+
+// This function is only called when RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
+// is enabled. In that flag is set, the filter will be registered as a user
+// filter instead of built-in one, so it won't be able to do filtering on
+// serialized samples. When this function is used, we don't perform
+// writer-side optimizations and we rely only on reader-side filtering to
+// avoid having to serialize the sample unnecessarily.
+DDS_Boolean
+RTI_CustomSqlFilter_evaluate(
+  void * filter_data,
+  void * handle,
+  const void * sample,
+  const struct DDS_FilterSampleInfo * meta_data)
+{
+  RTI_CustomSqlFilterData * const cft_data =
+    static_cast<RTI_CustomSqlFilterData *>(filter_data);
+  RTI_CustomSqlFilterProgram * const program =
+    static_cast<RTI_CustomSqlFilterProgram *>(handle);
+
+  if (nullptr == program->base) {
+    return DDS_BOOLEAN_TRUE;
+  }
+
+  const RMW_Connext_Message * const msg =
+    static_cast<const RMW_Connext_Message *>(sample);
+
+  if (nullptr != msg->user_data) {
+    // On the writer side we don't actually perform any filtering, because that
+    // could require to perform a (possibly useless) additional serialization
+    // into a buffer, so we always return true.
+    return DDS_BOOLEAN_TRUE;
+  }
+
+  RTICdrStream cdr_stream;
+  RTICdrStream_init(&cdr_stream);
+  RTICdrStream_set(
+    &cdr_stream,
+    reinterpret_cast<char *>(msg->data_buffer.buffer),
+    msg->data_buffer.buffer_length);
+  RTICdrStream_setCurrentPositionOffset(
+    &cdr_stream,
+    RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE);
+
+  return DDS_SqlFilter_evaluateOnSerialized(
+    &cft_data->base, program->base, &cdr_stream, meta_data);
+}
+
+void
+RTI_CustomSqlFilter_finalize(void * filter_data, void * handle)
+{
+  RTI_CustomSqlFilterData * const cft_data =
+    static_cast<RTI_CustomSqlFilterData *>(filter_data);
+  RTI_CustomSqlFilterProgram * const program =
+    static_cast<RTI_CustomSqlFilterProgram *>(handle);
+
+  if (nullptr != program->base) {
+    DDS_SqlFilter_finalize(&cft_data->base, program->base);
+  }
+
+  delete program;
+}
+
 
 DDS_ReturnCode_t
 rti_connext_dds_custom_sql_filter::register_content_filter(
@@ -683,15 +767,22 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
 
   DDS_ContentFilter filter = DDS_ContentFilter_INITIALIZER;
   filter.compile = RTI_CustomSqlFilter_compile;
+  filter.evaluate = RTI_CustomSqlFilter_evaluate;
+  filter.finalize = RTI_CustomSqlFilter_finalize;
+  filter.filter_data = filter_data;
+
+#if RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
+  rc = DDS_DomainParticipant_register_contentfilter(
+    participant,
+    PLUGIN_NAME,
+    &filter);
+#else
   filter.writer_attach = RTI_CustomSqlFilter_writer_attach;
   filter.writer_compile = RTI_CustomSqlFilter_writer_compile;
   filter.writer_detach = RTI_CustomSqlFilter_writer_detach;
   filter.writer_evaluate = RTI_CustomSqlFilter_writer_evaluate;
   filter.writer_finalize = RTI_CustomSqlFilter_writer_finalize;
   filter.writer_return_loan = RTI_CustomSqlFilter_writer_return_loan;
-  filter.evaluate = RTI_CustomSqlFilter_evaluate;
-  filter.finalize = RTI_CustomSqlFilter_finalize;
-  filter.filter_data = filter_data;
 
   rc = DDS_ContentFilter_register_filter(
     participant,
@@ -701,6 +792,7 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
     RTI_CustomSqlFilter_writer_evaluate_on_serialized,
     RTI_CustomSqlFilter_query,
     DDS_BOOLEAN_TRUE);
+#endif  // RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
   if (DDS_RETCODE_OK != rc) {
     // TODO(asorbini) log error
     return DDS_RETCODE_ERROR;

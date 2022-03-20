@@ -904,9 +904,11 @@ RMW_Connext_Publisher::write(
   int64_t * const sn_out)
 {
   RMW_Connext_Message user_msg;
+  if (RMW_RET_OK != RMW_Connext_Message_initialize(&user_msg, this->type_support, 0)) {
+    return RMW_RET_ERROR;
+  }
   user_msg.user_data = ros_message;
   user_msg.serialized = serialized;
-  user_msg.type_support = this->type_support;
 
   return rmw_connextdds_write_message(this, &user_msg, sn_out);
 }
@@ -1688,8 +1690,8 @@ RMW_Connext_Subscriber::take_next(
       RMW_RET_OK == rc_exit;
       this->loan_next++)
     {
-      rcutils_uint8_array_t * data_buffer =
-        reinterpret_cast<rcutils_uint8_array_t *>(
+      RMW_Connext_Message * msg =
+        reinterpret_cast<RMW_Connext_Message *>(
         DDS_UntypedSampleSeq_get_reference(
           &this->loan_data, static_cast<DDS_Long>(this->loan_next)));
       DDS_SampleInfo * info =
@@ -1710,7 +1712,7 @@ RMW_Connext_Subscriber::take_next(
 
             if (RMW_RET_OK !=
               this->type_support->deserialize(
-                ros_message, data_buffer, deserialized_size, true /* header_only */))
+                ros_message, &msg->data_buffer, deserialized_size, true /* header_only */))
             {
               RMW_CONNEXT_LOG_ERROR_SET("failed to deserialize taken sample")
               rc_exit = RMW_RET_ERROR;
@@ -1749,7 +1751,7 @@ RMW_Connext_Subscriber::take_next(
           if (RCUTILS_RET_OK !=
             rcutils_uint8_array_copy(
               reinterpret_cast<rcutils_uint8_array_t *>(ros_message),
-              data_buffer))
+              &msg->data_buffer))
           {
             RMW_CONNEXT_LOG_ERROR_SET("failed to copy uint8 array")
             rc_exit = RMW_RET_ERROR;
@@ -1760,7 +1762,7 @@ RMW_Connext_Subscriber::take_next(
 
           if (RMW_RET_OK !=
             this->type_support->deserialize(
-              ros_message, data_buffer, deserialized_size))
+              ros_message, &msg->data_buffer, deserialized_size))
           {
             RMW_CONNEXT_LOG_ERROR_SET(
               "failed to deserialize taken sample")

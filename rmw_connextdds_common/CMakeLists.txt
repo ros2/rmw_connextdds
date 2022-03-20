@@ -194,6 +194,9 @@ else()
     if("${CONNEXTDDS_VERSION}" VERSION_LESS "6.0.0")
       list(APPEND extra_defines "RMW_CONNEXT_DDS_API_PRO_LEGACY=1")
     endif()
+    if(CONNEXTDDS_ARCH MATCHES ".*Win.*")
+      list(APPEND extra_defines "RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE=1")
+    endif()
     rtirmw_add_library(
         NAME      ${PROJECT_NAME}_pro
         API       PRO

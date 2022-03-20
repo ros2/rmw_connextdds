@@ -43,6 +43,7 @@ extern const char * const PLUGIN_NAME;
 
 }  // namespace rti_connext_dds_custom_sql_filter
 
+#if !RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
 extern "C" {
 // This is an internal function from RTI Connext DDS which allows a filter to
 // be registered as "built-in". We need this because we want this custom filter
@@ -58,6 +59,7 @@ DDS_ContentFilter_register_filter(
   const DDS_ContentFilterQueryFunction query,
   DDS_Boolean isBuiltin);
 }
+#endif  // RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
 
 #endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 

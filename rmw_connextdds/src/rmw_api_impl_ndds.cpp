@@ -736,6 +736,32 @@ rmw_subscription_get_content_filter(
 }
 
 rmw_ret_t
+rmw_subscription_set_content_filter(
+  rmw_subscription_t * subscription,
+  const rmw_subscription_content_filter_options_t * options)
+{
+  UNUSED_ARG(subscription);
+  UNUSED_ARG(options);
+  RMW_CONNEXT_LOG_NOT_IMPLEMENTED
+  return RMW_RET_UNSUPPORTED;
+}
+
+
+rmw_ret_t
+rmw_subscription_get_content_filter(
+  const rmw_subscription_t * subscription,
+  rcutils_allocator_t * allocator,
+  rmw_subscription_content_filter_options_t * options)
+{
+  UNUSED_ARG(subscription);
+  UNUSED_ARG(allocator);
+  UNUSED_ARG(options);
+  RMW_CONNEXT_LOG_NOT_IMPLEMENTED
+  return RMW_RET_UNSUPPORTED;
+}
+
+
+rmw_ret_t
 rmw_destroy_subscription(
   rmw_node_t * node,
   rmw_subscription_t * subscription)
@@ -954,4 +980,13 @@ rmw_subscription_get_network_flow_endpoints(
     subscription,
     allocator,
     network_flow_endpoint_array);
+}
+
+/******************************************************************************
+ * Feature support functions
+ ******************************************************************************/
+bool
+rmw_feature_supported(rmw_feature_t feature)
+{
+  return rmw_api_connextdds_feature_supported(feature);
 }

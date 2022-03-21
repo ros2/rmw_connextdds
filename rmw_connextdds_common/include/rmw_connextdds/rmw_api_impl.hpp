@@ -17,6 +17,8 @@
 
 #include "rmw_connextdds/context.hpp"
 
+#include "rmw/features.h"
+
 /*****************************************************************************
  * Context API
  *****************************************************************************/
@@ -648,5 +650,12 @@ rmw_api_connextdds_subscription_get_network_flow_endpoints(
   const rmw_subscription_t * subscription,
   rcutils_allocator_t * allocator,
   rmw_network_flow_endpoint_array_t * network_flow_endpoint_array);
+
+/******************************************************************************
+ * Feature support functions
+ ******************************************************************************/
+RMW_CONNEXTDDS_PUBLIC
+bool
+rmw_api_connextdds_feature_supported(rmw_feature_t feature);
 
 #endif  // RMW_CONNEXTDDS__RMW_API_IMPL_HPP_

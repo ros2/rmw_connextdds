@@ -936,3 +936,12 @@ rmw_subscription_get_network_flow_endpoints(
     allocator,
     network_flow_endpoint_array);
 }
+
+/******************************************************************************
+ * Feature support functions
+ ******************************************************************************/
+bool
+rmw_feature_supported(rmw_feature_t feature)
+{
+  return rmw_api_connextdds_feature_supported(feature);
+}

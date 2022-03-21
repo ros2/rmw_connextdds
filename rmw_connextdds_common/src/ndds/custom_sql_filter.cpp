@@ -89,13 +89,7 @@ RTI_CustomSqlFilterData::set_memory_management_property(
     DDS_CONTENT_FILTER_SQL_DESERIALIZED_SAMPLE_MIN_BUFFER_SIZE_PROPERTY_NAME);
 
   if (nullptr != property) {
-    if (!sscanf(
-        property->value, "%d",
-        &this->base.memory_management.buffer_min_size))
-    {
-      // TODO(asorbini) log error
-      return DDS_RETCODE_ERROR;
-    }
+    this->base.memory_management.buffer_min_size = strtol(property->value, nullptr, 0);
   }
 
   property = DDS_PropertyQosPolicyHelper_lookup_property(

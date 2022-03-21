@@ -112,6 +112,11 @@ rmw_connextdds_finalize_participant_factory_context(
 
   delete ctx_api;
 
+  if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
+    // Nothing else  to do if we didn't even initialize the factory;
+    return RMW_RET_OK;
+  }
+
   // There might be some DomainParticipants left-over from a ("failed context
   // initialization" + "failed participant finalization"), so let's try to
   // clean them up.

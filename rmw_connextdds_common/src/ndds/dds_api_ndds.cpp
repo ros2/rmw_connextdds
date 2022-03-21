@@ -340,16 +340,17 @@ rmw_connextdds_initialize_cft_parameters(
   struct DDS_StringSeq * const cft_parameters,
   const rcutils_string_array_t * const cft_expression_parameters)
 {
-  if (!DDS_StringSeq_ensure_length(
-      cft_parameters, cft_expression_parameters->size, cft_expression_parameters->size))
-  {
+  // Cache value locally to avoid conversion warnings on Windows.
+  const DDS_Long params_len = static_cast<DDS_Long>(cft_expression_parameters->size);
+
+  if (!DDS_StringSeq_ensure_length(cft_parameters, params_len, params_len)) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to ensure length for cft parameters sequence")
     return RMW_RET_ERROR;
   }
   if (!DDS_StringSeq_from_array(
       cft_parameters,
       const_cast<const char **>(cft_expression_parameters->data),
-      cft_expression_parameters->size))
+      params_len))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to copy data for cft parameters sequence")
     return RMW_RET_ERROR;

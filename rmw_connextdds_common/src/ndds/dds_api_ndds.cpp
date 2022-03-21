@@ -22,6 +22,9 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
+#include "rcutils/env.h"
+#include "rcutils/filesystem.h"
+
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextdds";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 
@@ -65,13 +68,270 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
   return RMW_RET_OK;
 }
 
+char *
+rmw_connextdds_join_path(
+  const char **elements,
+  const size_t elements_len,
+  rcutils_allocator_t *const allocator)
+{
+  RMW_CONNEXT_ASSERT(elements_len >= 2)
+  char *result = nullptr;
+  auto scope_exit = rcpputils::make_scope_exit([&allocator, &result]() {
+      if (nullptr != result) {
+        allocator->deallocate(result, allocator->state);
+      }
+    });
+
+  for (size_t i = 0; i < elements_len;)
+  {
+    char *result_free = nullptr;
+    const char *a, *b;
+    if (i == 0) {
+      a = elements[i];
+      b = elements[i + 1];
+      i += 2;
+    } else {
+      a = result;
+      b = elements[i];
+      i += 1;
+      result_free = result;
+    }
+    result = rcutils_join_path(a, b, *allocator);
+    if (nullptr != result_free) {
+      allocator->deallocate(result_free, allocator->state);
+    }
+    if (nullptr == result) {
+      RMW_CONNEXT_LOG_ERROR("failed to join paths")
+      return nullptr;
+    }
+  }
+
+  scope_exit.cancel();
+  return result;
+}
+
+rmw_ret_t
+rmw_connextdds_expand_with_prefixes(
+  DDS_StringSeq *const prefixes,
+  const char *const path,
+  DDS_StringSeq *const expanded_out)
+{
+  rcutils_allocator_t allocator = rcutils_get_default_allocator();
+  size_t prefixes_len = DDS_StringSeq_get_length(prefixes);
+  if (prefixes_len == 0)
+  {
+      return RMW_RET_ERROR;
+  }
+
+  if (!DDS_StringSeq_ensure_length(expanded_out, prefixes_len, prefixes_len)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize StringSeq")
+    return RMW_RET_ERROR;
+  }
+
+  for (size_t i = 0; i < prefixes_len; i++)
+  {
+    char ** out_el_ref = DDS_StringSeq_get_reference(expanded_out, i);
+    char **seq_el_ref = DDS_StringSeq_get_reference(prefixes, i);
+    RMW_CONNEXT_ASSERT(nullptr != *seq_el_ref)
+    if ((*seq_el_ref)[0] != '\0') {
+      char *seq_el = rcutils_join_path(*seq_el_ref, path, allocator);
+      if (nullptr == seq_el) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to join paths")
+        return RMW_RET_ERROR;
+      }
+      *out_el_ref = DDS_String_dup(seq_el);
+      allocator.deallocate(seq_el, allocator.state);
+    } else {
+      *out_el_ref = DDS_String_dup(path);
+    }
+    if (nullptr == *out_el_ref) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to duplicate string")
+      return RMW_RET_ERROR;
+    }
+  }
+
+  return RMW_RET_OK;
+}
+
+std::string
+rmw_connextdds_build_url_group(DDS_StringSeq * const urls)
+{
+  const size_t urls_len = DDS_StringSeq_get_length(urls);
+  std::ostringstream url_group_ss;
+  url_group_ss << "[";
+  size_t added = 0;
+  for (size_t i = 0; i < urls_len; i++)
+  {
+    char **seq_el_ref = DDS_StringSeq_get_reference(urls, i);
+    RMW_CONNEXT_ASSERT(nullptr != *seq_el_ref)
+    if (!rcutils_exists(*seq_el_ref))
+    {
+      RMW_CONNEXT_LOG_TRACE_A("skipping non-existing file: %s", *seq_el_ref)
+      continue;
+    }
+    if (added > 0) {
+      url_group_ss << "|";
+    }
+    url_group_ss << *seq_el_ref;
+    added += 1;
+  }
+  if (added > 0) {
+    url_group_ss << "]";
+    return url_group_ss.str();
+  } else {
+    return std::string();
+  }
+}
+
 rmw_ret_t
 rmw_connextdds_initialize_participant_factory_context(
   rmw_context_impl_t * const ctx)
 {
   RMW_CONNEXT_ASSERT(RMW_Connext_gv_DomainParticipantFactory == nullptr)
   UNUSED_ARG(ctx);
-  // Nothing to do
+
+  rcutils_allocator_t allocator = rcutils_get_default_allocator();
+  DDS_StringSeq ament_pp = DDS_SEQUENCE_INITIALIZER;
+  DDS_StringSeq expanded_paths = DDS_SEQUENCE_INITIALIZER;
+  DDS_DomainParticipantFactoryQos dpf_qos = DDS_DomainParticipantFactoryQos_INITIALIZER;
+  char * qos_profiles_file = nullptr;
+
+  auto scope_exit_data = rcpputils::make_scope_exit([&allocator, &ament_pp, &expanded_paths, &dpf_qos, &qos_profiles_file]() {
+      if (!DDS_StringSeq_finalize(&expanded_paths)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize StringSeq")
+      }
+      if (!DDS_StringSeq_finalize(&ament_pp)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize StringSeq")
+      }
+      if (DDS_RETCODE_OK != DDS_DomainParticipantFactoryQos_finalize(&dpf_qos)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DomainParticipantFactoryQos")
+      }
+      if (nullptr != qos_profiles_file) {
+        allocator.deallocate(qos_profiles_file, allocator.state);
+      }
+    });
+
+  auto scope_exit_api_delete = rcpputils::make_scope_exit([]() {
+      DDS_DomainParticipantFactory_finalize_instance();
+    });
+
+  // We detect the build platform in CMake and set this path separator accordingly.
+  // Relative path of the XML file containing the "built-in" QoS profiles.
+  const char *qos_profiles_file_el[] = {
+    "share", "rmw_connextdds", "xml", "ros2_qos_profiles.xml"
+  };
+  qos_profiles_file = rmw_connextdds_join_path(
+    qos_profiles_file_el, sizeof(qos_profiles_file_el)/sizeof(const char*), &allocator);
+  if (nullptr == qos_profiles_file)
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to join qos profiles file's path")
+    return RMW_RET_ERROR;
+  }
+
+  // Load Ament's "prefix path" to try to guess the location of `ros2_qos_profiles.xml`.
+  // We will build multiple "candidate paths" and pass them to Connext as "URL groups"
+  // via DomainParticipantQos::profile::url_profile. Connext will then load the
+  // first file in the group found to actually exist in the file system.
+  static const char * const var_ament_pp = "AMENT_PREFIX_PATH";
+  const char * env_ament_pp = nullptr;
+  const char * lookup_rc = rcutils_get_env(var_ament_pp, &env_ament_pp);
+
+  if (nullptr != lookup_rc || nullptr == env_ament_pp) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      var_ament_pp,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  rmw_ret_t parse_rc = rmw_connextdds_parse_string_list(env_ament_pp, &ament_pp, ':');
+  if (RMW_RET_OK != parse_rc) {
+    RMW_CONNEXT_LOG_ERROR_A("failed to parse variable %s", var_ament_pp)
+    return parse_rc;
+  }
+
+  parse_rc = rmw_connextdds_expand_with_prefixes(
+    &ament_pp, qos_profiles_file, &expanded_paths);
+  if (RMW_RET_OK != parse_rc) {
+    RMW_CONNEXT_LOG_ERROR_A("failed to expand paths: %s", qos_profiles_file)
+    return parse_rc;
+  }
+
+  std::string qos_profiles_file_grp = rmw_connextdds_build_url_group(&expanded_paths);
+
+  if (!DDS_StringSeq_set_length(&ament_pp, 1))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize StringSeq")
+    return RMW_RET_ERROR;
+  }
+  const size_t prefix_max_len = 4096;
+  char **prefix_ref = DDS_StringSeq_get_reference(&ament_pp, 0);
+  *prefix_ref = DDS_String_alloc(prefix_max_len);
+  if (nullptr == *prefix_ref) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to preallocate string")
+    return RMW_RET_ERROR;
+  }
+  if (!rcutils_get_cwd(*prefix_ref, prefix_max_len)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get current directory path")
+    return RMW_RET_ERROR;
+  }
+  const char * user_profiles_file = "USER_QOS_PROFILES.xml";
+  parse_rc = rmw_connextdds_expand_with_prefixes(
+    &ament_pp, user_profiles_file, &expanded_paths);
+  if (RMW_RET_OK != parse_rc) {
+    RMW_CONNEXT_LOG_ERROR_A("failed to expand paths: %s", user_profiles_file)
+    return parse_rc;
+  }
+
+  std::string user_profiles_file_grp = rmw_connextdds_build_url_group(&expanded_paths);
+
+  DDS_DomainParticipantFactory * factory = DDS_DomainParticipantFactory_get_instance();
+  if (nullptr == factory) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS participant factory")
+    return RMW_RET_ERROR;
+  }
+
+  if (DDS_RETCODE_OK != DDS_DomainParticipantFactory_get_qos(factory, &dpf_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get participant factory qos")
+    return RMW_RET_ERROR;
+  }
+
+  size_t url_profile_len = (user_profiles_file_grp.empty())?1:2;
+
+  if (!DDS_StringSeq_ensure_length(&dpf_qos.profile.url_profile, url_profile_len, url_profile_len))
+  {
+    RMW_CONNEXT_LOG_ERROR("failed to resize StringSeq")
+    return RMW_RET_ERROR;
+  }
+  char **seq_ref = DDS_StringSeq_get_reference(&dpf_qos.profile.url_profile, 0);
+  *seq_ref = DDS_String_dup(qos_profiles_file_grp.c_str());
+  if (nullptr == *seq_ref)
+  {
+    RMW_CONNEXT_LOG_ERROR_A("failed to duplicate string: %s", qos_profiles_file_grp.c_str())
+    return RMW_RET_ERROR;
+  }
+
+  if (!user_profiles_file_grp.empty()) {
+    seq_ref = DDS_StringSeq_get_reference(&dpf_qos.profile.url_profile, 1);
+    *seq_ref = DDS_String_dup(user_profiles_file_grp.c_str());
+    if (nullptr == *seq_ref)
+    {
+      RMW_CONNEXT_LOG_ERROR_A("failed to duplicate string: %s", user_profiles_file_grp.c_str())
+      return RMW_RET_ERROR;
+    }
+    dpf_qos.profile.ignore_user_profile = DDS_BOOLEAN_TRUE;
+  }
+
+  if (DDS_RETCODE_OK != DDS_DomainParticipantFactory_set_qos(factory, &dpf_qos))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get participant factory qos")
+    return RMW_RET_ERROR;
+  }
+
+  scope_exit_api_delete.cancel();
   return RMW_RET_OK;
 }
 

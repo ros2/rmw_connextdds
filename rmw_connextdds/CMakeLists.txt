@@ -65,6 +65,13 @@ install(
     RUNTIME DESTINATION bin
 )
 
+install(
+  FILES
+    resource/xml/ros2_qos_profiles.xml
+    resource/xml/USER_QOS_PROFILES.example.xml
+  DESTINATION share/${PROJECT_NAME}/xml
+)
+
 ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(rmw_connextdds_common)
 

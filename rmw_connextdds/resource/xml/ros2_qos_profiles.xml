@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file contains various QoS profiles that model the default configuration applied
+  by `rmw_connextdds` and other ROS 2 core packages.
+
+  Users of `rmw_connextdds` on a shell (ie. not on Windows) may refer to any of the
+  included profiles in their own QoS configuration files without any further configuration,
+  because the file is automatically loaded into their shell environment by hooks installed
+  by `rmw_connextdds` using variable NDDS_QOS_PROFILES.
+
+  On other platforms/shells, or for use with any Connext application, you must
+  manually export the file's path in variable `NDDS_QOS_PROFILES`, e.g.:
+
+  ```sh
+  export NDDS_QOS_PROFILES="file:///path/to/ros2_qos_profiles.xml"
+  ```
+
+  You could also make these profiles available to any application sharing the same
+  Connext installation by copying the file (or its contents) to
+  `${NDDSHOME}/resource/xml/NDDS_QOS_PROFILES.xml`.
+
+  The file contains the following QoS profiles:
+
+  - `ROS2QoS::rmw.ros_discovery_info`
+  - `ROS2QoS::rcl.node_parameters`
+  - `ROS2QoS::rcl.log`
+  - `ROS2QoS::rcl.builtin_endpoints`
+  - `ROS2QoS::rmw_connextdds.base_participant`
+  - `ROS2QoS::rmw_connextdds.base_application`
+  - `ROS2QoS::rmw_connextdds.large_data`
+  - `ROS2QoS::rmw_connextdds.unbounded_data`
+  - `ROS2QoS::rmw_connextdds.content_filtered_topic_property`
+  - `ROS2QoS::rmw_connextdds.localhost_only`
+  - `ROS2QoS::rmw_connextdds.fast_endpoint_discovery`
+
+-->
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/5.3.1/rti_dds_qos_profiles.xsd" version="5.3.1">
+  <!--
+    Library of QoS profile describing the default QoS settings used by the ROS 2
+    core packages.
+    
+    The library contains some generic profiles that model behavior of core components
+    (e.g. RMW discovery, rcl logging, etc.) and they are applied to specific topics
+    via "topic filters".
+    -->
+  <qos_library name="ROS2QoS">
+    <!--
+      The following QoS profiles describe various configuration that are applied
+      optionally by rmw_connextdds.
+
+      These profiles include:
+      
+      - configurations that are applied automatically based on the characteristics
+        of a topic's data type (e.g. maximum serialized size, or "unbounded-ness")
+      
+      - configurations that are applied based on ROS 2 options (e.g. "localhost only").
+
+      - configurations that can be disabled via environment variables (e.g.
+        "fast endpoints discovery").
+    -->
+
+    <!-- 
+      Profile `rmw_connextdds.large_data` describes the "large data" optimizations
+      that `rmw_connextdds` applies to endpoints whose type is detected to have a static
+      maximum serialized size of at least 1MB. The configuration is derived from
+      Connext's built-in profile `Generic.KeepLastReliable.LargeData`.
+    -->
+    <qos_profile name="rmw_connextdds.large_data">
+      <datareader_qos>
+        <protocol>
+          <rtps_reliable_reader>
+            <min_heartbeat_response_delay>
+              <sec>0</sec>
+              <nanosec>0</nanosec>
+            </min_heartbeat_response_delay>
+            <max_heartbeat_response_delay>
+              <sec>0</sec>
+              <nanosec>0</nanosec>
+            </max_heartbeat_response_delay>
+          </rtps_reliable_reader>
+        </protocol>
+      </datareader_qos>
+      <datawriter_qos>
+        <protocol>
+          <rtps_reliable_writer>
+            <low_watermark>0</low_watermark>
+            <high_watermark>10</high_watermark>
+            <heartbeat_period>
+              <sec>0</sec>
+              <nanosec>200000000</nanosec>
+            </heartbeat_period>
+            <fast_heartbeat_period>
+              <sec>0</sec>
+              <nanosec>20000000</nanosec>
+            </fast_heartbeat_period>
+            <late_joiner_heartbeat_period>
+              <sec>0</sec>
+              <nanosec>200000000</nanosec>
+            </late_joiner_heartbeat_period>
+            <max_heartbeat_retries>500</max_heartbeat_retries>
+            <heartbeats_per_max_samples>100</heartbeats_per_max_samples>
+            <max_nack_response_delay>
+              <sec>0</sec>
+              <nanosec>0</nanosec>
+            </max_nack_response_delay>
+            <min_send_window_size>10</min_send_window_size>
+            <max_send_window_size>100</max_send_window_size>
+          </rtps_reliable_writer>
+        </protocol>
+      </datawriter_qos>
+    </qos_profile>
+
+    <!--
+      The settings from profile `rmw_connextdds.unbounded_data` are used by
+      `rmw_connextdds` to disable preallocation of samples for endpoints using
+      "unbounded" data types (any data type containing a string or a sequence with
+      unlimited maximum length).
+   
+      These properties MUST be set to 0 on any of these endpoints for things
+      to work properly, and rmw_connextdds will always assert them to this value.
+
+      The profile is provide only documentation purposes, since there is no way
+      to disable this behavior in `rmw_connextdds`.
+    -->
+    <qos_profile name="rmw_connextdds.unbounded_data">
+      <datareader_qos>
+        <property>
+          <value>
+            <element>
+              <name>dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size</name>
+              <value>0</value>
+            </element>
+          </value>
+        </property>
+      </datareader_qos>
+      <datawriter_qos>
+        <property>
+          <value>
+            <element>
+              <name>dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size</name>
+              <value>0</value>
+            </element>
+          </value>
+        </property>
+      </datawriter_qos>
+    </qos_profile>
+
+    <!-- 
+      Profile `rmw_connextdds.localhost_only` describes the configuration applied
+      to the DomainParticipant when "localhost only" communication is requested.
+    -->
+    <qos_profile name="rmw_connextdds.localhost_only">
+      <participant_qos>
+        <property>
+          <value>
+            <element>
+              <name>dds.transport.UDPv4.builtin.parent.allow_interfaces</name>
+              <value>127.0.0.1</value>
+            </element>
+          </value>
+        </property>
+      </participant_qos>
+    </qos_profile>
+
+    <!--
+      Profile `rmw_connextdds.content_filtered_topic_property` is applied by
+      `rmw_connextdds` when policy `resource_limits.contentfilter_property_max_length`
+      is detected to be less than 1024.
+    -->
+    <qos_profile name="rmw_connextdds.content_filtered_topic_property">
+      <participant_qos>
+        <resource_limits>
+          <contentfilter_property_max_length>1024</contentfilter_property_max_length>
+        </resource_limits>
+      </participant_qos>
+    </qos_profile>
+
+    <!--
+      Profile `rmw_connextdds.fast_endpoint_discovery` models the QoS configuration
+      applied by `rmw_connextdds` to speed up the process of endpoint discovery by
+      increasing the period at which Heartbeats are sent by the built-in DDS discovery
+      writers.
+    -->
+    <qos_profile name="rmw_connextdds.fast_endpoint_discovery">
+      <participant_qos>
+        <discovery_config>
+          <publication_writer>
+            <fast_heartbeat_period>
+              <sec>0</sec>
+              <nanosec>100000000</nanosec>
+            </fast_heartbeat_period>
+            <late_joiner_heartbeat_period>
+              <sec>0</sec>
+              <nanosec>100000000</nanosec>
+            </late_joiner_heartbeat_period>
+            <max_heartbeat_retries>300</max_heartbeat_retries>
+          </publication_writer>
+          <subscription_writer>
+            <fast_heartbeat_period>
+              <sec>0</sec>
+              <nanosec>100000000</nanosec>
+            </fast_heartbeat_period>
+            <late_joiner_heartbeat_period>
+              <sec>0</sec>
+              <nanosec>100000000</nanosec>
+            </late_joiner_heartbeat_period>
+            <max_heartbeat_retries>300</max_heartbeat_retries>
+          </subscription_writer>
+        </discovery_config>
+      </participant_qos>
+    </qos_profile>
+
+    <!--
+      Profile for endpoints on internal topic "ros_discovery_info".
+      For the equivalent RMW code, see `rmw_connextdds_graph_initialize()`
+      in rmw_connextdds_common/src/common/rmw_graph.cpp
+    -->
+    <qos_profile name="rmw.ros_discovery_info" base_name="rmw_connextdds.unbounded_data">
+      <datareader_qos>
+        <durability>
+          <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+        </durability>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>1</depth>
+        </history>
+      </datareader_qos>
+      <datawriter_qos>
+        <durability>
+          <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+        </durability>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>1</depth>
+        </history>
+      </datawriter_qos>
+    </qos_profile>
+
+    <!-- 
+      Profile `rcl.node_parameters` defines the QoS used by endpoints on topics
+      related to node parameters.
+      See `rmw_qos_profile_parameters` from `rmw/include/rmw/qos_profiles.h` for
+      the equivalent code implementation.
+    -->
+    <qos_profile name="rcl.node_parameters" base_name="rmw_connextdds.unbounded_data">
+      <datareader_qos>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>1000</depth>
+        </history>
+      </datareader_qos>
+      <datawriter_qos>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>1000</depth>
+        </history>
+      </datawriter_qos>
+    </qos_profile>
+
+    <!-- 
+      Profile `rcl.log` defines the QoS used by endpoints on topic "rt/rosout".
+      See `rcl_qos_profile_rosout_default` from `rcl/include/rcl/logging_rosout.h`
+      for the equivalent code implementation.
+    -->
+    <qos_profile name="rcl.log" base_name="rmw_connextdds.unbounded_data">
+      <datareader_qos>
+        <durability>
+          <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+        </durability>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>1000</depth>
+        </history>
+      </datareader_qos>
+      <datawriter_qos>
+        <durability>
+          <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+        </durability>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_LAST_HISTORY_QOS</kind>
+          <depth>1000</depth>
+        </history>
+        <lifespan>
+          <duration>
+            <sec>10</sec>
+            <nanosec>0</nanosec>
+          </duration>
+        </lifespan>
+      </datawriter_qos>
+    </qos_profile>
+
+    <!--
+      Profile `rcl.builtin_endpoints` provides QoS settings for all built-in
+      endpoints created for a ROS 2 Node and its Context by the `rcl` layer.
+    -->
+    <qos_profile name="rcl.builtin_endpoints">
+      <!-- Endpoints for topic "ros_discovery_info" -->
+      <datareader_qos topic_filter="ros_discovery_info" base_name="rmw.ros_discovery_info"/>
+      <datawriter_qos topic_filter="ros_discovery_info" base_name="rmw.ros_discovery_info">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for topic "rosout" -->
+      <datareader_qos topic_filter="rt/rosout" base_name="rcl.log"/>
+      <datawriter_qos topic_filter="rt/rosout" base_name="rcl.log">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for topic "parameter_events" -->
+      <datareader_qos topic_filter="rt/parameter_events" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rt/parameter_events" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for clients and services on topic "describe_parameters" -->
+      <datareader_qos topic_filter="rq/*/describe_parametersRequest" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rq/*/describe_parametersRequest" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+      <datareader_qos topic_filter="rr/*/describe_parametersReply" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rr/*/describe_parametersReply" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for clients and services on topic "get_parameter_types" -->
+      <datareader_qos topic_filter="rq/*/get_parameter_typesRequest" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rq/*/get_parameter_typesRequest" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+      <datareader_qos topic_filter="rr/*/get_parameter_typesReply" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rr/*/get_parameter_typesReply" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for clients and services on topic "get_parameters" -->
+      <datareader_qos topic_filter="rq/*/get_parametersRequest" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rq/*/get_parametersRequest" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+      <datareader_qos topic_filter="rr/*/get_parametersReply" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rr/*/get_parametersReply" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for clients and services on topic "set_parameters" -->
+      <datareader_qos topic_filter="rq/*/set_parametersRequest" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rq/*/set_parametersRequest" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+      <datareader_qos topic_filter="rr/*/set_parametersReply" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rr/*/set_parametersReply" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for clients and services on topic "list_parameters" -->
+      <datareader_qos topic_filter="rq/*/list_parametersRequest" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rq/*/list_parametersRequest" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+      <datareader_qos topic_filter="rr/*/list_parametersReply" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rr/*/list_parametersReply" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+
+      <!-- Endpoints for clients and services on topic "set_parameters_atomically" -->
+      <datareader_qos topic_filter="rq/*/set_parameters_atomicallyRequest" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rq/*/set_parameters_atomicallyRequest" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+      <datareader_qos topic_filter="rr/*/set_parameters_atomicallyReply" base_name="rcl.node_parameters"/>
+      <datawriter_qos topic_filter="rr/*/set_parameters_atomicallyReply" base_name="rcl.node_parameters">
+        <publish_mode>
+          <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+        </publish_mode>
+      </datawriter_qos>
+    </qos_profile>
+
+    <!--
+      Profile `rmw_connextdds.base_participant` models the DomainParticipanQos
+      settings used by `rmw_connextdds` to change some of Connext's "out of the box"
+      QoS, and make it more amenable to use with ROS 2 applications.
+    -->
+    <qos_profile name="rmw_connextdds.base_participant">
+      <participant_qos>
+        <wire_protocol>
+          <rtps_auto_id_kind>RTPS_AUTO_ID_FROM_UUID</rtps_auto_id_kind>
+        </wire_protocol>
+        <resource_limits>
+          <type_code_max_serialized_length>0</type_code_max_serialized_length>
+          <type_object_max_serialized_length>65000</type_object_max_serialized_length>
+        </resource_limits>
+        <database>
+          <shutdown_cleanup_period>
+            <sec>0</sec>
+            <nanosec>10000000</nanosec>
+          </shutdown_cleanup_period>
+        </database>
+      </participant_qos>
+    </qos_profile>
+
+    <!--
+      Use profile `rmw_connextdds.base_application` as the base profile when using
+      ENDPOINT_QOS_OVERRIDE_POLICY="never". This profile will configure the 
+      DomainParticipant and all built-in endpoints with the same settings normally
+      used by `rmw_connextdds`.
+      
+      Note that contrary to the code, the profile does not set the default value for
+      `datawriter_qos.publish_mode` to "asynchronous", leaving it up to the user to
+      configure this policy as needed in their own profiles. The asynchronous publish
+      mode is used for all built-in writers to allow them to continue to operate
+      like "out of the box", even if they write large messages.
+
+      You might also consider inheriting directly from profile `rcl.builtin_endpoints`,
+      if you only want to configure the built-in endpoints but not the
+      DomainParticipantQos.
+    -->
+    <qos_profile name="rmw_connextdds.base_application" base_name="rcl.builtin_endpoints">
+      <participant_qos base_name="rmw_connextdds.base_participant"/>
+    </qos_profile>
+  </qos_library>
+</dds>

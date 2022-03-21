@@ -558,7 +558,7 @@ rmw_connextdds_initialize_participant_factory_context(
     return RMW_RET_ERROR;
   }
 
-  if (strlen(env_udp_intf) == 0) {
+  if (env_udp_intf[0] == '\0') {
     env_udp_intf = RMW_CONNEXT_DEFAULT_UDP_INTERFACE;
   }
 
@@ -635,7 +635,6 @@ rmw_connextdds_initialize_participant_factory_context(
   RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipantFactory initialized")
 
   RMW_Connext_fv_FactoryContext = ctx_api;
-  RMW_Connext_gv_DomainParticipantFactory = factory;
 
   return RMW_RET_OK;
 }

@@ -167,10 +167,20 @@ public:
 
 struct RMW_Connext_Message
 {
-  const void * user_data;
-  bool serialized;
-  RMW_Connext_MessageTypeSupport * type_support;
+  const void * user_data{nullptr};
+  bool serialized{false};
+  RMW_Connext_MessageTypeSupport * type_support{nullptr};
+  rcutils_uint8_array_t data_buffer;
 };
+
+rmw_ret_t
+RMW_Connext_Message_initialize(
+  RMW_Connext_Message * const self,
+  RMW_Connext_MessageTypeSupport * const type_support,
+  const size_t data_buffer_size);
+
+void
+RMW_Connext_Message_finalize(RMW_Connext_Message * const self);
 
 class RMW_Connext_ServiceTypeSupportWrapper
 {
@@ -276,5 +286,19 @@ public:
     const rosidl_service_type_support_t * const type_supports);
 };
 
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+DDS_SEQUENCE(RMW_Connext_MessagePtrSeq, RMW_Connext_Message *);
+
+typedef RMW_Connext_MessagePtrSeq RMW_Connext_UntypedSampleSeq;
+
+#define RMW_Connext_UntypedSampleSeq_INITIALIZER    DDS_SEQUENCE_INITIALIZER
+
+#define DDS_UntypedSampleSeq_get_reference(seq_, i_) \
+  *RMW_Connext_MessagePtrSeq_get_reference(seq_, i_)
+
+#define DDS_UntypedSampleSeq_get_length(seq_) \
+  RMW_Connext_MessagePtrSeq_get_length(seq_)
+
+#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
 #endif  // RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_

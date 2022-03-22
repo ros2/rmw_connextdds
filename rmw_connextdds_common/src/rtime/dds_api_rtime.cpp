@@ -649,6 +649,8 @@ rmw_connextdds_finalize_participant_factory_context(
   RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_fv_FactoryContext)
   rmw_connextdds_api_micro * const ctx_api = RMW_Connext_fv_FactoryContext;
 
+  RMW_Connext_fv_FactoryContext = nullptr;
+
   RT_Registry_T * registry =
     DDS_DomainParticipantFactory_get_registry(
     RMW_Connext_gv_DomainParticipantFactory);
@@ -861,12 +863,24 @@ rmw_connextdds_initialize_participant_qos_impl(
 }
 
 rmw_ret_t
+rmw_connextdds_configure_participant(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const participant)
+{
+  UNUSED_ARG(participant);
+  UNUSED_ARG(ctx);
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 rmw_connextdds_create_contentfilteredtopic(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipant * const dp,
   DDS_Topic * const base_topic,
   const char * const cft_name,
   const char * const cft_filter,
+  const rcutils_string_array_t * const cft_expression_parameters,
   DDS_TopicDescription ** const cft_out)
 {
   UNUSED_ARG(ctx);
@@ -874,6 +888,7 @@ rmw_connextdds_create_contentfilteredtopic(
   UNUSED_ARG(base_topic);
   UNUSED_ARG(cft_name);
   UNUSED_ARG(cft_filter);
+  UNUSED_ARG(cft_expression_parameters);
   UNUSED_ARG(cft_out);
   return RMW_RET_UNSUPPORTED;
 }
@@ -1951,4 +1966,28 @@ rmw_connextdds_enable_security(
     RMW_CONNEXTDDS_ID)
   return RMW_RET_ERROR;
 #endif /* RMW_CONNEXT_ENABLE_SECURITY */
+}
+
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * const cft_expression,
+  const rcutils_string_array_t * const cft_expression_parameters)
+{
+  UNUSED_ARG(topic_desc);
+  UNUSED_ARG(cft_expression);
+  UNUSED_ARG(cft_expression_parameters);
+  return RMW_RET_UNSUPPORTED;
+}
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  rcutils_allocator_t * const allocator,
+  rmw_subscription_content_filter_options_t * const options)
+{
+  UNUSED_ARG(topic_desc);
+  UNUSED_ARG(allocator);
+  UNUSED_ARG(options);
+  return RMW_RET_UNSUPPORTED;
 }

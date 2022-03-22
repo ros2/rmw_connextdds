@@ -716,18 +716,14 @@ rmw_subscription_get_actual_qos(
   return rmw_api_connextdds_subscription_get_actual_qos(subscription, qos);
 }
 
-
 rmw_ret_t
 rmw_subscription_set_content_filter(
   rmw_subscription_t * subscription,
   const rmw_subscription_content_filter_options_t * options)
 {
-  UNUSED_ARG(subscription);
-  UNUSED_ARG(options);
-  RMW_CONNEXT_LOG_NOT_IMPLEMENTED
-  return RMW_RET_UNSUPPORTED;
+  return rmw_api_connextdds_subscription_set_content_filter(
+    subscription, options);
 }
-
 
 rmw_ret_t
 rmw_subscription_get_content_filter(
@@ -735,13 +731,9 @@ rmw_subscription_get_content_filter(
   rcutils_allocator_t * allocator,
   rmw_subscription_content_filter_options_t * options)
 {
-  UNUSED_ARG(subscription);
-  UNUSED_ARG(allocator);
-  UNUSED_ARG(options);
-  RMW_CONNEXT_LOG_NOT_IMPLEMENTED
-  return RMW_RET_UNSUPPORTED;
+  return rmw_api_connextdds_subscription_get_content_filter(
+    subscription, allocator, options);
 }
-
 
 rmw_ret_t
 rmw_destroy_subscription(

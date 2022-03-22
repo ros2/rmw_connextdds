@@ -166,6 +166,54 @@ rmw_api_connextdds_subscription_get_actual_qos(
   return sub_impl->qos(qos);
 }
 
+rmw_ret_t
+rmw_api_connextdds_subscription_set_content_filter(
+  rmw_subscription_t * subscription,
+  const rmw_subscription_content_filter_options_t * options)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    subscription,
+    subscription->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(options, RMW_RET_INVALID_ARGUMENT);
+
+  RMW_Connext_Subscriber * const sub_impl =
+    reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
+
+  rmw_ret_t rc = sub_impl->set_content_filter(options);
+  subscription->is_cft_enabled = sub_impl->is_cft_enabled();
+
+  return rc;
+}
+
+
+rmw_ret_t
+rmw_api_connextdds_subscription_get_content_filter(
+  const rmw_subscription_t * subscription,
+  rcutils_allocator_t * const allocator,
+  rmw_subscription_content_filter_options_t * options)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    subscription,
+    subscription->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(allocator, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_ARGUMENT_FOR_NULL(options, RMW_RET_INVALID_ARGUMENT);
+
+  RMW_Connext_Subscriber * const sub_impl =
+    reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
+
+  if (!sub_impl->is_cft_enabled()) {
+    RMW_CONNEXT_LOG_ERROR_SET("no content-filter associated with subscription")
+    return RMW_RET_ERROR;
+  }
+
+  return sub_impl->get_content_filter(allocator, options);
+}
 
 rmw_ret_t
 rmw_api_connextdds_destroy_subscription(

@@ -2,6 +2,13 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.10.0 (2022-03-28)
+-------------------
+* Add support for user-specified content filters (`#68 <https://github.com/ros2/rmw_connextdds/issues/68>`_)
+* add stub for content filtered topic (`#77 <https://github.com/ros2/rmw_connextdds/issues/77>`_)
+* Add sequence numbers to message info structure (`#74 <https://github.com/ros2/rmw_connextdds/issues/74>`_)
+* Contributors: Andrea Sorbini, Chen Lihui, Ivan Santiago Paunovic
+
 0.9.0 (2022-03-01)
 ------------------
 * Add rmw listener apis (`#44 <https://github.com/rticommunity/rmw_connextdds/issues/44>`_)

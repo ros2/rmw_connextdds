@@ -1970,9 +1970,11 @@ rmw_connextdds_message_info_from_dds(
   to->publication_sequence_number =
     static_cast<uint64_t>((from->publication_sequence_number).high) << 32 |
     static_cast<uint64_t>((from->publication_sequence_number).low);
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
   to->reception_sequence_number =
     static_cast<uint64_t>((from->reception_sequence_number).high) << 32 |
     static_cast<uint64_t>((from->reception_sequence_number).low);
+#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 }
 
 /******************************************************************************

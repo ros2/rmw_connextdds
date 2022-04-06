@@ -73,4 +73,4 @@ ament_package(
 )
 
 ament_index_register_resource("rmw_output_prefixes"
-  CONTENT "RTI Data Distribution Service\nExpires on")
+  CONTENT "RTI Data Distribution Service\nRTI Connext DDS\nExpires on")

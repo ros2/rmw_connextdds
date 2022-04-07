@@ -541,6 +541,11 @@ RTI_CustomSqlFilter_writer_evaluate(
       reinterpret_cast<char *>(
         const_cast<uint8_t *>(serialized_sample)),
       serialized_size);
+    if (!RTICdrStream_deserializeCdrEncapsulationAndSetDefault(&cdr_stream)) {
+      RMW_CONNEXT_LOG_ERROR("failed to deserialize and set CDR encapsulation")
+      return nullptr;
+    }
+    RTICdrStream_resetAlignment(&cdr_stream);
     RTICdrStream_setCurrentPositionOffset(
       &cdr_stream,
       RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE);
@@ -709,6 +714,11 @@ RTI_CustomSqlFilter_evaluate(
     &cdr_stream,
     reinterpret_cast<char *>(msg->data_buffer.buffer),
     msg->data_buffer.buffer_length);
+  if (!RTICdrStream_deserializeCdrEncapsulationAndSetDefault(&cdr_stream)) {
+    RMW_CONNEXT_LOG_ERROR("failed to deserialize and set CDR encapsulation")
+    return DDS_BOOLEAN_FALSE;
+  }
+  RTICdrStream_resetAlignment(&cdr_stream);
   RTICdrStream_setCurrentPositionOffset(
     &cdr_stream,
     RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE);

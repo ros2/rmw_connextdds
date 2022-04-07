@@ -1974,6 +1974,8 @@ rmw_connextdds_message_info_from_dds(
   to->reception_sequence_number =
     static_cast<uint64_t>((from->reception_sequence_number).high) << 32 |
     static_cast<uint64_t>((from->reception_sequence_number).low);
+#else
+  to->reception_sequence_number = RMW_MESSAGE_INFO_SEQUENCE_NUMBER_UNSUPPORTED;
 #endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 }
 

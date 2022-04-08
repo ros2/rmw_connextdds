@@ -135,7 +135,6 @@ set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_network_flow_endpoints.cpp
     src/common/rmw_graph.cpp
     src/common/rmw_event.cpp
-    src/common/rmw_features.cpp
     src/common/rmw_impl.cpp
     src/common/rmw_impl_waitset_std.cpp
     src/common/rmw_info.cpp

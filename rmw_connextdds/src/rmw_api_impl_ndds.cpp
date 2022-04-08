@@ -962,5 +962,15 @@ rmw_subscription_get_network_flow_endpoints(
 bool
 rmw_feature_supported(rmw_feature_t feature)
 {
-  return rmw_api_connextdds_feature_supported(feature);
+  switch (feature) {
+    case RMW_FEATURE_MESSAGE_INFO_RECEPTION_SEQUENCE_NUMBER:
+    case RMW_FEATURE_MESSAGE_INFO_PUBLICATION_SEQUENCE_NUMBER:
+      {
+        return true;
+      }
+    default:
+      {
+        return false;
+      }
+  }
 }

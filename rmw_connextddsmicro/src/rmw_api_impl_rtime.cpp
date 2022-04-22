@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rmw_dds_common/qos.hpp"
+
 #include "rmw_connextdds/rmw_api_impl.hpp"
+
 
 /*****************************************************************************
  * Context API
@@ -378,8 +381,18 @@ rmw_create_publisher(
   const rmw_qos_profile_t * qos_policies,
   const rmw_publisher_options_t * publisher_options)
 {
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
+
+  // Adapt any 'best available' QoS options
+  rmw_qos_profile_t adapted_qos_policies = *qos_policies;
+  rmw_ret_t ret = rmw_dds_common::qos_profile_get_best_available_for_topic_publisher(
+    node, topic_name, &adapted_qos_policies, rmw_get_subscriptions_info_by_topic);
+  if (RMW_RET_OK != ret) {
+    return nullptr;
+  }
+
   return rmw_api_connextdds_create_publisher(
-    node, type_supports, topic_name, qos_policies, publisher_options);
+    node, type_supports, topic_name, &adapted_qos_policies, publisher_options);
 }
 
 
@@ -694,8 +707,18 @@ rmw_create_subscription(
   const rmw_qos_profile_t * qos_policies,
   const rmw_subscription_options_t * subscription_options)
 {
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
+
+  // Adapt any 'best available' QoS options
+  rmw_qos_profile_t adapted_qos_policies = *qos_policies;
+  rmw_ret_t ret = rmw_dds_common::qos_profile_get_best_available_for_topic_subscription(
+    node, topic_name, &adapted_qos_policies, rmw_get_publishers_info_by_topic);
+  if (RMW_RET_OK != ret) {
+    return nullptr;
+  }
+
   return rmw_api_connextdds_create_subscription(
-    node, type_supports, topic_name, qos_policies, subscription_options);
+    node, type_supports, topic_name, &adapted_qos_policies, subscription_options);
 }
 
 

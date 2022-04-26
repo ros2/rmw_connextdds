@@ -583,8 +583,13 @@ rmw_create_client(
   const char * service_name,
   const rmw_qos_profile_t * qos_policies)
 {
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
+
+  rmw_qos_profile_t adapted_qos_policies =
+    rmw_dds_common::qos_profile_update_best_available_for_services(*qos_policies);
+
   return rmw_api_connextdds_create_client(
-    node, type_supports, service_name, qos_policies);
+    node, type_supports, service_name, &adapted_qos_policies);
 }
 
 
@@ -623,8 +628,13 @@ rmw_create_service(
   const char * service_name,
   const rmw_qos_profile_t * qos_policies)
 {
+  RMW_CHECK_ARGUMENT_FOR_NULL(qos_policies, nullptr);
+
+  rmw_qos_profile_t adapted_qos_policies =
+    rmw_dds_common::qos_profile_update_best_available_for_services(*qos_policies);
+
   return rmw_api_connextdds_create_service(
-    node, type_supports, service_name, qos_policies);
+    node, type_supports, service_name, &adapted_qos_policies);
 }
 
 

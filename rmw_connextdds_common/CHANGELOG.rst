@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.3 (2022-04-28)
+------------------
 * Allow sharing DomainParticipant with C++ applications (`#25 <https://github.com/ros2/rmw_connextdds/issues/25>`_) (`#52 <https://github.com/ros2/rmw_connextdds/issues/52>`_)
 * Contributors: Andrea Sorbini
 

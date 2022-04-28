@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Allow sharing DomainParticipant with C++ applications (`#25 <https://github.com/ros2/rmw_connextdds/issues/25>`_) (`#52 <https://github.com/ros2/rmw_connextdds/issues/52>`_)
+* Contributors: Andrea Sorbini
+
 0.6.2 (2021-05-20)
 ------------------
 * Improved conversion of time values between ROS and DDS formats (`#43 <https://github.com/ros2/rmw_connextdds/issues/43>`_) (`#54 <https://github.com/ros2/rmw_connextdds/issues/54>`_)

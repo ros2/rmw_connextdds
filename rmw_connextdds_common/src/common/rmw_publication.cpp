@@ -169,7 +169,7 @@ rmw_api_connextdds_create_publisher(
   // Adapt any 'best available' QoS options
   rmw_qos_profile_t adapted_qos_policies = *qos_policies;
   rmw_ret_t ret = rmw_dds_common::qos_profile_get_best_available_for_topic_publisher(
-    node, topic_name, &adapted_qos_policies, rmw_get_subscriptions_info_by_topic);
+    node, topic_name, &adapted_qos_policies, rmw_api_connextdds_get_subscriptions_info_by_topic);
   if (RMW_RET_OK != ret) {
     return nullptr;
   }

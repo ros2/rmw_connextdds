@@ -156,6 +156,9 @@ rmw_api_connextdds_create_client(
     "name=%s",
     service_name)
 
+  rmw_qos_profile_t adapted_qos_policies =
+    rmw_dds_common::qos_profile_update_best_available_for_services(*qos_policies);
+
   rmw_context_impl_t * ctx = node->context->impl;
   std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
@@ -167,7 +170,7 @@ rmw_api_connextdds_create_client(
     ctx->dds_sub,
     type_supports,
     service_name,
-    qos_policies);
+    &adapted_qos_policies);
 
   if (nullptr == client_impl) {
     RMW_CONNEXT_LOG_ERROR(
@@ -351,6 +354,9 @@ rmw_api_connextdds_create_service(
     "name=%s",
     service_name)
 
+  rmw_qos_profile_t adapted_qos_policies =
+    rmw_dds_common::qos_profile_update_best_available_for_services(*qos_policies);
+
   rmw_context_impl_t * ctx = node->context->impl;
   std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
@@ -362,7 +368,7 @@ rmw_api_connextdds_create_service(
     ctx->dds_sub,
     type_supports,
     service_name,
-    qos_policies);
+    &adapted_qos_policies);
 
   if (nullptr == svc_impl) {
     RMW_CONNEXT_LOG_ERROR(

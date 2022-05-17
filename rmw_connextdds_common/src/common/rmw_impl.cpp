@@ -286,7 +286,7 @@ dds_duration_to_rmw_time(const DDS_Duration_t & duration)
   if (DDS_Duration_is_infinite(&duration)) {
     return RMW_DURATION_INFINITE;
   }
-  assert(duration.sec > 0);
+  assert(duration.sec >= 0);
   rmw_time_t result = {static_cast<uint64_t>(duration.sec), duration.nanosec};
   return result;
 }

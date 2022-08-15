@@ -312,6 +312,26 @@ rmw_api_connextdds_client_response_subscription_get_actual_qos(
 }
 
 
+rmw_ret_t
+rmw_api_connextdds_get_gid_for_client(
+  const rmw_client_t * client,
+  rmw_gid_t * gid)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(client, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    client,
+    client->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_Connext_Client * const client_impl =
+    reinterpret_cast<RMW_Connext_Client *>(client->data);
+  *gid = *client_impl->gid();
+
+  return RMW_RET_OK;
+}
+
+
 rmw_service_t *
 rmw_api_connextdds_create_service(
   const rmw_node_t * node,

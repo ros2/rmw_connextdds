@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.12.1 (2022-09-13)
+-------------------
 * Fix assert statement to allow the seconds field of a DDS_Duration_t to be zero (`#88 <https://github.com/ros2/rmw_connextdds/issues/88>`_)
 * Contributors: Michael Jeronimo
 

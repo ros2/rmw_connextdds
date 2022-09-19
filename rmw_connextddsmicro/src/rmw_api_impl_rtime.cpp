@@ -394,12 +394,9 @@ rmw_get_gid_for_publisher(
 
 
 rmw_ret_t
-rmw_get_gid_for_client(
-  const rmw_client_t * client,
-  rmw_gid_t * gid)
+rmw_get_gid_for_client(const rmw_client_t * client, rmw_gid_t * gid)
 {
-  return rmw_api_connextdds_get_gid_for_client(
-    client, gid);
+  return rmw_api_connextdds_get_gid_for_client(client, gid);
 }
 
 

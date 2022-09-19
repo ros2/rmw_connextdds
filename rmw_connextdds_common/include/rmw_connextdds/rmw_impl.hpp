@@ -613,7 +613,7 @@ public:
 
   const rmw_gid_t gid() const
   {
-    return this->request_pub->gid();
+    return *this->request_pub->gid();
   }
 };
 

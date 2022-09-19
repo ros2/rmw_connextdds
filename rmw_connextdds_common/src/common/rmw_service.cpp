@@ -326,7 +326,7 @@ rmw_api_connextdds_get_gid_for_client(
 
   RMW_Connext_Client * const client_impl =
     reinterpret_cast<RMW_Connext_Client *>(client->data);
-  *gid = *client_impl->gid();
+  *gid = client_impl->gid();
 
   return RMW_RET_OK;
 }

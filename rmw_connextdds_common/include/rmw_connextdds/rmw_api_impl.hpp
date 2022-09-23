@@ -277,6 +277,12 @@ rmw_api_connextdds_get_gid_for_publisher(
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t
+rmw_api_connextdds_get_gid_for_client(
+  const rmw_client_t * client,
+  rmw_gid_t * gid);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
 rmw_api_connextdds_compare_gids_equal(
   const rmw_gid_t * gid1,
   const rmw_gid_t * gid2,

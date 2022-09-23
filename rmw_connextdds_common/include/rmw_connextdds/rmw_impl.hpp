@@ -610,6 +610,11 @@ public:
 
   rmw_ret_t
   response_subscription_qos(rmw_qos_profile_t * const qos);
+
+  const rmw_gid_t gid() const
+  {
+    return *this->request_pub->gid();
+  }
 };
 
 class RMW_Connext_Service

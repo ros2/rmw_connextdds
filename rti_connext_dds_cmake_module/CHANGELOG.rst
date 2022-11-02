@@ -2,6 +2,9 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.12.1 (2022-09-13)
 -------------------
 

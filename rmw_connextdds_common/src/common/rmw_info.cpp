@@ -323,28 +323,9 @@ rmw_api_connextdds_count_clients(
   }
 
   auto common_context = &node->context->impl->common;
-  const std::string mangled_rq_service_name =
-    rmw_connextdds_create_topic_name(
-    ROS_SERVICE_REQUESTER_PREFIX, service_name, "Request", false);
   const std::string mangled_rp_service_name =
     rmw_connextdds_create_topic_name(
     ROS_SERVICE_RESPONSE_PREFIX, service_name, "Reply", false);
-
-  size_t number_of_request_publishers = 0;
-  ret = common_context->graph_cache.get_writer_count(
-    mangled_rq_service_name, &number_of_request_publishers);
-  if (ret != RMW_RET_OK) {
-    return ret;
-  }
-  size_t number_of_response_subscribers = 0;
-  ret = common_context->graph_cache.get_reader_count(
-    mangled_rp_service_name, &number_of_response_subscribers);
-  if (ret != RMW_RET_OK) {
-    return ret;
-  }
-  if (number_of_request_publishers != number_of_response_subscribers) {
-    return RMW_RET_ERROR;
-  }
   return common_context->graph_cache.get_reader_count(
     mangled_rp_service_name, count);
 }
@@ -379,28 +360,9 @@ rmw_api_connextdds_count_services(
   }
 
   auto common_context = &node->context->impl->common;
-  const std::string mangled_rq_service_name =
-    rmw_connextdds_create_topic_name(
-    ROS_SERVICE_REQUESTER_PREFIX, service_name, "Request", false);
   const std::string mangled_rp_service_name =
     rmw_connextdds_create_topic_name(
     ROS_SERVICE_RESPONSE_PREFIX, service_name, "Reply", false);
-
-  size_t number_of_request_subscribers = 0;
-  ret = common_context->graph_cache.get_reader_count(
-    mangled_rq_service_name, &number_of_request_subscribers);
-  if (ret != RMW_RET_OK) {
-    return ret;
-  }
-  size_t number_of_response_publishers = 0;
-  ret = common_context->graph_cache.get_writer_count(
-    mangled_rp_service_name, &number_of_response_publishers);
-  if (ret != RMW_RET_OK) {
-    return ret;
-  }
-  if (number_of_request_subscribers != number_of_response_publishers) {
-    return RMW_RET_ERROR;
-  }
   return common_context->graph_cache.get_writer_count(
     mangled_rp_service_name, count);
 }

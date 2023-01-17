@@ -696,7 +696,7 @@ RMW_Connext_SubscriberStatusCondition::has_status(
       {
         return this->triggered_sample_lost;
       }
-    case RMW_EVENT_SUBSCRIPTION_INCONSISTENT_TOPIC:
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
       {
         return this->triggered_inconsistent_topic;
       }
@@ -874,7 +874,7 @@ RMW_Connext_PublisherStatusCondition::has_status(
       {
         return this->triggered_qos;
       }
-    case RMW_EVENT_PUBLISHER_INCONSISTENT_TOPIC:
+    case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
       {
         return this->triggered_inconsistent_topic;
       }

@@ -3074,8 +3074,8 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
       {
         return DDS_SAMPLE_LOST_STATUS;
       }
-    case RMW_EVENT_PUBLISHER_INCONSISTENT_TOPIC:
-    case RMW_EVENT_SUBSCRIPTION_INCONSISTENT_TOPIC:
+    case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
       {
         return DDS_INCONSISTENT_TOPIC_STATUS;
       }
@@ -3140,7 +3140,7 @@ ros_event_for_reader(const rmw_event_type_t ros)
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
     case RMW_EVENT_MESSAGE_LOST:
-    case RMW_EVENT_SUBSCRIPTION_INCONSISTENT_TOPIC:
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
       {
         return true;
       }
@@ -3190,12 +3190,12 @@ RMW_Connext_SubscriberStatusCondition::get_status(
         rc = this->get_message_lost_status(status);
         break;
       }
-    case RMW_EVENT_SUBSCRIPTION_INCONSISTENT_TOPIC:
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
       {
-        rmw_inconsistent_topic_status_t * const status =
-          reinterpret_cast<rmw_inconsistent_topic_status_t *>(event_info);
+        rmw_incompatible_type_status_t * const status =
+          reinterpret_cast<rmw_incompatible_type_status_t *>(event_info);
 
-        rc = this->get_inconsistent_topic_status(status);
+        rc = this->get_incompatible_type_status(status);
         break;
       }
     default:
@@ -3241,12 +3241,12 @@ RMW_Connext_PublisherStatusCondition::get_status(
         rc = this->get_offered_qos_incompatible_status(status);
         break;
       }
-    case RMW_EVENT_PUBLISHER_INCONSISTENT_TOPIC:
+    case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
       {
-        rmw_inconsistent_topic_status_t * const status =
-          reinterpret_cast<rmw_inconsistent_topic_status_t *>(event_info);
+        rmw_incompatible_type_status_t * const status =
+          reinterpret_cast<rmw_incompatible_type_status_t *>(event_info);
 
-        rc = this->get_inconsistent_topic_status(status);
+        rc = this->get_incompatible_type_status(status);
         break;
       }
     default:

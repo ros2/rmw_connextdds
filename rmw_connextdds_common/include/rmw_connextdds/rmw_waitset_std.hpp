@@ -341,18 +341,16 @@ public:
   void update_status_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
 
   inline rmw_ret_t
-  get_inconsistent_topic_status(
-    rmw_inconsistent_topic_status_t * const status)
+  get_incompatible_type_status(
+    rmw_incompatible_type_status_t * const status)
   {
     update_state(
       [this, status]() {
-        this->triggered_inconsistent_topic = false;
-
         status->total_count = this->status_inconsistent_topic.total_count;
         status->total_count_change = this->status_inconsistent_topic.total_count_change;
 
+        this->triggered_inconsistent_topic = false;
         this->status_inconsistent_topic.total_count_change = 0;
-
         this->status_inconsistent_topic_last = this->status_inconsistent_topic;
       }, false /* notify */);
 

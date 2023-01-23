@@ -229,3 +229,9 @@ rmw_api_connextdds_node_get_graph_guard_condition(const rmw_node_t * rmw_node)
 
   return node_impl->graph_guard_condition();
 }
+
+rmw_ret_t
+rmw_notify_participant_dynamic_network_interface(rmw_context_t * context)
+{
+  return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+}

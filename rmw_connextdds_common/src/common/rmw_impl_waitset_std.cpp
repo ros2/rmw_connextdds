@@ -580,10 +580,6 @@ RMW_Connext_StatusCondition::update_status_inconsistent_topic(
 {
   this->status_inconsistent_topic = *status;
   this->triggered_inconsistent_topic = true;
-
-  this->status_inconsistent_topic.total_count_change = this->status_inconsistent_topic.total_count;
-  this->status_inconsistent_topic.total_count_change -=
-    this->status_inconsistent_topic_last.total_count;
 }
 
 rmw_ret_t

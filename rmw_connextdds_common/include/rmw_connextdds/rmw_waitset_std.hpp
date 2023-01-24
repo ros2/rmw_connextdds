@@ -243,8 +243,7 @@ public:
   explicit RMW_Connext_StatusCondition(
     DDS_Entity * const entity)
   : scond(DDS_Entity_get_statuscondition(entity)),
-    status_inconsistent_topic(DDS_InconsistentTopicStatus_INITIALIZER),
-    status_inconsistent_topic_last(DDS_InconsistentTopicStatus_INITIALIZER)
+    status_inconsistent_topic(DDS_InconsistentTopicStatus_INITIALIZER)
   {
     this->scond = DDS_Entity_get_statuscondition(entity);
     if (nullptr == this->scond) {
@@ -351,7 +350,6 @@ public:
 
         this->triggered_inconsistent_topic = false;
         this->status_inconsistent_topic.total_count_change = 0;
-        this->status_inconsistent_topic_last = this->status_inconsistent_topic;
       }, false /* notify */);
 
     return RMW_RET_OK;
@@ -363,8 +361,6 @@ protected:
   bool triggered_inconsistent_topic{false};
 
   struct DDS_InconsistentTopicStatus status_inconsistent_topic;
-
-  struct DDS_InconsistentTopicStatus status_inconsistent_topic_last;
 };
 
 void

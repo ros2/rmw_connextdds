@@ -337,7 +337,8 @@ public:
   void
   on_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
 
-  void update_status_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
+  void
+  update_status_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
 
   inline rmw_ret_t
   get_incompatible_type_status(

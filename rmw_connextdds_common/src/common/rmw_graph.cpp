@@ -788,6 +788,7 @@ rmw_connextdds_graph_add_entityEA(
       gid,
       std::string(topic_name),
       std::string(type_name),
+      nullptr,
       dp_gid,
       qos_profile,
       is_reader))

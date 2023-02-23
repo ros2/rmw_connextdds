@@ -242,8 +242,7 @@ class RMW_Connext_StatusCondition : public RMW_Connext_Condition
 public:
   explicit RMW_Connext_StatusCondition(
     DDS_Entity * const entity)
-  : scond(DDS_Entity_get_statuscondition(entity)),
-    status_inconsistent_topic(DDS_InconsistentTopicStatus_INITIALIZER)
+  : scond(DDS_Entity_get_statuscondition(entity))
   {
     this->scond = DDS_Entity_get_statuscondition(entity);
     if (nullptr == this->scond) {
@@ -334,34 +333,8 @@ public:
   virtual bool
   has_status(const rmw_event_type_t event_type) = 0;
 
-  void
-  on_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
-
-  void
-  update_status_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
-
-  inline rmw_ret_t
-  get_incompatible_type_status(
-    rmw_incompatible_type_status_t * const status)
-  {
-    update_state(
-      [this, status]() {
-        status->total_count = this->status_inconsistent_topic.total_count;
-        status->total_count_change = this->status_inconsistent_topic.total_count_change;
-
-        this->triggered_inconsistent_topic = false;
-        this->status_inconsistent_topic.total_count_change = 0;
-      }, false /* notify */);
-
-    return RMW_RET_OK;
-  }
-
 protected:
   DDS_StatusCondition * scond;
-
-  bool triggered_inconsistent_topic{false};
-
-  struct DDS_InconsistentTopicStatus status_inconsistent_topic;
 };
 
 void

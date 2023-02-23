@@ -27,6 +27,7 @@ rmw_connextdds_graph_add_entityEA(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
+  const rosidl_type_hash_t * type_hash,
   const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
@@ -727,6 +728,7 @@ rmw_connextdds_graph_add_entityEA(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
+  const rosidl_type_hash_t * type_hash,
   const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
@@ -788,7 +790,7 @@ rmw_connextdds_graph_add_entityEA(
       gid,
       std::string(topic_name),
       std::string(type_name),
-      nullptr,
+      *type_hash,
       dp_gid,
       qos_profile,
       is_reader))
@@ -876,6 +878,7 @@ rmw_connextdds_graph_add_local_publisherEA(
     &dp_guid,
     topic_name,
     pub->message_type_support()->type_name(),
+    pub->message_type_support()->type_hash(),
     &dw_qos.history,
     &dw_qos.reliability,
     &dw_qos.durability,
@@ -947,6 +950,7 @@ rmw_connextdds_graph_add_local_subscriberEA(
     &dp_guid,
     topic_name,
     sub->message_type_support()->type_name(),
+    sub->message_type_support()->type_hash(),
     &dr_qos.history,
     &dr_qos.reliability,
     &dr_qos.durability,
@@ -964,6 +968,7 @@ rmw_connextdds_graph_add_remote_entity(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
+  const DDS_UserDataQosPolicy * const user_data,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,
@@ -983,12 +988,19 @@ rmw_connextdds_graph_add_remote_entity(
     return RMW_RET_OK;
   }
 
+  const uint8_t * user_data_data = DDS_OctetSeq_get_contiguous_buffer(&user_data->value);
+  const size_t user_data_size = DDS_OctetSeq_get_length(&user_data->value);
+  rosidl_type_hash_t type_hash = rmw_dds_common::parse_type_hash_from_user_data_qos(
+    user_data_data, user_data_size);
+  fprintf(stderr, "Discovered user data: %*s\n", user_data_size, user_data_data);
+
   rmw_ret_t rc = rmw_connextdds_graph_add_entityEA(
     ctx,
     endp_guid,
     dp_guid,
     topic_name,
     type_name,
+    &type_hash,
     nullptr /* history (not propagated via discovery) */,
     reliability,
     durability,

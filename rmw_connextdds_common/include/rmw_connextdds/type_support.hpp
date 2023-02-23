@@ -82,6 +82,12 @@ public:
     return this->_type_name.c_str();
   }
 
+  const rosidl_type_hash_t * type_hash() const
+  {
+    return &static_cast<const message_type_support_callbacks_t *>(
+      this->_type_support_fastrtps->data)->type_hash_;
+  }
+
   uint32_t type_serialized_size_max() const
   {
     return this->_serialized_size_max;

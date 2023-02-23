@@ -992,7 +992,6 @@ rmw_connextdds_graph_add_remote_entity(
   const size_t user_data_size = DDS_OctetSeq_get_length(&user_data->value);
   rosidl_type_hash_t type_hash = rmw_dds_common::parse_type_hash_from_user_data_qos(
     user_data_data, user_data_size);
-  fprintf(stderr, "Discovered user data: %*s\n", user_data_size, user_data_data);
 
   rmw_ret_t rc = rmw_connextdds_graph_add_entityEA(
     ctx,

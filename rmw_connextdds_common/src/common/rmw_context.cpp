@@ -753,6 +753,20 @@ rmw_api_connextdds_init(
     return RMW_RET_INVALID_ARGUMENT;
   }
 
+  if (context->options.discovery_params.static_peers_count > 0)
+  {
+    RMW_CONNEXT_LOG_WARNING("Static peers settings are currently not "
+     "implmented for rmw connext. The settings you have will be ignored.");
+  }
+
+  if (context->options.discovery_params->automatic_discovery_range
+    != RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET)
+  {
+    RMW_CONNEXT_LOG_WARNING("Discovery range settings are currently not "
+     "implmented for rmw connext. The settings you have will be ignored. "
+     "CONNEXT will default to SUBNET behaviour.");
+  }
+
   if (options->domain_id >= INT32_MAX &&
     options->domain_id != RMW_DEFAULT_DOMAIN_ID)
   {

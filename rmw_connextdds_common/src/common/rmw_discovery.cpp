@@ -56,6 +56,7 @@ rmw_connextdds_discovery_thread(rmw_context_impl_t * ctx)
 
   RMW_Connext_Subscriber * const sub_partinfo =
     reinterpret_cast<RMW_Connext_Subscriber *>(ctx->common.sub->data);
+
   DDS_ConditionSeq active_conditions = DDS_SEQUENCE_INITIALIZER;
   DDS_ReturnCode_t rc = DDS_RETCODE_ERROR;
   DDS_UnsignedLong active_len = 0,

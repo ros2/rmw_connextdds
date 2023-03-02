@@ -1296,6 +1296,9 @@ RMW_Connext_Subscriber::create(
 
   if (RMW_RET_OK == cft_rc) {
     sub_topic = cft_topic;
+  } else {
+    // RMW_Connext_Subscriber needs this value to check if CFT is enabled or not.
+    sub_cft_expr = "";
   }
 
   // The following initialization generates warnings when built

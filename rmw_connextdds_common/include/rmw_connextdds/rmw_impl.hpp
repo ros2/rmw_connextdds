@@ -487,7 +487,7 @@ public:
 
   bool is_cft_enabled()
   {
-    return this->dds_topic_cft != nullptr;
+    return !this->cft_expression.empty();
   }
 
   const bool internal;

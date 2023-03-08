@@ -142,7 +142,7 @@ rmw_connextdds_parse_string_list(
     input_i += 2,
     next_i_start = input_i)
   {
-    // determine token's lenght by finding a delimiter (or end of input)
+    // determine token's length by finding a delimiter (or end of input)
     for (;
       input_i + 1 < input_len && delimiter != list[input_i + 1];
       input_i += 1)
@@ -180,7 +180,7 @@ rmw_connextdds_parse_string_list(
       DDS_String_free(*el_ref);
     }
     *el_ref = DDS_String_alloc(next_len);
-    if (nullptr == el_ref) {
+    if (nullptr == *el_ref) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
       return RMW_RET_ERROR;
     }
@@ -200,6 +200,51 @@ rmw_connextdds_parse_string_list(
         return RMW_RET_ERROR;
       }
     }
+  }
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t rmw_connextdds_extend_initial_peer_list(
+  const peer_address_t * const static_peers,
+  const size_t static_peer_count,
+  struct DDS_StringSeq * const out)
+{
+  if (static_peer_count == 0) {
+    return RMW_RET_OK;
+  }
+
+  if (static_peers == nullptr) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "received nullptr static_peers but a static_peer_count of %lu",
+      static_peer_count);
+    return RMW_RET_ERROR;
+  }
+
+  const auto initial_length = DDS_StringSeq_get_length(out);
+  const auto new_seq_length = initial_length + static_peer_count;
+  DDS_StringSeq_ensure_length(out, new_seq_length, new_seq_length);
+  for (size_t s=0; s < static_peer_count; ++s) {
+    const auto index = initial_length + s;
+    const char * peer = static_peers[s].peer_address;
+    char ** const element_ref = DDS_StringSeq_get_reference(out, index);
+    RMW_CONNEXT_ASSERT(nullptr != element_ref);
+    if (nullptr != *element_ref) {
+      /* If some strings are still hanging around this dead space in the seq,
+         then free their memory. */
+      DDS_String_free(*element_ref);
+    }
+    const auto peer_char_len = strlen(peer);
+    *element_ref = DDS_String_alloc(peer_char_len);
+    if (nullptr == *element_ref) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string");
+      return RMW_RET_ERROR;
+    }
+
+    memcpy(*element_ref, peer, peer_char_len);
+    RMW_CONNEXT_LOG_TRACE_A(
+      "inserted static peer: i=%d, peer='%s'",
+      index, peer);
   }
 
   return RMW_RET_OK;

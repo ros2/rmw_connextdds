@@ -22,6 +22,7 @@
 #include <mutex>
 #include <regex>
 #include <string>
+#include <memory>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
@@ -78,8 +79,11 @@ struct rmw_context_impl_s
   DDS_DataReader * dr_publications;
   DDS_DataReader * dr_subscriptions;
 
-  /* Keep track of whether the DomainParticipant is localhost only */
-  bool localhost_only;
+  /* Keep track of what discovery settings were used when initializing */
+  rmw_discovery_params_t * discovery_params;
+
+  /* Manage the memory of the domain tag */
+  char * domain_tag;
 
   /* Global configuration for QoS profiles */
   std::string qos_ctx_name;
@@ -160,7 +164,8 @@ struct rmw_context_impl_s
     dr_participants(nullptr),
     dr_publications(nullptr),
     dr_subscriptions(nullptr),
-    localhost_only(base->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED)
+    discovery_params(nullptr),
+    domain_tag(nullptr)
   {
     /* destructor relies on these being initialized properly */
     common.thread_is_running.store(false);
@@ -174,15 +179,23 @@ struct rmw_context_impl_s
     if (0u != this->node_count) {
       RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
     }
+
+    if (this->discovery_params && this->base) {
+      (void)rmw_discovery_params_fini(
+        this->discovery_params,
+        &this->base->options.allocator);
+    }
+
+    if (this->domain_tag) {
+      DDS_String_free(this->domain_tag);
+    }
   }
 
   // Initializes the participant, if it wasn't done already.
   // node_count is increased
   rmw_ret_t
   initialize_node(
-    const char * const node_name,
-    const char * const node_namespace,
-    const bool localhost_only);
+    const rmw_discovery_params_t * const discovery_params);
 
   // Destroys the participant, when node_count reaches 0.
   rmw_ret_t
@@ -190,7 +203,7 @@ struct rmw_context_impl_s
 
   // Initialize the DomainParticipant associated with the context.
   rmw_ret_t
-  initialize_participant(const bool localhost_only);
+  initialize_participant();
 
   // Enable the DomainParticipant associated with the context.
   rmw_ret_t

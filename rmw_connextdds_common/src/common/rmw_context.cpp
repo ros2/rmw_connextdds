@@ -109,35 +109,35 @@ rmw_connextdds_initialize_participant_qos(
 
 rmw_ret_t
 rmw_context_impl_t::initialize_node(
-  const char * const node_name,
-  const char * const node_namespace,
-  const bool localhost_only)
+  const rmw_discovery_params_t * const discovery_params)
 {
-  UNUSED_ARG(node_name);
-  UNUSED_ARG(node_namespace);
-
-  RMW_CONNEXT_LOG_DEBUG_A(
-    "initializing new node: total=%lu, localhost=%d",
-    this->node_count, localhost_only)
-
   if (0u != this->node_count) {
-    if ((this->localhost_only && !localhost_only) ||
-      (!this->localhost_only && localhost_only))
-    {
-      RMW_CONNEXT_LOG_ERROR_A_SET(
-        "incompatible node for context:"
-        "ctx.localhost_only=%d, node.localhost_only=%d",
-        this->localhost_only, localhost_only)
+    bool params_equal = false;
+    if (rmw_discovery_params_equal(this->discovery_params, discovery_params, &params_equal) != RMW_RET_OK) {
+      RMW_CONNEXT_LOG_ERROR_SET("invalid discovery params argument");
+      return RMW_RET_INVALID_ARGUMENT;
+    }
+
+    if (!params_equal) {
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "node is being initialized with incompatible discovery parameters");
       return RMW_RET_ERROR;
     }
 
     this->node_count += 1;
     RMW_CONNEXT_LOG_DEBUG_A(
-      "initialized new node: total=%lu", this->node_count)
+      "initialized new node: total=%lu", this->node_count);
     return RMW_RET_OK;
   }
 
-  rmw_ret_t rc = this->initialize_participant(localhost_only);
+  if (!this->discovery_params && discovery_params) {
+    rmw_discovery_params_copy(
+      discovery_params,
+      &this->base->options.allocator,
+      this->discovery_params);
+  }
+
+  rmw_ret_t rc = this->initialize_participant();
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize DomainParticipant")
     return rc;
@@ -158,11 +158,9 @@ rmw_context_impl_t::initialize_node(
 }
 
 rmw_ret_t
-rmw_context_impl_t::initialize_participant(const bool localhost_only)
+rmw_context_impl_t::initialize_participant()
 {
   RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipant")
-
-  this->localhost_only = localhost_only;
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_ERROR("DDS DomainParticipantFactory not initialized")
@@ -991,35 +989,56 @@ rmw_api_connextdds_init(
   ctx->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
-  /* Lookup and configure initial peer from environment */
-  const char * initial_peers = nullptr;
-  lookup_rc =
-    rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);
-
-  if (nullptr != lookup_rc || nullptr == initial_peers) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_INITIAL_PEERS,
-      lookup_rc)
-    return RMW_RET_ERROR;
+  bool allow_static_peers = true;
+  if (ctx->discovery_params) {
+    const auto range = ctx->discovery_params->automatic_discovery_range;
+    if (range == RMW_AUTOMATIC_DISCOVERY_RANGE_OFF) {
+      allow_static_peers = false;
+    }
   }
 
-  if ('\0' != initial_peers[0]) {
-    rmw_ret_t rc = rmw_connextdds_parse_string_list(
-      initial_peers,
-      &ctx->initial_peers,
-      ',' /* delimiter */,
-      true /* trim_elements */,
-      false /* allow_empty_elements */,
-      false /* append_values */);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR_A(
-        "failed to parse initial peers: '%s'", initial_peers)
+  if (allow_static_peers) {
+    /* Lookup and configure initial peer from environment */
+    const char * initial_peers = nullptr;
+    lookup_rc =
+      rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);
+
+    if (nullptr != lookup_rc || nullptr == initial_peers) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to lookup from environment: "
+        "var=%s, "
+        "rc=%s ",
+        RMW_CONNEXT_ENV_INITIAL_PEERS,
+        lookup_rc)
+      return RMW_RET_ERROR;
+    }
+
+    if ('\0' != initial_peers[0]) {
+      rmw_ret_t rc = rmw_connextdds_parse_string_list(
+        initial_peers,
+        &ctx->initial_peers,
+        ',' /* delimiter */,
+        true /* trim_elements */,
+        false /* allow_empty_elements */,
+        false /* append_values */);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR_A(
+          "failed to parse initial peers: '%s'", initial_peers)
+        return rc;
+      }
+      RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
+    }
+
+    rc = rmw_connextdds_extend_initial_peer_list(
+      ctx->discovery_params->static_peers,
+      ctx->discovery_params->static_peers_count,
+      &ctx->initial_peers);
+    if (RMW_RET_OK != rc)
+    {
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "failed to extend initial peers with the static peers");
       return rc;
     }
-    RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
   }
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {

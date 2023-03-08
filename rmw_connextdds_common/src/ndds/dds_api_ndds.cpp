@@ -15,6 +15,9 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <cmath>
+
+#include "rcutils/process.h"
 
 #include "rmw/impl/cpp/key_value.hpp"
 #include "rmw_connextdds/custom_sql_filter.hpp"
@@ -197,26 +200,91 @@ rmw_connextdds_initialize_participant_qos_impl(
   dp_qos->user_object.topic_user_object.size = sizeof(void *);
   dp_qos->user_object.content_filtered_topic_user_object.size = sizeof(void *);
 #endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
+  if (!ctx->domain_tag) {
+    const auto pid = rcutils_get_pid();
+    ctx->domain_tag = DDS_String_alloc(18 + log10(pid));
+    sprintf(ctx->domain_tag, "ros_discovery_off_%d", pid);
+  }
 
   switch (ctx->participant_qos_override_policy) {
     case rmw_context_impl_t::participant_qos_override_policy_t::All:
     case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
       {
         // Parse and apply QoS parameters derived from ROS 2 configuration options.
+        // Reference link for properties:
+        // https://community.rti.com/static/documentation/connext-dds/6.1.1/doc/manuals/connext_dds_professional/properties_reference/index.html
+        if (ctx->discovery_params) {
+          const auto range = ctx->discovery_params->automatic_discovery_range;
+          switch (range) {
+            case RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET:
+              /* No action needed. This is the default discovery behavior for DDS */
+              break;
+            default:
+              RMW_CONNEXT_LOG_WARNING_A(
+                "Unknown value provided for automatic discovery range: %i",
+                ctx->discovery_params->automatic_discovery_range);
+              /* Fall back to the default behavior */
+              [[clang::fallthrough]];
+              /* [[fallthrough]]; // Uncomment this when migrating to C++17 */
+            case RMW_AUTOMATIC_DISCOVERY_RANGE_DEFAULT:
+              /* Same behavior as LOCALHOST */
+              [[clang::fallthrough]];
+              /* [[fallthrough]]; // Uncomment this when migrating to C++17 */
+            case RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST:
+              /* Same interface settings as OFF */
+              [[clang::fallthrough]];
+              /* [[fallthrough]]; // Uncomment this when migrating to C++17 */
+            case RMW_AUTOMATIC_DISCOVERY_RANGE_OFF:
+              /* Note: We allow the LOCALHOST interface for the OFF range
+                 because if we leave this property completely blank then it
+                 has the opposite effect and allows all interfaces to be used.
+                 Allowing only LOCALHOST at least minimizes the unnecessary
+                 discovery traffic and prevents discovery with other host
+                 machines, while the domain_tag protects against same-host
+                 connections. */
+              if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
+                &dp_qos->property,
+                "dds.transport.UDPv4.builtin.parent.allow_interfaces_list",
+                RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
+                DDS_BOOLEAN_FALSE /* propagate */))
+              {
+                RMW_CONNEXT_LOG_ERROR_SET(
+                  "failed to assert property on participant: "
+                  "dds.transport.UDPv4.builtin.parent.allow_interfaces_list");
+                return RMW_RET_ERROR;
+              }
 
-        if (ctx->localhost_only) {
-          if (DDS_RETCODE_OK !=
-            DDS_PropertyQosPolicyHelper_assert_property(
-              &dp_qos->property,
-              "dds.transport.UDPv4.builtin.parent.allow_interfaces",
-              RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
-              DDS_BOOLEAN_FALSE /* propagate */))
-          {
-            RMW_CONNEXT_LOG_ERROR_A_SET(
-              "failed to assert property on participant: %s",
-              "dds.transport.UDPv4.builtin.parent.allow_interfaces")
-            return RMW_RET_ERROR;
+              if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
+                &dp_qos->property,
+                "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list",
+                RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
+                DDS_BOOLEAN_FALSE /* propagate */))
+              {
+                RMW_CONNEXT_LOG_ERROR_A_SET(
+                  "failed to assert property on participant: %s",
+                  "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list")
+                return RMW_RET_ERROR;
+              }
           }
+
+          if (range == RMW_AUTOMATIC_DISCOVERY_RANGE_OFF) {
+              /* Give this participant its own unique domain tag to prevent
+                 unicast discovery from happening. */
+              if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
+                &dp_qos->property,
+                "dds.domain_participant.domain_tag",
+                ctx->domain_tag,
+                DDS_BOOLEAN_FALSE))
+              {
+                RMW_CONNEXT_LOG_ERROR_SET(
+                  "failed to assert property on participant: "
+                  "dds.domain_participant.domain_tag");
+                return RMW_RET_ERROR;
+              }
+          }
+
+          /* NOTE: The static_peers setting is handled in rmw_api_connextdds_init
+             alongside the RMW_CONNEXT_ENV_INITIAL_PEERS variable */
         }
 
         const size_t user_data_len_in =

@@ -206,7 +206,7 @@ rmw_connextdds_parse_string_list(
 }
 
 rmw_ret_t rmw_connextdds_extend_initial_peer_list(
-  const peer_address_t * const static_peers,
+  const rmw_peer_address_t * const static_peers,
   const size_t static_peer_count,
   struct DDS_StringSeq * const out)
 {

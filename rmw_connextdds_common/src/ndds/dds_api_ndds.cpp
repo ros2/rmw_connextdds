@@ -213,8 +213,8 @@ rmw_connextdds_initialize_participant_qos_impl(
         // Parse and apply QoS parameters derived from ROS 2 configuration options.
         // Reference link for properties:
         // https://community.rti.com/static/documentation/connext-dds/6.1.1/doc/manuals/connext_dds_professional/properties_reference/index.html
-        if (ctx->discovery_params) {
-          const auto range = ctx->discovery_params->automatic_discovery_range;
+        if (ctx->discovery_options) {
+          const auto range = ctx->discovery_options->automatic_discovery_range;
           switch (range) {
             case RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET:
               /* No action needed. This is the default discovery behavior for DDS */
@@ -222,7 +222,7 @@ rmw_connextdds_initialize_participant_qos_impl(
             default:
               RMW_CONNEXT_LOG_WARNING_A(
                 "Unknown value provided for automatic discovery range: %i",
-                ctx->discovery_params->automatic_discovery_range);
+                ctx->discovery_options->automatic_discovery_range);
               /* Fall back to the default behavior */
               [[clang::fallthrough]];
               /* [[fallthrough]]; // Uncomment this when migrating to C++17 */

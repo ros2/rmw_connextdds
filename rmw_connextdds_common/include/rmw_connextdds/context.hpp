@@ -80,7 +80,7 @@ struct rmw_context_impl_s
   DDS_DataReader * dr_subscriptions;
 
   /* Keep track of what discovery settings were used when initializing */
-  rmw_discovery_params_t * discovery_params;
+  rmw_discovery_options_t * discovery_options;
 
   /* Manage the memory of the domain tag */
   char * domain_tag;
@@ -164,7 +164,7 @@ struct rmw_context_impl_s
     dr_participants(nullptr),
     dr_publications(nullptr),
     dr_subscriptions(nullptr),
-    discovery_params(nullptr),
+    discovery_options(nullptr),
     domain_tag(nullptr)
   {
     /* destructor relies on these being initialized properly */
@@ -180,10 +180,10 @@ struct rmw_context_impl_s
       RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
     }
 
-    if (this->discovery_params && this->base) {
-      (void)rmw_discovery_params_fini(
-        this->discovery_params,
-        &this->base->options.allocator);
+    if (this->discovery_options && this->base) {
+      (void)rmw_discovery_options_fini(
+        this->discovery_options,
+        this->base->options.allocator);
     }
 
     if (this->domain_tag) {
@@ -195,7 +195,7 @@ struct rmw_context_impl_s
   // node_count is increased
   rmw_ret_t
   initialize_node(
-    const rmw_discovery_params_t * const discovery_params);
+    const rmw_discovery_options_t * const discovery_options);
 
   // Destroys the participant, when node_count reaches 0.
   rmw_ret_t

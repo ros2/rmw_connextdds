@@ -109,11 +109,11 @@ rmw_connextdds_initialize_participant_qos(
 
 rmw_ret_t
 rmw_context_impl_t::initialize_node(
-  const rmw_discovery_params_t * const discovery_params)
+  const rmw_discovery_options_t * const discovery_options)
 {
   if (0u != this->node_count) {
     bool params_equal = false;
-    if (rmw_discovery_params_equal(this->discovery_params, discovery_params, &params_equal) != RMW_RET_OK) {
+    if (rmw_discovery_options_equal(this->discovery_options, discovery_options, &params_equal) != RMW_RET_OK) {
       RMW_CONNEXT_LOG_ERROR_SET("invalid discovery params argument");
       return RMW_RET_INVALID_ARGUMENT;
     }
@@ -130,11 +130,15 @@ rmw_context_impl_t::initialize_node(
     return RMW_RET_OK;
   }
 
-  if (!this->discovery_params && discovery_params) {
-    rmw_discovery_params_copy(
-      discovery_params,
-      &this->base->options.allocator,
-      this->discovery_params);
+  if (!this->discovery_options && discovery_options) {
+    const auto rc = rmw_discovery_options_copy(
+      discovery_options,
+      this->base->options.allocator,
+      this->discovery_options);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR("failed to copy discovery parameters");
+      return rc;
+    }
   }
 
   rmw_ret_t rc = this->initialize_participant();
@@ -990,8 +994,8 @@ rmw_api_connextdds_init(
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
   bool allow_static_peers = true;
-  if (ctx->discovery_params) {
-    const auto range = ctx->discovery_params->automatic_discovery_range;
+  if (ctx->discovery_options) {
+    const auto range = ctx->discovery_options->automatic_discovery_range;
     if (range == RMW_AUTOMATIC_DISCOVERY_RANGE_OFF) {
       allow_static_peers = false;
     }
@@ -1030,8 +1034,8 @@ rmw_api_connextdds_init(
     }
 
     rc = rmw_connextdds_extend_initial_peer_list(
-      ctx->discovery_params->static_peers,
-      ctx->discovery_params->static_peers_count,
+      ctx->discovery_options->static_peers,
+      ctx->discovery_options->static_peers_count,
       &ctx->initial_peers);
     if (RMW_RET_OK != rc)
     {

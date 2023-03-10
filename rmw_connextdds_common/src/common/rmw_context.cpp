@@ -131,6 +131,11 @@ rmw_context_impl_t::initialize_node(
   }
 
   if (!this->discovery_options && discovery_options) {
+    this->discovery_options = (rmw_discovery_options_t*)
+      this->base->options.allocator.allocate(
+      sizeof(rmw_discovery_options_t),
+      this->base->options.allocator.state);
+
     const auto rc = rmw_discovery_options_copy(
       discovery_options,
       this->base->options.allocator,
@@ -436,6 +441,21 @@ rmw_ret_t
 rmw_context_impl_t::finalize()
 {
   rmw_ret_t rc_exit = RMW_RET_OK;
+
+  if (this->discovery_options && this->base) {
+    const auto rc = rmw_discovery_options_fini(
+      this->discovery_options,
+      this->base->options.allocator);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR_A(
+        "failed to deallocate discovery options: %i",
+        rc);
+    }
+  }
+
+  if (this->domain_tag) {
+    DDS_String_free(this->domain_tag);
+  }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing RMW context: %p",
@@ -993,56 +1013,35 @@ rmw_api_connextdds_init(
   ctx->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
-  bool allow_static_peers = true;
-  if (ctx->discovery_options) {
-    const auto range = ctx->discovery_options->automatic_discovery_range;
-    if (range == RMW_AUTOMATIC_DISCOVERY_RANGE_OFF) {
-      allow_static_peers = false;
-    }
+    /* Lookup and configure initial peer from environment */
+  const char * initial_peers = nullptr;
+  lookup_rc =
+    rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);
+
+  if (nullptr != lookup_rc || nullptr == initial_peers) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_INITIAL_PEERS,
+      lookup_rc)
+    return RMW_RET_ERROR;
   }
 
-  if (allow_static_peers) {
-    /* Lookup and configure initial peer from environment */
-    const char * initial_peers = nullptr;
-    lookup_rc =
-      rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);
-
-    if (nullptr != lookup_rc || nullptr == initial_peers) {
-      RMW_CONNEXT_LOG_ERROR_A_SET(
-        "failed to lookup from environment: "
-        "var=%s, "
-        "rc=%s ",
-        RMW_CONNEXT_ENV_INITIAL_PEERS,
-        lookup_rc)
-      return RMW_RET_ERROR;
-    }
-
-    if ('\0' != initial_peers[0]) {
-      rmw_ret_t rc = rmw_connextdds_parse_string_list(
-        initial_peers,
-        &ctx->initial_peers,
-        ',' /* delimiter */,
-        true /* trim_elements */,
-        false /* allow_empty_elements */,
-        false /* append_values */);
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR_A(
-          "failed to parse initial peers: '%s'", initial_peers)
-        return rc;
-      }
-      RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
-    }
-
-    rc = rmw_connextdds_extend_initial_peer_list(
-      ctx->discovery_options->static_peers,
-      ctx->discovery_options->static_peers_count,
-      &ctx->initial_peers);
-    if (RMW_RET_OK != rc)
-    {
-      RMW_CONNEXT_LOG_ERROR_SET(
-        "failed to extend initial peers with the static peers");
+  if ('\0' != initial_peers[0]) {
+    rmw_ret_t rc = rmw_connextdds_parse_string_list(
+      initial_peers,
+      &ctx->initial_peers,
+      ',' /* delimiter */,
+      true /* trim_elements */,
+      false /* allow_empty_elements */,
+      false /* append_values */);
+    if (RMW_RET_OK != rc) {
+      RMW_CONNEXT_LOG_ERROR_A(
+        "failed to parse initial peers: '%s'", initial_peers)
       return rc;
     }
+    RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
   }
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {

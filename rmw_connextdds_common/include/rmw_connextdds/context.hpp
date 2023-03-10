@@ -179,16 +179,6 @@ struct rmw_context_impl_s
     if (0u != this->node_count) {
       RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
     }
-
-    if (this->discovery_options && this->base) {
-      (void)rmw_discovery_options_fini(
-        this->discovery_options,
-        this->base->options.allocator);
-    }
-
-    if (this->domain_tag) {
-      DDS_String_free(this->domain_tag);
-    }
   }
 
   // Initializes the participant, if it wasn't done already.

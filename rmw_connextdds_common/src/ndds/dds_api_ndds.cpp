@@ -244,18 +244,6 @@ rmw_connextdds_initialize_participant_qos_impl(
                  connections. */
               if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
                 &dp_qos->property,
-                "dds.transport.UDPv4.builtin.parent.allow_interfaces_list",
-                RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
-                DDS_BOOLEAN_FALSE /* propagate */))
-              {
-                RMW_CONNEXT_LOG_ERROR_SET(
-                  "failed to assert property on participant: "
-                  "dds.transport.UDPv4.builtin.parent.allow_interfaces_list");
-                return RMW_RET_ERROR;
-              }
-
-              if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
-                &dp_qos->property,
                 "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list",
                 RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
                 DDS_BOOLEAN_FALSE /* propagate */))
@@ -267,24 +255,65 @@ rmw_connextdds_initialize_participant_qos_impl(
               }
           }
 
-          if (range == RMW_AUTOMATIC_DISCOVERY_RANGE_OFF) {
-              /* Give this participant its own unique domain tag to prevent
-                 unicast discovery from happening. */
-              if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
-                &dp_qos->property,
-                "dds.domain_participant.domain_tag",
-                ctx->domain_tag,
-                DDS_BOOLEAN_FALSE))
-              {
-                RMW_CONNEXT_LOG_ERROR_SET(
-                  "failed to assert property on participant: "
-                  "dds.domain_participant.domain_tag");
-                return RMW_RET_ERROR;
+          if (RMW_AUTOMATIC_DISCOVERY_RANGE_OFF == range) {
+            dp_qos->discovery.accept_unknown_peers = DDS_BOOLEAN_FALSE;
+            const size_t num_peers = DDS_StringSeq_get_length(&ctx->initial_peers);
+            if (num_peers > 0) {
+              RMW_CONNEXT_LOG_WARNING_A(
+                "requested %lu initial peers using %s, but discovery range is off",
+                num_peers,
+                RMW_CONNEXT_ENV_INITIAL_PEERS);
+              for (size_t i = 0; i < num_peers; ++i) {
+                // Deallocate the peer list before setting its length to zero
+                char ** const element_ref = DDS_StringSeq_get_reference(&ctx->initial_peers, i);
+                DDS_String_free(*element_ref);
               }
-          }
+              DDS_StringSeq_set_length(&ctx->initial_peers, 0);
+            }
 
-          /* NOTE: The static_peers setting is handled in rmw_api_connextdds_init
-             alongside the RMW_CONNEXT_ENV_INITIAL_PEERS variable */
+            /* See earlier note about why we allow LOCALHOST interface for
+                OFF range. */
+            if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
+              &dp_qos->property,
+              "dds.transport.UDPv4.builtin.parent.allow_interfaces_list",
+              RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
+              DDS_BOOLEAN_FALSE /* propagate */))
+            {
+              RMW_CONNEXT_LOG_ERROR_SET(
+                "failed to assert property on participant: "
+                "dds.transport.UDPv4.builtin.parent.allow_interfaces_list");
+              return RMW_RET_ERROR;
+            }
+
+            /* Give this participant its own unique domain tag to prevent
+                unicast discovery from happening. */
+            if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
+              &dp_qos->property,
+              "dds.domain_participant.domain_tag",
+              ctx->domain_tag,
+              DDS_BOOLEAN_FALSE))
+            {
+              RMW_CONNEXT_LOG_ERROR_SET(
+                "failed to assert property on participant: "
+                "dds.domain_participant.domain_tag");
+              return RMW_RET_ERROR;
+            }
+          } else {
+            dp_qos->discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
+            const auto rc = rmw_connextdds_extend_initial_peer_list(
+              ctx->discovery_options->static_peers,
+              ctx->discovery_options->static_peers_count,
+              &ctx->initial_peers);
+            if (RMW_RET_OK != rc)
+            {
+              RMW_CONNEXT_LOG_ERROR_SET(
+                "failed to extend initial peers with the static peers");
+              return rc;
+            }
+
+            /* NOTE: The initial peers will be passed into the QoS by
+               rmw_connextdds_initialize_participant_qos(~) */
+          }
         }
 
         const size_t user_data_len_in =

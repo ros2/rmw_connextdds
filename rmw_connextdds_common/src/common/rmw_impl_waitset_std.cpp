@@ -166,6 +166,20 @@ RMW_Connext_DataWriterListener_liveliness_lost(
   self->on_liveliness_lost(status);
 }
 
+void
+RMW_Connext_TopicListener_on_inconsistent_topic(
+  void * listener_data,
+  DDS_Topic * topic,
+  const struct DDS_InconsistentTopicStatus * status)
+{
+  RMW_Connext_StatusCondition * const self =
+    reinterpret_cast<RMW_Connext_StatusCondition *>(listener_data);
+
+  UNUSED_ARG(topic);
+
+  self->on_inconsistent_topic(status);
+}
+
 
 bool
 RMW_Connext_WaitSet::on_condition_active(
@@ -550,6 +564,24 @@ RMW_Connext_WaitSet::wait(
   return RMW_RET_OK;
 }
 
+void
+RMW_Connext_StatusCondition::on_inconsistent_topic(
+  const struct DDS_InconsistentTopicStatus * status)
+{
+  update_state(
+    [this, status]() {
+      this->update_status_inconsistent_topic(status);
+    }, true /* notify */);
+}
+
+void
+RMW_Connext_StatusCondition::update_status_inconsistent_topic(
+  const struct DDS_InconsistentTopicStatus * status)
+{
+  this->status_inconsistent_topic = *status;
+  this->triggered_inconsistent_topic = true;
+}
+
 rmw_ret_t
 RMW_Connext_SubscriberStatusCondition::install(
   RMW_Connext_Subscriber * const sub)
@@ -583,6 +615,17 @@ RMW_Connext_SubscriberStatusCondition::install(
     DDS_DataReader_set_listener(sub->reader(), &listener, listener_mask))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to configure reader listener")
+    return RMW_RET_ERROR;
+  }
+
+  struct DDS_TopicListener topic_listener = DDS_TopicListener_INITIALIZER;
+  topic_listener.on_inconsistent_topic = RMW_Connext_TopicListener_on_inconsistent_topic;
+  topic_listener.as_listener.listener_data = this;
+
+  if (DDS_RETCODE_OK !=
+    DDS_Topic_set_listener(sub->topic(), &topic_listener, DDS_INCONSISTENT_TOPIC_STATUS))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set topic listener");
     return RMW_RET_ERROR;
   }
 
@@ -648,6 +691,10 @@ RMW_Connext_SubscriberStatusCondition::has_status(
     case RMW_EVENT_MESSAGE_LOST:
       {
         return this->triggered_sample_lost;
+      }
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
+      {
+        return this->triggered_inconsistent_topic;
       }
     default:
       {
@@ -773,6 +820,23 @@ RMW_Connext_PublisherStatusCondition::install(
     return RMW_RET_ERROR;
   }
 
+  DDS_Topic * topic = DDS_DataWriter_get_topic(pub->writer());
+  if (topic == nullptr) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get topic associated with data writer");
+    return RMW_RET_ERROR;
+  }
+
+  struct DDS_TopicListener topic_listener = DDS_TopicListener_INITIALIZER;
+  topic_listener.on_inconsistent_topic = RMW_Connext_TopicListener_on_inconsistent_topic;
+  topic_listener.as_listener.listener_data = this;
+
+  if (DDS_RETCODE_OK !=
+    DDS_Topic_set_listener(topic, &topic_listener, DDS_INCONSISTENT_TOPIC_STATUS))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set topic listener");
+    return RMW_RET_ERROR;
+  }
+
   this->pub = pub;
 
   return RMW_RET_OK;
@@ -805,6 +869,10 @@ RMW_Connext_PublisherStatusCondition::has_status(
     case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
       {
         return this->triggered_qos;
+      }
+    case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+      {
+        return this->triggered_inconsistent_topic;
       }
     default:
       RMW_CONNEXT_ASSERT(0)

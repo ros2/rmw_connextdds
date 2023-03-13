@@ -459,7 +459,7 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_OctetSeq_from_array(
     &user_data->value,
     reinterpret_cast<const uint8_t *>(user_data_str.c_str()),
-    user_data_str.size());
+    static_cast<DDS_Long>(user_data_str.size()));
 
   return RMW_RET_OK;
 }

@@ -990,8 +990,12 @@ rmw_connextdds_graph_add_remote_entity(
 
   const uint8_t * user_data_data = DDS_OctetSeq_get_contiguous_buffer(&user_data->value);
   const size_t user_data_size = DDS_OctetSeq_get_length(&user_data->value);
-  rosidl_type_hash_t type_hash = rmw_dds_common::parse_type_hash_from_user_data(
-    user_data_data, user_data_size);
+  rosidl_type_hash_t type_hash;
+  rmw_ret_t ret = rmw_dds_common::parse_type_hash_from_user_data(
+    user_data_data, user_data_size, type_hash);
+  if (ret != RMW_RET_OK) {
+    type_hash = rosidl_get_zero_initialized_type_hash();
+  }
 
   rmw_ret_t rc = rmw_connextdds_graph_add_entityEA(
     ctx,

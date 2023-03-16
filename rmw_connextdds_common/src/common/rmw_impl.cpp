@@ -20,6 +20,7 @@
 #include <stdexcept>
 
 #include "rmw_dds_common/time_utils.hpp"
+#include "rmw_dds_common/qos.hpp"
 
 #include "rmw_connextdds/graph_cache.hpp"
 
@@ -454,8 +455,12 @@ rmw_connextdds_get_readerwriter_qos(
   }
 #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 
-  auto user_data_str = rmw_dds_common::encode_type_hash_for_user_data_qos(
-    *type_support->type_hash());
+  std::string user_data_str;
+  if (RMW_RET_OK != rmw_dds_common::encode_type_hash_for_user_data_qos(
+      type_support->type_hash(), user_data_str))
+  {
+    user_data_str.clear();
+  }
   DDS_OctetSeq_from_array(
     &user_data->value,
     reinterpret_cast<const uint8_t *>(user_data_str.c_str()),

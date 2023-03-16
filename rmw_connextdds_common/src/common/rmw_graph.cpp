@@ -17,6 +17,8 @@
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
+#include "rosidl_runtime_c/type_hash.h"
+
 // Aliases for rmw.h functions referenced by rmw_dds_common inline functions
 #define rmw_publish     rmw_api_connextdds_publish
 
@@ -27,7 +29,7 @@ rmw_connextdds_graph_add_entityEA(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
-  const rosidl_type_hash_t * type_hash,
+  const rosidl_type_hash_t & type_hash,
   const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
@@ -728,7 +730,7 @@ rmw_connextdds_graph_add_entityEA(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
-  const rosidl_type_hash_t * type_hash,
+  const rosidl_type_hash_t & type_hash,
   const DDS_HistoryQosPolicy * const history,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
@@ -790,7 +792,7 @@ rmw_connextdds_graph_add_entityEA(
       gid,
       std::string(topic_name),
       std::string(type_name),
-      *type_hash,
+      type_hash,
       dp_gid,
       qos_profile,
       is_reader))
@@ -991,9 +993,9 @@ rmw_connextdds_graph_add_remote_entity(
   const uint8_t * user_data_data = DDS_OctetSeq_get_contiguous_buffer(&user_data->value);
   const size_t user_data_size = DDS_OctetSeq_get_length(&user_data->value);
   rosidl_type_hash_t type_hash;
-  rmw_ret_t ret = rmw_dds_common::parse_type_hash_from_user_data(
-    user_data_data, user_data_size, type_hash);
-  if (ret != RMW_RET_OK) {
+  if (RMW_RET_OK != rmw_dds_common::parse_type_hash_from_user_data(
+      user_data_data, user_data_size, type_hash))
+  {
     type_hash = rosidl_get_zero_initialized_type_hash();
   }
 
@@ -1003,7 +1005,7 @@ rmw_connextdds_graph_add_remote_entity(
     dp_guid,
     topic_name,
     type_name,
-    &type_hash,
+    type_hash,
     nullptr /* history (not propagated via discovery) */,
     reliability,
     durability,

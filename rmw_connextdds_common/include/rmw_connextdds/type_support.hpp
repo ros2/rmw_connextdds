@@ -20,6 +20,8 @@
 
 #include "rmw_connextdds/context.hpp"
 
+#include "rosidl_runtime_c/type_hash.h"
+
 #include "rosidl_typesupport_fastrtps_c/identifier.h"
 #include "rosidl_typesupport_fastrtps_cpp/identifier.hpp"
 #include "rosidl_typesupport_fastrtps_cpp/message_type_support.h"
@@ -82,10 +84,10 @@ public:
     return this->_type_name.c_str();
   }
 
-  const rosidl_type_hash_t * type_hash() const
+  const rosidl_type_hash_t & type_hash() const
   {
-    return &(static_cast<const message_type_support_callbacks_t *>(
-             this->_type_support_fastrtps->data)->type_hash_);
+    return static_cast<const message_type_support_callbacks_t *>(
+      this->_type_support_fastrtps->data)->type_hash_;
   }
 
   uint32_t type_serialized_size_max() const

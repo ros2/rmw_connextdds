@@ -350,18 +350,19 @@ public:
   has_status(const rmw_event_type_t event_type) = 0;
 
   void
-  notify_new_event()
+  notify_new_event(rmw_event_type_t event_type)
   {
     std::unique_lock<std::mutex> lock_mutex(new_event_mutex_);
-    if (new_event_cb_) {
-      new_event_cb_(user_data_, 1);
+    if (new_event_cb_[event_type]) {
+      new_event_cb_[event_type](user_data_[event_type], 1);
     } else {
-      unread_events_count_++;
+      unread_events_count_[event_type]++;
     }
   }
 
   void
   set_new_event_callback(
+    rmw_event_type_t event_type,
     rmw_event_callback_t callback,
     const void * user_data)
   {
@@ -369,24 +370,24 @@ public:
 
     if (callback) {
       // Push events arrived before setting the executor's callback
-      if (unread_events_count_ > 0) {
-        callback(user_data, unread_events_count_);
-        unread_events_count_ = 0;
+      if (unread_events_count_[event_type] > 0) {
+        callback(user_data, unread_events_count_[event_type]);
+        unread_events_count_[event_type] = 0;
       }
-      user_data_ = user_data;
-      new_event_cb_ = callback;
+      user_data_[event_type] = user_data;
+      new_event_cb_[event_type] = callback;
     } else {
-      user_data_ = nullptr;
-      new_event_cb_ = nullptr;
+      user_data_[event_type] = nullptr;
+      new_event_cb_[event_type] = nullptr;
     }
   }
 
 protected:
   DDS_StatusCondition * scond;
   std::mutex new_event_mutex_;
-  rmw_event_callback_t new_event_cb_{nullptr};
-  const void * user_data_{nullptr};
-  uint64_t unread_events_count_ = 0;
+  rmw_event_callback_t new_event_cb_[RMW_EVENT_INVALID] = {};
+  const void * user_data_[RMW_EVENT_INVALID] = {};
+  uint64_t unread_events_count_[RMW_EVENT_INVALID] = {0};
 };
 
 void

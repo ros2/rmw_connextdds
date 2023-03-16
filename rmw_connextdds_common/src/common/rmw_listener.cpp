@@ -36,7 +36,7 @@ rmw_api_connextdds_event_set_callback(
   } else {
     condition = RMW_Connext_Event::publisher(event)->condition();
   }
-  condition->set_new_event_callback(callback, user_data);
+  condition->set_new_event_callback(event->event_type, callback, user_data);
   return RMW_RET_OK;
 }
 

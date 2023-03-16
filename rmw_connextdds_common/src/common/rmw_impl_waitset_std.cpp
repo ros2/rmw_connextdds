@@ -708,7 +708,7 @@ RMW_Connext_SubscriberStatusCondition::update_status_deadline(
   this->status_deadline.total_count_change = this->status_deadline.total_count;
   this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
 
-  this->notify_new_event();
+  this->notify_new_event(RMW_EVENT_REQUESTED_DEADLINE_MISSED);
 }
 
 void
@@ -724,7 +724,7 @@ RMW_Connext_SubscriberStatusCondition::update_status_liveliness(
   this->status_liveliness.not_alive_count_change -=
     this->status_liveliness_last.not_alive_count;
 
-  this->notify_new_event();
+  this->notify_new_event(RMW_EVENT_LIVELINESS_CHANGED);
 }
 
 void
@@ -736,6 +736,7 @@ RMW_Connext_SubscriberStatusCondition::update_status_qos(
 
   this->status_qos.total_count_change = this->status_qos.total_count;
   this->status_qos.total_count_change -= this->status_qos_last.total_count;
+  this->notify_new_event(RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE);
 }
 
 void
@@ -748,6 +749,7 @@ RMW_Connext_SubscriberStatusCondition::update_status_sample_lost(
   this->status_sample_lost.total_count_change = this->status_sample_lost.total_count;
   this->status_sample_lost.total_count_change -=
     this->status_sample_lost_last.total_count;
+  this->notify_new_event(RMW_EVENT_MESSAGE_LOST);
 }
 
 void
@@ -882,7 +884,7 @@ RMW_Connext_PublisherStatusCondition::update_status_deadline(
   this->status_deadline.total_count_change = this->status_deadline.total_count;
   this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
 
-  this->notify_new_event();
+  this->notify_new_event(RMW_EVENT_OFFERED_DEADLINE_MISSED);
 }
 
 void
@@ -895,7 +897,7 @@ RMW_Connext_PublisherStatusCondition::update_status_liveliness(
   this->status_liveliness.total_count_change = this->status_liveliness.total_count;
   this->status_liveliness.total_count_change -= this->status_liveliness_last.total_count;
 
-  this->notify_new_event();
+  this->notify_new_event(RMW_EVENT_LIVELINESS_CHANGED);
 }
 
 void
@@ -907,4 +909,6 @@ RMW_Connext_PublisherStatusCondition::update_status_qos(
 
   this->status_qos.total_count_change = this->status_qos.total_count;
   this->status_qos.total_count_change -= this->status_qos_last.total_count;
+
+  this->notify_new_event(RMW_EVENT_OFFERED_QOS_INCOMPATIBLE);
 }

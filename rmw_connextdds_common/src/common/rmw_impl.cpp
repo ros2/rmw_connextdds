@@ -459,6 +459,8 @@ rmw_connextdds_get_readerwriter_qos(
   if (RMW_RET_OK != rmw_dds_common::encode_type_hash_for_user_data_qos(
       type_support->type_hash(), user_data_str))
   {
+    RMW_CONNEXT_LOG_WARNING(
+      "Failed to encode type hash for topic, will not distribute it in USER_DATA.");
     user_data_str.clear();
   }
   DDS_OctetSeq_from_array(

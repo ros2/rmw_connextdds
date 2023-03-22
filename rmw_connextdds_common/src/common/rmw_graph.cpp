@@ -996,6 +996,10 @@ rmw_connextdds_graph_add_remote_entity(
   if (RMW_RET_OK != rmw_dds_common::parse_type_hash_from_user_data(
       user_data_data, user_data_size, type_hash))
   {
+    RMW_CONNEXT_LOG_WARNING_A(
+      "Failed to parse type hash for topic '%s' with type '%s' from USER_DATA '%*s'.",
+      topic_name, type_name,
+      static_cast<int>(user_data_size), reinterpret_cast<const char *>(user_data_data));
     type_hash = rosidl_get_zero_initialized_type_hash();
   }
 

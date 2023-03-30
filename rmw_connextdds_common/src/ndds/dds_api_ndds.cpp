@@ -226,10 +226,6 @@ rmw_connextdds_initialize_participant_qos_impl(
               /* Fall back to the default behavior */
               [[clang::fallthrough]];
               /* [[fallthrough]]; // Uncomment this when migrating to C++17 */
-            case RMW_AUTOMATIC_DISCOVERY_RANGE_DEFAULT:
-              /* Same behavior as LOCALHOST */
-              [[clang::fallthrough]];
-              /* [[fallthrough]]; // Uncomment this when migrating to C++17 */
             case RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST:
               /* Same interface settings as OFF */
               [[clang::fallthrough]];

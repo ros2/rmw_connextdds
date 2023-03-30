@@ -2,6 +2,19 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.13.0 (2022-11-02)
+-------------------
+* Add rmw_get_gid_for_client impl (`#92 <https://github.com/ros2/rmw_connextdds/issues/92>`_)
+* Contributors: Brian
+
+0.12.1 (2022-09-13)
+-------------------
+
+0.12.0 (2022-05-03)
+-------------------
+* Switch ROS2 -> ROS 2 everywhere (`#83 <https://github.com/ros2/rmw_connextdds/issues/83>`_)
+* Contributors: Chris Lalancette
+
 0.11.1 (2022-04-26)
 -------------------
 

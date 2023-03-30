@@ -634,6 +634,11 @@ public:
 
   rmw_ret_t
   response_subscription_qos(rmw_qos_profile_t * const qos);
+
+  const rmw_gid_t gid() const
+  {
+    return *this->request_pub->gid();
+  }
 };
 
 class RMW_Connext_Service
@@ -830,6 +835,7 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
   DDS_LifespanQosPolicy * const lifespan,
+  DDS_UserDataQosPolicy * const user_data,
   const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
   const rmw_subscription_options_t * const sub_options);

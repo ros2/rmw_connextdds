@@ -2,6 +2,21 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.13.0 (2022-11-02)
+-------------------
+* Add rmw_get_gid_for_client impl (`#92 <https://github.com/ros2/rmw_connextdds/issues/92>`_)
+* Contributors: Brian
+
+0.12.1 (2022-09-13)
+-------------------
+* Fix assert statement to allow the seconds field of a DDS_Duration_t to be zero (`#88 <https://github.com/ros2/rmw_connextdds/issues/88>`_)
+* Contributors: Michael Jeronimo
+
+0.12.0 (2022-05-03)
+-------------------
+* Handle 'best_available' QoS policies in common  (`#85 <https://github.com/ros2/rmw_connextdds/issues/85>`_)
+* Contributors: Jose Luis Rivero
+
 0.11.1 (2022-04-26)
 -------------------
 * Resolve build error with RTI Connext DDS 5.3.1 (`#82 <https://github.com/ros2/rmw_connextdds/issues/82>`_)

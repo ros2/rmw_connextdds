@@ -20,6 +20,7 @@
 #include <stdexcept>
 
 #include "rmw_dds_common/time_utils.hpp"
+#include "rmw_dds_common/qos.hpp"
 
 #include "rmw_connextdds/graph_cache.hpp"
 
@@ -303,12 +304,12 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_ResourceLimitsQosPolicy * const resource_limits,
   DDS_PublishModeQosPolicy * const publish_mode,
   DDS_LifespanQosPolicy * const lifespan,
+  DDS_UserDataQosPolicy * const user_data,
   const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
   const rmw_subscription_options_t * const sub_options)
 {
   UNUSED_ARG(writer_qos);
-  UNUSED_ARG(type_support);
   UNUSED_ARG(publish_mode);
   UNUSED_ARG(resource_limits);
   UNUSED_ARG(pub_options);
@@ -453,6 +454,19 @@ rmw_connextdds_get_readerwriter_qos(
     lifespan->duration = rmw_time_to_dds_duration(qos_policies->lifespan);
   }
 #endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
+
+  std::string user_data_str;
+  if (RMW_RET_OK != rmw_dds_common::encode_type_hash_for_user_data_qos(
+      type_support->type_hash(), user_data_str))
+  {
+    RMW_CONNEXT_LOG_WARNING(
+      "Failed to encode type hash for topic, will not distribute it in USER_DATA.");
+    user_data_str.clear();
+  }
+  DDS_OctetSeq_from_array(
+    &user_data->value,
+    reinterpret_cast<const uint8_t *>(user_data_str.c_str()),
+    static_cast<DDS_Long>(user_data_str.size()));
 
   return RMW_RET_OK;
 }
@@ -3074,6 +3088,19 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
       {
         return DDS_SAMPLE_LOST_STATUS;
       }
+    case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
+      {
+        return DDS_INCONSISTENT_TOPIC_STATUS;
+      }
+    case RMW_EVENT_PUBLICATION_MATCHED:
+      {
+        return DDS_PUBLICATION_MATCHED_STATUS;
+      }
+    case RMW_EVENT_SUBSCRIPTION_MATCHED:
+      {
+        return DDS_SUBSCRIPTION_MATCHED_STATUS;
+      }
     default:
       {
         if (nullptr != invalid) {
@@ -3116,6 +3143,10 @@ dds_event_to_str(const DDS_StatusKind event)
       {
         return "SAMPLE_LOST";
       }
+    case DDS_INCONSISTENT_TOPIC_STATUS:
+      {
+        return "INCONSISTENT_TOPIC";
+      }
     default:
       {
         return "UNSUPPORTED";
@@ -3131,6 +3162,8 @@ ros_event_for_reader(const rmw_event_type_t ros)
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
     case RMW_EVENT_MESSAGE_LOST:
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
+    case RMW_EVENT_SUBSCRIPTION_MATCHED:
       {
         return true;
       }
@@ -3180,6 +3213,22 @@ RMW_Connext_SubscriberStatusCondition::get_status(
         rc = this->get_message_lost_status(status);
         break;
       }
+    case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
+      {
+        rmw_incompatible_type_status_t * const status =
+          reinterpret_cast<rmw_incompatible_type_status_t *>(event_info);
+
+        rc = this->get_incompatible_type_status(status);
+        break;
+      }
+    case RMW_EVENT_SUBSCRIPTION_MATCHED:
+      {
+        rmw_matched_status_t * const status =
+          reinterpret_cast<rmw_matched_status_t *>(event_info);
+
+        rc = this->get_matched_status(status);
+        break;
+      }
     default:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
@@ -3221,6 +3270,22 @@ RMW_Connext_PublisherStatusCondition::get_status(
           reinterpret_cast<rmw_offered_qos_incompatible_event_status_t *>(event_info);
 
         rc = this->get_offered_qos_incompatible_status(status);
+        break;
+      }
+    case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+      {
+        rmw_incompatible_type_status_t * const status =
+          reinterpret_cast<rmw_incompatible_type_status_t *>(event_info);
+
+        rc = this->get_incompatible_type_status(status);
+        break;
+      }
+    case RMW_EVENT_PUBLICATION_MATCHED:
+      {
+        rmw_matched_status_t * status =
+          reinterpret_cast<rmw_matched_status_t *>(event_info);
+
+        rc = this->get_matched_status(status);
         break;
       }
     default:

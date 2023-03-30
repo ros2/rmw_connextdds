@@ -166,6 +166,14 @@ rmw_api_connextdds_create_publisher(
     }
   }
 
+  // Adapt any 'best available' QoS options
+  rmw_qos_profile_t adapted_qos_policies = *qos_policies;
+  rmw_ret_t ret = rmw_dds_common::qos_profile_get_best_available_for_topic_publisher(
+    node, topic_name, &adapted_qos_policies, rmw_api_connextdds_get_subscriptions_info_by_topic);
+  if (RMW_RET_OK != ret) {
+    return nullptr;
+  }
+
   rmw_context_impl_t * ctx = node->context->impl;
 
   rmw_publisher_t * const rmw_pub =
@@ -176,7 +184,7 @@ rmw_api_connextdds_create_publisher(
     ctx->dds_pub,
     type_supports,
     topic_name,
-    qos_policies,
+    &adapted_qos_policies,
     publisher_options);
 
   if (nullptr == rmw_pub) {

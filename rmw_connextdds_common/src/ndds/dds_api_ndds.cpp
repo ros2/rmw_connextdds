@@ -18,6 +18,7 @@
 #include <cmath>
 
 #include "rcutils/process.h"
+#include "rcutils/snprintf.h"
 
 #include "rmw/impl/cpp/key_value.hpp"
 #include "rmw_connextdds/custom_sql_filter.hpp"
@@ -202,8 +203,17 @@ rmw_connextdds_initialize_participant_qos_impl(
 #endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
   if (!ctx->domain_tag) {
     const auto pid = rcutils_get_pid();
-    ctx->domain_tag = DDS_String_alloc(18 + log10(pid));
-    sprintf(ctx->domain_tag, "ros_discovery_off_%d", pid);
+    static const char * format_string = "ros_discovery_off_%d";
+    int bytes_needed = rcutils_snprintf(nullptr, 0, format_string, pid);
+    ctx->domain_tag = DDS_String_alloc(bytes_needed + 1);
+    if (nullptr == ctx->domain_tag) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate domain tag string");
+      return RMW_RET_BAD_ALLOC;
+    }
+    if (rcutils_snprintf(ctx->domain_tag, bytes_needed + 1, format_string, pid) < 0) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to format ros discovery off information into domain tag");
+      return RMW_RET_ERROR;
+    }
   }
 
   switch (ctx->participant_qos_override_policy) {

@@ -237,14 +237,14 @@ rmw_ret_t rmw_connextdds_extend_initial_peer_list(
          then free their memory. */
       DDS_String_free(*element_ref);
     }
-    const auto peer_char_len = strlen(peer);
-    *element_ref = DDS_String_alloc(peer_char_len);
+    const auto peer_char_len = strnlen(peer, RMW_DISCOVERY_OPTIONS_STATIC_PEERS_MAX_LENGTH);
+    *element_ref = DDS_String_alloc(peer_char_len + 1);  // +1 for nul character
     if (nullptr == *element_ref) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string");
       return RMW_RET_ERROR;
     }
 
-    memcpy(*element_ref, peer, peer_char_len);
+    std::memcpy(*element_ref, peer, peer_char_len + 1);
     RMW_CONNEXT_LOG_TRACE_A(
       "inserted static peer: i=%d, peer='%s'",
       index, peer);

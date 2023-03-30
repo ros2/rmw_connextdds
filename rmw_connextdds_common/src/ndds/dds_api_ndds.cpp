@@ -234,12 +234,10 @@ rmw_connextdds_initialize_participant_qos_impl(
                 "Unknown value provided for automatic discovery range: %i",
                 ctx->discovery_options->automatic_discovery_range);
               /* Fall back to the default behavior */
-              [[clang::fallthrough]];
-              /* [[fallthrough]]; // Uncomment this when migrating to C++17 */
+              [[fallthrough]];
             case RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST:
               /* Same interface settings as OFF */
-              [[clang::fallthrough]];
-              /* [[fallthrough]]; // Uncomment this when migrating to C++17 */
+              [[fallthrough]];
             case RMW_AUTOMATIC_DISCOVERY_RANGE_OFF:
               /* Note: We allow the LOCALHOST interface for the OFF range
                  because if we leave this property completely blank then it

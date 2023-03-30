@@ -225,38 +225,42 @@ rmw_connextdds_initialize_participant_qos_impl(
         // https://community.rti.com/static/documentation/connext-dds/6.1.1/doc/manuals/connext_dds_professional/properties_reference/index.html
         if (ctx->discovery_options) {
           const auto range = ctx->discovery_options->automatic_discovery_range;
+          bool set_multicast_peers = false;
           switch (range) {
             case RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET:
               /* No action needed. This is the default discovery behavior for DDS */
+              break;
+            case RMW_AUTOMATIC_DISCOVERY_RANGE_DEFAULT:
+            case RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST:
+            case RMW_AUTOMATIC_DISCOVERY_RANGE_OFF:
+              set_multicast_peers = true;
               break;
             default:
               RMW_CONNEXT_LOG_WARNING_A(
                 "Unknown value provided for automatic discovery range: %i",
                 ctx->discovery_options->automatic_discovery_range);
-              /* Fall back to the default behavior */
-              [[fallthrough]];
-            case RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST:
-              /* Same interface settings as OFF */
-              [[fallthrough]];
-            case RMW_AUTOMATIC_DISCOVERY_RANGE_OFF:
-              /* Note: We allow the LOCALHOST interface for the OFF range
-                 because if we leave this property completely blank then it
-                 has the opposite effect and allows all interfaces to be used.
-                 Allowing only LOCALHOST at least minimizes the unnecessary
-                 discovery traffic and prevents discovery with other host
-                 machines, while the domain_tag protects against same-host
-                 connections. */
-              if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
+              set_multicast_peers = true;
+              break;
+          }
+          if (set_multicast_peers) {
+            /* Note: We allow the LOCALHOST interface for the OFF range
+               because if we leave this property completely blank then it
+               has the opposite effect and allows all interfaces to be used.
+               Allowing only LOCALHOST at least minimizes the unnecessary
+               discovery traffic and prevents discovery with other host
+               machines, while the domain_tag protects against same-host
+               connections. */
+            if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
                 &dp_qos->property,
                 "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list",
                 RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
                 DDS_BOOLEAN_FALSE /* propagate */))
-              {
-                RMW_CONNEXT_LOG_ERROR_A_SET(
-                  "failed to assert property on participant: %s",
-                  "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list")
-                return RMW_RET_ERROR;
-              }
+            {
+              RMW_CONNEXT_LOG_ERROR_A_SET(
+                "failed to assert property on participant: %s",
+                "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list")
+              return RMW_RET_ERROR;
+            }
           }
 
           if (RMW_AUTOMATIC_DISCOVERY_RANGE_OFF == range) {

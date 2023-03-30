@@ -2,6 +2,21 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.11.1 (2022-04-26)
+-------------------
+
+0.11.0 (2022-04-08)
+-------------------
+* Exclude missing sample info fields when building rmw_connextddsmicro (`#79 <https://github.com/ros2/rmw_connextdds/issues/79>`_)
+* Update launch_testing_ros output filter prefixes for Connext6 (`#80 <https://github.com/ros2/rmw_connextdds/issues/80>`_)
+* Contributors: Andrea Sorbini, Ivan Santiago Paunovic
+
+0.10.0 (2022-03-28)
+-------------------
+* Add support for user-specified content filters (`#68 <https://github.com/ros2/rmw_connextdds/issues/68>`_)
+* add stub for content filtered topic (`#77 <https://github.com/ros2/rmw_connextdds/issues/77>`_)
+* Contributors: Andrea Sorbini, Chen Lihui, Ivan Santiago Paunovic
+
 0.9.0 (2022-03-01)
 ------------------
 * Add rmw listener apis (`#44 <https://github.com/rticommunity/rmw_connextdds/issues/44>`_)

@@ -29,6 +29,7 @@
 const char * const ROS_TOPIC_PREFIX = "rt";
 const char * const ROS_SERVICE_REQUESTER_PREFIX = ROS_SERVICE_REQUESTER_PREFIX_STR;
 const char * const ROS_SERVICE_RESPONSE_PREFIX = ROS_SERVICE_RESPONSE_PREFIX_STR;
+const char * const ROS_CFT_TOPIC_NAME_INFIX = "_ContentFilterTopic";
 
 std::string
 rmw_connextdds_create_topic_name(
@@ -903,9 +904,11 @@ RMW_Connext_Publisher::write(
   int64_t * const sn_out)
 {
   RMW_Connext_Message user_msg;
+  if (RMW_RET_OK != RMW_Connext_Message_initialize(&user_msg, this->type_support, 0)) {
+    return RMW_RET_ERROR;
+  }
   user_msg.user_data = ros_message;
   user_msg.serialized = serialized;
-  user_msg.type_support = this->type_support;
 
   return rmw_connextdds_write_message(this, &user_msg, sn_out);
 }
@@ -947,6 +950,11 @@ rmw_ret_t
 RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
 {
   DDS_Duration_t timeout = rmw_connextdds_duration_from_ros_time(&wait_timeout);
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  // Avoid warnings for unused variable in micro, since wait_for_ack() is
+  // mapped to an empty call.
+  UNUSED_ARG(timeout);
+#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
 
   const DDS_ReturnCode_t dds_rc =
     DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout);
@@ -1129,6 +1137,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   const bool ignore_local,
   const bool created_topic,
   DDS_TopicDescription * const dds_topic_cft,
+  const char * const cft_expression,
   const bool internal)
 : internal(internal),
   ignore_local(ignore_local),
@@ -1136,6 +1145,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   dds_reader(dds_reader),
   dds_topic(dds_topic),
   dds_topic_cft(dds_topic_cft),
+  cft_expression(cft_expression),
   type_support(type_support),
   created_topic(created_topic),
   status_condition(dds_reader, ignore_local, internal)
@@ -1236,7 +1246,7 @@ RMW_Connext_Subscriber::create(
   }
 
   auto scope_exit_topic_delete = rcpputils::make_scope_exit(
-    [ctx, topic_created, dp, topic, cft_topic]()
+    [ctx, &topic_created, dp, &topic, &cft_topic]()
     {
       if (nullptr != cft_topic) {
         if (RMW_RET_OK !=
@@ -1256,19 +1266,40 @@ RMW_Connext_Subscriber::create(
     });
 
   DDS_TopicDescription * sub_topic = DDS_Topic_as_topicdescription(topic);
+  std::string sub_cft_name;
+  const char * sub_cft_expr = "";
+  const rcutils_string_array_t * sub_cft_params = nullptr;
 
   if (nullptr != cft_name) {
-    rmw_ret_t cft_rc =
-      rmw_connextdds_create_contentfilteredtopic(
-      ctx, dp, topic, cft_name, cft_filter, &cft_topic);
-
-    if (RMW_RET_OK != cft_rc) {
-      if (RMW_RET_UNSUPPORTED != cft_rc) {
-        return nullptr;
-      }
-    } else {
-      sub_topic = cft_topic;
+    sub_cft_name = cft_name;
+    sub_cft_expr = cft_filter;
+  } else {
+    sub_cft_name =
+      fqtopic_name + ROS_CFT_TOPIC_NAME_INFIX + RMW_Connext_Subscriber::get_atomic_id();
+    if (nullptr != subscriber_options->content_filter_options) {
+      sub_cft_expr =
+        subscriber_options->content_filter_options->filter_expression;
+      sub_cft_params =
+        &subscriber_options->content_filter_options->expression_parameters;
     }
+  }
+
+  rmw_ret_t cft_rc =
+    rmw_connextdds_create_contentfilteredtopic(
+    ctx,
+    dp,
+    topic,
+    sub_cft_name.c_str(),
+    sub_cft_expr,
+    sub_cft_params,
+    &cft_topic);
+
+  if (RMW_RET_OK != cft_rc) {
+    if (RMW_RET_UNSUPPORTED != cft_rc) {
+      return nullptr;
+    }
+  } else {
+    sub_topic = cft_topic;
   }
 
   // The following initialization generates warnings when built
@@ -1337,15 +1368,16 @@ RMW_Connext_Subscriber::create(
     subscriber_options->ignore_local_publications,
     topic_created,
     cft_topic,
+    sub_cft_expr,
     internal);
 
   if (nullptr == rmw_sub_impl) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate RMW subscriber")
     return nullptr;
   }
-  scope_exit_type_unregister.cancel();
-  scope_exit_topic_delete.cancel();
   scope_exit_dds_reader_delete.cancel();
+  scope_exit_topic_delete.cancel();
+  scope_exit_type_unregister.cancel();
 
   return rmw_sub_impl;
 }
@@ -1529,6 +1561,30 @@ RMW_Connext_Subscriber::take_serialized(
   return rc;
 }
 
+
+rmw_ret_t
+RMW_Connext_Subscriber::set_content_filter(
+  const rmw_subscription_content_filter_options_t * const options)
+{
+  if (RMW_RET_OK !=
+    rmw_connextdds_set_cft_filter_expression(
+      this->dds_topic_cft, options->filter_expression, &options->expression_parameters))
+  {
+    return RMW_RET_ERROR;
+  }
+
+  this->cft_expression = options->filter_expression;
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_Subscriber::get_content_filter(
+  rcutils_allocator_t * allocator,
+  rmw_subscription_content_filter_options_t * const options)
+{
+  return rmw_connextdds_get_cft_filter_expression(this->dds_topic_cft, allocator, options);
+}
+
 rmw_ret_t
 RMW_Connext_Subscriber::loan_messages(const bool update_condition)
 {
@@ -1634,8 +1690,8 @@ RMW_Connext_Subscriber::take_next(
       RMW_RET_OK == rc_exit;
       this->loan_next++)
     {
-      rcutils_uint8_array_t * data_buffer =
-        reinterpret_cast<rcutils_uint8_array_t *>(
+      RMW_Connext_Message * msg =
+        reinterpret_cast<RMW_Connext_Message *>(
         DDS_UntypedSampleSeq_get_reference(
           &this->loan_data, static_cast<DDS_Long>(this->loan_next)));
       DDS_SampleInfo * info =
@@ -1656,7 +1712,7 @@ RMW_Connext_Subscriber::take_next(
 
             if (RMW_RET_OK !=
               this->type_support->deserialize(
-                ros_message, data_buffer, deserialized_size, true /* header_only */))
+                ros_message, &msg->data_buffer, deserialized_size, true /* header_only */))
             {
               RMW_CONNEXT_LOG_ERROR_SET("failed to deserialize taken sample")
               rc_exit = RMW_RET_ERROR;
@@ -1695,7 +1751,7 @@ RMW_Connext_Subscriber::take_next(
           if (RCUTILS_RET_OK !=
             rcutils_uint8_array_copy(
               reinterpret_cast<rcutils_uint8_array_t *>(ros_message),
-              data_buffer))
+              &msg->data_buffer))
           {
             RMW_CONNEXT_LOG_ERROR_SET("failed to copy uint8 array")
             rc_exit = RMW_RET_ERROR;
@@ -1706,7 +1762,7 @@ RMW_Connext_Subscriber::take_next(
 
           if (RMW_RET_OK !=
             this->type_support->deserialize(
-              ros_message, data_buffer, deserialized_size))
+              ros_message, &msg->data_buffer, deserialized_size))
           {
             RMW_CONNEXT_LOG_ERROR_SET(
               "failed to deserialize taken sample")
@@ -1771,7 +1827,6 @@ rmw_connextdds_create_subscriber(
       "failed to allocate RMW_Connext_Subscriber")
     return nullptr;
   }
-
   auto scope_exit_rmw_reader_impl_delete =
     rcpputils::make_scope_exit(
     [rmw_sub_impl]()
@@ -1782,6 +1837,25 @@ rmw_connextdds_create_subscriber(
       }
       delete rmw_sub_impl;
     });
+#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+  auto scope_exit_enable_participant_on_error =
+    rcpputils::make_scope_exit(
+    [ctx]()
+    {
+      // If we are building in Debug mode, an issue in Connext may prevent the
+      // participant from being able to delete any content-filtered topic if
+      // the participant has not been enabled.
+      // For this reason, make sure to enable the participant before trying to
+      // finalize it.
+      // TODO(asorbini) reconsider the need for this code in Connext > 6.1.0
+      if (DDS_RETCODE_OK !=
+      DDS_Entity_enable(DDS_DomainParticipant_as_entity(ctx->participant)))
+      {
+        RMW_CONNEXT_LOG_ERROR_SET(
+          "failed to enable DomainParticipant on subscriber creation error")
+      }
+    });
+#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
   rmw_subscription_t * rmw_subscriber = rmw_subscription_allocate();
   if (nullptr == rmw_subscriber) {
@@ -1815,6 +1889,7 @@ rmw_connextdds_create_subscriber(
     topic_name_len + 1);
   rmw_subscriber->options = *subscriber_options;
   rmw_subscriber->can_loan_messages = false;
+  rmw_subscriber->is_cft_enabled = rmw_sub_impl->is_cft_enabled();
 
   if (!internal) {
     if (RMW_RET_OK != rmw_sub_impl->enable()) {
@@ -1831,6 +1906,9 @@ rmw_connextdds_create_subscriber(
     }
   }
 
+#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+  scope_exit_enable_participant_on_error.cancel();
+#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
   scope_exit_rmw_reader_impl_delete.cancel();
   scope_exit_rmw_reader_delete.cancel();
   return rmw_subscriber;
@@ -1885,6 +1963,20 @@ rmw_connextdds_message_info_from_dds(
   to->source_timestamp = 0;
   to->received_timestamp = 0;
 #endif /* !RTI_WIN32 */
+  // Currently we cannot use `rmw_connextdds_sn_dds_to_ros`, as that was used to convert to
+  // `rmw_request_id_t.sequence_number`, which is an int64_t and not an uint64_t.
+  // When rmw is updated and all sequence numbers are a `uint64_t`,
+  // rmw_connextdds_sn_dds_to_ros() should be updated and used everywhere.
+  to->publication_sequence_number =
+    static_cast<uint64_t>((from->publication_sequence_number).high) << 32 |
+    static_cast<uint64_t>((from->publication_sequence_number).low);
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+  to->reception_sequence_number =
+    static_cast<uint64_t>((from->reception_sequence_number).high) << 32 |
+    static_cast<uint64_t>((from->reception_sequence_number).low);
+#else
+  to->reception_sequence_number = RMW_MESSAGE_INFO_SEQUENCE_NUMBER_UNSUPPORTED;
+#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 }
 
 /******************************************************************************

@@ -438,6 +438,15 @@ public:
     rmw_message_info_t * const message_info,
     bool * const taken);
 
+  rmw_ret_t
+  set_content_filter(
+    const rmw_subscription_content_filter_options_t * const options);
+
+  rmw_ret_t
+  get_content_filter(
+    rcutils_allocator_t * allocator,
+    rmw_subscription_content_filter_options_t * const options);
+
   bool
   has_data()
   {
@@ -494,6 +503,17 @@ public:
     return this->dds_topic;
   }
 
+  static std::string get_atomic_id()
+  {
+    static std::atomic_uint64_t id;
+    return std::to_string(id++);
+  }
+
+  bool is_cft_enabled()
+  {
+    return !this->cft_expression.empty();
+  }
+
   const bool internal;
   const bool ignore_local;
 
@@ -502,6 +522,7 @@ private:
   DDS_DataReader * dds_reader;
   DDS_Topic * dds_topic;
   DDS_TopicDescription * dds_topic_cft;
+  std::string cft_expression;
   RMW_Connext_MessageTypeSupport * type_support;
   rmw_gid_t ros_gid;
   const bool created_topic;
@@ -520,6 +541,7 @@ private:
     const bool ignore_local,
     const bool created_topic,
     DDS_TopicDescription * const dds_topic_cft,
+    const char * const cft_expression,
     const bool internal);
 
   friend class RMW_Connext_SubscriberStatusCondition;

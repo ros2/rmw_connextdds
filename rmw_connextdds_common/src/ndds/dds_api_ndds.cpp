@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "rmw/impl/cpp/key_value.hpp"
+#include "rmw_connextdds/custom_sql_filter.hpp"
 
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
@@ -24,6 +25,13 @@
 
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextdds";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
+
+struct rmw_connextdds_api_pro
+{
+  rti_connext_dds_custom_sql_filter::CustomSqlFilterData custom_filter_data;
+};
+
+rmw_connextdds_api_pro * RMW_Connext_fv_FactoryContext = nullptr;
 
 rmw_ret_t
 rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
@@ -69,9 +77,28 @@ rmw_ret_t
 rmw_connextdds_initialize_participant_factory_context(
   rmw_context_impl_t * const ctx)
 {
+  RMW_CONNEXT_ASSERT(RMW_Connext_fv_FactoryContext == nullptr)
+  // RMW_Connext_gv_DomainParticipantFactory is initialized by
+  // rmw_api_connextdds_init().
   RMW_CONNEXT_ASSERT(RMW_Connext_gv_DomainParticipantFactory == nullptr)
   UNUSED_ARG(ctx);
-  // Nothing to do
+
+  rmw_connextdds_api_pro * ctx_api = nullptr;
+  auto scope_exit_api_delete = rcpputils::make_scope_exit(
+    [ctx_api]()
+    {
+      if (nullptr != ctx_api) {
+        delete ctx_api;
+      }
+    });
+
+  ctx_api = new (std::nothrow) rmw_connextdds_api_pro();
+  if (nullptr == ctx_api) {
+    return RMW_RET_ERROR;
+  }
+
+  scope_exit_api_delete.cancel();
+  RMW_Connext_fv_FactoryContext = ctx_api;
   return RMW_RET_OK;
 }
 
@@ -79,6 +106,71 @@ rmw_ret_t
 rmw_connextdds_finalize_participant_factory_context(
   rmw_context_impl_t * const ctx)
 {
+  RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_fv_FactoryContext)
+  rmw_connextdds_api_pro * const ctx_api = RMW_Connext_fv_FactoryContext;
+  RMW_Connext_fv_FactoryContext = nullptr;
+
+  delete ctx_api;
+
+  if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
+    // Nothing else  to do if we didn't even initialize the factory;
+    return RMW_RET_OK;
+  }
+
+  // There might be some DomainParticipants left-over from a ("failed context
+  // initialization" + "failed participant finalization"), so let's try to
+  // clean them up.
+  DDS_DomainParticipantSeq participants = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_seq = rcpputils::make_scope_exit(
+    [&participants]()
+    {
+      DDS_DomainParticipantSeq_finalize(&participants);
+    });
+
+  if (DDS_RETCODE_OK !=
+    DDS_DomainParticipantFactory_get_participants(
+      RMW_Connext_gv_DomainParticipantFactory, &participants))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to list existing participants")
+    return RMW_RET_ERROR;
+  }
+
+  const DDS_Long pending = DDS_DomainParticipantSeq_get_length(&participants);
+  for (DDS_Long i = 0; i < pending; i++) {
+    DDS_DomainParticipant * const participant =
+      *DDS_DomainParticipantSeq_get_reference(&participants, i);
+#if RMW_CONNEXT_DEBUG
+    // If we are building in Debug mode, an issue in Connext may prevent the
+    // participant from being able to delete any content-filtered topic if
+    // the participant has not been enabled.
+    // For this reason, make sure to enable the participant before trying to
+    // finalize it.
+    // TODO(asorbini) reconsider the need for this code in Connext > 6.1.0
+    if (DDS_RETCODE_OK !=
+      DDS_Entity_enable(DDS_DomainParticipant_as_entity(participant)))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "failed to enable pending DomainParticipant before deletion")
+      return RMW_RET_ERROR;
+    }
+#endif  // RMW_CONNEXT_DEBUG
+    if (DDS_RETCODE_OK !=
+      DDS_DomainParticipant_delete_contained_entities(participant))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "failed to delete pending DomainParticipant's entities")
+      return RMW_RET_ERROR;
+    }
+
+    if (DDS_RETCODE_OK !=
+      DDS_DomainParticipantFactory_delete_participant(
+        RMW_Connext_gv_DomainParticipantFactory, participant))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to delete pending DomainParticipant")
+      return RMW_RET_ERROR;
+    }
+  }
+
   UNUSED_ARG(ctx);
   return RMW_RET_OK;
 }
@@ -230,12 +322,55 @@ rmw_connextdds_initialize_participant_qos_impl(
 }
 
 rmw_ret_t
+rmw_connextdds_configure_participant(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipant * const participant)
+{
+  UNUSED_ARG(ctx);
+
+  if (DDS_RETCODE_OK !=
+    rti_connext_dds_custom_sql_filter::register_content_filter(
+      participant, &RMW_Connext_fv_FactoryContext->custom_filter_data))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to register custom SQL filter")
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+static
+rmw_ret_t
+rmw_connextdds_initialize_cft_parameters(
+  struct DDS_StringSeq * const cft_parameters,
+  const rcutils_string_array_t * const cft_expression_parameters)
+{
+  // Cache value locally to avoid conversion warnings on Windows.
+  const DDS_Long params_len = static_cast<DDS_Long>(cft_expression_parameters->size);
+
+  if (!DDS_StringSeq_ensure_length(cft_parameters, params_len, params_len)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to ensure length for cft parameters sequence")
+    return RMW_RET_ERROR;
+  }
+  if (!DDS_StringSeq_from_array(
+      cft_parameters,
+      const_cast<const char **>(cft_expression_parameters->data),
+      params_len))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to copy data for cft parameters sequence")
+    return RMW_RET_ERROR;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 rmw_connextdds_create_contentfilteredtopic(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipant * const dp,
   DDS_Topic * const base_topic,
   const char * const cft_name,
   const char * const cft_filter,
+  const rcutils_string_array_t * const cft_expression_parameters,
   DDS_TopicDescription ** const cft_out)
 {
   UNUSED_ARG(ctx);
@@ -243,13 +378,28 @@ rmw_connextdds_create_contentfilteredtopic(
   RMW_CONNEXT_ASSERT(nullptr != cft_filter)
 
   struct DDS_StringSeq cft_parameters = DDS_SEQUENCE_INITIALIZER;
-  DDS_StringSeq_ensure_length(&cft_parameters, 0, 0);
+  auto scope_exit_cft_params = rcpputils::make_scope_exit(
+    [&cft_parameters]() {
+      if (!DDS_StringSeq_finalize(&cft_parameters)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize cft parameters sequence")
+      }
+    });
+  if (cft_expression_parameters) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_cft_parameters(&cft_parameters, cft_expression_parameters))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_connextdds_initialize_cft_parameters")
+      return RMW_RET_ERROR;
+    }
+  }
 
   *cft_out = nullptr;
 
   DDS_ContentFilteredTopic * cft_topic =
-    DDS_DomainParticipant_create_contentfilteredtopic(
-    dp, cft_name, base_topic, cft_filter, &cft_parameters);
+    DDS_DomainParticipant_create_contentfilteredtopic_with_filter(
+    dp, cft_name, base_topic, cft_filter, &cft_parameters,
+    rti_connext_dds_custom_sql_filter::PLUGIN_NAME);
+
   if (nullptr == cft_topic) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to create content-filtered topic: "
@@ -570,7 +720,6 @@ rmw_connextdds_write_message(
       // enable WriteParams::replace_auto to retrieve SN of published message
       write_params.replace_auto = DDS_BOOLEAN_TRUE;
     }
-
     if (DDS_RETCODE_OK !=
       DDS_DataWriter_write_w_params_untypedI(
         pub->writer(), message, &write_params))
@@ -640,9 +789,9 @@ rmw_connextdds_take_samples(
     RMW_CONNEXT_LOG_ERROR_SET("failed to take data from DDS reader")
     return RMW_RET_ERROR;
   }
-  RMW_CONNEXT_ASSERT(data_len > 0)(void) RMW_Connext_Uint8ArrayPtrSeq_loan_contiguous(
+  RMW_CONNEXT_ASSERT(data_len > 0)(void) RMW_Connext_MessagePtrSeq_loan_contiguous(
     sub->data_seq(),
-    reinterpret_cast<rcutils_uint8_array_t **>(data_buffer),
+    reinterpret_cast<RMW_Connext_Message **>(data_buffer),
     data_len,
     data_len);
 
@@ -654,11 +803,11 @@ rmw_connextdds_return_samples(
   RMW_Connext_Subscriber * const sub)
 {
   void ** data_buffer = reinterpret_cast<void **>(
-    RMW_Connext_Uint8ArrayPtrSeq_get_contiguous_buffer(sub->data_seq()));
+    RMW_Connext_MessagePtrSeq_get_contiguous_buffer(sub->data_seq()));
   const DDS_Long data_len =
-    RMW_Connext_Uint8ArrayPtrSeq_get_length(sub->data_seq());
+    RMW_Connext_MessagePtrSeq_get_length(sub->data_seq());
 
-  if (!RMW_Connext_Uint8ArrayPtrSeq_unloan(sub->data_seq())) {
+  if (!RMW_Connext_MessagePtrSeq_unloan(sub->data_seq())) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to unloan sample sequence")
     return RMW_RET_ERROR;
   }
@@ -1294,6 +1443,101 @@ rmw_connextdds_enable_security(
       "RTI_Security_PluginSuite_create",
       RTI_FALSE))
   {
+    return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * const cft_expression,
+  const rcutils_string_array_t * const cft_expression_parameters)
+{
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(topic_desc);
+
+  struct DDS_StringSeq cft_parameters = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_cft_parameters = rcpputils::make_scope_exit(
+    [&cft_parameters]() {
+      if (!DDS_StringSeq_finalize(&cft_parameters)) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize cft parameters sequence")
+      }
+    });
+  if (nullptr != cft_expression_parameters) {
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_cft_parameters(&cft_parameters, cft_expression_parameters))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_connextdds_initialize_cft_parameters")
+      return RMW_RET_ERROR;
+    }
+  }
+
+  DDS_ReturnCode_t ret =
+    DDS_ContentFilteredTopic_set_expression(cft_topic, cft_expression, &cft_parameters);
+  if (DDS_RETCODE_OK != ret) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to set content-filtered topic")
+    return RMW_RET_ERROR;
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  rcutils_allocator_t * const allocator,
+  rmw_subscription_content_filter_options_t * const options)
+{
+  DDS_ContentFilteredTopic * const cft_topic =
+    DDS_ContentFilteredTopic_narrow(topic_desc);
+
+  // get filter_expression
+  const char * filter_expression = DDS_ContentFilteredTopic_get_filter_expression(cft_topic);
+  if (!filter_expression) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get filter expression")
+    return RMW_RET_ERROR;
+  }
+
+  // get parameters
+  struct DDS_StringSeq parameters = DDS_SEQUENCE_INITIALIZER;
+  DDS_ReturnCode_t status =
+    DDS_ContentFilteredTopic_get_expression_parameters(cft_topic, &parameters);
+  if (DDS_RETCODE_OK != status) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get expression parameters")
+    return RMW_RET_ERROR;
+  }
+  auto scope_exit_parameters_delete =
+    rcpputils::make_scope_exit(
+    [&parameters]()
+    {
+      DDS_StringSeq_finalize(&parameters);
+    });
+
+  const DDS_Long parameters_len = DDS_StringSeq_get_length(&parameters);
+  std::vector<const char *> expression_parameters;
+  expression_parameters.reserve(parameters_len);
+
+  for (DDS_Long i = 0; i < parameters_len; ++i) {
+    const char * ref = *DDS_StringSeq_get_reference(&parameters, i);
+    if (!ref) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "failed to get a reference for parameters with index %d", i)
+      return RMW_RET_ERROR;
+    }
+
+    expression_parameters.push_back(ref);
+  }
+
+  if (RMW_RET_OK != rmw_subscription_content_filter_options_init(
+      filter_expression,
+      expression_parameters.size(),
+      expression_parameters.data(),
+      allocator,
+      options))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_subscription_content_filter_options_init")
     return RMW_RET_ERROR;
   }
 

@@ -515,18 +515,19 @@ rmw_context_impl_t::finalize()
 {
   rmw_ret_t rc_exit = RMW_RET_OK;
 
-  if (this->discovery_options && this->base) {
+  if (nullptr != this->discovery_options) {
     const auto rc = rmw_discovery_options_fini(
       this->discovery_options);
     if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR_A(
-        "failed to deallocate discovery options: %i",
-        rc);
+      RMW_CONNEXT_LOG_ERROR("failed to deallocate discovery options");
+      rc_exit = RMW_RET_ERROR;
     }
+    this->discovery_options = nullptr;
   }
 
-  if (this->domain_tag) {
+  if (nullptr != this->domain_tag) {
     DDS_String_free(this->domain_tag);
+    this->domain_tag = nullptr;
   }
 
   RMW_CONNEXT_LOG_DEBUG_A(

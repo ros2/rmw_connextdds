@@ -1086,7 +1086,7 @@ rmw_api_connextdds_init(
   ctx->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
-    /* Lookup and configure initial peer from environment */
+  /* Lookup and configure initial peer from environment */
   const char * initial_peers = nullptr;
   lookup_rc =
     rcutils_get_env(RMW_CONNEXT_ENV_INITIAL_PEERS, &initial_peers);

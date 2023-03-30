@@ -223,7 +223,10 @@ rmw_ret_t rmw_connextdds_extend_initial_peer_list(
 
   const auto initial_length = DDS_StringSeq_get_length(out);
   const auto new_seq_length = initial_length + static_peer_count;
-  DDS_StringSeq_ensure_length(out, new_seq_length, new_seq_length);
+  if (!DDS_StringSeq_ensure_length(out, new_seq_length, new_seq_length)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to resize string sequence")
+    return RMW_RET_ERROR;
+  }
   for (size_t s=0; s < static_peer_count; ++s) {
     const auto index = initial_length + s;
     const char * peer = static_peers[s].peer_address;

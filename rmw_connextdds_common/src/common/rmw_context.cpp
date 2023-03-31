@@ -318,12 +318,12 @@ rmw_connextdds_initialize_participant_qos(
 
 rmw_ret_t
 rmw_context_impl_t::initialize_node(
-  const rmw_discovery_options_t * const discovery_options)
+  const rmw_discovery_options_t * const discovery_options_in)
 {
   if (this->node_count > 0) {
     bool params_equal = false;
     if (rmw_discovery_options_equal(
-        this->discovery_options, discovery_options, &params_equal) != RMW_RET_OK)
+        this->discovery_options, discovery_options_in, &params_equal) != RMW_RET_OK)
     {
       RMW_CONNEXT_LOG_ERROR_SET("invalid discovery params argument");
       return RMW_RET_INVALID_ARGUMENT;
@@ -335,7 +335,7 @@ rmw_context_impl_t::initialize_node(
       return RMW_RET_ERROR;
     }
   } else {
-    if (nullptr != discovery_options) {
+    if (nullptr != discovery_options_in) {
       RMW_CONNEXT_ASSERT(nullptr == this->discovery_options)
       this->discovery_options = static_cast<rmw_discovery_options_t *>(
         this->base->options.allocator.allocate(
@@ -343,14 +343,16 @@ rmw_context_impl_t::initialize_node(
           this->base->options.allocator.state));
       if (nullptr == this->discovery_options) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to allocate discovery options")
-        return RMW_RET_ERROR;
+        return RMW_RET_BAD_ALLOC;
       }
       const auto rc = rmw_discovery_options_copy(
-        discovery_options,
+        discovery_options_in,
         &this->base->options.allocator,
         this->discovery_options);
       if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to copy discovery parameters");
+        RMW_CONNEXT_LOG_ERROR_A_SET(
+          "failed to copy discovery parameters: %s",
+          rmw_get_error_string().str);
         return rc;
       }
     }

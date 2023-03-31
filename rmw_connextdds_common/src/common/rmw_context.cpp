@@ -136,6 +136,10 @@ rmw_connextdds_initialize_discovery_options(
       /* No action needed. This is the default discovery behavior for DDS */
       break;
     case RMW_AUTOMATIC_DISCOVERY_RANGE_NOT_SET:
+      RMW_CONNEXT_LOG_ERROR_SET(
+        "automatic_discovery_range unexpectedly RMW_AUTOMATIC_DISCOVERY_RANGE_NOT_SET");
+      return RMW_RET_ERROR;
+      break;
     case RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST:
     case RMW_AUTOMATIC_DISCOVERY_RANGE_OFF:
       /*Limit the UDPv4 transport to use only unicast interfaces, by setting

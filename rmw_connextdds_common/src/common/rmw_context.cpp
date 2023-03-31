@@ -345,14 +345,16 @@ rmw_context_impl_t::initialize_node(
         RMW_CONNEXT_LOG_ERROR_SET("failed to allocate discovery options")
         return RMW_RET_BAD_ALLOC;
       }
-      const auto rc = rmw_discovery_options_copy(
+      *this->discovery_options = rmw_get_zero_initialized_discovery_options();
+      const rmw_ret_t rc = rmw_discovery_options_copy(
         discovery_options_in,
         &this->base->options.allocator,
         this->discovery_options);
-      if (RMW_RET_OK != rc) {
+      if (rc != RMW_RET_OK) {
+        rcutils_error_string_t prev_error_string = rcutils_get_error_string();
         RMW_CONNEXT_LOG_ERROR_A_SET(
           "failed to copy discovery parameters: %s",
-          rmw_get_error_string().str);
+          prev_error_string.str);
         return rc;
       }
     }

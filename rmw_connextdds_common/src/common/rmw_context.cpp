@@ -249,6 +249,19 @@ rmw_connextdds_initialize_discovery_options(
         "failed to extend initial peers with the static peers");
       return rc;
     }
+    /* Support for ROS_AUTOMATIC_DISCOVERY_RANGE == LOCALHOST
+      -----------------------------------------
+      Make sure that the participant is not listening on any multicast address. */
+    if (RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST ==
+      ctx->discovery_options->automatic_discovery_range)
+    {
+      if (!DDS_StringSeq_ensure_length(
+          &dp_qos.discovery.multicast_receive_addresses, 0, 0))
+      {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to resize multicast_receive_addresses")
+        return RMW_RET_ERROR;
+      }
+    }
   }
 
   return RMW_RET_OK;
@@ -336,73 +349,7 @@ rmw_context_impl_t::initialize_node(
         RMW_CONNEXT_LOG_ERROR("failed to copy discovery parameters");
         return rc;
       }
-      /* Support for ROS_AUTOMATIC_DISCOVERY_RANGE == LOCALHOST
-        -----------------------------------------
-        Connext looks at variable NDDS_DISCOVERY_PEERS to determine
-        whether it should add a multicast locator to the set of locators
-        used for discovery. If this variable is empty, or if it
-        contains at least one multicast address, a multicast locator is
-        used for discovery (the default 239.255.0.1 group when the
-        variable is empty, the first multicast locator found in the list
-        when one or more multicast addresses are present).
-        Because of this, we must make sure that NDDS_DISCOVERY_PEERS
-        contains some value to prevent this default behavior, otherwise
-        the participant will be announcing the default multicast group,
-        which in turn will cause ROS_STATIC_PEERS not to work correctly. */
-      if (RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST ==
-        this->discovery_options->automatic_discovery_range)
-      {
-        static const char * const ndds_disc_peers_var = "NDDS_DISCOVERY_PEERS";
-        const char * ndds_disc_peers = nullptr;
-        const char * lookup_rc = rcutils_get_env(ndds_disc_peers_var, &ndds_disc_peers);
-        if (nullptr != lookup_rc || nullptr == ndds_disc_peers) {
-          RMW_CONNEXT_LOG_ERROR_A_SET(
-            "failed to lookup from environment: "
-            "var=%s, "
-            "rc=%s ",
-            ndds_disc_peers_var,
-            lookup_rc)
-          return RMW_RET_ERROR;
-        }
-        if (ndds_disc_peers[0] == '\0' &&
-          !rcutils_set_env(ndds_disc_peers_var, RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS))
-        {
-          RMW_CONNEXT_LOG_ERROR_A_SET(
-            "failed to set environment: var=%s", ndds_disc_peers_var)
-          return RMW_RET_ERROR;
-        }
-      }
     }
-
-    if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
-      RMW_CONNEXT_ASSERT(1 == RMW_Connext_gv_ContextCount)
-      RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")
-
-      if (RMW_RET_OK !=
-        rmw_connextdds_initialize_participant_factory_context(this))
-      {
-        RMW_CONNEXT_LOG_ERROR(
-          "failed to initialize DDS DomainParticipantFactory context")
-        return RMW_RET_ERROR;
-      }
-
-      RMW_Connext_gv_DomainParticipantFactory =
-        DDS_DomainParticipantFactory_get_instance();
-      if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS participant factory")
-        return RMW_RET_ERROR;
-      }
-
-      if (RMW_RET_OK !=
-        rmw_connextdds_initialize_participant_factory_qos(this))
-      {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to set DDS participant factory QoS")
-        return RMW_RET_ERROR;
-      }
-
-      RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipantFactory initialized")
-    }
-    RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_gv_DomainParticipantFactory)
 
     rmw_ret_t rc = this->initialize_participant();
     if (RMW_RET_OK != rc) {
@@ -419,6 +366,7 @@ rmw_context_impl_t::initialize_node(
       return rc;
     }
   }
+
   this->node_count += 1;
   RMW_CONNEXT_LOG_DEBUG_A("initialized new node: total=%lu", this->node_count);
   return RMW_RET_OK;
@@ -1301,6 +1249,36 @@ rmw_api_connextdds_init(
     }
     RMW_CONNEXT_LOG_DEBUG_A("initial DDS peers: %s", initial_peers)
   }
+
+  if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
+    RMW_CONNEXT_ASSERT(1 == RMW_Connext_gv_ContextCount)
+    RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")
+
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_participant_factory_context(ctx))
+    {
+      RMW_CONNEXT_LOG_ERROR(
+        "failed to initialize DDS DomainParticipantFactory context")
+      return RMW_RET_ERROR;
+    }
+
+    RMW_Connext_gv_DomainParticipantFactory =
+      DDS_DomainParticipantFactory_get_instance();
+    if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS participant factory")
+      return RMW_RET_ERROR;
+    }
+
+    if (RMW_RET_OK !=
+      rmw_connextdds_initialize_participant_factory_qos(ctx))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to set DDS participant factory QoS")
+      return RMW_RET_ERROR;
+    }
+
+    RMW_CONNEXT_LOG_DEBUG("DDS DomainParticipantFactory initialized")
+  }
+  RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_gv_DomainParticipantFactory)
 
   scope_exit_context_finalize.cancel();
   scope_exit_context_opts_finalize.cancel();

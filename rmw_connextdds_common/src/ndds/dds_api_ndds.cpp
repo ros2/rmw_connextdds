@@ -17,9 +17,6 @@
 #include <vector>
 #include <cmath>
 
-#include "rcutils/process.h"
-#include "rcutils/snprintf.h"
-
 #include "rmw/impl/cpp/key_value.hpp"
 #include "rmw_connextdds/custom_sql_filter.hpp"
 
@@ -201,129 +198,11 @@ rmw_connextdds_initialize_participant_qos_impl(
   dp_qos->user_object.topic_user_object.size = sizeof(void *);
   dp_qos->user_object.content_filtered_topic_user_object.size = sizeof(void *);
 #endif /* RMW_CONNEXT_SHARE_DDS_ENTITIES_WITH_CPP */
-  if (!ctx->domain_tag) {
-    const auto pid = rcutils_get_pid();
-    static const char * format_string = "ros_discovery_off_%d";
-    int bytes_needed = rcutils_snprintf(nullptr, 0, format_string, pid);
-    ctx->domain_tag = DDS_String_alloc(bytes_needed + 1);
-    if (nullptr == ctx->domain_tag) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate domain tag string");
-      return RMW_RET_BAD_ALLOC;
-    }
-    if (rcutils_snprintf(ctx->domain_tag, bytes_needed + 1, format_string, pid) < 0) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to format ros discovery off information into domain tag");
-      return RMW_RET_ERROR;
-    }
-  }
 
   switch (ctx->participant_qos_override_policy) {
     case rmw_context_impl_t::participant_qos_override_policy_t::All:
     case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
       {
-        // Parse and apply QoS parameters derived from ROS 2 configuration options.
-        // Reference link for properties:
-        // https://community.rti.com/static/documentation/connext-dds/6.1.1/doc/manuals/connext_dds_professional/properties_reference/index.html
-        if (ctx->discovery_options) {
-          const auto range = ctx->discovery_options->automatic_discovery_range;
-          bool set_multicast_peers = false;
-          switch (range) {
-            case RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET:
-              /* No action needed. This is the default discovery behavior for DDS */
-              break;
-            case RMW_AUTOMATIC_DISCOVERY_RANGE_DEFAULT:
-            case RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST:
-            case RMW_AUTOMATIC_DISCOVERY_RANGE_OFF:
-              set_multicast_peers = true;
-              break;
-            default:
-              RMW_CONNEXT_LOG_WARNING_A(
-                "Unknown value provided for automatic discovery range: %i",
-                ctx->discovery_options->automatic_discovery_range);
-              set_multicast_peers = true;
-              break;
-          }
-          if (set_multicast_peers) {
-            /* Note: We allow the LOCALHOST interface for the OFF range
-               because if we leave this property completely blank then it
-               has the opposite effect and allows all interfaces to be used.
-               Allowing only LOCALHOST at least minimizes the unnecessary
-               discovery traffic and prevents discovery with other host
-               machines, while the domain_tag protects against same-host
-               connections. */
-            if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
-                &dp_qos->property,
-                "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list",
-                RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
-                DDS_BOOLEAN_FALSE /* propagate */))
-            {
-              RMW_CONNEXT_LOG_ERROR_A_SET(
-                "failed to assert property on participant: %s",
-                "dds.transport.UDPv4.builtin.parent.allow_multicast_interfaces_list")
-              return RMW_RET_ERROR;
-            }
-          }
-
-          if (RMW_AUTOMATIC_DISCOVERY_RANGE_OFF == range) {
-            dp_qos->discovery.accept_unknown_peers = DDS_BOOLEAN_FALSE;
-            const size_t num_peers = DDS_StringSeq_get_length(&ctx->initial_peers);
-            if (num_peers > 0) {
-              RMW_CONNEXT_LOG_WARNING_A(
-                "requested %lu initial peers using %s, but discovery range is off",
-                num_peers,
-                RMW_CONNEXT_ENV_INITIAL_PEERS);
-              for (size_t i = 0; i < num_peers; ++i) {
-                // Deallocate the peer list before setting its length to zero
-                char ** const element_ref = DDS_StringSeq_get_reference(&ctx->initial_peers, i);
-                DDS_String_free(*element_ref);
-              }
-              DDS_StringSeq_set_length(&ctx->initial_peers, 0);
-            }
-
-            /* See earlier note about why we allow LOCALHOST interface for
-                OFF range. */
-            if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
-              &dp_qos->property,
-              "dds.transport.UDPv4.builtin.parent.allow_interfaces_list",
-              RMW_CONNEXT_LOCALHOST_ONLY_ADDRESS,
-              DDS_BOOLEAN_FALSE /* propagate */))
-            {
-              RMW_CONNEXT_LOG_ERROR_SET(
-                "failed to assert property on participant: "
-                "dds.transport.UDPv4.builtin.parent.allow_interfaces_list");
-              return RMW_RET_ERROR;
-            }
-
-            /* Give this participant its own unique domain tag to prevent
-                unicast discovery from happening. */
-            if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
-              &dp_qos->property,
-              "dds.domain_participant.domain_tag",
-              ctx->domain_tag,
-              DDS_BOOLEAN_FALSE))
-            {
-              RMW_CONNEXT_LOG_ERROR_SET(
-                "failed to assert property on participant: "
-                "dds.domain_participant.domain_tag");
-              return RMW_RET_ERROR;
-            }
-          } else {
-            dp_qos->discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
-            const auto rc = rmw_connextdds_extend_initial_peer_list(
-              ctx->discovery_options->static_peers,
-              ctx->discovery_options->static_peers_count,
-              &ctx->initial_peers);
-            if (RMW_RET_OK != rc)
-            {
-              RMW_CONNEXT_LOG_ERROR_SET(
-                "failed to extend initial peers with the static peers");
-              return rc;
-            }
-
-            /* NOTE: The initial peers will be passed into the QoS by
-               rmw_connextdds_initialize_participant_qos(~) */
-          }
-        }
-
         const size_t user_data_len_in =
           DDS_OctetSeq_get_length(&dp_qos->user_data.value);
 

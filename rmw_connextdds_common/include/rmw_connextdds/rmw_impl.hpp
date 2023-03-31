@@ -60,12 +60,6 @@ rmw_connextdds_parse_string_list(
   const bool allow_empty_elements = true,
   const bool append_values = true);
 
-rmw_ret_t
-rmw_connextdds_extend_initial_peer_list(
-  const rmw_peer_address_t * const static_peers,
-  const size_t static_peer_count,
-  struct DDS_StringSeq * const out);
-
 bool rmw_connextdds_find_string_in_list(
   const DDS_StringSeq * const values,
   const char * const value);

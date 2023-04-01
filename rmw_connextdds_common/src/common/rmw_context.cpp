@@ -831,7 +831,8 @@ rmw_api_connextdds_init_options_init(
   init_options->domain_id = RMW_DEFAULT_DOMAIN_ID;
   init_options->enclave = nullptr;
   init_options->security_options = rmw_get_zero_initialized_security_options();
-  return RMW_RET_OK;
+  init_options->discovery_options = rmw_get_zero_initialized_discovery_options();
+  return rmw_discovery_options_init(&(init_options->discovery_options), 0, &allocator);
 }
 
 

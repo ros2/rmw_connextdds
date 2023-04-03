@@ -848,13 +848,15 @@ RMW_Connext_SubscriberStatusCondition::update_status_sample_lost(
 void
 RMW_Connext_SubscriberStatusCondition::notify_new_data()
 {
-  size_t unread_samples = 0;
+  size_t unread_samples = 1;
   std::unique_lock<std::mutex> lock_mutex(new_data_event_mutex_);
   perform_action_and_update_state(
     [this, &unread_samples]() {
-      const rmw_ret_t rc = this->sub->count_unread_samples(unread_samples);
-      if (RMW_RET_OK != rc) {
-        RMW_CONNEXT_LOG_ERROR("failed to count unread samples on DDS Reader")
+      if (this->new_data_event_cb_ == nullptr) {
+        const rmw_ret_t rc = this->sub->count_unread_samples(unread_samples);
+        if (RMW_RET_OK != rc) {
+          RMW_CONNEXT_LOG_ERROR("failed to count unread samples on DDS Reader")
+        }
       }
     },
     [this, &unread_samples]() {

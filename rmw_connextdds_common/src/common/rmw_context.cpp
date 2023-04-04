@@ -254,15 +254,35 @@ rmw_connextdds_initialize_discovery_options(
     }
     /* Support for ROS_AUTOMATIC_DISCOVERY_RANGE == LOCALHOST
       -----------------------------------------
-      Make sure that the participant is not listening on any multicast address. */
+    */
     if (RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST ==
       ctx->discovery_options->automatic_discovery_range)
     {
+      // Make sure that the participant is not listening on any multicast address.
       if (!DDS_StringSeq_ensure_length(
           &dp_qos.discovery.multicast_receive_addresses, 0, 0))
       {
         RMW_CONNEXT_LOG_ERROR_SET("failed to resize multicast_receive_addresses")
         return RMW_RET_ERROR;
+      }
+      // Increase maximum participant ID
+      // This controls the number of participants that can be discovered on a single host,
+      // which is roughly equivalent to the number of ROS 2 processes.
+      // If it's too small then we won't connect to all participants.
+      // If it's too large then we will send a lot of announcement traffic.
+      // The default number here is picked arbitrarily.
+      const rmw_peer_address_t localhost_peers[2] = {
+        "32@builtin.udpv4://127.0.0.1",
+        "32@builtin.shmem://",
+      };
+      const auto rc2 = rmw_connextdds_extend_initial_peer_list(
+        localhost_peers,
+        2,
+        &ctx->initial_peers);
+      if (RMW_RET_OK != rc2) {
+        RMW_CONNEXT_LOG_ERROR(
+          "failed to extend initial peers with the static peers");
+        return rc2;
       }
     }
   }

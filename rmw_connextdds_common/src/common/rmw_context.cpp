@@ -239,7 +239,10 @@ rmw_connextdds_initialize_discovery_options(
         "dds.domain_participant.domain_tag");
       return RMW_RET_ERROR;
     }
-  } else {
+  } else if (  // NOLINT
+    RMW_AUTOMATIC_DISCOVERY_RANGE_SYSTEM_DEFAULT !=
+    ctx->discovery_options->automatic_discovery_range)
+  {
     // For any other discovery range, copy the list of static peers to so that
     // it will be later copied to DomainParticipantQos::discovery::initial_peers.
     dp_qos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;

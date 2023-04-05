@@ -111,6 +111,7 @@ rmw_connextdds_graph_add_remote_entity(
   const DDS_GUID_t * const dp_guid,
   const char * const topic_name,
   const char * const type_name,
+  const DDS_UserDataQosPolicy * const user_data,
   const DDS_ReliabilityQosPolicy * const reliability,
   const DDS_DurabilityQosPolicy * const durability,
   const DDS_DeadlineQosPolicy * const deadline,

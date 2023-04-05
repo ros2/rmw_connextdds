@@ -488,6 +488,7 @@ rmw_connextdds_get_datawriter_qos(
         // TODO(asorbini) this value is not actually used, remove it
         &qos->publish_mode,
         &qos->lifespan,
+        &qos->user_data,
         qos_policies,
         pub_options,
         nullptr /* sub_options */))
@@ -577,6 +578,7 @@ rmw_connextdds_get_datareader_qos(
         &qos->resource_limits,
         nullptr /* publish_mode */,
         nullptr /* Lifespan is a writer-only qos policy */,
+        &qos->user_data,
         qos_policies,
         nullptr /* pub_options */,
         sub_options))
@@ -1203,6 +1205,7 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &dp_guid,
         data->topic_name,
         data->type_name,
+        &data->user_data,
         &data->reliability,
         &data->durability,
         &data->deadline,
@@ -1286,6 +1289,7 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &dp_guid,
         data->topic_name,
         data->type_name,
+        &data->user_data,
         &data->reliability,
         &data->durability,
         &data->deadline,

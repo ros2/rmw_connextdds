@@ -86,7 +86,7 @@ public:
 
   const rosidl_type_hash_t & type_hash() const
   {
-    return *_type_support_fastrtps->type_hash;
+    return *_type_support_fastrtps->get_type_hash_func(_type_support_fastrtps);
   }
 
   uint32_t type_serialized_size_max() const

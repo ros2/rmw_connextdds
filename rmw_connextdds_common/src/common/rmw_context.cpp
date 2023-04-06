@@ -100,7 +100,7 @@ rmw_ret_t rmw_connextdds_extend_initial_peer_list(
     return RMW_RET_ERROR;
   }
   for (size_t s = 0; s < static_peer_count; ++s) {
-    const auto index = initial_length + s;
+    const DDS_Long index = static_cast<DDS_Long>(initial_length + s);
     const char * peer = static_peers[s].peer_address;
     char ** const element_ref = DDS_StringSeq_get_reference(out, index);
     RMW_CONNEXT_ASSERT(nullptr != element_ref);

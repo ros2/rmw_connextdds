@@ -1024,15 +1024,13 @@ rmw_take_dynamic_message_with_info(
 }
 
 rmw_ret_t
-rmw_init_serialization_support(
+rmw_get_serialization_support(
   const char * serialization_lib_name,
-  rcutils_allocator_t * allocator,
-  rosidl_dynamic_typesupport_serialization_support_t * serialization_support)
+  rosidl_dynamic_typesupport_serialization_support_t ** serialization_support)
 {
   static_cast<void>(serialization_lib_name);
-  static_cast<void>(allocator);
   static_cast<void>(serialization_support);
 
-  RMW_SET_ERROR_MSG("rmw_init_serialization_support: unimplemented");
+  RMW_SET_ERROR_MSG("rmw_get_serialization_support: unimplemented");
   return RMW_RET_UNSUPPORTED;
 }

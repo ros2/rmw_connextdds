@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.0 (2023-04-12)
+-------------------
 * Dynamic Subscription (BONUS: Allocators): rmw_connextdds (`#115 <https://github.com/ros2/rmw_connextdds/issues/115>`_)
 * Revert "Refactor serialization support to use allocators and refs"
 * Refactor serialization support to use allocators and refs

@@ -2,6 +2,12 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Dynamic Subscription (BONUS: Allocators): rmw_connextdds (`#115 <https://github.com/ros2/rmw_connextdds/issues/115>`_)
+* Add stubs for new rmw interfaces (`#111 <https://github.com/ros2/rmw_connextdds/issues/111>`_)
+* Contributors: methylDragon
+
 0.13.0 (2022-11-02)
 -------------------
 * Add rmw_get_gid_for_client impl (`#92 <https://github.com/ros2/rmw_connextdds/issues/92>`_)

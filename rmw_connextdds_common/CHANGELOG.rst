@@ -2,6 +2,15 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [rmw_connextdds] New RMW discovery options (`#108 <https://github.com/ros2/rmw_connextdds/issues/108>`_)
+* Call get_type_hash_func (`#113 <https://github.com/ros2/rmw_connextdds/issues/113>`_)
+* Type hash distribution during discovery (rep2011) (`#104 <https://github.com/ros2/rmw_connextdds/issues/104>`_)
+* Implement matched event (`#101 <https://github.com/ros2/rmw_connextdds/issues/101>`_)
+* Add in implementation of inconsistent topic. (`#103 <https://github.com/ros2/rmw_connextdds/issues/103>`_)
+* Contributors: Barry Xu, Chris Lalancette, Emerson Knapp, Grey, Michael Carroll
+
 0.13.0 (2022-11-02)
 -------------------
 * Add rmw_get_gid_for_client impl (`#92 <https://github.com/ros2/rmw_connextdds/issues/92>`_)

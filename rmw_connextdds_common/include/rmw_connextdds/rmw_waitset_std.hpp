@@ -381,6 +381,9 @@ public:
       user_data_[event_type] = nullptr;
       new_event_cb_[event_type] = nullptr;
     }
+  }
+
+  void
   on_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
 
   void

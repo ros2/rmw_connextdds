@@ -405,7 +405,7 @@ endfunction()
 # (e.g. ".DS_Store").
 ################################################################################
 function(rti_guess_connextdds_arch)
-  if(ENV{CONNEXTDDS_ARCH})
+  if(NOT "$ENV{CONNEXTDDS_ARCH}" STREQUAL "")
     set(CONNEXTDDS_ARCH $ENV{CONNEXTDDS_ARCH} PARENT_SCOPE)
     return()
   endif()

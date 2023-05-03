@@ -851,6 +851,7 @@ public:
   }
 
   void notify_new_data();
+
   inline rmw_ret_t
   get_matched_status(rmw_matched_status_t * const status)
   {

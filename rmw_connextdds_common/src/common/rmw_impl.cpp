@@ -143,7 +143,7 @@ rmw_connextdds_parse_string_list(
     input_i += 2,
     next_i_start = input_i)
   {
-    // determine token's lenght by finding a delimiter (or end of input)
+    // determine token's length by finding a delimiter (or end of input)
     for (;
       input_i + 1 < input_len && delimiter != list[input_i + 1];
       input_i += 1)
@@ -181,7 +181,7 @@ rmw_connextdds_parse_string_list(
       DDS_String_free(*el_ref);
     }
     *el_ref = DDS_String_alloc(next_len);
-    if (nullptr == el_ref) {
+    if (nullptr == *el_ref) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to allocate string")
       return RMW_RET_ERROR;
     }

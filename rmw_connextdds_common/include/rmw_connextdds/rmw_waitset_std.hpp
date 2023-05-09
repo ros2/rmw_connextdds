@@ -381,6 +381,9 @@ public:
       user_data_[event_type] = nullptr;
       new_event_cb_[event_type] = nullptr;
     }
+  }
+
+  void
   on_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
 
   void
@@ -848,6 +851,7 @@ public:
   }
 
   void notify_new_data();
+
   inline rmw_ret_t
   get_matched_status(rmw_matched_status_t * const status)
   {

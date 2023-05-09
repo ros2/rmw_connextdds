@@ -880,6 +880,8 @@ RMW_Connext_SubscriberStatusCondition::update_status_matched(
     this->status_matched.total_count - this->status_matched_last.total_count;
   this->status_matched.current_count_change =
     this->status_matched.current_count - this->status_matched_last.current_count;
+
+  this->notify_new_event(RMW_EVENT_SUBSCRIPTION_MATCHED);
 }
 
 rmw_ret_t
@@ -1070,4 +1072,6 @@ RMW_Connext_PublisherStatusCondition::update_status_matched(
     this->status_matched.total_count - this->status_matched_last.total_count;
   this->status_matched.current_count_change =
     this->status_matched.current_count - this->status_matched_last.current_count;
+
+  this->notify_new_event(RMW_EVENT_PUBLICATION_MATCHED);
 }

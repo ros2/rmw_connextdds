@@ -127,6 +127,16 @@ struct rmw_context_impl_t
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
   std::mutex endpoint_mutex;
 
+  /* State for the discovery listener thread */
+  DDS_WaitSet * discovery_thread_waitset{nullptr};
+  DDS_Long discovery_thread_waitset_size{0};
+  bool discovery_thread_exit_cond{false};
+  bool discovery_thread_discinfo_cond{false};
+  DDS_Condition * discovery_thread_cond_dcps_part{nullptr};
+  DDS_Condition * discovery_thread_cond_dcps_pub{nullptr};
+  DDS_Condition * discovery_thread_cond_dcps_sub{nullptr};
+
+
   explicit rmw_context_impl_t(rmw_context_t * const base)
   : common(),
     base(base),

@@ -152,25 +152,28 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
 
   ctx->common.graph_cache.add_participant(ctx->common.gid, dp_enclave);
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_dcps_participant_get_reader(
-      ctx, &ctx->dr_participants))
-  {
+  rmw_ret_t rmw_rc = rmw_connextdds_dcps_participant_get_reader(ctx, &ctx->dr_participants);
+  if (RMW_RET_OK != rmw_rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to get DCPS participant reader")
     return RMW_RET_ERROR;
   }
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_dcps_publication_get_reader(
-      ctx, &ctx->dr_publications))
-  {
+  rmw_rc = rmw_connextdds_dcps_publication_get_reader(ctx, &ctx->dr_publications);
+  if (RMW_RET_OK != rmw_rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to get DCPS publications reader")
     return RMW_RET_ERROR;
   }
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_dcps_subscription_get_reader(
-      ctx, &ctx->dr_subscriptions))
-  {
+  rmw_rc = rmw_connextdds_dcps_subscription_get_reader(ctx, &ctx->dr_subscriptions);
+  if (RMW_RET_OK != rmw_rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to get DCPS subscriptions reader")
     return RMW_RET_ERROR;
+  }
+
+  rmw_rc = rmw_connextdds_discovery_thread_start(ctx);
+  if (RMW_RET_OK != rmw_rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to start discovery thread")
+    return rmw_rc;
   }
 
   return RMW_RET_OK;
@@ -191,12 +194,6 @@ rmw_connextdds_graph_enable(rmw_context_impl_t * const ctx)
 
   if (RMW_RET_OK != rmw_connextdds_enable_builtin_readers(ctx)) {
     return RMW_RET_ERROR;
-  }
-
-  rmw_ret_t ret = rmw_connextdds_discovery_thread_start(ctx);
-  if (RMW_RET_OK != ret) {
-    RMW_CONNEXT_LOG_ERROR("failed to start discovery thread")
-    return ret;
   }
 
   return RMW_RET_OK;

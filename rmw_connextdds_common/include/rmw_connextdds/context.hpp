@@ -49,17 +49,17 @@ public:
   rmw_dds_common::Context common;
   rmw_context_t * base;
 
-  DDS_DomainId_t domain_id;
-  DDS_DomainParticipant * participant;
+  DDS_DomainId_t domain_id{RMW_CONNEXT_DEFAULT_DOMAIN};
+  DDS_DomainParticipant * participant{nullptr};
 
   /* DDS publisher, subscriber used for ROS 2 publishers and subscriptions */
-  DDS_Publisher * dds_pub;
-  DDS_Subscriber * dds_sub;
+  DDS_Publisher * dds_pub{nullptr};
+  DDS_Subscriber * dds_sub{nullptr};
 
   /* Built-in Discovery Readers */
-  DDS_DataReader * dr_participants;
-  DDS_DataReader * dr_publications;
-  DDS_DataReader * dr_subscriptions;
+  DDS_DataReader * dr_participants{nullptr};
+  DDS_DataReader * dr_publications{nullptr};
+  DDS_DataReader * dr_subscriptions{nullptr};
 
   /* Global configuration for QoS profiles */
   bool use_default_publish_mode;
@@ -125,6 +125,15 @@ public:
 
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
   std::mutex endpoint_mutex;
+
+  /* State for the discovery listener thread */
+  DDS_WaitSet * discovery_thread_waitset{nullptr};
+  DDS_Long discovery_thread_waitset_size{0};
+  bool discovery_thread_exit_cond{false};
+  bool discovery_thread_discinfo_cond{false};
+  DDS_Condition * discovery_thread_cond_dcps_part{nullptr};
+  DDS_Condition * discovery_thread_cond_dcps_pub{nullptr};
+  DDS_Condition * discovery_thread_cond_dcps_sub{nullptr};
 
   explicit rmw_context_impl_s(rmw_context_t * const base);
 

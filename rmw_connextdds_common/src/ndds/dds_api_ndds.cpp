@@ -829,19 +829,29 @@ rmw_connextdds_return_samples(
 {
   void ** data_buffer = reinterpret_cast<void **>(
     RMW_Connext_MessagePtrSeq_get_contiguous_buffer(sub->data_seq()));
-  const DDS_Long data_len =
-    RMW_Connext_MessagePtrSeq_get_length(sub->data_seq());
 
   if (!RMW_Connext_MessagePtrSeq_unloan(sub->data_seq())) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to unloan sample sequence")
     return RMW_RET_ERROR;
   }
+  // DDS_DataReader_return_loan_untypedI is an internal API, and
+  // its signature changed slightly in Connext 7.x.
+#if RTI_DDS_VERSION_MAJOR < 7
+  const DDS_Long data_len =
+    RMW_Connext_MessagePtrSeq_get_length(sub->data_seq());
   if (DDS_RETCODE_OK !=
     DDS_DataReader_return_loan_untypedI(
       sub->reader(),
       data_buffer,
       data_len,
       sub->info_seq()))
+#else
+  if (DDS_RETCODE_OK !=
+    DDS_DataReader_return_loan_untypedI(
+      sub->reader(),
+      data_buffer,
+      sub->info_seq()))
+#endif  // RTI_DDS_VERSION_MAJOR < 7
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
     return RMW_RET_ERROR;
@@ -891,11 +901,20 @@ rmw_connextdds_count_unread_samples(
     }
     if (DDS_RETCODE_OK == rc) {
       unread_count += data_len;
+      // DDS_DataReader_return_loan_untypedI is an internal API, and
+      // its signature changed slightly in Connext 7.x.
+#if RTI_DDS_VERSION_MAJOR < 7
       rc = DDS_DataReader_return_loan_untypedI(
         sub->reader(),
         data_buffer,
         data_len,
         &info_seq);
+#else
+      rc = DDS_DataReader_return_loan_untypedI(
+        sub->reader(),
+        data_buffer,
+        &info_seq);
+#endif  // RTI_DDS_VERSION_MAJOR < 7
       if (DDS_RETCODE_OK != rc) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
         return RMW_RET_ERROR;

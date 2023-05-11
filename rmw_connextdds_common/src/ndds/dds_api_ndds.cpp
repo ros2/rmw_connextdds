@@ -811,12 +811,22 @@ rmw_connextdds_return_samples(
     RMW_CONNEXT_LOG_ERROR_SET("failed to unloan sample sequence")
     return RMW_RET_ERROR;
   }
+  // DDS_DataReader_return_loan_untypedI is an internal API, and
+  // its signature changed slightly in Connext 7.x.
+#if RTI_DDS_VERSION_MAJOR < 7
   if (DDS_RETCODE_OK !=
     DDS_DataReader_return_loan_untypedI(
       sub->reader(),
       data_buffer,
       data_len,
       sub->info_seq()))
+#else
+  if (DDS_RETCODE_OK !=
+    DDS_DataReader_return_loan_untypedI(
+      sub->reader(),
+      data_buffer,
+      sub->info_seq()))
+#endif  // RTI_DDS_VERSION_MAJOR < 7
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
     return RMW_RET_ERROR;

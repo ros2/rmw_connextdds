@@ -716,15 +716,19 @@ rmw_ret_t
 rmw_connextdds_write_message(
   RMW_Connext_Publisher * const pub,
   RMW_Connext_Message * const message,
-  int64_t * const sn_out)
+  RMW_Connext_WriteParams * const params)
 {
   if (pub->message_type_support()->type_requestreply() &&
     pub->message_type_support()->ctx()->request_reply_mapping ==
     RMW_Connext_RequestReplyMapping::Extended)
   {
+    DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
+    if (params != nullptr) {
+      write_params.source_timestamp = params->timestamp;
+    }
+
     const RMW_Connext_RequestReplyMessage * const rr_msg =
       reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(message->user_data);
-    DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
 
     if (!rr_msg->request) {
       /* If this is a reply, propagate the request's sample identity
@@ -767,9 +771,11 @@ rmw_connextdds_write_message(
     return RMW_RET_OK;
   }
 
+  DDS_Time_t timestamp = (params != nullptr) ? params->timestamp : DDS_TIME_INVALID;
+
   if (DDS_RETCODE_OK !=
-    DDS_DataWriter_write_untypedI(
-      pub->writer(), message, &DDS_HANDLE_NIL))
+    DDS_DataWriter_write_w_timestamp_untypedI(
+      pub->writer(), message, &DDS_HANDLE_NIL, &timestamp))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to write message to DDS")
     return RMW_RET_ERROR;

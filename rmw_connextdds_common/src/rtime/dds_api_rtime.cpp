@@ -1153,12 +1153,11 @@ rmw_ret_t
 rmw_connextdds_write_message(
   RMW_Connext_Publisher * const pub,
   RMW_Connext_Message * const message,
-  int64_t * const sn_out)
+  RMW_Connext_WriteParams * const params)
 {
-  UNUSED_ARG(sn_out);
-
+  DDS_Time_t timestamp = (params != nullptr) ? params->timestamp : DDS_TIME_INVALID;
   if (DDS_RETCODE_OK !=
-    DDS_DataWriter_write(pub->writer(), message, &DDS_HANDLE_NIL))
+    DDS_DataWriter_write_w_timestamp(pub->writer(), message, &DDS_HANDLE_NIL, &timestamp))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to write message to DDS")
     return RMW_RET_ERROR;

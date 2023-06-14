@@ -19,15 +19,25 @@
  ******************************************************************************/
 rmw_ret_t
 rmw_api_connextdds_event_set_callback(
-  rmw_event_t * event,
-  rmw_event_callback_t callback,
-  const void * user_data)
+  rmw_event_t * const event,
+  const rmw_event_callback_t callback,
+  const void * const user_data)
 {
-  UNUSED_ARG(event);
-  UNUSED_ARG(callback);
-  UNUSED_ARG(user_data);
-  RMW_CONNEXT_LOG_ERROR_SET("rmw_event_set_callback not implemented")
-  return RMW_RET_UNSUPPORTED;
+  RMW_CHECK_ARGUMENT_FOR_NULL(event, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    event,
+    event->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INVALID_ARGUMENT);
+
+  RMW_Connext_StatusCondition * condition = nullptr;
+  if (RMW_Connext_Event::reader_event(event)) {
+    condition = RMW_Connext_Event::subscriber(event)->condition();
+  } else {
+    condition = RMW_Connext_Event::publisher(event)->condition();
+  }
+  condition->set_new_event_callback(event->event_type, callback, user_data);
+  return RMW_RET_OK;
 }
 
 /******************************************************************************
@@ -35,28 +45,40 @@ rmw_api_connextdds_event_set_callback(
  ******************************************************************************/
 rmw_ret_t
 rmw_api_connextdds_service_set_on_new_request_callback(
-  rmw_service_t * rmw_service,
-  rmw_event_callback_t callback,
-  const void * user_data)
+  rmw_service_t * const service,
+  const rmw_event_callback_t callback,
+  const void * const user_data)
 {
-  UNUSED_ARG(rmw_service);
-  UNUSED_ARG(callback);
-  UNUSED_ARG(user_data);
-  RMW_CONNEXT_LOG_ERROR_SET("rmw_service_set_on_new_request_callback not implemented")
-  return RMW_RET_UNSUPPORTED;
+  RMW_CHECK_ARGUMENT_FOR_NULL(service, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    service,
+    service->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_Connext_Service * const svc_impl =
+    reinterpret_cast<RMW_Connext_Service *>(service->data);
+  svc_impl->subscriber()->condition()->set_on_new_data_callback(callback, user_data);
+  return RMW_RET_OK;
 }
 
 rmw_ret_t
 rmw_api_connextdds_client_set_on_new_response_callback(
-  rmw_client_t * rmw_client,
-  rmw_event_callback_t callback,
-  const void * user_data)
+  rmw_client_t * const client,
+  const rmw_event_callback_t callback,
+  const void * const user_data)
 {
-  UNUSED_ARG(rmw_client);
-  UNUSED_ARG(callback);
-  UNUSED_ARG(user_data);
-  RMW_CONNEXT_LOG_ERROR_SET("rmw_client_set_on_new_response_callback not implemented")
-  return RMW_RET_UNSUPPORTED;
+  RMW_CHECK_ARGUMENT_FOR_NULL(client, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    client,
+    client->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_Connext_Client * const client_impl =
+    reinterpret_cast<RMW_Connext_Client *>(client->data);
+  client_impl->subscriber()->condition()->set_on_new_data_callback(callback, user_data);
+  return RMW_RET_OK;
 }
 
 /******************************************************************************
@@ -64,13 +86,19 @@ rmw_api_connextdds_client_set_on_new_response_callback(
  ******************************************************************************/
 rmw_ret_t
 rmw_api_connextdds_subscription_set_on_new_message_callback(
-  rmw_subscription_t * rmw_subscription,
-  rmw_event_callback_t callback,
-  const void * user_data)
+  rmw_subscription_t * const subscription,
+  const rmw_event_callback_t callback,
+  const void * const user_data)
 {
-  UNUSED_ARG(rmw_subscription);
-  UNUSED_ARG(callback);
-  UNUSED_ARG(user_data);
-  RMW_CONNEXT_LOG_ERROR_SET("rmw_subscription_set_on_new_message_callback not implemented")
-  return RMW_RET_UNSUPPORTED;
+  RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    subscription,
+    subscription->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+
+  RMW_Connext_Subscriber * const sub_impl =
+    reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
+  sub_impl->condition()->set_on_new_data_callback(callback, user_data);
+  return RMW_RET_OK;
 }

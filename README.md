@@ -84,18 +84,19 @@ release:
 
 |ROS 2 Release|Branch|Status|
 |-------------|------|------|
-|Rolling      |`master`|Developed|
-|Foxy         |`foxy`|LTS (May 2023)|
-|Eloquent     |`eloquent`|EOL (Nov 2020)|
-|Dashing      |`dashing`|LTS (May 2021)|
+|Rolling      |`rolling`|Developed|
+|Iron         |`iron`|Supported until November 2024|
+|Humble       |`humble`|Supported until May 2027|
+|Galactic     |`galactic`|Supported until November 2022 (EOL)|
+|Foxy         |`foxy`|Supported until May 2023 (EOL)|
+|Eloquent     |`eloquent`|Supported until November 2020 (EOL)|
+|Dashing      |`dashing`|Supported until May 2021 (EOL)|
 
-Branch `master` is actively developed and maintained. It is used to create
+Branch `rolling` is actively developed and maintained. It is used to create
 other branches for specific ROS 2 releases (starting from Galactic).
 
-Branches marked as `LTS` will receive updates for critical bug fixes and
-important patches only (until they reach `EOL`).
-
-Branches marked as `EOL` will not receive any future updates.
+All other non-EOL branches will receive updates for critical bug fixes and
+important patches only.
 
 ## RTI Connext DDS Requirements
 

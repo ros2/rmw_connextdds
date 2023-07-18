@@ -2,6 +2,11 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.11.2 (2023-07-18)
+-------------------
+* Use unified approach for checking the existence of environment variables (`#105 <https://github.com/ros2/rmw_connextdds/issues/105>`_) (`#118 <https://github.com/ros2/rmw_connextdds/issues/118>`_)
+* Contributors: mergify[bot]
+
 0.11.1 (2022-04-26)
 -------------------
 

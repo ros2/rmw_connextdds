@@ -1001,6 +1001,8 @@ rmw_connextdds_graph_add_remote_entity(
       topic_name, type_name,
       static_cast<int>(user_data_size), reinterpret_cast<const char *>(user_data_data));
     type_hash = rosidl_get_zero_initialized_type_hash();
+    // We handled the error, so clear it out
+    rmw_reset_error();
   }
 
   rmw_ret_t rc = rmw_connextdds_graph_add_entityEA(

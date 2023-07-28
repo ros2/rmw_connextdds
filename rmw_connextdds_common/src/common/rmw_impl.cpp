@@ -462,6 +462,8 @@ rmw_connextdds_get_readerwriter_qos(
     RMW_CONNEXT_LOG_WARNING(
       "Failed to encode type hash for topic, will not distribute it in USER_DATA.");
     user_data_str.clear();
+    // We handled the error, so clear it out
+    rmw_reset_error();
   }
   DDS_OctetSeq_from_array(
     &user_data->value,

@@ -1220,8 +1220,8 @@ rmw_connextdds_count_unread_samples(
       &data_seq,
       &info_seq,
       DDS_LENGTH_UNLIMITED,
-      DDS_ANY_VIEW_STATE,
       DDS_NOT_READ_SAMPLE_STATE,
+      DDS_ANY_VIEW_STATE,
       DDS_ANY_INSTANCE_STATE);
     if (DDS_RETCODE_OK != rc && DDS_RETCODE_NO_DATA != rc) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to read data from DDS reader")

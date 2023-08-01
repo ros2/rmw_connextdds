@@ -100,6 +100,9 @@ struct rmw_context_impl_s
 #if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
   bool optimize_large_data{true};
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
+#if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+  bool optimize_reliability{true};
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
 
   enum class participant_qos_override_policy_t
   {

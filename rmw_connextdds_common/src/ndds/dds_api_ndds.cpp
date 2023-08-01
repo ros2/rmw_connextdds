@@ -501,6 +501,32 @@ rmw_connextdds_get_datawriter_qos(
     qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
   }
 
+#if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+  // The default settings for the RTPS reliability protocol are not very
+  // responsive, and they cause some unit tests to fail. These optimizations
+  // have been derived from profile `Optimization.ReliabilityProtocol.Common`
+  // available in Connext 6+. `Generic.StrictReliable` is the equivalent
+  // profile in 5.3.1. Changes are limited to `DDS_RtpsReliableWriterProtocol_t`.
+  if (ctx->optimize_reliability) {
+    // All write() calls will block (for at most max_blocking_time) once the send_window
+    // is filled with samples that haven't yet been acknowledged by all active readers.
+    qos->protocol.rtps_reliable_writer.min_send_window_size = 40;
+    qos->protocol.rtps_reliable_writer.max_send_window_size = 40;  // fixed size window
+    qos->protocol.rtps_reliable_writer.heartbeats_per_max_samples = 10;  // 1 every 4
+    qos->protocol.rtps_reliable_writer.heartbeat_period = {0, 200000000};  // 200ms
+    qos->protocol.rtps_reliable_writer.late_joiner_heartbeat_period = {0, 20000000};  // 20ms
+    qos->protocol.rtps_reliable_writer.fast_heartbeat_period = {0, 20000000};  // 20ms
+    qos->protocol.rtps_reliable_writer.max_heartbeat_retries = 500;  // 10s @ 50hz
+    // Force the writer to reply immediately to ACKNACK's received from a writer.
+    qos->protocol.rtps_reliable_writer.max_nack_response_delay = DDS_DURATION_ZERO;
+    // When the number of unack'd samples reaches the high_watermark the fast_heartbeat_period
+    // is used. When the number dips below the low_watermark, the heartbeat_period is used.
+    // These numbers are tied to the send_window size.
+    qos->protocol.rtps_reliable_writer.high_watermark = 25;
+    qos->protocol.rtps_reliable_writer.low_watermark = 10;
+  }
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
+
 #if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
   // Unless disabled, optimize the DataWriter's reliability protocol to
   // better handle large data samples. These are *bounded* types whose
@@ -586,6 +612,17 @@ rmw_connextdds_get_datareader_qos(
       return RMW_RET_ERROR;
     }
   }
+
+#if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+  // The default settings for the RTPS reliability protocol are not very
+  // responsive, and they cause some unit tests to fail. These optimizations
+  // are dual to those applied in rmw_connextdds_get_datawriter_qos().
+  // Changes are limited to `DDS_RtpsReliableReaderProtocol_t`.
+  if (ctx->optimize_reliability) {
+    qos->protocol.rtps_reliable_reader.min_heartbeat_response_delay = DDS_DURATION_ZERO;
+    qos->protocol.rtps_reliable_reader.max_heartbeat_response_delay = DDS_DURATION_ZERO;
+  }
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
 
 #if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
   // Unless disabled, optimize the DataReader's reliability protocol to

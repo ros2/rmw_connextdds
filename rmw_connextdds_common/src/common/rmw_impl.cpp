@@ -2578,6 +2578,12 @@ RMW_Connext_Client::enable()
 rmw_ret_t
 RMW_Connext_Client::is_service_available(bool & available)
 {
+#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
+  available = 0 < this->request_pub->subscriptions_count() &&
+    0 < this->reply_sub->publications_count();
+  return RMW_RET_OK;
+#else /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
+
   // mark service as available if we have at least one writer and one reader
   // matched from the same remote DomainParticipant.
   struct DDS_InstanceHandleSeq matched_req_subs = DDS_SEQUENCE_INITIALIZER,
@@ -2622,6 +2628,7 @@ RMW_Connext_Client::is_service_available(bool & available)
   }
 
   return RMW_RET_OK;
+#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 }
 
 rmw_ret_t

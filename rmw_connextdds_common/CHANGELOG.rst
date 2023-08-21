@@ -2,6 +2,15 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix RMW_Connext_Client::is_service_available for micro (`#130 <https://github.com/ros2/rmw_connextdds/issues/130>`_)
+* Update to C++17 (`#125 <https://github.com/ros2/rmw_connextdds/issues/125>`_)
+* Pass parameters in the correct order to DDS_DataReader_read in rmw_connextdds_count_unread_samples for micro (`#129 <https://github.com/ros2/rmw_connextdds/issues/129>`_)
+* Optimize QoS to improve responsiveness of reliable endpoints (`#26 <https://github.com/ros2/rmw_connextdds/issues/26>`_)
+* Clear out errors once we have handled them. (`#126 <https://github.com/ros2/rmw_connextdds/issues/126>`_)
+* Contributors: Andrea Sorbini, Chris Lalancette, Christopher Wecht
+
 0.16.0 (2023-07-11)
 -------------------
 * Add support for listener callbacks (`#76 <https://github.com/ros2/rmw_connextdds/issues/76>`_)

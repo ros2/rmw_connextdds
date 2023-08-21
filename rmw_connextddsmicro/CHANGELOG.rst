@@ -2,8 +2,8 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.17.0 (2023-08-21)
+-------------------
 * Update to C++17 (`#125 <https://github.com/ros2/rmw_connextdds/issues/125>`_)
 * Contributors: Chris Lalancette
 

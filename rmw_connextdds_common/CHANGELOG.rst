@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.17.0 (2023-08-21)
+-------------------
 * Fix RMW_Connext_Client::is_service_available for micro (`#130 <https://github.com/ros2/rmw_connextdds/issues/130>`_)
 * Update to C++17 (`#125 <https://github.com/ros2/rmw_connextdds/issues/125>`_)
 * Pass parameters in the correct order to DDS_DataReader_read in rmw_connextdds_count_unread_samples for micro (`#129 <https://github.com/ros2/rmw_connextdds/issues/129>`_)

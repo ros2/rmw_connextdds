@@ -223,10 +223,6 @@ struct rmw_context_impl_s
 };
 
 rmw_ret_t
-rmw_connextdds_initialize_participant_factory_qos(
-  rmw_context_impl_t * const ctx);
-
-rmw_ret_t
 rmw_connextdds_configure_security(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos * const qos);

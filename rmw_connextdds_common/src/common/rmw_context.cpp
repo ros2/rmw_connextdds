@@ -44,7 +44,7 @@ size_t RMW_Connext_gv_ContextCount = 0;
  * Context Implementation
  ******************************************************************************/
 
-rmw_ret_t
+static rmw_ret_t
 rmw_connextdds_initialize_participant_factory_qos(
   rmw_context_impl_t * const ctx)
 {
@@ -76,8 +76,8 @@ rmw_connextdds_initialize_participant_factory_qos(
   return RMW_RET_OK;
 }
 
-static
-rmw_ret_t rmw_connextdds_extend_initial_peer_list(
+static rmw_ret_t
+rmw_connextdds_extend_initial_peer_list(
   const rmw_peer_address_t * const static_peers,
   const size_t static_peer_count,
   struct DDS_StringSeq * const out)
@@ -123,8 +123,7 @@ rmw_ret_t rmw_connextdds_extend_initial_peer_list(
   return RMW_RET_OK;
 }
 
-static
-rmw_ret_t
+static rmw_ret_t
 rmw_connextdds_initialize_discovery_options(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos & dp_qos)
@@ -294,8 +293,7 @@ rmw_connextdds_initialize_discovery_options(
 }
 
 
-static
-rmw_ret_t
+static rmw_ret_t
 rmw_connextdds_initialize_participant_qos(
   rmw_context_impl_t * const ctx,
   DDS_DomainParticipantQos & dp_qos)
@@ -923,8 +921,7 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
   return ret;
 }
 
-static
-rmw_ret_t
+static rmw_ret_t
 rmw_connextdds_parse_participant_qos_override_policy(
   const char * const user_input,
   rmw_context_impl_t::participant_qos_override_policy_t & policy)
@@ -950,8 +947,7 @@ rmw_connextdds_parse_participant_qos_override_policy(
   return RMW_RET_OK;
 }
 
-static
-rmw_ret_t
+static rmw_ret_t
 rmw_connextdds_parse_endpoint_qos_override_policy(
   const char * const user_input,
   rmw_context_impl_t::endpoint_qos_override_policy_t & policy,

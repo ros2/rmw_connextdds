@@ -121,7 +121,7 @@ rmw_connextdds_extend_initial_peer_list(
 }
 
 rmw_ret_t
-rmw_context_impl_t::initialize_discovery_options(DDS_DomainParticipantQos & dp_qos)
+rmw_context_impl_s::initialize_discovery_options(DDS_DomainParticipantQos & dp_qos)
 {
   const auto range = this->discovery_options->automatic_discovery_range;
   switch (range) {
@@ -288,7 +288,7 @@ rmw_context_impl_t::initialize_discovery_options(DDS_DomainParticipantQos & dp_q
 }
 
 rmw_ret_t
-rmw_context_impl_t::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos)
+rmw_context_impl_s::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos)
 {
   RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_gv_DomainParticipantFactory)
   if (DDS_RETCODE_OK !=
@@ -305,8 +305,8 @@ rmw_context_impl_t::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos
   }
 
   switch (this->participant_qos_override_policy) {
-    case rmw_context_impl_t::participant_qos_override_policy_t::All:
-    case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
+    case rmw_context_impl_s::participant_qos_override_policy_t::All:
+    case rmw_context_impl_s::participant_qos_override_policy_t::Basic:
       if (nullptr != this->discovery_options) {
         const auto rc = this->initialize_discovery_options(dp_qos);
         if (RMW_RET_OK != rc) {
@@ -329,7 +329,7 @@ rmw_context_impl_t::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos
 }
 
 rmw_ret_t
-rmw_context_impl_t::initialize_node(
+rmw_context_impl_s::initialize_node(
   const rmw_discovery_options_t * const discovery_options_in)
 {
   if (this->node_count > 0) {
@@ -393,7 +393,7 @@ rmw_context_impl_t::initialize_node(
 }
 
 rmw_ret_t
-rmw_context_impl_t::configure_security(DDS_DomainParticipantQos * const qos)
+rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
 {
   if (nullptr == this->base->options.security_options.security_root_path) {
     // Security not enabled;
@@ -510,7 +510,7 @@ rmw_context_impl_t::configure_security(DDS_DomainParticipantQos * const qos)
 }
 
 rmw_ret_t
-rmw_context_impl_t::initialize_participant()
+rmw_context_impl_s::initialize_participant()
 {
   RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipant")
 
@@ -649,7 +649,7 @@ rmw_context_impl_t::initialize_participant()
 }
 
 rmw_ret_t
-rmw_context_impl_t::enable_participant()
+rmw_context_impl_s::enable_participant()
 {
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(
@@ -682,7 +682,7 @@ rmw_context_impl_t::enable_participant()
 }
 
 rmw_ret_t
-rmw_context_impl_t::finalize_participant()
+rmw_context_impl_s::finalize_participant()
 {
   RMW_CONNEXT_LOG_DEBUG("finalizing DDS DomainParticipant")
 #if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
@@ -778,7 +778,7 @@ rmw_context_impl_t::finalize_participant()
 }
 
 rmw_ret_t
-rmw_context_impl_t::finalize()
+rmw_context_impl_s::finalize()
 {
   rmw_ret_t rc_exit = RMW_RET_OK;
 
@@ -825,7 +825,7 @@ rmw_context_impl_t::finalize()
 }
 
 rmw_ret_t
-rmw_context_impl_t::finalize_node()
+rmw_context_impl_s::finalize_node()
 {
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing node: total=%lu", this->node_count)
@@ -841,7 +841,7 @@ rmw_context_impl_t::finalize_node()
 }
 
 uint32_t
-rmw_context_impl_t::next_client_id()
+rmw_context_impl_s::next_client_id()
 {
   const uint32_t res = this->client_service_id;
   this->client_service_id += 1;
@@ -852,7 +852,7 @@ rmw_context_impl_t::next_client_id()
 }
 
 rmw_ret_t
-rmw_context_impl_t::assert_topic(
+rmw_context_impl_s::assert_topic(
   DDS_DomainParticipant * const participant,
   const char * const topic_name,
   const char * const type_name,
@@ -1030,18 +1030,18 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
 static rmw_ret_t
 rmw_connextdds_parse_participant_qos_override_policy(
   const char * const user_input,
-  rmw_context_impl_t::participant_qos_override_policy_t & policy)
+  rmw_context_impl_s::participant_qos_override_policy_t & policy)
 {
   static const char pfx_never[] = "never";
   static const char pfx_all[] = "all";
   static const char pfx_basic[] = "basic";
 
-  policy = rmw_context_impl_t::participant_qos_override_policy_t::All;
+  policy = rmw_context_impl_s::participant_qos_override_policy_t::All;
 
   if (0 == strcmp(user_input, pfx_never)) {
-    policy = rmw_context_impl_t::participant_qos_override_policy_t::Never;
+    policy = rmw_context_impl_s::participant_qos_override_policy_t::Never;
   } else if (0 == strcmp(user_input, pfx_basic)) {
-    policy = rmw_context_impl_t::participant_qos_override_policy_t::Basic;
+    policy = rmw_context_impl_s::participant_qos_override_policy_t::Basic;
   } else if (user_input[0] != '\0' && strcmp(user_input, pfx_all) != 0) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "unexpected value for participant qos override policy. "
@@ -1056,7 +1056,7 @@ rmw_connextdds_parse_participant_qos_override_policy(
 static rmw_ret_t
 rmw_connextdds_parse_endpoint_qos_override_policy(
   const char * const user_input,
-  rmw_context_impl_t::endpoint_qos_override_policy_t & policy,
+  rmw_context_impl_s::endpoint_qos_override_policy_t & policy,
   std::regex & policy_regex)
 {
   static const char pfx_dds_topics[] = "dds_topics: ";
@@ -1064,10 +1064,10 @@ rmw_connextdds_parse_endpoint_qos_override_policy(
   static const char pfx_never[] = "never";
   static const char pfx_always[] = "always";
 
-  policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Always;
+  policy = rmw_context_impl_s::endpoint_qos_override_policy_t::Always;
 
   if (0 == strncmp(user_input, pfx_dds_topics, pfx_dds_topics_len)) {
-    policy = rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics;
+    policy = rmw_context_impl_s::endpoint_qos_override_policy_t::DDSTopics;
     try {
       policy_regex = &user_input[pfx_dds_topics_len];
     } catch (std::regex_error & err) {
@@ -1077,7 +1077,7 @@ rmw_connextdds_parse_endpoint_qos_override_policy(
       return RMW_RET_ERROR;
     }
   } else if (0 == strcmp(user_input, pfx_never)) {
-    policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Never;
+    policy = rmw_context_impl_s::endpoint_qos_override_policy_t::Never;
   } else if (user_input[0] != '\0' && strcmp(user_input, pfx_always) != 0) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "unexpected value for endpoint qos override policy. "
@@ -1170,7 +1170,7 @@ rmw_api_connextdds_init(
     });
 
   // TODO(asorbini) get rid of context->impl->domain_id, and just use
-  // context->actual_domain_id in rmw_context_impl_t::initialize_node()
+  // context->actual_domain_id in rmw_context_impl_s::initialize_node()
   ctx_impl->domain_id = actual_domain_id;
 
   // All publishers will use asynchronous publish mode unless

@@ -19,6 +19,8 @@
 #include <vector>
 #include <stdexcept>
 
+#include "rcpputils/scope_exit.hpp"
+
 #include "rmw_dds_common/time_utils.hpp"
 #include "rmw_dds_common/qos.hpp"
 

@@ -14,8 +14,14 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
+#include <regex>
 #include <string>
 #include <unordered_map>
+
+#include "rcpputils/scope_exit.hpp"
+
+#include "rmw/error_handling.h"
 
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/discovery.hpp"
@@ -27,6 +33,7 @@
 #include "rcutils/filesystem.h"
 #include "rcutils/process.h"
 #include "rcutils/snprintf.h"
+#include "rcutils/strdup.h"
 
 /******************************************************************************
  * Global reference to the Domain Participant Factory.

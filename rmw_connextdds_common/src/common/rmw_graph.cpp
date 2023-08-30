@@ -14,8 +14,12 @@
 
 #include <string>
 
+#include "rcpputils/scope_exit.hpp"
+
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
+
+#include "rmw_dds_common/qos.hpp"
 
 #include "rosidl_runtime_c/type_hash.h"
 

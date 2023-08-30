@@ -15,40 +15,23 @@
 #ifndef RMW_CONNEXTDDS__CONTEXT_HPP_
 #define RMW_CONNEXTDDS__CONTEXT_HPP_
 
-#include <stdio.h>
-
-#include <limits>
 #include <map>
 #include <mutex>
 #include <regex>
 #include <string>
-#include <memory>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
 
-#include "rmw/error_handling.h"
-#include "rmw/impl/cpp/macros.hpp"
-#include "rmw/event.h"
-#include "rmw/names_and_types.h"
-#include "rmw/get_node_info_and_types.h"
-#include "rmw/get_service_names_and_types.h"
-#include "rmw/get_topic_names_and_types.h"
-#include "rmw/topic_endpoint_info_array.h"
-#include "rmw/get_topic_endpoint_info.h"
 #include "rmw_dds_common/context.hpp"
-#include "rmw_dds_common/msg/participant_entities_info.hpp"
 
-#include "rmw/qos_profiles.h"
-#include "rmw_dds_common/qos.hpp"
+#include "rmw/discovery_options.h"
+#include "rmw/init.h"
+#include "rmw/ret_types.h"
 
-#include "rcutils/strdup.h"
+#include "rmw/impl/cpp/macros.hpp"
 
-#include "rcpputils/scope_exit.hpp"
-
-#include "rmw/get_network_flow_endpoints.h"
 #include "rmw/rmw.h"
-#include "rmw/types.h"
 
 extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
 extern size_t RMW_Connext_gv_ContextCount;

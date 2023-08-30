@@ -123,16 +123,13 @@ rmw_connextdds_extend_initial_peer_list(
 rmw_context_impl_s::rmw_context_impl_s(rmw_context_t * const base)
 : common(),
   base(base),
-  factory(nullptr),
   domain_id(RMW_CONNEXT_DEFAULT_DOMAIN),
   participant(nullptr),
   dds_pub(nullptr),
   dds_sub(nullptr),
   dr_participants(nullptr),
   dr_publications(nullptr),
-  dr_subscriptions(nullptr),
-  discovery_options(nullptr),
-  domain_tag(nullptr)
+  dr_subscriptions(nullptr)
 {
   /* destructor relies on these being initialized properly */
   common.thread_is_running.store(false);

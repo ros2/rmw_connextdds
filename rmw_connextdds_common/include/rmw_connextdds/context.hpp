@@ -66,8 +66,6 @@ public:
   rmw_dds_common::Context common;
   rmw_context_t * base;
 
-  DDS_DomainParticipantFactory * factory;
-
   DDS_DomainId_t domain_id;
   DDS_DomainParticipant * participant;
 
@@ -79,12 +77,6 @@ public:
   DDS_DataReader * dr_participants;
   DDS_DataReader * dr_publications;
   DDS_DataReader * dr_subscriptions;
-
-  /* Keep track of what discovery settings were used when initializing */
-  rmw_discovery_options_t * discovery_options;
-
-  /* Manage the memory of the domain tag */
-  char * domain_tag;
 
   /* Global configuration for QoS profiles */
   bool use_default_publish_mode;
@@ -148,10 +140,6 @@ public:
   /* Shutdown flag */
   bool is_shutdown{false};
 
-  /* suffix for GUIDs to construct unique client/service ids
-     (protected by initialization_mutex) */
-  uint32_t client_service_id{0};
-
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
   std::mutex endpoint_mutex;
 
@@ -205,6 +193,18 @@ private:
   // Finalize the DomainParticipant associated with the context.
   rmw_ret_t
   finalize_participant();
+
+  DDS_DomainParticipantFactory * factory{nullptr};
+
+  /* Keep track of what discovery settings were used when initializing */
+  rmw_discovery_options_t * discovery_options{nullptr};
+
+  /* Manage the memory of the domain tag */
+  char * domain_tag{nullptr};
+
+  /* suffix for GUIDs to construct unique client/service ids
+     (protected by initialization_mutex) */
+  uint32_t client_service_id{0};
 };
 
 #endif  // RMW_CONNEXTDDS__CONTEXT_HPP_

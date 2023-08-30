@@ -87,8 +87,6 @@ public:
   char * domain_tag;
 
   /* Global configuration for QoS profiles */
-  std::string qos_ctx_name;
-  std::string qos_ctx_namespace;
   bool use_default_publish_mode;
   RMW_Connext_RequestReplyMapping request_reply_mapping;
   bool cyclone_compatible{false};

@@ -397,17 +397,15 @@ rmw_context_impl_t::initialize_node(
   return RMW_RET_OK;
 }
 
-static rmw_ret_t
-rmw_connextdds_configure_security(
-  rmw_context_impl_t * const ctx_impl,
-  DDS_DomainParticipantQos * const qos)
+rmw_ret_t
+rmw_context_impl_t::configure_security(DDS_DomainParticipantQos * const qos)
 {
-  if (nullptr == ctx_impl->base->options.security_options.security_root_path) {
+  if (nullptr == this->base->options.security_options.security_root_path) {
     // Security not enabled;
     return RMW_RET_OK;
   }
 
-  rmw_ret_t rc = rmw_connextdds_enable_security(ctx_impl, qos);
+  rmw_ret_t rc = rmw_connextdds_enable_security(this, qos);
   if (RMW_RET_OK != rc) {
     return rc;
   }
@@ -421,7 +419,7 @@ rmw_connextdds_configure_security(
 
   std::unordered_map<std::string, std::string> security_files;
   if (!rmw_dds_common::get_security_files(
-      uri_prefix, ctx_impl->base->options.security_options.security_root_path, security_files))
+      uri_prefix, this->base->options.security_options.security_root_path, security_files))
   {
     RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
     return RMW_RET_ERROR;
@@ -555,7 +553,7 @@ rmw_context_impl_t::initialize_participant()
     return RMW_RET_ERROR;
   }
 
-  if (RMW_RET_OK != rmw_connextdds_configure_security(this, &dp_qos)) {
+  if (RMW_RET_OK != this->configure_security(&dp_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to configure DDS Security")
     return RMW_RET_ERROR;
   }

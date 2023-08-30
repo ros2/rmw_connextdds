@@ -157,33 +157,9 @@ public:
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
   std::mutex endpoint_mutex;
 
-  explicit rmw_context_impl_s(rmw_context_t * const base)
-  : common(),
-    base(base),
-    factory(nullptr),
-    domain_id(RMW_CONNEXT_DEFAULT_DOMAIN),
-    participant(nullptr),
-    dds_pub(nullptr),
-    dds_sub(nullptr),
-    dr_participants(nullptr),
-    dr_publications(nullptr),
-    dr_subscriptions(nullptr),
-    discovery_options(nullptr),
-    domain_tag(nullptr)
-  {
-    /* destructor relies on these being initialized properly */
-    common.thread_is_running.store(false);
-    common.graph_guard_condition = nullptr;
-    common.pub = nullptr;
-    common.sub = nullptr;
-  }
+  explicit rmw_context_impl_s(rmw_context_t * const base);
 
-  ~rmw_context_impl_s()
-  {
-    if (0u != this->node_count) {
-      RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
-    }
-  }
+  ~rmw_context_impl_s();
 
   // Initializes the participant, if it wasn't done already.
   // node_count is increased

@@ -400,6 +400,125 @@ rmw_context_impl_t::initialize_node(
   return RMW_RET_OK;
 }
 
+static rmw_ret_t
+rmw_connextdds_configure_security(
+  rmw_context_impl_t * const ctx,
+  DDS_DomainParticipantQos * const qos)
+{
+  if (nullptr == ctx->base->options.security_options.security_root_path) {
+    // Security not enabled;
+    return RMW_RET_OK;
+  }
+
+  rmw_ret_t rc = rmw_connextdds_enable_security(ctx, qos);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
+  static const char * const uri_prefix = "file:";
+#else
+  // Connext Pro 5.3.1 does not support the "file:" prefix
+  static const char * const uri_prefix = "";
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
+
+  std::unordered_map<std::string, std::string> security_files;
+  if (!rmw_dds_common::get_security_files(
+      uri_prefix, ctx->base->options.security_options.security_root_path, security_files))
+  {
+    RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
+    return RMW_RET_ERROR;
+  }
+
+  /* X509 Certificate of the Identity CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_IDENTITY_CA_PROPERTY,
+      security_files["IDENTITY_CA"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_IDENTITY_CA_PROPERTY, security_files["IDENTITY_CA"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* X509 Certificate of the Permissions CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
+      security_files["PERMISSIONS_CA"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, security_files["PERMISSIONS_CA"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* Private Key of the DomainParticipant's identity */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
+      security_files["PRIVATE_KEY"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY, security_files["PRIVATE_KEY"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* Public certificate of the DomainParticipant's identity, signed
+   * by the Certificate Authority */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
+      security_files["CERTIFICATE"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, security_files["CERTIFICATE"].c_str())
+    return RMW_RET_ERROR;
+  }
+  /* XML file containing domain governance configuration, signed by
+   * the Permission CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_GOVERNANCE_PROPERTY,
+      security_files["GOVERNANCE"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_GOVERNANCE_PROPERTY, security_files["GOVERNANCE"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* XML file containing domain permissions configuration, signed by
+   * the Permission CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PERMISSIONS_PROPERTY,
+      security_files["PERMISSIONS"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PERMISSIONS_PROPERTY, security_files["PERMISSIONS"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  return rmw_connextdds_apply_security_logging_configuration(&qos->property);
+}
+
 rmw_ret_t
 rmw_context_impl_t::initialize_participant()
 {
@@ -1398,123 +1517,4 @@ rmw_api_connextdds_context_fini(rmw_context_t * context)
   delete context->impl;
   *context = rmw_get_zero_initialized_context();
   return rc_exit;
-}
-
-rmw_ret_t
-rmw_connextdds_configure_security(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantQos * const qos)
-{
-  if (nullptr == ctx->base->options.security_options.security_root_path) {
-    // Security not enabled;
-    return RMW_RET_OK;
-  }
-
-  rmw_ret_t rc = rmw_connextdds_enable_security(ctx, qos);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
-
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
-  static const char * const uri_prefix = "file:";
-#else
-  // Connext Pro 5.3.1 does not support the "file:" prefix
-  static const char * const uri_prefix = "";
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
-
-  std::unordered_map<std::string, std::string> security_files;
-  if (!rmw_dds_common::get_security_files(
-      uri_prefix, ctx->base->options.security_options.security_root_path, security_files))
-  {
-    RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
-    return RMW_RET_ERROR;
-  }
-
-  /* X509 Certificate of the Identity CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_IDENTITY_CA_PROPERTY,
-      security_files["IDENTITY_CA"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CA_PROPERTY, security_files["IDENTITY_CA"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* X509 Certificate of the Permissions CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
-      security_files["PERMISSIONS_CA"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, security_files["PERMISSIONS_CA"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* Private Key of the DomainParticipant's identity */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
-      security_files["PRIVATE_KEY"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY, security_files["PRIVATE_KEY"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* Public certificate of the DomainParticipant's identity, signed
-   * by the Certificate Authority */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
-      security_files["CERTIFICATE"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, security_files["CERTIFICATE"].c_str())
-    return RMW_RET_ERROR;
-  }
-  /* XML file containing domain governance configuration, signed by
-   * the Permission CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_GOVERNANCE_PROPERTY,
-      security_files["GOVERNANCE"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_GOVERNANCE_PROPERTY, security_files["GOVERNANCE"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* XML file containing domain permissions configuration, signed by
-   * the Permission CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_PERMISSIONS_PROPERTY,
-      security_files["PERMISSIONS"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_PROPERTY, security_files["PERMISSIONS"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  return rmw_connextdds_apply_security_logging_configuration(&qos->property);
 }

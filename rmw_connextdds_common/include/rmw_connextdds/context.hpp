@@ -222,9 +222,4 @@ struct rmw_context_impl_s
   finalize();
 };
 
-rmw_ret_t
-rmw_connextdds_configure_security(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantQos * const qos);
-
 #endif  // RMW_CONNEXTDDS__CONTEXT_HPP_

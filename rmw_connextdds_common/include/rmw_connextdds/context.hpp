@@ -133,8 +133,7 @@ public:
   // Initializes the participant, if it wasn't done already.
   // node_count is increased
   rmw_ret_t
-  initialize_node(
-    const rmw_discovery_options_t * const discovery_options);
+  initialize_node();
 
   // Destroys the participant, when node_count reaches 0.
   rmw_ret_t
@@ -178,9 +177,6 @@ private:
   finalize_participant();
 
   DDS_DomainParticipantFactory * factory{nullptr};
-
-  /* Keep track of what discovery settings were used when initializing */
-  rmw_discovery_options_t * discovery_options{nullptr};
 
   /* Manage the memory of the domain tag */
   char * domain_tag{nullptr};

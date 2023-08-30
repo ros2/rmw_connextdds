@@ -155,7 +155,7 @@ rmw_context_impl_s::~rmw_context_impl_s()
 rmw_ret_t
 rmw_context_impl_s::initialize_discovery_options(DDS_DomainParticipantQos & dp_qos)
 {
-  const auto range = this->discovery_options->automatic_discovery_range;
+  const auto range = this->base->options.discovery_options.automatic_discovery_range;
   switch (range) {
     case RMW_AUTOMATIC_DISCOVERY_RANGE_SYSTEM_DEFAULT:
     case RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET:
@@ -267,14 +267,14 @@ rmw_context_impl_s::initialize_discovery_options(DDS_DomainParticipantQos & dp_q
     }
   } else if (  // NOLINT
     RMW_AUTOMATIC_DISCOVERY_RANGE_SYSTEM_DEFAULT !=
-    this->discovery_options->automatic_discovery_range)
+    this->base->options.discovery_options.automatic_discovery_range)
   {
     // For any other discovery range, copy the list of static peers to so that
     // it will be later copied to DomainParticipantQos::discovery::initial_peers.
     dp_qos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
     const auto rc = rmw_connextdds_extend_initial_peer_list(
-      this->discovery_options->static_peers,
-      this->discovery_options->static_peers_count,
+      this->base->options.discovery_options.static_peers,
+      this->base->options.discovery_options.static_peers_count,
       &this->initial_peers);
     if (RMW_RET_OK != rc) {
       RMW_CONNEXT_LOG_ERROR(
@@ -285,7 +285,7 @@ rmw_context_impl_s::initialize_discovery_options(DDS_DomainParticipantQos & dp_q
       -----------------------------------------
     */
     if (RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST ==
-      this->discovery_options->automatic_discovery_range)
+      this->base->options.discovery_options.automatic_discovery_range)
     {
       // Make sure that the participant is not listening on any multicast address.
       if (!DDS_StringSeq_ensure_length(
@@ -339,18 +339,18 @@ rmw_context_impl_s::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos
   switch (this->participant_qos_override_policy) {
     case rmw_context_impl_s::participant_qos_override_policy_t::All:
     case rmw_context_impl_s::participant_qos_override_policy_t::Basic:
-      if (nullptr != this->discovery_options) {
+      {
         const auto rc = this->initialize_discovery_options(dp_qos);
         if (RMW_RET_OK != rc) {
           RMW_CONNEXT_LOG_ERROR("failed to initialize discovery options")
           return RMW_RET_ERROR;
         }
-      }
-      if (DDS_StringSeq_get_length(&this->initial_peers) > 0 &&
-        !DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &this->initial_peers))
-      {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to copy initial peers sequence")
-        return RMW_RET_ERROR;
+        if (DDS_StringSeq_get_length(&this->initial_peers) > 0 &&
+          !DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &this->initial_peers))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to copy initial peers sequence")
+          return RMW_RET_ERROR;
+        }
       }
       break;
     default:
@@ -361,48 +361,9 @@ rmw_context_impl_s::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos
 }
 
 rmw_ret_t
-rmw_context_impl_s::initialize_node(
-  const rmw_discovery_options_t * const discovery_options_in)
+rmw_context_impl_s::initialize_node()
 {
-  if (this->node_count > 0) {
-    bool params_equal = false;
-    if (rmw_discovery_options_equal(
-        this->discovery_options, discovery_options_in, &params_equal) != RMW_RET_OK)
-    {
-      RMW_CONNEXT_LOG_ERROR_SET("invalid discovery params argument");
-      return RMW_RET_INVALID_ARGUMENT;
-    }
-
-    if (!params_equal) {
-      RMW_CONNEXT_LOG_ERROR_SET(
-        "node is being initialized with incompatible discovery parameters");
-      return RMW_RET_ERROR;
-    }
-  } else {
-    if (nullptr != discovery_options_in) {
-      RMW_CONNEXT_ASSERT(nullptr == this->discovery_options)
-      this->discovery_options = static_cast<rmw_discovery_options_t *>(
-        this->base->options.allocator.allocate(
-          sizeof(rmw_discovery_options_t),
-          this->base->options.allocator.state));
-      if (nullptr == this->discovery_options) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to allocate discovery options")
-        return RMW_RET_BAD_ALLOC;
-      }
-      *this->discovery_options = rmw_get_zero_initialized_discovery_options();
-      const rmw_ret_t rc = rmw_discovery_options_copy(
-        discovery_options_in,
-        &this->base->options.allocator,
-        this->discovery_options);
-      if (rc != RMW_RET_OK) {
-        rcutils_error_string_t prev_error_string = rcutils_get_error_string();
-        RMW_CONNEXT_LOG_ERROR_A_SET(
-          "failed to copy discovery parameters: %s",
-          prev_error_string.str);
-        return rc;
-      }
-    }
-
+  if (this->node_count == 0) {
     rmw_ret_t rc = this->initialize_participant();
     if (RMW_RET_OK != rc) {
       RMW_CONNEXT_LOG_ERROR("failed to initialize DomainParticipant")
@@ -813,16 +774,6 @@ rmw_ret_t
 rmw_context_impl_s::finalize()
 {
   rmw_ret_t rc_exit = RMW_RET_OK;
-
-  if (nullptr != this->discovery_options) {
-    const auto rc = rmw_discovery_options_fini(
-      this->discovery_options);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to deallocate discovery options");
-      rc_exit = RMW_RET_ERROR;
-    }
-    this->discovery_options = nullptr;
-  }
 
   if (nullptr != this->domain_tag) {
     DDS_String_free(this->domain_tag);

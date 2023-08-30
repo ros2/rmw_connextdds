@@ -62,6 +62,7 @@ enum class RMW_Connext_RequestReplyMapping
 // Definition of struct rmw_context_impl_s as declared in rmw/init.h
 struct rmw_context_impl_s
 {
+public:
   rmw_dds_common::Context common;
   rmw_context_t * base;
 
@@ -195,6 +196,19 @@ struct rmw_context_impl_s
   finalize_node();
 
   rmw_ret_t
+  assert_topic(
+    DDS_DomainParticipant * const participant,
+    const char * const topic_name,
+    const char * const type_name,
+    const bool internal,
+    DDS_Topic ** const topic,
+    bool & created);
+
+  rmw_ret_t
+  finalize();
+
+private:
+  rmw_ret_t
   configure_security(DDS_DomainParticipantQos * const qos);
 
   rmw_ret_t
@@ -211,24 +225,12 @@ struct rmw_context_impl_s
   rmw_ret_t
   enable_participant();
 
-  // Finalize the DomainParticipant associated with the context.
-  rmw_ret_t
-  finalize_participant();
-
   uint32_t
   next_client_id();
 
+  // Finalize the DomainParticipant associated with the context.
   rmw_ret_t
-  assert_topic(
-    DDS_DomainParticipant * const participant,
-    const char * const topic_name,
-    const char * const type_name,
-    const bool internal,
-    DDS_Topic ** const topic,
-    bool & created);
-
-  rmw_ret_t
-  finalize();
+  finalize_participant();
 };
 
 #endif  // RMW_CONNEXTDDS__CONTEXT_HPP_

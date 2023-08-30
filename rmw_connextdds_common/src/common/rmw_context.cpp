@@ -531,11 +531,10 @@ rmw_context_impl_t::initialize_participant()
     return RMW_RET_ERROR;
   }
 
-  rmw_context_impl_t * const ctx_impl = this;
   auto scope_exit_dp_finalize = rcpputils::make_scope_exit(
-    [ctx_impl]()
+    [this]()
     {
-      if (RMW_RET_OK != ctx_impl->finalize_participant()) {
+      if (RMW_RET_OK != this->finalize_participant()) {
         RMW_CONNEXT_LOG_ERROR(
           "failed to finalize participant on error")
       }

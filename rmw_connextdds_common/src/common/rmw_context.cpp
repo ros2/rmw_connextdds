@@ -120,12 +120,10 @@ rmw_connextdds_extend_initial_peer_list(
   return RMW_RET_OK;
 }
 
-static rmw_ret_t
-rmw_connextdds_initialize_discovery_options(
-  rmw_context_impl_t * const ctx_impl,
-  DDS_DomainParticipantQos & dp_qos)
+rmw_ret_t
+rmw_context_impl_t::initialize_discovery_options(DDS_DomainParticipantQos & dp_qos)
 {
-  const auto range = ctx_impl->discovery_options->automatic_discovery_range;
+  const auto range = this->discovery_options->automatic_discovery_range;
   switch (range) {
     case RMW_AUTOMATIC_DISCOVERY_RANGE_SYSTEM_DEFAULT:
     case RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET:
@@ -172,7 +170,7 @@ rmw_connextdds_initialize_discovery_options(
     // Also, assign a host-wide unique domain tag to the participant to
     // prevent discovery with other local participant (e.g. through shared
     // memory transport).
-    const DDS_Long ros_peers = DDS_StringSeq_get_length(&ctx_impl->initial_peers);
+    const DDS_Long ros_peers = DDS_StringSeq_get_length(&this->initial_peers);
     const DDS_Long qos_peers = DDS_StringSeq_get_length(&dp_qos.discovery.initial_peers);
     dp_qos.discovery.accept_unknown_peers = DDS_BOOLEAN_FALSE;
     if (ros_peers > 0) {
@@ -180,7 +178,7 @@ rmw_connextdds_initialize_discovery_options(
         "requested %d initial peers using %s, but discovery range is off",
         ros_peers,
         RMW_CONNEXT_ENV_INITIAL_PEERS);
-      if (!DDS_StringSeq_ensure_length(&ctx_impl->initial_peers, 0, 0)) {
+      if (!DDS_StringSeq_ensure_length(&this->initial_peers, 0, 0)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to clear initial peers list")
         return RMW_RET_ERROR;
       }
@@ -189,7 +187,7 @@ rmw_connextdds_initialize_discovery_options(
       RMW_CONNEXT_LOG_WARNING_A(
         "requested %d initial peers from DomainParticipantQos, but discovery range is off",
         qos_peers);
-      if (!DDS_StringSeq_ensure_length(&ctx_impl->initial_peers, 0, 0)) {
+      if (!DDS_StringSeq_ensure_length(&this->initial_peers, 0, 0)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to clear initial peers list")
         return RMW_RET_ERROR;
       }
@@ -210,16 +208,16 @@ rmw_connextdds_initialize_discovery_options(
 
     /* Give this participant its own unique domain tag to prevent
         unicast discovery from happening. */
-    if (!ctx_impl->domain_tag) {
+    if (!this->domain_tag) {
       const auto pid = rcutils_get_pid();
       static const char * format_string = "ros_discovery_off_%d";
       const int bytes_needed = rcutils_snprintf(nullptr, 0, format_string, pid);
-      ctx_impl->domain_tag = DDS_String_alloc(bytes_needed);
-      if (nullptr == ctx_impl->domain_tag) {
+      this->domain_tag = DDS_String_alloc(bytes_needed);
+      if (nullptr == this->domain_tag) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to allocate domain tag string");
         return RMW_RET_BAD_ALLOC;
       }
-      if (rcutils_snprintf(ctx_impl->domain_tag, bytes_needed + 1, format_string, pid) < 0) {
+      if (rcutils_snprintf(this->domain_tag, bytes_needed + 1, format_string, pid) < 0) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to format ros discovery off information into domain tag");
         return RMW_RET_ERROR;
       }
@@ -227,7 +225,7 @@ rmw_connextdds_initialize_discovery_options(
     if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
         &dp_qos.property,
         "dds.domain_participant.domain_tag",
-        ctx_impl->domain_tag,
+        this->domain_tag,
         DDS_BOOLEAN_FALSE))
     {
       RMW_CONNEXT_LOG_ERROR_SET(
@@ -237,15 +235,15 @@ rmw_connextdds_initialize_discovery_options(
     }
   } else if (  // NOLINT
     RMW_AUTOMATIC_DISCOVERY_RANGE_SYSTEM_DEFAULT !=
-    ctx_impl->discovery_options->automatic_discovery_range)
+    this->discovery_options->automatic_discovery_range)
   {
     // For any other discovery range, copy the list of static peers to so that
     // it will be later copied to DomainParticipantQos::discovery::initial_peers.
     dp_qos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
     const auto rc = rmw_connextdds_extend_initial_peer_list(
-      ctx_impl->discovery_options->static_peers,
-      ctx_impl->discovery_options->static_peers_count,
-      &ctx_impl->initial_peers);
+      this->discovery_options->static_peers,
+      this->discovery_options->static_peers_count,
+      &this->initial_peers);
     if (RMW_RET_OK != rc) {
       RMW_CONNEXT_LOG_ERROR(
         "failed to extend initial peers with the static peers");
@@ -255,7 +253,7 @@ rmw_connextdds_initialize_discovery_options(
       -----------------------------------------
     */
     if (RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST ==
-      ctx_impl->discovery_options->automatic_discovery_range)
+      this->discovery_options->automatic_discovery_range)
     {
       // Make sure that the participant is not listening on any multicast address.
       if (!DDS_StringSeq_ensure_length(
@@ -277,7 +275,7 @@ rmw_connextdds_initialize_discovery_options(
       const auto rc2 = rmw_connextdds_extend_initial_peer_list(
         localhost_peers,
         2,
-        &ctx_impl->initial_peers);
+        &this->initial_peers);
       if (RMW_RET_OK != rc2) {
         RMW_CONNEXT_LOG_ERROR(
           "failed to extend initial peers with the static peers");
@@ -288,7 +286,6 @@ rmw_connextdds_initialize_discovery_options(
 
   return RMW_RET_OK;
 }
-
 
 static rmw_ret_t
 rmw_connextdds_initialize_participant_qos(
@@ -313,7 +310,7 @@ rmw_connextdds_initialize_participant_qos(
     case rmw_context_impl_t::participant_qos_override_policy_t::All:
     case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
       if (nullptr != ctx_impl->discovery_options) {
-        const auto rc = rmw_connextdds_initialize_discovery_options(ctx_impl, dp_qos);
+        const auto rc = ctx_impl->initialize_discovery_options(dp_qos);
         if (RMW_RET_OK != rc) {
           RMW_CONNEXT_LOG_ERROR("failed to initialize discovery options")
           return RMW_RET_ERROR;

@@ -197,6 +197,9 @@ struct rmw_context_impl_s
   rmw_ret_t
   configure_security(DDS_DomainParticipantQos * const qos);
 
+  rmw_ret_t
+  initialize_discovery_options(DDS_DomainParticipantQos & dp_qos);
+
   // Initialize the DomainParticipant associated with the context.
   rmw_ret_t
   initialize_participant();

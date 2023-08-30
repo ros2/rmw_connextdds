@@ -287,10 +287,8 @@ rmw_context_impl_t::initialize_discovery_options(DDS_DomainParticipantQos & dp_q
   return RMW_RET_OK;
 }
 
-static rmw_ret_t
-rmw_connextdds_initialize_participant_qos(
-  rmw_context_impl_t * const ctx_impl,
-  DDS_DomainParticipantQos & dp_qos)
+rmw_ret_t
+rmw_context_impl_t::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos)
 {
   RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_gv_DomainParticipantFactory)
   if (DDS_RETCODE_OK !=
@@ -301,23 +299,23 @@ rmw_connextdds_initialize_participant_qos(
   }
 
   if (RMW_RET_OK !=
-    rmw_connextdds_initialize_participant_qos_impl(ctx_impl, &dp_qos))
+    rmw_connextdds_initialize_participant_qos_impl(this, &dp_qos))
   {
     return RMW_RET_ERROR;
   }
 
-  switch (ctx_impl->participant_qos_override_policy) {
+  switch (this->participant_qos_override_policy) {
     case rmw_context_impl_t::participant_qos_override_policy_t::All:
     case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
-      if (nullptr != ctx_impl->discovery_options) {
-        const auto rc = ctx_impl->initialize_discovery_options(dp_qos);
+      if (nullptr != this->discovery_options) {
+        const auto rc = this->initialize_discovery_options(dp_qos);
         if (RMW_RET_OK != rc) {
           RMW_CONNEXT_LOG_ERROR("failed to initialize discovery options")
           return RMW_RET_ERROR;
         }
       }
-      if (DDS_StringSeq_get_length(&ctx_impl->initial_peers) > 0 &&
-        !DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &ctx_impl->initial_peers))
+      if (DDS_StringSeq_get_length(&this->initial_peers) > 0 &&
+        !DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &this->initial_peers))
       {
         RMW_CONNEXT_LOG_ERROR_SET("failed to copy initial peers sequence")
         return RMW_RET_ERROR;
@@ -543,9 +541,7 @@ rmw_context_impl_t::initialize_participant()
       }
     });
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_initialize_participant_qos(this, dp_qos))
-  {
+  if (RMW_RET_OK != this->initialize_participant_qos(dp_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize participant qos")
     return RMW_RET_ERROR;
   }

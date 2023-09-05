@@ -22,6 +22,7 @@
 #include <mutex>
 #include <regex>
 #include <string>
+#include <memory>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
@@ -78,8 +79,11 @@ struct rmw_context_impl_s
   DDS_DataReader * dr_publications;
   DDS_DataReader * dr_subscriptions;
 
-  /* Keep track of whether the DomainParticipant is localhost only */
-  bool localhost_only;
+  /* Keep track of what discovery settings were used when initializing */
+  rmw_discovery_options_t * discovery_options;
+
+  /* Manage the memory of the domain tag */
+  char * domain_tag;
 
   /* Global configuration for QoS profiles */
   std::string qos_ctx_name;
@@ -96,6 +100,9 @@ struct rmw_context_impl_s
 #if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
   bool optimize_large_data{true};
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
+#if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+  bool optimize_reliability{true};
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
 
   enum class participant_qos_override_policy_t
   {
@@ -160,7 +167,8 @@ struct rmw_context_impl_s
     dr_participants(nullptr),
     dr_publications(nullptr),
     dr_subscriptions(nullptr),
-    localhost_only(base->options.localhost_only == RMW_LOCALHOST_ONLY_ENABLED)
+    discovery_options(nullptr),
+    domain_tag(nullptr)
   {
     /* destructor relies on these being initialized properly */
     common.thread_is_running.store(false);
@@ -180,9 +188,7 @@ struct rmw_context_impl_s
   // node_count is increased
   rmw_ret_t
   initialize_node(
-    const char * const node_name,
-    const char * const node_namespace,
-    const bool localhost_only);
+    const rmw_discovery_options_t * const discovery_options);
 
   // Destroys the participant, when node_count reaches 0.
   rmw_ret_t
@@ -190,7 +196,7 @@ struct rmw_context_impl_s
 
   // Initialize the DomainParticipant associated with the context.
   rmw_ret_t
-  initialize_participant(const bool localhost_only);
+  initialize_participant();
 
   // Enable the DomainParticipant associated with the context.
   rmw_ret_t

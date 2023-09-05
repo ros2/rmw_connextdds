@@ -1015,6 +1015,7 @@ rmw_connextdds_get_datawriter_qos(
       &qos->resource_limits,
       &qos->publish_mode,
       nullptr /* Micro doesn't support DDS_LifespanQosPolicy */,
+      &qos->user_data,
       qos_policies,
       pub_options,
       nullptr /* sub_options */))
@@ -1064,6 +1065,7 @@ rmw_connextdds_get_datareader_qos(
       &qos->resource_limits,
       nullptr /* publish_mode */,
       nullptr /* Lifespan is a writer-only qos policy */,
+      &qos->user_data,
       qos_policies,
       nullptr /* pub_options */,
       sub_options))
@@ -1200,6 +1202,40 @@ rmw_connextdds_return_samples(
     RMW_CONNEXT_LOG_ERROR_SET("failed to return data to DDS reader")
     return RMW_RET_ERROR;
   }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_count_unread_samples(
+  RMW_Connext_Subscriber * const sub,
+  size_t & unread_count)
+{
+  unread_count = 0;
+  DDS_SampleInfoSeq info_seq = DDS_SEQUENCE_INITIALIZER;
+  DDS_UntypedSampleSeq data_seq = DDS_SEQUENCE_INITIALIZER;
+  DDS_ReturnCode_t rc = DDS_RETCODE_ERROR;
+  do {
+    rc = DDS_DataReader_read(
+      sub->reader(),
+      &data_seq,
+      &info_seq,
+      DDS_LENGTH_UNLIMITED,
+      DDS_NOT_READ_SAMPLE_STATE,
+      DDS_ANY_VIEW_STATE,
+      DDS_ANY_INSTANCE_STATE);
+    if (DDS_RETCODE_OK != rc && DDS_RETCODE_NO_DATA != rc) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to read data from DDS reader")
+      return RMW_RET_ERROR;
+    }
+    if (DDS_RETCODE_OK == rc) {
+      unread_count += DDS_UntypedSampleSeq_get_length(&data_seq);
+      rc = DDS_DataReader_return_loan(sub->reader(), &data_seq, &info_seq);
+      if (DDS_RETCODE_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
+        return RMW_RET_ERROR;
+      }
+    }
+  } while (rc == DDS_RETCODE_OK);
   return RMW_RET_OK;
 }
 
@@ -1766,6 +1802,7 @@ rmw_connextdds_dcps_publication_on_data(rmw_context_impl_t * const ctx)
         &dp_guid,
         qdata.data.topic_name,
         qdata.data.type_name,
+        &data->user_data,
         &qdata.data.reliability,
         &qdata.data.durability,
         &qdata.data.deadline,
@@ -1824,6 +1861,7 @@ rmw_connextdds_dcps_subscription_on_data(rmw_context_impl_t * const ctx)
         &dp_guid,
         qdata.data.topic_name,
         qdata.data.type_name,
+        &data->user_data,
         &qdata.data.reliability,
         &qdata.data.durability,
         &qdata.data.deadline,

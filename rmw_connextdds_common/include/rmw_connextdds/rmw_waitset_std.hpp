@@ -121,6 +121,22 @@ public:
     }
   }
 
+  template<typename FunctorT, typename FunctorA>
+  void
+  perform_action_and_update_state(FunctorA && action, FunctorT && update_condition)
+  {
+    std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
+
+    action();
+
+    if (nullptr != this->waitset_mutex) {
+      std::lock_guard<std::mutex> lock(*this->waitset_mutex);
+      update_condition();
+    } else {
+      update_condition();
+    }
+  }
+
 protected:
   std::mutex mutex_internal;
   std::mutex * waitset_mutex;
@@ -242,7 +258,8 @@ class RMW_Connext_StatusCondition : public RMW_Connext_Condition
 public:
   explicit RMW_Connext_StatusCondition(
     DDS_Entity * const entity)
-  : scond(DDS_Entity_get_statuscondition(entity))
+  : scond(DDS_Entity_get_statuscondition(entity)),
+    status_inconsistent_topic(DDS_InconsistentTopicStatus_INITIALIZER)
   {
     this->scond = DDS_Entity_get_statuscondition(entity);
     if (nullptr == this->scond) {
@@ -333,8 +350,71 @@ public:
   virtual bool
   has_status(const rmw_event_type_t event_type) = 0;
 
+  void
+  notify_new_event(rmw_event_type_t event_type)
+  {
+    std::unique_lock<std::mutex> lock_mutex(new_event_mutex_);
+    if (new_event_cb_[event_type]) {
+      new_event_cb_[event_type](user_data_[event_type], 1);
+    } else {
+      unread_events_count_[event_type]++;
+    }
+  }
+
+  void
+  set_new_event_callback(
+    rmw_event_type_t event_type,
+    rmw_event_callback_t callback,
+    const void * user_data)
+  {
+    std::unique_lock<std::mutex> lock_mutex(new_event_mutex_);
+
+    if (callback) {
+      // Push events arrived before setting the executor's callback
+      if (unread_events_count_[event_type] > 0) {
+        callback(user_data, unread_events_count_[event_type]);
+        unread_events_count_[event_type] = 0;
+      }
+      user_data_[event_type] = user_data;
+      new_event_cb_[event_type] = callback;
+    } else {
+      user_data_[event_type] = nullptr;
+      new_event_cb_[event_type] = nullptr;
+    }
+  }
+
+  void
+  on_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
+
+  void
+  update_status_inconsistent_topic(const struct DDS_InconsistentTopicStatus * status);
+
+  inline rmw_ret_t
+  get_incompatible_type_status(
+    rmw_incompatible_type_status_t * const status)
+  {
+    update_state(
+      [this, status]() {
+        status->total_count = this->status_inconsistent_topic.total_count;
+        status->total_count_change = this->status_inconsistent_topic.total_count_change;
+
+        this->triggered_inconsistent_topic = false;
+        this->status_inconsistent_topic.total_count_change = 0;
+      }, false /* notify */);
+
+    return RMW_RET_OK;
+  }
+
 protected:
   DDS_StatusCondition * scond;
+  std::mutex new_event_mutex_;
+  rmw_event_callback_t new_event_cb_[RMW_EVENT_INVALID] = {};
+  const void * user_data_[RMW_EVENT_INVALID] = {};
+  uint64_t unread_events_count_[RMW_EVENT_INVALID] = {0};
+
+  bool triggered_inconsistent_topic{false};
+
+  struct DDS_InconsistentTopicStatus status_inconsistent_topic;
 };
 
 void
@@ -354,6 +434,12 @@ RMW_Connext_DataWriterListener_liveliness_lost(
   void * listener_data,
   DDS_DataWriter * writer,
   const struct DDS_LivelinessLostStatus * status);
+
+void
+RMW_Connext_DataWriterListener_matched(
+  void * listener_data,
+  DDS_DataWriter * writer,
+  const struct DDS_PublicationMatchedStatus * status);
 
 class RMW_Connext_PublisherStatusCondition : public RMW_Connext_StatusCondition
 {
@@ -401,6 +487,10 @@ public:
   void
   on_liveliness_lost(
     const DDS_LivelinessLostStatus * const status);
+
+  void
+  on_matched(
+    const DDS_PublicationMatchedStatus * const status);
 
   // Helper functions to retrieve status information
   inline rmw_ret_t
@@ -458,6 +548,27 @@ public:
     return RMW_RET_OK;
   }
 
+  inline rmw_ret_t
+  get_matched_status(
+    rmw_matched_status_t * const status)
+  {
+    update_state(
+      [this, status]() {
+        this->triggered_matched = false;
+
+        status->total_count = this->status_matched.total_count;
+        status->total_count_change = this->status_matched.total_count_change;
+        status->current_count = this->status_matched.current_count;
+        status->current_count_change = this->status_matched.current_count_change;
+
+        this->status_matched.total_count_change = 0;
+        this->status_matched.current_count_change = 0;
+        this->status_matched_last = this->status_matched;
+      }, false /* notify */);
+
+    return RMW_RET_OK;
+  }
+
 protected:
   void update_status_deadline(
     const DDS_OfferedDeadlineMissedStatus * const status);
@@ -468,17 +579,23 @@ protected:
   void update_status_qos(
     const DDS_OfferedIncompatibleQosStatus * const status);
 
+  void update_status_matched(
+    const DDS_PublicationMatchedStatus * const status);
+
   bool triggered_deadline{false};
   bool triggered_liveliness{false};
   bool triggered_qos{false};
+  bool triggered_matched{false};
 
   DDS_OfferedDeadlineMissedStatus status_deadline;
   DDS_OfferedIncompatibleQosStatus status_qos;
   DDS_LivelinessLostStatus status_liveliness;
+  DDS_PublicationMatchedStatus status_matched;
 
   DDS_OfferedDeadlineMissedStatus status_deadline_last;
   DDS_OfferedIncompatibleQosStatus status_qos_last;
   DDS_LivelinessLostStatus status_liveliness_last;
+  DDS_PublicationMatchedStatus status_matched_last;
 
   RMW_Connext_Publisher * pub;
 };
@@ -578,6 +695,9 @@ public:
 
   void
   on_sample_lost(const DDS_SampleLostStatus * const status);
+
+  void
+  on_matched(const DDS_SubscriptionMatchedStatus * const status);
 
   const bool ignore_local;
   const DDS_InstanceHandle_t participant_handle;
@@ -712,6 +832,46 @@ public:
     return RMW_RET_OK;
   }
 
+  void set_on_new_data_callback(
+    const rmw_event_callback_t callback,
+    const void * const user_data)
+  {
+    std::unique_lock<std::mutex> lock(new_data_event_mutex_);
+    if (callback) {
+      if (unread_data_events_count_ > 0) {
+        callback(user_data, unread_data_events_count_);
+        unread_data_events_count_ = 0;
+      }
+      new_data_event_cb_ = callback;
+      data_event_user_data_ = user_data;
+    } else {
+      new_data_event_cb_ = nullptr;
+      data_event_user_data_ = nullptr;
+    }
+  }
+
+  void notify_new_data();
+
+  inline rmw_ret_t
+  get_matched_status(rmw_matched_status_t * const status)
+  {
+    update_state(
+      [this, status]() {
+        this->triggered_matched = false;
+
+        status->total_count = static_cast<size_t>(this->status_matched.total_count);
+        status->total_count_change = static_cast<size_t>(this->status_matched.total_count_change);
+        status->current_count = static_cast<size_t>(this->status_matched.current_count);
+        status->current_count_change = this->status_matched.current_count_change;
+
+        this->status_matched.total_count_change = 0;
+        this->status_matched.current_count_change = 0;
+        this->status_matched_last = this->status_matched;
+      }, false /* notify */);
+
+    return RMW_RET_OK;
+  }
+
 protected:
   void update_status_deadline(
     const DDS_RequestedDeadlineMissedStatus * const status);
@@ -725,25 +885,36 @@ protected:
   void update_status_sample_lost(
     const DDS_SampleLostStatus * const status);
 
+  void update_status_matched(
+    const DDS_SubscriptionMatchedStatus * const status);
+
   DDS_GuardCondition * const loan_guard_condition;
 
   bool triggered_deadline{false};
   bool triggered_liveliness{false};
   bool triggered_qos{false};
   bool triggered_sample_lost{false};
+  bool triggered_matched{false};
   bool triggered_data{false};
 
   DDS_RequestedDeadlineMissedStatus status_deadline;
   DDS_RequestedIncompatibleQosStatus status_qos;
   DDS_LivelinessChangedStatus status_liveliness;
   DDS_SampleLostStatus status_sample_lost;
+  DDS_SubscriptionMatchedStatus status_matched;
 
   DDS_RequestedDeadlineMissedStatus status_deadline_last;
   DDS_RequestedIncompatibleQosStatus status_qos_last;
   DDS_LivelinessChangedStatus status_liveliness_last;
   DDS_SampleLostStatus status_sample_lost_last;
+  DDS_SubscriptionMatchedStatus status_matched_last;
 
   RMW_Connext_Subscriber * sub;
+
+  std::mutex new_data_event_mutex_;
+  rmw_event_callback_t new_data_event_cb_{nullptr};
+  const void * data_event_user_data_{nullptr};
+  uint64_t unread_data_events_count_ = 0;
 
   friend class RMW_Connext_WaitSet;
 };

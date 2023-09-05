@@ -2,6 +2,35 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-08-21)
+-------------------
+* Fix RMW_Connext_Client::is_service_available for micro (`#130 <https://github.com/ros2/rmw_connextdds/issues/130>`_)
+* Update to C++17 (`#125 <https://github.com/ros2/rmw_connextdds/issues/125>`_)
+* Pass parameters in the correct order to DDS_DataReader_read in rmw_connextdds_count_unread_samples for micro (`#129 <https://github.com/ros2/rmw_connextdds/issues/129>`_)
+* Optimize QoS to improve responsiveness of reliable endpoints (`#26 <https://github.com/ros2/rmw_connextdds/issues/26>`_)
+* Clear out errors once we have handled them. (`#126 <https://github.com/ros2/rmw_connextdds/issues/126>`_)
+* Contributors: Andrea Sorbini, Chris Lalancette, Christopher Wecht
+
+0.16.0 (2023-07-11)
+-------------------
+* Add support for listener callbacks (`#76 <https://github.com/ros2/rmw_connextdds/issues/76>`_)
+* Contributors: Andrea Sorbini
+
+0.15.1 (2023-05-11)
+-------------------
+
+0.15.0 (2023-04-27)
+-------------------
+
+0.14.0 (2023-04-12)
+-------------------
+* [rmw_connextdds] New RMW discovery options (`#108 <https://github.com/ros2/rmw_connextdds/issues/108>`_)
+* Call get_type_hash_func (`#113 <https://github.com/ros2/rmw_connextdds/issues/113>`_)
+* Type hash distribution during discovery (rep2011) (`#104 <https://github.com/ros2/rmw_connextdds/issues/104>`_)
+* Implement matched event (`#101 <https://github.com/ros2/rmw_connextdds/issues/101>`_)
+* Add in implementation of inconsistent topic. (`#103 <https://github.com/ros2/rmw_connextdds/issues/103>`_)
+* Contributors: Barry Xu, Chris Lalancette, Emerson Knapp, Grey, Michael Carroll
+
 0.13.0 (2022-11-02)
 -------------------
 * Add rmw_get_gid_for_client impl (`#92 <https://github.com/ros2/rmw_connextdds/issues/92>`_)

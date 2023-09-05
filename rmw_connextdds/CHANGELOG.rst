@@ -2,6 +2,28 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-08-21)
+-------------------
+* Update to C++17 (`#125 <https://github.com/ros2/rmw_connextdds/issues/125>`_)
+* Contributors: Chris Lalancette
+
+0.16.0 (2023-07-11)
+-------------------
+
+0.15.1 (2023-05-11)
+-------------------
+
+0.15.0 (2023-04-27)
+-------------------
+
+0.14.0 (2023-04-12)
+-------------------
+* Dynamic Subscription (BONUS: Allocators): rmw_connextdds (`#115 <https://github.com/ros2/rmw_connextdds/issues/115>`_)
+* Revert "Refactor serialization support to use allocators and refs"
+* Refactor serialization support to use allocators and refs
+* Add stubs for new rmw interfaces (`#111 <https://github.com/ros2/rmw_connextdds/issues/111>`_)
+* Contributors: methylDragon
+
 0.13.0 (2022-11-02)
 -------------------
 * Add rmw_get_gid_for_client impl (`#92 <https://github.com/ros2/rmw_connextdds/issues/92>`_)

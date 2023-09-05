@@ -84,18 +84,19 @@ release:
 
 |ROS 2 Release|Branch|Status|
 |-------------|------|------|
-|Rolling      |`master`|Developed|
-|Foxy         |`foxy`|LTS (May 2023)|
-|Eloquent     |`eloquent`|EOL (Nov 2020)|
-|Dashing      |`dashing`|LTS (May 2021)|
+|Rolling      |`rolling`|Developed|
+|Iron         |`iron`|Supported until November 2024|
+|Humble       |`humble`|Supported until May 2027|
+|Galactic     |`galactic`|Supported until November 2022 (EOL)|
+|Foxy         |`foxy`|Supported until May 2023 (EOL)|
+|Eloquent     |`eloquent`|Supported until November 2020 (EOL)|
+|Dashing      |`dashing`|Supported until May 2021 (EOL)|
 
-Branch `master` is actively developed and maintained. It is used to create
+Branch `rolling` is actively developed and maintained. It is used to create
 other branches for specific ROS 2 releases (starting from Galactic).
 
-Branches marked as `LTS` will receive updates for critical bug fixes and
-important patches only (until they reach `EOL`).
-
-Branches marked as `EOL` will not receive any future updates.
+All other non-EOL branches will receive updates for critical bug fixes and
+important patches only.
 
 ## RTI Connext DDS Requirements
 
@@ -150,6 +151,7 @@ variables.
 - [RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE](#RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE)
 - [RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS](#RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS)
 - [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY)
+- [RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS](#RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS)
 - [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_INITIAL_PEERS](#RMW_CONNEXT_INITIAL_PEERS)
 - [RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE](#RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE)
@@ -205,6 +207,17 @@ for larger systems.
 Variable `RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY` may be used to disable
 these automatic optimizations, and to leave the DomainParticipant's QoS to
 its defaults.
+
+### RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS
+
+By default, `rmw_connextdds` will modify the QoS of each reliable DataWriter
+and DataReader to improve the responsiveness of the RTPS [reliability protocol](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/Content/UsersManual/Using_QosPolicies_to_Tune_the_Reliable_P.htm?tocpath=Part%203%3A%20Advanced%20Concepts%7C11.%20Reliable%20Communications%7C11.3%20Using%20QosPolicies%20to%20Tune%20the%20Reliable%20Protocol%7C_____0#reliable_1394042328_776265).
+
+For example, the ["heartbeat period"](https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/connext_dds/html_files/RTI_ConnextDDS_CoreLibraries_UsersManual/Content/UsersManual/Controlling_Heartbeats_and_Retries.htm#reliable_1394042328_785637)
+is sped up from 3 seconds to 100 milliseconds.
+
+These optimizations may be disabled using variable
+`RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS`.
 
 ### RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY
 

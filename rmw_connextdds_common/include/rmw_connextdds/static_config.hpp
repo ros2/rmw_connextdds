@@ -85,6 +85,11 @@
   "RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS"
 #endif /* RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS */
 
+#ifndef RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS
+#define RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS \
+  "RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS"
+#endif /* RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS */
+
 // TODO(security-wg): These are intended to be temporary, and need to be
 // refactored into a proper abstraction.
 #ifndef RMW_CONNEXT_ENV_SECURITY_LOG_FILE
@@ -225,6 +230,13 @@
 #ifndef RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE
 #define RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE   65000
 #endif /* RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE */
+
+/******************************************************************************
+ * Customize the RTPS reliability protocol to speed up its responsiveness.
+ ******************************************************************************/
+#ifndef RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+#define RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS     1
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
 
 /******************************************************************************
  * Automatically tune DataWriterQos to better handle reliable "large data".

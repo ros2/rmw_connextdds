@@ -14,8 +14,14 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
+#include <regex>
 #include <string>
 #include <unordered_map>
+
+#include "rcpputils/scope_exit.hpp"
+
+#include "rmw/error_handling.h"
 
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/discovery.hpp"
@@ -27,6 +33,7 @@
 #include "rcutils/filesystem.h"
 #include "rcutils/process.h"
 #include "rcutils/snprintf.h"
+#include "rcutils/strdup.h"
 
 /******************************************************************************
  * Global reference to the Domain Participant Factory.
@@ -44,12 +51,9 @@ size_t RMW_Connext_gv_ContextCount = 0;
  * Context Implementation
  ******************************************************************************/
 
-rmw_ret_t
-rmw_connextdds_initialize_participant_factory_qos(
-  rmw_context_impl_t * const ctx)
+static rmw_ret_t
+rmw_connextdds_initialize_participant_factory_qos()
 {
-  UNUSED_ARG(ctx);
-
   DDS_DomainParticipantFactoryQos qos =
     DDS_DomainParticipantFactoryQos_INITIALIZER;
 
@@ -76,8 +80,8 @@ rmw_connextdds_initialize_participant_factory_qos(
   return RMW_RET_OK;
 }
 
-static
-rmw_ret_t rmw_connextdds_extend_initial_peer_list(
+static rmw_ret_t
+rmw_connextdds_extend_initial_peer_list(
   const rmw_peer_address_t * const static_peers,
   const size_t static_peer_count,
   struct DDS_StringSeq * const out)
@@ -123,13 +127,35 @@ rmw_ret_t rmw_connextdds_extend_initial_peer_list(
   return RMW_RET_OK;
 }
 
-static
-rmw_ret_t
-rmw_connextdds_initialize_discovery_options(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantQos & dp_qos)
+rmw_context_impl_s::rmw_context_impl_s(rmw_context_t * const base)
+: common(),
+  base(base),
+  domain_id(RMW_CONNEXT_DEFAULT_DOMAIN),
+  participant(nullptr),
+  dds_pub(nullptr),
+  dds_sub(nullptr),
+  dr_participants(nullptr),
+  dr_publications(nullptr),
+  dr_subscriptions(nullptr)
 {
-  const auto range = ctx->discovery_options->automatic_discovery_range;
+  /* destructor relies on these being initialized properly */
+  common.thread_is_running.store(false);
+  common.graph_guard_condition = nullptr;
+  common.pub = nullptr;
+  common.sub = nullptr;
+}
+
+rmw_context_impl_s::~rmw_context_impl_s()
+{
+  if (0u != this->node_count) {
+    RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
+  }
+}
+
+rmw_ret_t
+rmw_context_impl_s::initialize_discovery_options(DDS_DomainParticipantQos & dp_qos)
+{
+  const auto range = this->base->options.discovery_options.automatic_discovery_range;
   switch (range) {
     case RMW_AUTOMATIC_DISCOVERY_RANGE_SYSTEM_DEFAULT:
     case RMW_AUTOMATIC_DISCOVERY_RANGE_SUBNET:
@@ -176,7 +202,7 @@ rmw_connextdds_initialize_discovery_options(
     // Also, assign a host-wide unique domain tag to the participant to
     // prevent discovery with other local participant (e.g. through shared
     // memory transport).
-    const DDS_Long ros_peers = DDS_StringSeq_get_length(&ctx->initial_peers);
+    const DDS_Long ros_peers = DDS_StringSeq_get_length(&this->initial_peers);
     const DDS_Long qos_peers = DDS_StringSeq_get_length(&dp_qos.discovery.initial_peers);
     dp_qos.discovery.accept_unknown_peers = DDS_BOOLEAN_FALSE;
     if (ros_peers > 0) {
@@ -184,7 +210,7 @@ rmw_connextdds_initialize_discovery_options(
         "requested %d initial peers using %s, but discovery range is off",
         ros_peers,
         RMW_CONNEXT_ENV_INITIAL_PEERS);
-      if (!DDS_StringSeq_ensure_length(&ctx->initial_peers, 0, 0)) {
+      if (!DDS_StringSeq_ensure_length(&this->initial_peers, 0, 0)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to clear initial peers list")
         return RMW_RET_ERROR;
       }
@@ -193,7 +219,7 @@ rmw_connextdds_initialize_discovery_options(
       RMW_CONNEXT_LOG_WARNING_A(
         "requested %d initial peers from DomainParticipantQos, but discovery range is off",
         qos_peers);
-      if (!DDS_StringSeq_ensure_length(&ctx->initial_peers, 0, 0)) {
+      if (!DDS_StringSeq_ensure_length(&this->initial_peers, 0, 0)) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to clear initial peers list")
         return RMW_RET_ERROR;
       }
@@ -214,16 +240,16 @@ rmw_connextdds_initialize_discovery_options(
 
     /* Give this participant its own unique domain tag to prevent
         unicast discovery from happening. */
-    if (!ctx->domain_tag) {
+    if (!this->domain_tag) {
       const auto pid = rcutils_get_pid();
       static const char * format_string = "ros_discovery_off_%d";
       const int bytes_needed = rcutils_snprintf(nullptr, 0, format_string, pid);
-      ctx->domain_tag = DDS_String_alloc(bytes_needed);
-      if (nullptr == ctx->domain_tag) {
+      this->domain_tag = DDS_String_alloc(bytes_needed);
+      if (nullptr == this->domain_tag) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to allocate domain tag string");
         return RMW_RET_BAD_ALLOC;
       }
-      if (rcutils_snprintf(ctx->domain_tag, bytes_needed + 1, format_string, pid) < 0) {
+      if (rcutils_snprintf(this->domain_tag, bytes_needed + 1, format_string, pid) < 0) {
         RMW_CONNEXT_LOG_ERROR_SET("failed to format ros discovery off information into domain tag");
         return RMW_RET_ERROR;
       }
@@ -231,7 +257,7 @@ rmw_connextdds_initialize_discovery_options(
     if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
         &dp_qos.property,
         "dds.domain_participant.domain_tag",
-        ctx->domain_tag,
+        this->domain_tag,
         DDS_BOOLEAN_FALSE))
     {
       RMW_CONNEXT_LOG_ERROR_SET(
@@ -241,15 +267,15 @@ rmw_connextdds_initialize_discovery_options(
     }
   } else if (  // NOLINT
     RMW_AUTOMATIC_DISCOVERY_RANGE_SYSTEM_DEFAULT !=
-    ctx->discovery_options->automatic_discovery_range)
+    this->base->options.discovery_options.automatic_discovery_range)
   {
     // For any other discovery range, copy the list of static peers to so that
     // it will be later copied to DomainParticipantQos::discovery::initial_peers.
     dp_qos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
     const auto rc = rmw_connextdds_extend_initial_peer_list(
-      ctx->discovery_options->static_peers,
-      ctx->discovery_options->static_peers_count,
-      &ctx->initial_peers);
+      this->base->options.discovery_options.static_peers,
+      this->base->options.discovery_options.static_peers_count,
+      &this->initial_peers);
     if (RMW_RET_OK != rc) {
       RMW_CONNEXT_LOG_ERROR(
         "failed to extend initial peers with the static peers");
@@ -259,7 +285,7 @@ rmw_connextdds_initialize_discovery_options(
       -----------------------------------------
     */
     if (RMW_AUTOMATIC_DISCOVERY_RANGE_LOCALHOST ==
-      ctx->discovery_options->automatic_discovery_range)
+      this->base->options.discovery_options.automatic_discovery_range)
     {
       // Make sure that the participant is not listening on any multicast address.
       if (!DDS_StringSeq_ensure_length(
@@ -281,7 +307,7 @@ rmw_connextdds_initialize_discovery_options(
       const auto rc2 = rmw_connextdds_extend_initial_peer_list(
         localhost_peers,
         2,
-        &ctx->initial_peers);
+        &this->initial_peers);
       if (RMW_RET_OK != rc2) {
         RMW_CONNEXT_LOG_ERROR(
           "failed to extend initial peers with the static peers");
@@ -293,12 +319,8 @@ rmw_connextdds_initialize_discovery_options(
   return RMW_RET_OK;
 }
 
-
-static
 rmw_ret_t
-rmw_connextdds_initialize_participant_qos(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantQos & dp_qos)
+rmw_context_impl_s::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos)
 {
   RMW_CONNEXT_ASSERT(nullptr != RMW_Connext_gv_DomainParticipantFactory)
   if (DDS_RETCODE_OK !=
@@ -309,26 +331,26 @@ rmw_connextdds_initialize_participant_qos(
   }
 
   if (RMW_RET_OK !=
-    rmw_connextdds_initialize_participant_qos_impl(ctx, &dp_qos))
+    rmw_connextdds_initialize_participant_qos_impl(this, &dp_qos))
   {
     return RMW_RET_ERROR;
   }
 
-  switch (ctx->participant_qos_override_policy) {
-    case rmw_context_impl_t::participant_qos_override_policy_t::All:
-    case rmw_context_impl_t::participant_qos_override_policy_t::Basic:
-      if (nullptr != ctx->discovery_options) {
-        const auto rc = rmw_connextdds_initialize_discovery_options(ctx, dp_qos);
+  switch (this->participant_qos_override_policy) {
+    case rmw_context_impl_s::participant_qos_override_policy_t::All:
+    case rmw_context_impl_s::participant_qos_override_policy_t::Basic:
+      {
+        const auto rc = this->initialize_discovery_options(dp_qos);
         if (RMW_RET_OK != rc) {
           RMW_CONNEXT_LOG_ERROR("failed to initialize discovery options")
           return RMW_RET_ERROR;
         }
-      }
-      if (DDS_StringSeq_get_length(&ctx->initial_peers) > 0 &&
-        !DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &ctx->initial_peers))
-      {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to copy initial peers sequence")
-        return RMW_RET_ERROR;
+        if (DDS_StringSeq_get_length(&this->initial_peers) > 0 &&
+          !DDS_StringSeq_copy(&dp_qos.discovery.initial_peers, &this->initial_peers))
+        {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to copy initial peers sequence")
+          return RMW_RET_ERROR;
+        }
       }
       break;
     default:
@@ -339,48 +361,9 @@ rmw_connextdds_initialize_participant_qos(
 }
 
 rmw_ret_t
-rmw_context_impl_t::initialize_node(
-  const rmw_discovery_options_t * const discovery_options_in)
+rmw_context_impl_s::initialize_node()
 {
-  if (this->node_count > 0) {
-    bool params_equal = false;
-    if (rmw_discovery_options_equal(
-        this->discovery_options, discovery_options_in, &params_equal) != RMW_RET_OK)
-    {
-      RMW_CONNEXT_LOG_ERROR_SET("invalid discovery params argument");
-      return RMW_RET_INVALID_ARGUMENT;
-    }
-
-    if (!params_equal) {
-      RMW_CONNEXT_LOG_ERROR_SET(
-        "node is being initialized with incompatible discovery parameters");
-      return RMW_RET_ERROR;
-    }
-  } else {
-    if (nullptr != discovery_options_in) {
-      RMW_CONNEXT_ASSERT(nullptr == this->discovery_options)
-      this->discovery_options = static_cast<rmw_discovery_options_t *>(
-        this->base->options.allocator.allocate(
-          sizeof(rmw_discovery_options_t),
-          this->base->options.allocator.state));
-      if (nullptr == this->discovery_options) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to allocate discovery options")
-        return RMW_RET_BAD_ALLOC;
-      }
-      *this->discovery_options = rmw_get_zero_initialized_discovery_options();
-      const rmw_ret_t rc = rmw_discovery_options_copy(
-        discovery_options_in,
-        &this->base->options.allocator,
-        this->discovery_options);
-      if (rc != RMW_RET_OK) {
-        rcutils_error_string_t prev_error_string = rcutils_get_error_string();
-        RMW_CONNEXT_LOG_ERROR_A_SET(
-          "failed to copy discovery parameters: %s",
-          prev_error_string.str);
-        return rc;
-      }
-    }
-
+  if (this->node_count == 0) {
     rmw_ret_t rc = this->initialize_participant();
     if (RMW_RET_OK != rc) {
       RMW_CONNEXT_LOG_ERROR("failed to initialize DomainParticipant")
@@ -403,7 +386,124 @@ rmw_context_impl_t::initialize_node(
 }
 
 rmw_ret_t
-rmw_context_impl_t::initialize_participant()
+rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
+{
+  if (nullptr == this->base->options.security_options.security_root_path) {
+    // Security not enabled;
+    return RMW_RET_OK;
+  }
+
+  rmw_ret_t rc = rmw_connextdds_enable_security(this, qos);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+
+#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
+  static const char * const uri_prefix = "file:";
+#else
+  // Connext Pro 5.3.1 does not support the "file:" prefix
+  static const char * const uri_prefix = "";
+#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
+
+  std::unordered_map<std::string, std::string> security_files;
+  if (!rmw_dds_common::get_security_files(
+      uri_prefix, this->base->options.security_options.security_root_path, security_files))
+  {
+    RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
+    return RMW_RET_ERROR;
+  }
+
+  /* X509 Certificate of the Identity CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_IDENTITY_CA_PROPERTY,
+      security_files["IDENTITY_CA"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_IDENTITY_CA_PROPERTY, security_files["IDENTITY_CA"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* X509 Certificate of the Permissions CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
+      security_files["PERMISSIONS_CA"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, security_files["PERMISSIONS_CA"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* Private Key of the DomainParticipant's identity */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
+      security_files["PRIVATE_KEY"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY, security_files["PRIVATE_KEY"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* Public certificate of the DomainParticipant's identity, signed
+   * by the Certificate Authority */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
+      security_files["CERTIFICATE"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, security_files["CERTIFICATE"].c_str())
+    return RMW_RET_ERROR;
+  }
+  /* XML file containing domain governance configuration, signed by
+   * the Permission CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_GOVERNANCE_PROPERTY,
+      security_files["GOVERNANCE"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_GOVERNANCE_PROPERTY, security_files["GOVERNANCE"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  /* XML file containing domain permissions configuration, signed by
+   * the Permission CA */
+  if (DDS_RETCODE_OK !=
+    DDS_PropertyQosPolicyHelper_assert_property(
+      &qos->property,
+      DDS_SECURITY_PERMISSIONS_PROPERTY,
+      security_files["PERMISSIONS"].c_str(),
+      RTI_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PERMISSIONS_PROPERTY, security_files["PERMISSIONS"].c_str())
+    return RMW_RET_ERROR;
+  }
+
+  return rmw_connextdds_apply_security_logging_configuration(&qos->property);
+}
+
+rmw_ret_t
+rmw_context_impl_s::initialize_participant()
 {
   RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipant")
 
@@ -424,24 +524,21 @@ rmw_context_impl_t::initialize_participant()
     return RMW_RET_ERROR;
   }
 
-  rmw_context_impl_t * const ctx = this;
   auto scope_exit_dp_finalize = rcpputils::make_scope_exit(
-    [ctx]()
+    [this]()
     {
-      if (RMW_RET_OK != ctx->finalize_participant()) {
+      if (RMW_RET_OK != this->finalize_participant()) {
         RMW_CONNEXT_LOG_ERROR(
           "failed to finalize participant on error")
       }
     });
 
-  if (RMW_RET_OK !=
-    rmw_connextdds_initialize_participant_qos(this, dp_qos))
-  {
+  if (RMW_RET_OK != this->initialize_participant_qos(dp_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize participant qos")
     return RMW_RET_ERROR;
   }
 
-  if (RMW_RET_OK != rmw_connextdds_configure_security(this, &dp_qos)) {
+  if (RMW_RET_OK != this->configure_security(&dp_qos)) {
     RMW_CONNEXT_LOG_ERROR("failed to configure DDS Security")
     return RMW_RET_ERROR;
   }
@@ -545,7 +642,7 @@ rmw_context_impl_t::initialize_participant()
 }
 
 rmw_ret_t
-rmw_context_impl_t::enable_participant()
+rmw_context_impl_s::enable_participant()
 {
   if (DDS_RETCODE_OK !=
     DDS_Entity_enable(
@@ -578,7 +675,7 @@ rmw_context_impl_t::enable_participant()
 }
 
 rmw_ret_t
-rmw_context_impl_t::finalize_participant()
+rmw_context_impl_s::finalize_participant()
 {
   RMW_CONNEXT_LOG_DEBUG("finalizing DDS DomainParticipant")
 #if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
@@ -674,19 +771,9 @@ rmw_context_impl_t::finalize_participant()
 }
 
 rmw_ret_t
-rmw_context_impl_t::finalize()
+rmw_context_impl_s::finalize()
 {
   rmw_ret_t rc_exit = RMW_RET_OK;
-
-  if (nullptr != this->discovery_options) {
-    const auto rc = rmw_discovery_options_fini(
-      this->discovery_options);
-    if (RMW_RET_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR("failed to deallocate discovery options");
-      rc_exit = RMW_RET_ERROR;
-    }
-    this->discovery_options = nullptr;
-  }
 
   if (nullptr != this->domain_tag) {
     DDS_String_free(this->domain_tag);
@@ -721,7 +808,7 @@ rmw_context_impl_t::finalize()
 }
 
 rmw_ret_t
-rmw_context_impl_t::finalize_node()
+rmw_context_impl_s::finalize_node()
 {
   RMW_CONNEXT_LOG_DEBUG_A(
     "finalizing node: total=%lu", this->node_count)
@@ -737,7 +824,7 @@ rmw_context_impl_t::finalize_node()
 }
 
 uint32_t
-rmw_context_impl_t::next_client_id()
+rmw_context_impl_s::next_client_id()
 {
   const uint32_t res = this->client_service_id;
   this->client_service_id += 1;
@@ -748,7 +835,7 @@ rmw_context_impl_t::next_client_id()
 }
 
 rmw_ret_t
-rmw_context_impl_t::assert_topic(
+rmw_context_impl_s::assert_topic(
   DDS_DomainParticipant * const participant,
   const char * const topic_name,
   const char * const type_name,
@@ -923,22 +1010,21 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
   return ret;
 }
 
-static
-rmw_ret_t
+static rmw_ret_t
 rmw_connextdds_parse_participant_qos_override_policy(
   const char * const user_input,
-  rmw_context_impl_t::participant_qos_override_policy_t & policy)
+  rmw_context_impl_s::participant_qos_override_policy_t & policy)
 {
   static const char pfx_never[] = "never";
   static const char pfx_all[] = "all";
   static const char pfx_basic[] = "basic";
 
-  policy = rmw_context_impl_t::participant_qos_override_policy_t::All;
+  policy = rmw_context_impl_s::participant_qos_override_policy_t::All;
 
   if (0 == strcmp(user_input, pfx_never)) {
-    policy = rmw_context_impl_t::participant_qos_override_policy_t::Never;
+    policy = rmw_context_impl_s::participant_qos_override_policy_t::Never;
   } else if (0 == strcmp(user_input, pfx_basic)) {
-    policy = rmw_context_impl_t::participant_qos_override_policy_t::Basic;
+    policy = rmw_context_impl_s::participant_qos_override_policy_t::Basic;
   } else if (user_input[0] != '\0' && strcmp(user_input, pfx_all) != 0) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "unexpected value for participant qos override policy. "
@@ -950,11 +1036,10 @@ rmw_connextdds_parse_participant_qos_override_policy(
   return RMW_RET_OK;
 }
 
-static
-rmw_ret_t
+static rmw_ret_t
 rmw_connextdds_parse_endpoint_qos_override_policy(
   const char * const user_input,
-  rmw_context_impl_t::endpoint_qos_override_policy_t & policy,
+  rmw_context_impl_s::endpoint_qos_override_policy_t & policy,
   std::regex & policy_regex)
 {
   static const char pfx_dds_topics[] = "dds_topics: ";
@@ -962,10 +1047,10 @@ rmw_connextdds_parse_endpoint_qos_override_policy(
   static const char pfx_never[] = "never";
   static const char pfx_always[] = "always";
 
-  policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Always;
+  policy = rmw_context_impl_s::endpoint_qos_override_policy_t::Always;
 
   if (0 == strncmp(user_input, pfx_dds_topics, pfx_dds_topics_len)) {
-    policy = rmw_context_impl_t::endpoint_qos_override_policy_t::DDSTopics;
+    policy = rmw_context_impl_s::endpoint_qos_override_policy_t::DDSTopics;
     try {
       policy_regex = &user_input[pfx_dds_topics_len];
     } catch (std::regex_error & err) {
@@ -975,7 +1060,7 @@ rmw_connextdds_parse_endpoint_qos_override_policy(
       return RMW_RET_ERROR;
     }
   } else if (0 == strcmp(user_input, pfx_never)) {
-    policy = rmw_context_impl_t::endpoint_qos_override_policy_t::Never;
+    policy = rmw_context_impl_s::endpoint_qos_override_policy_t::Never;
   } else if (user_input[0] != '\0' && strcmp(user_input, pfx_always) != 0) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "unexpected value for endpoint qos override policy. "
@@ -1046,13 +1131,13 @@ rmw_api_connextdds_init(
       }
     });
 
-  rmw_context_impl_t * const ctx = new (std::nothrow) rmw_context_impl_t(context);
-  if (nullptr == ctx) {
+  rmw_context_impl_t * const ctx_impl = new (std::nothrow) rmw_context_impl_t(context);
+  if (nullptr == ctx_impl) {
     RMW_CONNEXT_LOG_ERROR_SET(
       "failed to allocate RMW context implementation")
     return RMW_RET_ERROR;
   }
-  context->impl = ctx;
+  context->impl = ctx_impl;
 
   // Increment the count early, since context->finalize() expects it
   // to have been already incremented.
@@ -1060,16 +1145,16 @@ rmw_api_connextdds_init(
 
   auto scope_exit_context_finalize =
     rcpputils::make_scope_exit(
-    [ctx]()
+    [ctx_impl]()
     {
-      if (RMW_RET_OK != ctx->finalize()) {
+      if (RMW_RET_OK != ctx_impl->finalize()) {
         RMW_CONNEXT_LOG_ERROR("failed to finalize RMW context")
       }
     });
 
   // TODO(asorbini) get rid of context->impl->domain_id, and just use
-  // context->actual_domain_id in rmw_context_impl_t::initialize_node()
-  ctx->domain_id = actual_domain_id;
+  // context->actual_domain_id in rmw_context_impl_s::initialize_node()
+  ctx_impl->domain_id = actual_domain_id;
 
   // All publishers will use asynchronous publish mode unless
   // RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE is set.
@@ -1086,7 +1171,7 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->use_default_publish_mode = '\0' != use_default_publish_mode_env[0];
+  ctx_impl->use_default_publish_mode = '\0' != use_default_publish_mode_env[0];
 
   // Check if the user specified a custom override policy for participant qos.
   const char * participant_qos_policy = nullptr;
@@ -1104,7 +1189,7 @@ rmw_api_connextdds_init(
   }
 
   rc = rmw_connextdds_parse_participant_qos_override_policy(
-    participant_qos_policy, ctx->participant_qos_override_policy);
+    participant_qos_policy, ctx_impl->participant_qos_override_policy);
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to parse value for environment variable {%s}",
@@ -1129,8 +1214,8 @@ rmw_api_connextdds_init(
 
   rc = rmw_connextdds_parse_endpoint_qos_override_policy(
     endpoint_qos_policy,
-    ctx->endpoint_qos_override_policy,
-    ctx->endpoint_qos_override_policy_topics_regex);
+    ctx_impl->endpoint_qos_override_policy,
+    ctx_impl->endpoint_qos_override_policy_topics_regex);
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to parse value for environment variable {%s}",
@@ -1152,15 +1237,15 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->cyclone_compatible = '\0' != cyclone_compatible_env[0];
+  ctx_impl->cyclone_compatible = '\0' != cyclone_compatible_env[0];
 
 #if !RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC
   // Check if we should use the "basic" mapping profile for Request/Reply
   // endpoints in order to interoperate with Micro, and Cyclone DDS.
   // If "compatibility mode" with Cyclone is enabled, then we always use
   // the "basic" profile.
-  if (ctx->cyclone_compatible) {
-    ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
+  if (ctx_impl->cyclone_compatible) {
+    ctx_impl->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
   } else {
     const char * request_reply_mapping_env = nullptr;
     lookup_rc = rcutils_get_env(
@@ -1178,9 +1263,9 @@ rmw_api_connextdds_init(
     if ('\0' == request_reply_mapping_env[0] ||
       strncmp("extended", request_reply_mapping_env, 5) == 0)
     {
-      ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
+      ctx_impl->request_reply_mapping = RMW_Connext_RequestReplyMapping::Extended;
     } else if (strncmp("basic", request_reply_mapping_env, 5) == 0) {
-      ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
+      ctx_impl->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
     } else {
       RMW_CONNEXT_LOG_ERROR_A_SET(
         "invalid value for %s: '%s'. Use one of: basic, extended.",
@@ -1189,7 +1274,7 @@ rmw_api_connextdds_init(
     }
   }
 #else
-  ctx->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
+  ctx_impl->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
 #endif /* RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC */
 
 #if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
@@ -1207,7 +1292,7 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->legacy_rmw_compatible = '\0' != legacy_rmw_compatible_env[0];
+  ctx_impl->legacy_rmw_compatible = '\0' != legacy_rmw_compatible_env[0];
 #endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
@@ -1227,7 +1312,7 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->fast_endp_discovery = '\0' == disable_fast_endp_discovery_env[0];
+  ctx_impl->fast_endp_discovery = '\0' == disable_fast_endp_discovery_env[0];
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
 #if RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
@@ -1247,7 +1332,7 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
+  ctx_impl->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
   /* Lookup and configure initial peer from environment */
@@ -1268,7 +1353,7 @@ rmw_api_connextdds_init(
   if ('\0' != initial_peers[0]) {
     rmw_ret_t rc = rmw_connextdds_parse_string_list(
       initial_peers,
-      &ctx->initial_peers,
+      &ctx_impl->initial_peers,
       ',' /* delimiter */,
       true /* trim_elements */,
       false /* allow_empty_elements */,
@@ -1297,7 +1382,7 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx->optimize_reliability = '\0' == disable_optimize_reliability_env[0];
+  ctx_impl->optimize_reliability = '\0' == disable_optimize_reliability_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
 
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
@@ -1305,7 +1390,7 @@ rmw_api_connextdds_init(
     RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")
 
     if (RMW_RET_OK !=
-      rmw_connextdds_initialize_participant_factory_context(ctx))
+      rmw_connextdds_initialize_participant_factory_context(ctx_impl))
     {
       RMW_CONNEXT_LOG_ERROR(
         "failed to initialize DDS DomainParticipantFactory context")
@@ -1320,7 +1405,7 @@ rmw_api_connextdds_init(
     }
 
     if (RMW_RET_OK !=
-      rmw_connextdds_initialize_participant_factory_qos(ctx))
+      rmw_connextdds_initialize_participant_factory_qos())
     {
       RMW_CONNEXT_LOG_ERROR_SET("failed to set DDS participant factory QoS")
       return RMW_RET_ERROR;
@@ -1402,123 +1487,4 @@ rmw_api_connextdds_context_fini(rmw_context_t * context)
   delete context->impl;
   *context = rmw_get_zero_initialized_context();
   return rc_exit;
-}
-
-rmw_ret_t
-rmw_connextdds_configure_security(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantQos * const qos)
-{
-  if (nullptr == ctx->base->options.security_options.security_root_path) {
-    // Security not enabled;
-    return RMW_RET_OK;
-  }
-
-  rmw_ret_t rc = rmw_connextdds_enable_security(ctx, qos);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
-
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
-  static const char * const uri_prefix = "file:";
-#else
-  // Connext Pro 5.3.1 does not support the "file:" prefix
-  static const char * const uri_prefix = "";
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
-
-  std::unordered_map<std::string, std::string> security_files;
-  if (!rmw_dds_common::get_security_files(
-      uri_prefix, ctx->base->options.security_options.security_root_path, security_files))
-  {
-    RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
-    return RMW_RET_ERROR;
-  }
-
-  /* X509 Certificate of the Identity CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_IDENTITY_CA_PROPERTY,
-      security_files["IDENTITY_CA"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CA_PROPERTY, security_files["IDENTITY_CA"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* X509 Certificate of the Permissions CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
-      security_files["PERMISSIONS_CA"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, security_files["PERMISSIONS_CA"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* Private Key of the DomainParticipant's identity */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
-      security_files["PRIVATE_KEY"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY, security_files["PRIVATE_KEY"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* Public certificate of the DomainParticipant's identity, signed
-   * by the Certificate Authority */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
-      security_files["CERTIFICATE"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, security_files["CERTIFICATE"].c_str())
-    return RMW_RET_ERROR;
-  }
-  /* XML file containing domain governance configuration, signed by
-   * the Permission CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_GOVERNANCE_PROPERTY,
-      security_files["GOVERNANCE"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_GOVERNANCE_PROPERTY, security_files["GOVERNANCE"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  /* XML file containing domain permissions configuration, signed by
-   * the Permission CA */
-  if (DDS_RETCODE_OK !=
-    DDS_PropertyQosPolicyHelper_assert_property(
-      &qos->property,
-      DDS_SECURITY_PERMISSIONS_PROPERTY,
-      security_files["PERMISSIONS"].c_str(),
-      RTI_FALSE))
-  {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_PROPERTY, security_files["PERMISSIONS"].c_str())
-    return RMW_RET_ERROR;
-  }
-
-  return rmw_connextdds_apply_security_logging_configuration(&qos->property);
 }

@@ -17,6 +17,8 @@
 #include <vector>
 #include <cmath>
 
+#include "rcpputils/scope_exit.hpp"
+
 #include "rmw/impl/cpp/key_value.hpp"
 #include "rmw_connextdds/custom_sql_filter.hpp"
 

@@ -15,6 +15,8 @@
 #include <string.h>
 #include <string>
 
+#include "rcpputils/scope_exit.hpp"
+
 #include "rmw_connextdds/type_support.hpp"
 
 #include "rmw_connextdds/rmw_impl.hpp"

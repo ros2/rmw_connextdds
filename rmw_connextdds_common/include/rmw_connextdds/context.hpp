@@ -15,40 +15,23 @@
 #ifndef RMW_CONNEXTDDS__CONTEXT_HPP_
 #define RMW_CONNEXTDDS__CONTEXT_HPP_
 
-#include <stdio.h>
-
-#include <limits>
 #include <map>
 #include <mutex>
 #include <regex>
 #include <string>
-#include <memory>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
 
-#include "rmw/error_handling.h"
-#include "rmw/impl/cpp/macros.hpp"
-#include "rmw/event.h"
-#include "rmw/names_and_types.h"
-#include "rmw/get_node_info_and_types.h"
-#include "rmw/get_service_names_and_types.h"
-#include "rmw/get_topic_names_and_types.h"
-#include "rmw/topic_endpoint_info_array.h"
-#include "rmw/get_topic_endpoint_info.h"
 #include "rmw_dds_common/context.hpp"
-#include "rmw_dds_common/msg/participant_entities_info.hpp"
 
-#include "rmw/qos_profiles.h"
-#include "rmw_dds_common/qos.hpp"
+#include "rmw/discovery_options.h"
+#include "rmw/init.h"
+#include "rmw/ret_types.h"
 
-#include "rcutils/strdup.h"
+#include "rmw/impl/cpp/macros.hpp"
 
-#include "rcpputils/scope_exit.hpp"
-
-#include "rmw/get_network_flow_endpoints.h"
 #include "rmw/rmw.h"
-#include "rmw/types.h"
 
 extern DDS_DomainParticipantFactory * RMW_Connext_gv_DomainParticipantFactory;
 extern size_t RMW_Connext_gv_ContextCount;
@@ -62,10 +45,9 @@ enum class RMW_Connext_RequestReplyMapping
 // Definition of struct rmw_context_impl_s as declared in rmw/init.h
 struct rmw_context_impl_s
 {
+public:
   rmw_dds_common::Context common;
   rmw_context_t * base;
-
-  DDS_DomainParticipantFactory * factory;
 
   DDS_DomainId_t domain_id;
   DDS_DomainParticipant * participant;
@@ -79,15 +61,7 @@ struct rmw_context_impl_s
   DDS_DataReader * dr_publications;
   DDS_DataReader * dr_subscriptions;
 
-  /* Keep track of what discovery settings were used when initializing */
-  rmw_discovery_options_t * discovery_options;
-
-  /* Manage the memory of the domain tag */
-  char * domain_tag;
-
   /* Global configuration for QoS profiles */
-  std::string qos_ctx_name;
-  std::string qos_ctx_namespace;
   bool use_default_publish_mode;
   RMW_Connext_RequestReplyMapping request_reply_mapping;
   bool cyclone_compatible{false};
@@ -149,65 +123,21 @@ struct rmw_context_impl_s
   /* Shutdown flag */
   bool is_shutdown{false};
 
-  /* suffix for GUIDs to construct unique client/service ids
-     (protected by initialization_mutex) */
-  uint32_t client_service_id{0};
-
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
   std::mutex endpoint_mutex;
 
-  explicit rmw_context_impl_s(rmw_context_t * const base)
-  : common(),
-    base(base),
-    factory(nullptr),
-    domain_id(RMW_CONNEXT_DEFAULT_DOMAIN),
-    participant(nullptr),
-    dds_pub(nullptr),
-    dds_sub(nullptr),
-    dr_participants(nullptr),
-    dr_publications(nullptr),
-    dr_subscriptions(nullptr),
-    discovery_options(nullptr),
-    domain_tag(nullptr)
-  {
-    /* destructor relies on these being initialized properly */
-    common.thread_is_running.store(false);
-    common.graph_guard_condition = nullptr;
-    common.pub = nullptr;
-    common.sub = nullptr;
-  }
+  explicit rmw_context_impl_s(rmw_context_t * const base);
 
-  ~rmw_context_impl_s()
-  {
-    if (0u != this->node_count) {
-      RMW_CONNEXT_LOG_ERROR_A("not all nodes finalized: %lu", this->node_count)
-    }
-  }
+  ~rmw_context_impl_s();
 
   // Initializes the participant, if it wasn't done already.
   // node_count is increased
   rmw_ret_t
-  initialize_node(
-    const rmw_discovery_options_t * const discovery_options);
+  initialize_node();
 
   // Destroys the participant, when node_count reaches 0.
   rmw_ret_t
   finalize_node();
-
-  // Initialize the DomainParticipant associated with the context.
-  rmw_ret_t
-  initialize_participant();
-
-  // Enable the DomainParticipant associated with the context.
-  rmw_ret_t
-  enable_participant();
-
-  // Finalize the DomainParticipant associated with the context.
-  rmw_ret_t
-  finalize_participant();
-
-  uint32_t
-  next_client_id();
 
   rmw_ret_t
   assert_topic(
@@ -220,15 +150,40 @@ struct rmw_context_impl_s
 
   rmw_ret_t
   finalize();
+
+private:
+  rmw_ret_t
+  configure_security(DDS_DomainParticipantQos * const qos);
+
+  rmw_ret_t
+  initialize_discovery_options(DDS_DomainParticipantQos & dp_qos);
+
+  rmw_ret_t
+  initialize_participant_qos(DDS_DomainParticipantQos & dp_qos);
+
+  // Initialize the DomainParticipant associated with the context.
+  rmw_ret_t
+  initialize_participant();
+
+  // Enable the DomainParticipant associated with the context.
+  rmw_ret_t
+  enable_participant();
+
+  uint32_t
+  next_client_id();
+
+  // Finalize the DomainParticipant associated with the context.
+  rmw_ret_t
+  finalize_participant();
+
+  DDS_DomainParticipantFactory * factory{nullptr};
+
+  /* Manage the memory of the domain tag */
+  char * domain_tag{nullptr};
+
+  /* suffix for GUIDs to construct unique client/service ids
+     (protected by initialization_mutex) */
+  uint32_t client_service_id{0};
 };
-
-rmw_ret_t
-rmw_connextdds_initialize_participant_factory_qos(
-  rmw_context_impl_t * const ctx);
-
-rmw_ret_t
-rmw_connextdds_configure_security(
-  rmw_context_impl_t * const ctx,
-  DDS_DomainParticipantQos * const qos);
 
 #endif  // RMW_CONNEXTDDS__CONTEXT_HPP_

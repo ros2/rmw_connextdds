@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rcpputils/scope_exit.hpp"
+
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
@@ -80,7 +82,7 @@ rmw_api_connextdds_create_node(
     return nullptr;
   }
 
-  ret = ctx->initialize_node(&context->options.discovery_options);
+  ret = ctx->initialize_node();
   if (RMW_RET_OK != ret) {
     RMW_CONNEXT_LOG_ERROR("failed to initialize node in context")
     return nullptr;

@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rcpputils/scope_exit.hpp"
+
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
+
+#include "rmw_dds_common/qos.hpp"
 
 #include "rmw/validate_full_topic_name.h"
 

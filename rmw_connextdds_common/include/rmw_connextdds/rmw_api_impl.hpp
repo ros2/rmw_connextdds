@@ -18,6 +18,7 @@
 #include "rmw_connextdds/context.hpp"
 
 #include "rmw/features.h"
+#include "rmw/get_network_flow_endpoints.h"
 
 /*****************************************************************************
  * Context API

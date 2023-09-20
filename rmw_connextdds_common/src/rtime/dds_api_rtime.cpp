@@ -2041,3 +2041,15 @@ rmw_connextdds_get_cft_filter_expression(
   UNUSED_ARG(options);
   return RMW_RET_UNSUPPORTED;
 }
+
+rmw_ret_t
+rmw_connextdds_is_subscription_matched(
+  RMW_Connext_Publisher * const pub,
+  const DDS_GUID_t * const reader_guid,
+  bool & matched);
+{
+  UNUSED_ARG(pub);
+  UNUSED_ARG(reader_gid);
+  UNUSED_ARG(matched);
+  return RMW_RET_UNSUPPORTED;
+}

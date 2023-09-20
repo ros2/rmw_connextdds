@@ -17,6 +17,8 @@
 #include <vector>
 #include <cmath>
 
+#include "dds_c/dds_c_infrastructure_impl.h"
+
 #include "rcpputils/scope_exit.hpp"
 
 #include "rmw/impl/cpp/key_value.hpp"
@@ -726,25 +728,24 @@ rmw_connextdds_write_message(
       reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(message->user_data);
     DDS_WriteParams_t write_params = DDS_WRITEPARAMS_DEFAULT;
 
-    if (!rr_msg->request) {
-      /* If this is a reply, propagate the request's sample identity
-         via the related_sample_identity field */
-      rmw_ret_t rc = RMW_RET_ERROR;
+    // Propagate the request's sample identity via the related_sample_identity field
+    int64_t sn_ros = rr_msg->sn >= 0 ? rr_msg->sn : 0;
+    rmw_connextdds_sn_ros_to_dds(
+      sn_ros,
+      write_params.related_sample_identity.sequence_number);
 
-      rmw_connextdds_sn_ros_to_dds(
-        rr_msg->sn,
-        write_params.related_sample_identity.sequence_number);
+    rmw_ret_t rc = rmw_connextdds_gid_to_guid(
+      rr_msg->request ? rr_msg->gid : rr_msg->writer_gid,
+      write_params.related_sample_identity.writer_guid);
+    if (RMW_RET_OK != rc) {
+      return rc;
+    }
 
-      rc = rmw_connextdds_gid_to_guid(
-        rr_msg->gid,
-        write_params.related_sample_identity.writer_guid);
-      if (RMW_RET_OK != rc) {
-        return rc;
-      }
-    } else {
+    if (rr_msg->request) {
       // enable WriteParams::replace_auto to retrieve SN of published message
       write_params.replace_auto = DDS_BOOLEAN_TRUE;
     }
+
     if (DDS_RETCODE_OK !=
       DDS_DataWriter_write_w_params_untypedI(
         pub->writer(), message, &write_params))
@@ -760,7 +761,6 @@ rmw_connextdds_write_message(
       // Read assigned sn from write_params
       rmw_connextdds_sn_dds_to_ros(
         write_params.identity.sequence_number, sn);
-
       *sn_out = sn;
     }
 
@@ -1585,6 +1585,39 @@ rmw_connextdds_get_cft_filter_expression(
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to rmw_subscription_content_filter_options_init")
     return RMW_RET_ERROR;
+  }
+
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_is_subscription_matched(
+  RMW_Connext_Publisher * const pub,
+  const DDS_GUID_t * const reader_guid,
+  bool & matched)
+{
+  DDS_InstanceHandle_t reader_ih = DDS_HANDLE_NIL;
+  DDS_GUID_to_instance_handle(reader_guid, &reader_ih);
+  struct DDS_InstanceHandleSeq matched_subs = DDS_SEQUENCE_INITIALIZER;
+  auto scope_exit_seqs = rcpputils::make_scope_exit(
+    [&matched_subs]()
+    {
+      if (!DDS_InstanceHandleSeq_finalize(&matched_subs)) {
+        RMW_CONNEXT_LOG_ERROR("failed to finalize instance handle sequence")
+      }
+    });
+  DDS_ReturnCode_t dds_rc =
+    DDS_DataWriter_get_matched_subscriptions(pub->writer(), &matched_subs);
+  if (DDS_RETCODE_OK != dds_rc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched subscriptions: dds_rc=%d", dds_rc)
+    return RMW_RET_ERROR;
+  }
+  const DDS_Long subs_len = DDS_InstanceHandleSeq_get_length(&matched_subs);
+  matched = false;
+  for (DDS_Long i = 0; i < subs_len && !matched; i++) {
+    DDS_InstanceHandle_t * const matched_ih =
+      DDS_InstanceHandleSeq_get_reference(&matched_subs, i);
+    matched = DDS_InstanceHandle_compare(matched_ih, &reader_ih) == 0;
   }
 
   return RMW_RET_OK;

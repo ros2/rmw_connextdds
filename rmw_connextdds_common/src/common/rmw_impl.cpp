@@ -1075,7 +1075,7 @@ RMW_Connext_Publisher::wait_for_subscription(
   }
 
   std::unique_lock<std::mutex> lock(matched_mutex);
-  auto endpoint_entry = known_endpoints.find(known_endpoint_guid(reader_gid));
+  auto endpoint_entry = known_endpoints.find(RMW_Connext_KnownEndpointGuid(reader_gid));
   if (endpoint_entry == known_endpoints.end()) {
     unmatched = true;
     return RMW_RET_OK;

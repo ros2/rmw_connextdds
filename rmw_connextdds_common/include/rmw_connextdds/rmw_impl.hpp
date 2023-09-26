@@ -71,6 +71,28 @@ bool rmw_connextdds_find_string_in_list(
 DDS_Duration_t rmw_connextdds_duration_from_ros_time(
   const rmw_time_t * const ros_time);
 
+class RMW_Connext_OrderedGid
+{
+public:
+  explicit RMW_Connext_OrderedGid(const rmw_gid_t & value)
+  : value(value)
+  {
+  }
+
+  bool operator<(const RMW_Connext_OrderedGid & other) const
+  {
+    return memcmp(value.data, other.value.data, RMW_GID_STORAGE_SIZE) < 0;
+  }
+
+  bool operator==(const RMW_Connext_OrderedGid & other) const
+  {
+    return memcmp(value.data, other.value.data, RMW_GID_STORAGE_SIZE) == 0;
+  }
+
+private:
+  rmw_gid_t value;
+};
+
 /******************************************************************************
  * WaitSet wrapper
  ******************************************************************************/
@@ -245,20 +267,20 @@ public:
   push_related_endpoints(const rmw_gid_t & endpoint, const rmw_gid_t & related)
   {
     std::lock_guard<std::mutex> lock(matched_mutex);
-    known_endpoints.emplace(known_endpoint_guid(endpoint), related);
-    known_endpoints.emplace(known_endpoint_guid(related), endpoint);
+    known_endpoints.emplace(RMW_Connext_OrderedGid(endpoint), related);
+    known_endpoints.emplace(RMW_Connext_OrderedGid(related), endpoint);
   }
 
   void
   pop_related_endpoints(const rmw_gid_t & endpoint)
   {
     std::lock_guard<std::mutex> lock(matched_mutex);
-    auto endpoint_entry = known_endpoints.find(known_endpoint_guid(endpoint));
+    auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(endpoint));
     if (endpoint_entry == known_endpoints.end()) {
       return;
     }
-    known_endpoints.erase(known_endpoint_guid(endpoint));
-    known_endpoints.erase(known_endpoint_guid(endpoint_entry->second));
+    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint));
+    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint_entry->second));
   }
 
   void
@@ -298,28 +320,7 @@ private:
   std::mutex matched_mutex;
   std::condition_variable matched_cv;
   std::chrono::microseconds max_blocking_time;
-  class known_endpoint_guid
-  {
-public:
-    explicit known_endpoint_guid(const rmw_gid_t & value)
-    : value(value)
-    {
-    }
-
-    bool operator<(const known_endpoint_guid & other) const
-    {
-      return memcmp(value.data, other.value.data, RMW_GID_STORAGE_SIZE) < 0;
-    }
-
-    bool operator==(const known_endpoint_guid & other) const
-    {
-      return memcmp(value.data, other.value.data, RMW_GID_STORAGE_SIZE) == 0;
-    }
-
-private:
-    rmw_gid_t value;
-  };
-  std::map<known_endpoint_guid, rmw_gid_t> known_endpoints;
+  std::map<RMW_Connext_OrderedGid, rmw_gid_t> known_endpoints;
 
   RMW_Connext_Publisher(
     rmw_context_impl_t * const ctx,

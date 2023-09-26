@@ -21,8 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "dds_c/dds_c_infrastructure_impl.h"
-
 #include "rcpputils/scope_exit.hpp"
 
 #include "rmw/impl/cpp/key_value.hpp"
@@ -31,6 +29,8 @@
 #include "rmw_connextdds/type_support.hpp"
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
+
+#include "dds_c/dds_c_infrastructure_impl.h"
 
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextdds";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";

@@ -1040,8 +1040,7 @@ RMW_Connext_Publisher::load_max_blocking_time() const
     RMW_CONNEXT_LOG_ERROR_SET("failed to get datawriter qos")
     return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_DEFAULT);
   }
-  if (DDS_Duration_is_auto(&dw_qos.reliability.max_blocking_time))
-  {
+  if (DDS_Duration_is_auto(&dw_qos.reliability.max_blocking_time)) {
     return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_DEFAULT);
   }
   if (DDS_Duration_is_infinite(&dw_qos.reliability.max_blocking_time) ||

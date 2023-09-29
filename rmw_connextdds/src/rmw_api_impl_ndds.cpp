@@ -219,6 +219,25 @@ rmw_count_subscribers(
 
 
 rmw_ret_t
+rmw_count_clients(
+  const rmw_node_t * node,
+  const char * service_name,
+  size_t * count)
+{
+  return rmw_api_connextdds_count_clients(node, service_name, count);
+}
+
+rmw_ret_t
+rmw_count_services(
+  const rmw_node_t * node,
+  const char * service_name,
+  size_t * count)
+{
+  return rmw_api_connextdds_count_services(node, service_name, count);
+}
+
+
+rmw_ret_t
 rmw_get_subscriber_names_and_types_by_node(
   const rmw_node_t * node,
   rcutils_allocator_t * allocator,

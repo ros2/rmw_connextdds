@@ -2,6 +2,12 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add rmw count clients services impl (`#93 <https://github.com/ros2/rmw_connextdds/issues/93>`_)
+* Cleanup context implementation (`#131 <https://github.com/ros2/rmw_connextdds/issues/131>`_)
+* Contributors: Chris Lalancette, Minju, Lee
+
 0.17.0 (2023-08-21)
 -------------------
 * Update to C++17 (`#125 <https://github.com/ros2/rmw_connextdds/issues/125>`_)

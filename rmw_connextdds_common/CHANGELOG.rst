@@ -2,6 +2,13 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add rmw count clients services impl (`#93 <https://github.com/ros2/rmw_connextdds/issues/93>`_)
+* Conditional internal API access to support Connext 7+ (`#121 <https://github.com/ros2/rmw_connextdds/issues/121>`_)
+* Cleanup context implementation (`#131 <https://github.com/ros2/rmw_connextdds/issues/131>`_)
+* Contributors: Andrea Sorbini, Chris Lalancette, Minju, Lee
+
 0.17.0 (2023-08-21)
 -------------------
 * Fix RMW_Connext_Client::is_service_available for micro (`#130 <https://github.com/ros2/rmw_connextdds/issues/130>`_)

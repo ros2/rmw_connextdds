@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.0 (2023-10-04)
+-------------------
 * Add rmw count clients services impl (`#93 <https://github.com/ros2/rmw_connextdds/issues/93>`_)
 * Conditional internal API access to support Connext 7+ (`#121 <https://github.com/ros2/rmw_connextdds/issues/121>`_)
 * Cleanup context implementation (`#131 <https://github.com/ros2/rmw_connextdds/issues/131>`_)

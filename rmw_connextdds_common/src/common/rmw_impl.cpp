@@ -658,13 +658,19 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
   dds_writer(dds_writer),
   type_support(type_support),
   created_topic(created_topic),
-  status_condition(dds_writer)
+  status_condition(dds_writer),
+  matched_subscriptions(DDS_SEQUENCE_INITIALIZER)
 {
   rmw_connextdds_get_entity_gid(this->dds_writer, this->ros_gid);
   if (RMW_RET_OK != this->status_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on writer")
     throw std::runtime_error("failed to install condition on writer");
   }
+}
+
+RMW_Connext_Publisher::~RMW_Connext_Publisher()
+{
+  DDS_InstanceHandleSeq_finalize(&matched_subscriptions);
 }
 
 RMW_Connext_Publisher *
@@ -1084,11 +1090,18 @@ RMW_Connext_Publisher::wait_for_subscription(
   }
   related_writer_gid = endpoint_entry->second;
 
-  auto done_waiting = [this, &reader_guid]() {
+  DDS_InstanceHandle_t reader_ih = DDS_HANDLE_NIL;
+  rc = rmw_connextdds_guid_to_instance_handle(&reader_guid, &reader_ih);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
+  auto done_waiting = [this, &reader_ih]() {
       bool matched = false;
-      if (RMW_RET_OK != rmw_connextdds_is_subscription_matched(this, &reader_guid, matched)) {
-        RMW_CONNEXT_LOG_ERROR("failed to check if subscription is matched")
-        return false;
+      const DDS_Long subs_len = DDS_InstanceHandleSeq_get_length(&matched_subscriptions);
+      for (DDS_Long i = 0; i < subs_len && !matched; i++) {
+        DDS_InstanceHandle_t * const matched_ih =
+          DDS_InstanceHandleSeq_get_reference(&matched_subscriptions, i);
+        matched = DDS_InstanceHandle_compare(matched_ih, &reader_ih) == 0;
       }
       return matched;
     };

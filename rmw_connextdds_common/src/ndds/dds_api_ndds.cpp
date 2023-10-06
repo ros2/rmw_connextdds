@@ -1601,34 +1601,10 @@ rmw_connextdds_get_cft_filter_expression(
 }
 
 rmw_ret_t
-rmw_connextdds_is_subscription_matched(
-  RMW_Connext_Publisher * const pub,
-  const DDS_GUID_t * const reader_guid,
-  bool & matched)
+rmw_connextdds_guid_to_instance_handle(
+  const struct DDS_GUID_t * const guid,
+  DDS_InstanceHandle_t * const instance_handle)
 {
-  DDS_InstanceHandle_t reader_ih = DDS_HANDLE_NIL;
-  DDS_GUID_to_instance_handle(reader_guid, &reader_ih);
-  struct DDS_InstanceHandleSeq matched_subs = DDS_SEQUENCE_INITIALIZER;
-  auto scope_exit_seqs = rcpputils::make_scope_exit(
-    [&matched_subs]()
-    {
-      if (!DDS_InstanceHandleSeq_finalize(&matched_subs)) {
-        RMW_CONNEXT_LOG_ERROR("failed to finalize instance handle sequence")
-      }
-    });
-  DDS_ReturnCode_t dds_rc =
-    DDS_DataWriter_get_matched_subscriptions(pub->writer(), &matched_subs);
-  if (DDS_RETCODE_OK != dds_rc) {
-    RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched subscriptions: dds_rc=%d", dds_rc)
-    return RMW_RET_ERROR;
-  }
-  const DDS_Long subs_len = DDS_InstanceHandleSeq_get_length(&matched_subs);
-  matched = false;
-  for (DDS_Long i = 0; i < subs_len && !matched; i++) {
-    DDS_InstanceHandle_t * const matched_ih =
-      DDS_InstanceHandleSeq_get_reference(&matched_subs, i);
-    matched = DDS_InstanceHandle_compare(matched_ih, &reader_ih) == 0;
-  }
-
+  DDS_GUID_to_instance_handle(guid, instance_handle);
   return RMW_RET_OK;
 }

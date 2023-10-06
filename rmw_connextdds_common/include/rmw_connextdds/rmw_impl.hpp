@@ -272,21 +272,15 @@ public:
   }
 
   void
-  pop_related_endpoints(const rmw_gid_t & endpoint)
-  {
-    std::lock_guard<std::mutex> lock(matched_mutex);
-    auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(endpoint));
-    if (endpoint_entry == known_endpoints.end()) {
-      return;
-    }
-    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint));
-    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint_entry->second));
-  }
-
-  void
   on_publication_matched(
     const DDS_PublicationMatchedStatus * const status)
   {
+    std::lock_guard<std::mutex> lock(matched_mutex);
+    DDS_ReturnCode_t dds_rc =
+      DDS_DataWriter_get_matched_subscriptions(writer(), &matched_subscriptions);
+    if (DDS_RETCODE_OK != dds_rc) {
+      RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched subscriptions: dds_rc=%d", dds_rc)
+    }
     if (status->current_count_change < 0) {
       rmw_gid_t unmatched_gid;
       rmw_connextdds_ih_to_gid(status->last_subscription_handle, unmatched_gid);
@@ -301,6 +295,7 @@ public:
     const DDS_SubscriptionMatchedStatus * const status)
   {
     UNUSED_ARG(sub);
+    std::lock_guard<std::mutex> lock(matched_mutex);
     if (status->current_count_change < 0) {
       rmw_gid_t unmatched_gid;
       rmw_connextdds_ih_to_gid(status->last_publication_handle, unmatched_gid);
@@ -310,6 +305,8 @@ public:
   }
 
   rmw_context_impl_t * const ctx;
+
+  ~RMW_Connext_Publisher();
 
 private:
   DDS_DataWriter * dds_writer;
@@ -321,6 +318,7 @@ private:
   std::condition_variable matched_cv;
   std::chrono::microseconds max_blocking_time;
   std::map<RMW_Connext_OrderedGid, rmw_gid_t> known_endpoints;
+  DDS_InstanceHandleSeq matched_subscriptions;
 
   RMW_Connext_Publisher(
     rmw_context_impl_t * const ctx,
@@ -328,6 +326,16 @@ private:
     RMW_Connext_MessageTypeSupport * const type_support,
     const bool created_topic);
 
+  void
+  pop_related_endpoints(const rmw_gid_t & endpoint)
+  {
+    auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(endpoint));
+    if (endpoint_entry == known_endpoints.end()) {
+      return;
+    }
+    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint));
+    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint_entry->second));
+  }
 
   std::chrono::microseconds
   load_max_blocking_time() const;

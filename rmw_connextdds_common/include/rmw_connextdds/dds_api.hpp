@@ -297,9 +297,8 @@ rmw_connextdds_get_cft_filter_expression(
   rmw_subscription_content_filter_options_t * const options);
 
 rmw_ret_t
-rmw_connextdds_is_subscription_matched(
-  RMW_Connext_Publisher * const pub,
-  const DDS_GUID_t * const reader_guid,
-  bool & matched);
+rmw_connextdds_guid_to_instance_handle(
+  const struct DDS_GUID_t * const guid,
+  DDS_InstanceHandle_t * const instanceHandle);
 
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

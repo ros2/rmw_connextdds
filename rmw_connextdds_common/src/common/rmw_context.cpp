@@ -301,8 +301,8 @@ rmw_context_impl_s::initialize_discovery_options(DDS_DomainParticipantQos & dp_q
       // If it's too large then we will send a lot of announcement traffic.
       // The default number here is picked arbitrarily.
       const rmw_peer_address_t localhost_peers[2] = {
-        "32@builtin.udpv4://127.0.0.1",
-        "32@builtin.shmem://",
+        {"32@builtin.udpv4://127.0.0.1"},
+        {"32@builtin.shmem://"},
       };
       const auto rc2 = rmw_connextdds_extend_initial_peer_list(
         localhost_peers,

@@ -176,8 +176,6 @@ private:
   rmw_ret_t
   finalize_participant();
 
-  DDS_DomainParticipantFactory * factory{nullptr};
-
   /* Manage the memory of the domain tag */
   char * domain_tag{nullptr};
 

@@ -29,7 +29,7 @@ rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx);
 
 rmw_ret_t
 rmw_connextdds_graph_publish_update(
-  rmw_context_impl_t * const ctx,
+  rmw_publisher_t * const ctx,
   void * const msg);
 
 rmw_ret_t

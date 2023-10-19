@@ -105,6 +105,10 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     return RMW_RET_ERROR;
   }
 
+  ctx->common.publish_callback = [](rmw_publisher_t * pub, void * msg) {
+      return rmw_connextdds_graph_publish_update(pub, msg);
+    };
+
   pubsub_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_ALL;
 
   RMW_CONNEXT_LOG_DEBUG("creating discovery subscriber")
@@ -234,6 +238,10 @@ rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx)
     ctx->common.sub = nullptr;
   }
 
+  if (nullptr != ctx->common.publish_callback) {
+    ctx->common.publish_callback = nullptr;
+  }
+
   if (nullptr != ctx->common.pub) {
     if (RMW_RET_OK !=
       rmw_connextdds_destroy_publisher(ctx, ctx->common.pub))
@@ -285,10 +293,7 @@ rmw_connextdds_graph_on_node_created(
     reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[3])
 
   rmw_ret_t rmw_ret = ctx->common.update_node_graph(
-    node->name, node->namespace_,
-    [](rmw_publisher_t * pub, void * msg) {
-      return rmw_connextdds_graph_publish_update(pub, msg);
-    });
+    node->name, node->namespace_);
   if (RMW_RET_OK != rmw_ret) {
     RMW_CONNEXT_LOG_ERROR("failed to publish discovery sample")
     return RMW_RET_ERROR;
@@ -305,10 +310,7 @@ rmw_connextdds_graph_on_node_deleted(
   std::lock_guard<std::mutex> guard(ctx->common_mutex);
 
   if (RMW_RET_OK != ctx->common.destroy_node_graph(
-      node->name, node->namespace_,
-      [](rmw_publisher_t * pub, void * msg) {
-        return rmw_connextdds_graph_publish_update(pub, msg);
-      }))
+      node->name, node->namespace_))
   {
     RMW_CONNEXT_LOG_ERROR("failed to publish discovery sample")
     return RMW_RET_ERROR;
@@ -334,10 +336,7 @@ rmw_connextdds_graph_on_publisher_created(
   const rmw_gid_t gid = *pub->gid();
   rc = ctx->common.update_publisher_graph(
     gid,
-    node->name, node->namespace_,
-    [](rmw_publisher_t * pub, void * msg) {
-      return rmw_connextdds_graph_publish_update(pub, msg);
-    });
+    node->name, node->namespace_);
 
   if (RMW_RET_OK != rc) {
     DDS_InstanceHandle_t ih = pub->instance_handle();
@@ -365,10 +364,7 @@ rmw_connextdds_graph_on_publisher_deleted(
 
   rc = ctx->common.destroy_publisher_graph(
     *pub->gid(),
-    node->name, node->namespace_,
-    [](rmw_publisher_t * pub, void * msg) {
-      return rmw_connextdds_graph_publish_update(pub, msg);
-    });
+    node->name, node->namespace_);
 
   if (RMW_RET_OK != rc) {
     return rc;
@@ -391,10 +387,7 @@ rmw_connextdds_graph_on_subscriber_created(
   const rmw_gid_t gid = *sub->gid();
   rc = ctx->common.update_subscriber_graph(
     gid,
-    node->name, node->namespace_,
-    [](rmw_publisher_t * pub, void * msg) {
-      return rmw_connextdds_graph_publish_update(pub, msg);
-    });
+    node->name, node->namespace_);
   if (RMW_RET_OK != rc) {
     DDS_InstanceHandle_t ih = sub->instance_handle();
     rmw_connextdds_graph_remove_entityEA(ctx, &ih, true);
@@ -426,10 +419,7 @@ rmw_connextdds_graph_on_subscriber_deleted(
 
   rc = ctx->common.destroy_subscriber_graph(
     *sub->gid(),
-    node->name, node->namespace_,
-    [](rmw_publisher_t * pub, void * msg) {
-      return rmw_connextdds_graph_publish_update(pub, msg);
-    });
+    node->name, node->namespace_);
   if (RMW_RET_OK != rc) {
     return rc;
   }
@@ -480,10 +470,7 @@ rmw_connextdds_graph_on_service_created(
   if (RMW_RET_OK != ctx->common.update_service_graph(
       sub_gid,
       pub_gid,
-      node->name, node->namespace_,
-      [](rmw_publisher_t * pub, void * msg) {
-        return rmw_connextdds_graph_publish_update(pub, msg);
-      }))
+      node->name, node->namespace_))
   {
     return RMW_RET_ERROR;
   }
@@ -511,10 +498,7 @@ rmw_connextdds_graph_on_service_deleted(
   rc = ctx->common.destroy_service_graph(
     *svc->subscriber()->gid(),
     *svc->publisher()->gid(),
-    node->name, node->namespace_,
-    [](rmw_publisher_t * pub, void * msg) {
-      return rmw_connextdds_graph_publish_update(pub, msg);
-    });
+    node->name, node->namespace_);
 
   failed = failed && (RMW_RET_OK == rc);
 
@@ -563,10 +547,7 @@ rmw_connextdds_graph_on_client_created(
   if (RMW_RET_OK != ctx->common.update_client_graph(
       pub_gid,
       sub_gid,
-      node->name, node->namespace_,
-      [](rmw_publisher_t * pub, void * msg) {
-        return rmw_connextdds_graph_publish_update(pub, msg);
-      }))
+      node->name, node->namespace_))
   {
     return RMW_RET_ERROR;
   }
@@ -595,10 +576,7 @@ rmw_connextdds_graph_on_client_deleted(
   rc = ctx->common.destroy_client_graph(
     *client->publisher()->gid(),
     *client->subscriber()->gid(),
-    node->name, node->namespace_,
-    [](rmw_publisher_t * pub, void * msg) {
-      return rmw_connextdds_graph_publish_update(pub, msg);
-    });
+    node->name, node->namespace_);
   failed = failed && (RMW_RET_OK == rc);
 
   return failed ? RMW_RET_ERROR : RMW_RET_OK;

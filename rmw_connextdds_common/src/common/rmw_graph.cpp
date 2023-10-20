@@ -105,7 +105,7 @@ rmw_connextdds_graph_initialize(rmw_context_impl_t * const ctx)
     return RMW_RET_ERROR;
   }
 
-  ctx->common.publish_callback = [](rmw_publisher_t * pub, void * msg) {
+  ctx->common.publish_callback = [](const rmw_publisher_t * pub, const void * msg) {
       return rmw_connextdds_graph_publish_update(pub, msg);
     };
 

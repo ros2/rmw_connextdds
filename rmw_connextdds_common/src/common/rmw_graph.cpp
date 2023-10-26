@@ -257,8 +257,8 @@ rmw_connextdds_graph_finalize(rmw_context_impl_t * const ctx)
 
 rmw_ret_t
 rmw_connextdds_graph_publish_update(
-  rmw_publisher_t * const pub,
-  void * const msg)
+  const rmw_publisher_t * const pub,
+  const void * const msg)
 {
   if (nullptr == pub) {
     RMW_CONNEXT_LOG_WARNING(

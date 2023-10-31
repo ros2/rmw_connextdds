@@ -292,7 +292,7 @@ rmw_connextdds_graph_on_node_created(
     reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[2],
     reinterpret_cast<const uint32_t *>(ctx->common.gid.data)[3])
 
-  rmw_ret_t rmw_ret = ctx->common.update_node_graph(
+  rmw_ret_t rmw_ret = ctx->common.add_node_graph(
     node->name, node->namespace_);
   if (RMW_RET_OK != rmw_ret) {
     RMW_CONNEXT_LOG_ERROR("failed to publish discovery sample")
@@ -309,7 +309,7 @@ rmw_connextdds_graph_on_node_deleted(
 {
   std::lock_guard<std::mutex> guard(ctx->common_mutex);
 
-  if (RMW_RET_OK != ctx->common.destroy_node_graph(
+  if (RMW_RET_OK != ctx->common.remove_node_graph(
       node->name, node->namespace_))
   {
     RMW_CONNEXT_LOG_ERROR("failed to publish discovery sample")
@@ -334,7 +334,7 @@ rmw_connextdds_graph_on_publisher_created(
   }
 
   const rmw_gid_t gid = *pub->gid();
-  rc = ctx->common.update_publisher_graph(
+  rc = ctx->common.add_publisher_graph(
     gid,
     node->name, node->namespace_);
 
@@ -362,7 +362,7 @@ rmw_connextdds_graph_on_publisher_deleted(
     failed = true;
   }
 
-  rc = ctx->common.destroy_publisher_graph(
+  rc = ctx->common.remove_publisher_graph(
     *pub->gid(),
     node->name, node->namespace_);
 
@@ -385,7 +385,7 @@ rmw_connextdds_graph_on_subscriber_created(
   }
 
   const rmw_gid_t gid = *sub->gid();
-  rc = ctx->common.update_subscriber_graph(
+  rc = ctx->common.add_subscriber_graph(
     gid,
     node->name, node->namespace_);
   if (RMW_RET_OK != rc) {
@@ -417,7 +417,7 @@ rmw_connextdds_graph_on_subscriber_deleted(
     failed = true;
   }
 
-  rc = ctx->common.destroy_subscriber_graph(
+  rc = ctx->common.remove_subscriber_graph(
     *sub->gid(),
     node->name, node->namespace_);
   if (RMW_RET_OK != rc) {
@@ -467,7 +467,7 @@ rmw_connextdds_graph_on_service_created(
   }
   added_pub = true;
 
-  if (RMW_RET_OK != ctx->common.update_service_graph(
+  if (RMW_RET_OK != ctx->common.add_service_graph(
       sub_gid,
       pub_gid,
       node->name, node->namespace_))
@@ -495,7 +495,7 @@ rmw_connextdds_graph_on_service_deleted(
   rc = rmw_connextdds_graph_remove_entityEA(ctx, &ih, false);
   failed = failed && (RMW_RET_OK == rc);
 
-  rc = ctx->common.destroy_service_graph(
+  rc = ctx->common.remove_service_graph(
     *svc->subscriber()->gid(),
     *svc->publisher()->gid(),
     node->name, node->namespace_);
@@ -544,7 +544,7 @@ rmw_connextdds_graph_on_client_created(
   }
   added_pub = true;
 
-  if (RMW_RET_OK != ctx->common.update_client_graph(
+  if (RMW_RET_OK != ctx->common.add_client_graph(
       pub_gid,
       sub_gid,
       node->name, node->namespace_))
@@ -573,7 +573,7 @@ rmw_connextdds_graph_on_client_deleted(
   rc = rmw_connextdds_graph_remove_entityEA(ctx, &ih, false);
   failed = failed && (RMW_RET_OK == rc);
 
-  rc = ctx->common.destroy_client_graph(
+  rc = ctx->common.remove_client_graph(
     *client->publisher()->gid(),
     *client->subscriber()->gid(),
     node->name, node->namespace_);

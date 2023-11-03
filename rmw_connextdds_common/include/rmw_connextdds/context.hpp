@@ -47,6 +47,7 @@ struct rmw_context_impl_s
 {
 public:
   rmw_dds_common::Context common;
+  std::mutex common_mutex;
   rmw_context_t * base;
 
   DDS_DomainId_t domain_id;

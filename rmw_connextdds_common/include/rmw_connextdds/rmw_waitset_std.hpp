@@ -680,7 +680,9 @@ public:
     DDS_DataReader * reader);
 
   rmw_ret_t
-  install(RMW_Connext_Subscriber * const sub);
+  install(
+    RMW_Connext_Subscriber * const sub,
+    RMW_Connext_Publisher * const related_pub = nullptr);
 
   void
   on_requested_deadline_missed(
@@ -909,7 +911,8 @@ protected:
   DDS_SampleLostStatus status_sample_lost_last;
   DDS_SubscriptionMatchedStatus status_matched_last;
 
-  RMW_Connext_Subscriber * sub;
+  RMW_Connext_Subscriber * sub{nullptr};
+  RMW_Connext_Publisher * related_pub{nullptr};
 
   std::mutex new_data_event_mutex_;
   rmw_event_callback_t new_data_event_cb_{nullptr};

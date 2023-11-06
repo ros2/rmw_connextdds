@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.19.0 (2023-11-06)
+-------------------
 * avoid using dds common public mutex directly (`#134 <https://github.com/ros2/rmw_connextdds/issues/134>`_)
 * Fix a couple of warnings pointed out by clang. (`#133 <https://github.com/ros2/rmw_connextdds/issues/133>`_)
 * Contributors: Chen Lihui, Chris Lalancette

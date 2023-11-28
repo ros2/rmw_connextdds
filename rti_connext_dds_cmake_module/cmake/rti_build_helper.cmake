@@ -542,6 +542,8 @@ function(rti_guess_connextdds_arch)
           "-DCONNEXTDDS_ARCH= to specify your RTI Connext DDS "
           " architecture")
       endif()
+    else()
+      message(STATUS "Selected CONNEXTDDS_ARCH: ${CONNEXTDDS_ARCH}")
     endif()
 
   endif()

@@ -474,7 +474,7 @@ function(rti_guess_connextdds_arch)
     message(STATUS
       "Guessed CONNEXTDDS_ARCH ('${guessed_architecture}') not available.")
     message(STATUS
-      "Pick first from ${CONNEXTDDS_DIR}/lib/[${architectures_installed}]")
+      "Try to search from ${CONNEXTDDS_DIR}/lib/[${architectures_installed}]")
 
     set(architecture_candidates "")
     foreach(architecture_name ${architectures_installed})

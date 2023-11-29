@@ -462,7 +462,7 @@ function(rti_guess_connextdds_arch)
   if(EXISTS "${CONNEXTDDS_DIR}/lib/${guessed_architecture}")
     set(CONNEXTDDS_ARCH "${guessed_architecture}")
     message(STATUS
-      "Guessed ${CONNEXTDDS_DIR}/lib/${guessed_architecture} exists")
+      "Guessed ${CONNEXTDDS_DIR}/lib/${guessed_architecture} exists and is selected")
   else()
     # If CONNEXTDDS_ARCH is unspecified, the module tries uses the first
     # architecture installed by looking under $CONNEXTDDS_DIR/lib that matches

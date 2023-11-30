@@ -529,9 +529,11 @@ function(rti_guess_connextdds_arch)
 
     endforeach()
 
-    if(NOT CONNEXTDDS_ARCH)
-      list(GET architecture_candidates 0 CONNEXTDDS_ARCH)
-      if(CONNEXTDDS_ARCH)
+    if(CONNEXTDDS_ARCH)
+      message(STATUS "Selected CONNEXTDDS_ARCH: ${CONNEXTDDS_ARCH}")
+    else()
+      if(architecture_candidates)
+        list(GET architecture_candidates 0 CONNEXTDDS_ARCH)
         message(STATUS
           "unsupported CMAKE_HOST_SYSTEM_NAME (${CMAKE_HOST_SYSTEM_NAME}) "
           "or CMAKE_HOST_SYSTEM_PROCESSOR (${CMAKE_HOST_SYSTEM_PROCESSOR}). "
@@ -541,9 +543,7 @@ function(rti_guess_connextdds_arch)
           "CONNEXTDDS_ARCH not specified. Please set "
           "-DCONNEXTDDS_ARCH= to specify your RTI Connext DDS "
           " architecture")
-      endif()
-    else()
-      message(STATUS "Selected CONNEXTDDS_ARCH: ${CONNEXTDDS_ARCH}")
+      endif() 
     endif()
 
   endif()

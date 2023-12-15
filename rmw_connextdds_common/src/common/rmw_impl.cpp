@@ -1966,12 +1966,6 @@ rmw_connextdds_destroy_subscriber(
   return RMW_RET_OK;
 }
 
-static
-constexpr uint64_t C_NANOSECONDS_PER_SEC = 1000000000ULL;
-
-#define dds_time_to_u64(t_) \
-  ((C_NANOSECONDS_PER_SEC * (uint64_t)(t_)->sec) + (uint64_t)(t_)->nanosec)
-
 void
 rmw_connextdds_message_info_from_dds(
   rmw_message_info_t * const to,
@@ -2733,11 +2727,11 @@ RMW_Connext_Client::send_request(
   RMW_Connext_WriteParams write_params;
 
   if (DDS_RETCODE_OK !=
-    DDS_DomainParticipant_get_current_time(
+    rmw_connextdds_get_current_time(
       this->request_pub->dds_participant(),
       &write_params.timestamp))
   {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time from DDS Domain Participant")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time")
     return RMW_RET_ERROR;
   }
 
@@ -3021,11 +3015,11 @@ RMW_Connext_Service::send_response(
   RMW_Connext_WriteParams write_params;
 
   if (DDS_RETCODE_OK !=
-    DDS_DomainParticipant_get_current_time(
+    rmw_connextdds_get_current_time(
       this->reply_pub->dds_participant(),
       &write_params.timestamp))
   {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time from DDS Domain Participant")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time")
     return RMW_RET_ERROR;
   }
 

@@ -37,6 +37,22 @@ struct rmw_connextdds_api_pro
 rmw_connextdds_api_pro * RMW_Connext_fv_FactoryContext = nullptr;
 
 rmw_ret_t
+rmw_connextdds_get_current_time(
+  DDS_DomainParticipant * domain_participant,
+  struct DDS_Time_t * current_time)
+{
+  // Use DDS_DomainParticipant_get_current_time only with Micro since Pro's
+  // implementation is pretty slow. See #120 for details.
+  UNUSED_ARG(domain_participant);
+  RTINtpTime now;
+  if (!RTIOsapiUtility_getTime(&now)) {
+    return DDS_RETCODE_ERROR;
+  }
+  RTINtpTime_unpackToNanosec(current_time->sec, current_time->nanosec, now);
+  return DDS_RETCODE_OK;
+}
+
+rmw_ret_t
 rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
 {
   NDDS_Config_Logger * logger = NDDS_Config_Logger_get_instance();

@@ -378,6 +378,16 @@ struct rmw_connextdds_api_micro
 
 rmw_connextdds_api_micro * RMW_Connext_fv_FactoryContext = nullptr;
 
+rmw_ret_t
+rmw_connextdds_get_current_time(
+  DDS_DomainParticipant * domain_participant,
+  struct DDS_Time_t * current_time)
+{
+  // Use DDS_DomainParticipant_get_current_time only with Micro since Pro's
+  // implementation is pretty slow. See #120 for details.
+  return DDS_DomainParticipant_get_current_time(domain_participant, current_time);
+}
+
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 

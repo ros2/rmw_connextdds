@@ -35,6 +35,9 @@
  * General helpers and utilities.
  ******************************************************************************/
 
+#define dds_time_to_u64(t_) \
+  ((1000000000ULL * (uint64_t)(t_)->sec) + (uint64_t)(t_)->nanosec)
+
 rcutils_ret_t
 rcutils_uint8_array_copy(
   rcutils_uint8_array_t * const dst,

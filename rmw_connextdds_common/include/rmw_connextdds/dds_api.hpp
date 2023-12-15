@@ -56,6 +56,11 @@ RMW_CONNEXTDDS_PUBLIC extern const char * const RMW_CONNEXTDDS_ID;
 extern const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT;
 
 rmw_ret_t
+rmw_connextdds_get_current_time(
+  DDS_DomainParticipant * domain_participant,
+  struct DDS_Time_t * current_time);
+
+rmw_ret_t
 rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity);
 
 rmw_ret_t

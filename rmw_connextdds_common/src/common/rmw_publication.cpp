@@ -21,13 +21,6 @@
 
 #include "tracetools/tracetools.h"
 
-static
-constexpr uint64_t C_NANOSECONDS_PER_SEC = 1000000000ULL;
-
-#define dds_time_to_u64(t_) \
-  ((C_NANOSECONDS_PER_SEC * (uint64_t)(t_)->sec) + (uint64_t)(t_)->nanosec)
-
-
 /******************************************************************************
  * Publication functions
  ******************************************************************************/
@@ -59,11 +52,11 @@ rmw_api_connextdds_publish(
   RMW_Connext_WriteParams write_params;
 
   if (DDS_RETCODE_OK !=
-    DDS_DomainParticipant_get_current_time(
+    rmw_connextdds_get_current_time(
       pub_impl->dds_participant(),
       &write_params.timestamp))
   {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time from DDS Domain Participant")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time")
     return RMW_RET_ERROR;
   }
 
@@ -100,11 +93,11 @@ rmw_api_connextdds_publish_serialized_message(
   RMW_Connext_WriteParams write_params;
 
   if (DDS_RETCODE_OK !=
-    DDS_DomainParticipant_get_current_time(
+    rmw_connextdds_get_current_time(
       pub_impl->dds_participant(),
       &write_params.timestamp))
   {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time from DDS Domain Participant")
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time")
     return RMW_RET_ERROR;
   }
 

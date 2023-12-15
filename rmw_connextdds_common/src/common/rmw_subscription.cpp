@@ -284,12 +284,7 @@ rmw_api_connextdds_take(
 
   rmw_ret_t rc = sub_impl->take_message(ros_message, nullptr, taken);
 
-  TRACEPOINT(
-    rmw_take,
-    static_cast<const void *>(subscription),
-    static_cast<const void *>(ros_message),
-    0LL,
-    *taken);
+  TRACETOOLS_TRACEPOINT(rmw_take, subscription, ros_message, 0LL, *taken);
   return rc;
 }
 
@@ -319,10 +314,10 @@ rmw_api_connextdds_take_with_info(
 
   rmw_ret_t rc = sub_impl->take_message(ros_message, message_info, taken);
 
-  TRACEPOINT(
+  TRACETOOLS_TRACEPOINT(
     rmw_take,
-    static_cast<const void *>(subscription),
-    static_cast<const void *>(ros_message),
+    subscription,
+    ros_message,
     (message_info ? message_info->source_timestamp : 0LL),
     *taken);
 

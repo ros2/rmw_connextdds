@@ -60,14 +60,15 @@ rmw_api_connextdds_publish(
 
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipant_get_current_time(
-      this->request_pub->dds_participant(),
+      pub_impl->dds_participant(),
       &write_params.timestamp))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get current time from DDS Domain Participant")
     return RMW_RET_ERROR;
   }
 
-  TRACEPOINT(rmw_publish, publisher, ros_message, dds_time_to_u64(&write_params.timestamp));
+  TRACETOOLS_TRACEPOINT(
+    rmw_publish, publisher, ros_message, dds_time_to_u64(&write_params.timestamp));
 
   return pub_impl->write(ros_message, false /* serialized */, &write_params);
 }
@@ -100,14 +101,15 @@ rmw_api_connextdds_publish_serialized_message(
 
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipant_get_current_time(
-      this->request_pub->dds_participant(),
+      pub_impl->dds_participant(),
       &write_params.timestamp))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get current time from DDS Domain Participant")
     return RMW_RET_ERROR;
   }
 
-  TRACEPOINT(rmw_publish, publisher, serialized_message, dds_time_to_u64(&write_params.timestamp));
+  TRACETOOLS_TRACEPOINT(
+    rmw_publish, publisher, serialized_message, dds_time_to_u64(&write_params.timestamp));
   return pub_impl->write(serialized_message, true /* serialized */, &write_params);
 }
 

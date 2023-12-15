@@ -1110,10 +1110,7 @@ rmw_connextdds_create_publisher(
     }
   }
 
-  TRACEPOINT(
-    rmw_publisher_init,
-    static_cast<const void *>(rmw_publisher),
-    rmw_pub_impl->gid()->data);
+  TRACETOOLS_TRACEPOINT(rmw_publisher_init, rmw_publisher, rmw_pub_impl->gid()->data);
 
   scope_exit_rmw_writer_impl_delete.cancel();
   scope_exit_rmw_writer_delete.cancel();
@@ -1931,10 +1928,7 @@ rmw_connextdds_create_subscriber(
     }
   }
 
-  TRACEPOINT(
-    rmw_subscription_init,
-    static_cast<const void *>(rmw_subscriber),
-    rmw_sub_impl->gid()->data);
+  TRACETOOLS_TRACEPOINT(rmw_subscription_init, rmw_subscriber, rmw_sub_impl->gid()->data);
 
 #if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
   scope_exit_enable_participant_on_error.cancel();
@@ -2737,7 +2731,6 @@ RMW_Connext_Client::send_request(
 
 
   RMW_Connext_WriteParams write_params;
-  write_params.sn_out = sequence_id;
 
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipant_get_current_time(
@@ -2749,6 +2742,8 @@ RMW_Connext_Client::send_request(
   }
 
   rmw_ret_t rc = this->request_pub->write(&rr_msg, false /* serialized */, &write_params);
+
+  *sequence_id = write_params.sequence_number;
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[%s] SENT REQUEST: "
@@ -3027,7 +3022,7 @@ RMW_Connext_Service::send_response(
 
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipant_get_current_time(
-      this->request_pub->dds_participant(),
+      this->reply_pub->dds_participant(),
       &write_params.timestamp))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get current time from DDS Domain Participant")
@@ -3045,7 +3040,7 @@ RMW_Connext_Service::send_response(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
 
-  return this->reply_pub->write(&rr_msg, false /* serialized */, write_params);
+  return this->reply_pub->write(&rr_msg, false /* serialized */, &write_params);
 }
 
 rmw_ret_t

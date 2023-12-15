@@ -1155,7 +1155,10 @@ rmw_connextdds_write_message(
   RMW_Connext_Message * const message,
   RMW_Connext_WriteParams * const params)
 {
-  DDS_Time_t timestamp = (params != nullptr) ? params->timestamp : DDS_TIME_INVALID;
+  DDS_Time_t timestamp = DDS_TIME_INVALID;
+  if (nullptr != params && !DDS_Time_is_invalid(&params->timestamp)) {
+    timestamp = params->timestamp;
+  }
   if (DDS_RETCODE_OK !=
     DDS_DataWriter_write_w_timestamp(pub->writer(), message, &DDS_HANDLE_NIL, &timestamp))
   {

@@ -19,6 +19,8 @@
 
 #include "rmw/validate_full_topic_name.h"
 
+#include "tracetools/tracetools.h"
+
 /******************************************************************************
  * Subscription functions
  ******************************************************************************/
@@ -282,6 +284,7 @@ rmw_api_connextdds_take(
 
   rmw_ret_t rc = sub_impl->take_message(ros_message, nullptr, taken);
 
+  TRACETOOLS_TRACEPOINT(rmw_take, subscription, ros_message, 0LL, *taken);
   return rc;
 }
 
@@ -310,6 +313,13 @@ rmw_api_connextdds_take_with_info(
     reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
 
   rmw_ret_t rc = sub_impl->take_message(ros_message, message_info, taken);
+
+  TRACETOOLS_TRACEPOINT(
+    rmw_take,
+    subscription,
+    ros_message,
+    (message_info ? message_info->source_timestamp : 0LL),
+    *taken);
 
   return rc;
 }

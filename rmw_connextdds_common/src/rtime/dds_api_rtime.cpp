@@ -378,6 +378,16 @@ struct rmw_connextdds_api_micro
 
 rmw_connextdds_api_micro * RMW_Connext_fv_FactoryContext = nullptr;
 
+rmw_ret_t
+rmw_connextdds_get_current_time(
+  DDS_DomainParticipant * domain_participant,
+  struct DDS_Time_t * current_time)
+{
+  // Use DDS_DomainParticipant_get_current_time only with Micro since Pro's
+  // implementation is pretty slow. See #120 for details.
+  return DDS_DomainParticipant_get_current_time(domain_participant, current_time);
+}
+
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextddsmicro";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 
@@ -1153,12 +1163,14 @@ rmw_ret_t
 rmw_connextdds_write_message(
   RMW_Connext_Publisher * const pub,
   RMW_Connext_Message * const message,
-  int64_t * const sn_out)
+  RMW_Connext_WriteParams * const params)
 {
-  UNUSED_ARG(sn_out);
-
+  DDS_Time_t timestamp = DDS_TIME_INVALID;
+  if (nullptr != params && !DDS_Time_is_invalid(&params->timestamp)) {
+    timestamp = params->timestamp;
+  }
   if (DDS_RETCODE_OK !=
-    DDS_DataWriter_write(pub->writer(), message, &DDS_HANDLE_NIL))
+    DDS_DataWriter_write_w_timestamp(pub->writer(), message, &DDS_HANDLE_NIL, &timestamp))
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to write message to DDS")
     return RMW_RET_ERROR;

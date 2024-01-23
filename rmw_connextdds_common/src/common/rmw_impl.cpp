@@ -21,6 +21,8 @@
 
 #include "rcpputils/scope_exit.hpp"
 
+#include "tracetools/tracetools.h"
+
 #include "rmw_dds_common/time_utils.hpp"
 #include "rmw_dds_common/qos.hpp"
 
@@ -919,7 +921,7 @@ rmw_ret_t
 RMW_Connext_Publisher::write(
   const void * const ros_message,
   const bool serialized,
-  int64_t * const sn_out)
+  RMW_Connext_WriteParams * const params)
 {
   RMW_Connext_Message user_msg;
   if (RMW_RET_OK != RMW_Connext_Message_initialize(&user_msg, this->type_support, 0)) {
@@ -928,7 +930,7 @@ RMW_Connext_Publisher::write(
   user_msg.user_data = ros_message;
   user_msg.serialized = serialized;
 
-  return rmw_connextdds_write_message(this, &user_msg, sn_out);
+  return rmw_connextdds_write_message(this, &user_msg, params);
 }
 
 
@@ -1108,6 +1110,7 @@ rmw_connextdds_create_publisher(
     }
   }
 
+  TRACETOOLS_TRACEPOINT(rmw_publisher_init, rmw_publisher, rmw_pub_impl->gid()->data);
 
   scope_exit_rmw_writer_impl_delete.cancel();
   scope_exit_rmw_writer_delete.cancel();
@@ -1393,6 +1396,7 @@ RMW_Connext_Subscriber::create(
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate RMW subscriber")
     return nullptr;
   }
+
   scope_exit_dds_reader_delete.cancel();
   scope_exit_topic_delete.cancel();
   scope_exit_type_unregister.cancel();
@@ -1924,6 +1928,8 @@ rmw_connextdds_create_subscriber(
     }
   }
 
+  TRACETOOLS_TRACEPOINT(rmw_subscription_init, rmw_subscriber, rmw_sub_impl->gid()->data);
+
 #if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
   scope_exit_enable_participant_on_error.cancel();
 #endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
@@ -1959,12 +1965,6 @@ rmw_connextdds_destroy_subscriber(
 
   return RMW_RET_OK;
 }
-
-static
-constexpr uint64_t C_NANOSECONDS_PER_SEC = 1000000000ULL;
-
-#define dds_time_to_u64(t_) \
-  ((C_NANOSECONDS_PER_SEC * (uint64_t)(t_)->sec) + (uint64_t)(t_)->nanosec)
 
 void
 rmw_connextdds_message_info_from_dds(
@@ -2723,7 +2723,21 @@ RMW_Connext_Client::send_request(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
 
-  rmw_ret_t rc = this->request_pub->write(&rr_msg, false /* serialized */, sequence_id);
+
+  RMW_Connext_WriteParams write_params;
+
+  if (DDS_RETCODE_OK !=
+    rmw_connextdds_get_current_time(
+      this->request_pub->dds_participant(),
+      &write_params.timestamp))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time")
+    return RMW_RET_ERROR;
+  }
+
+  rmw_ret_t rc = this->request_pub->write(&rr_msg, false /* serialized */, &write_params);
+
+  *sequence_id = write_params.sequence_number;
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[%s] SENT REQUEST: "
@@ -2998,6 +3012,17 @@ RMW_Connext_Service::send_response(
   rr_msg.gid.implementation_identifier = RMW_CONNEXTDDS_ID;
   rr_msg.payload = const_cast<void *>(ros_response);
 
+  RMW_Connext_WriteParams write_params;
+
+  if (DDS_RETCODE_OK !=
+    rmw_connextdds_get_current_time(
+      this->reply_pub->dds_participant(),
+      &write_params.timestamp))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to get current time")
+    return RMW_RET_ERROR;
+  }
+
   RMW_CONNEXT_LOG_DEBUG_A(
     "[%s] send RESPONSE: "
     "gid=%08X.%08X.%08X.%08X, "
@@ -3009,7 +3034,7 @@ RMW_Connext_Service::send_response(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
 
-  return this->reply_pub->write(&rr_msg, false /* serialized */);
+  return this->reply_pub->write(&rr_msg, false /* serialized */, &write_params);
 }
 
 rmw_ret_t

@@ -112,6 +112,7 @@ set(RMW_CONNEXT_DEPS
     rcpputils
     rmw
     rmw_dds_common
+    tracetools
     fastcdr
     rosidl_runtime_c
     rosidl_runtime_cpp
@@ -128,6 +129,7 @@ endforeach()
 ################################################################################
 # Common Source Configuration
 ################################################################################
+
 set(RMW_CONNEXT_DIR     ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(RMW_CONNEXT_COMMON_SOURCE_CPP
@@ -171,6 +173,7 @@ set(RMW_CONNEXT_COMMON_SOURCE_HPP
 set(RMW_CONNEXT_COMMON_SOURCE
     ${RMW_CONNEXT_COMMON_SOURCE_CPP}
     ${RMW_CONNEXT_COMMON_SOURCE_HPP})
+
 
 ################################################################################
 # Check if additional Connext components are needed (e.g. security)

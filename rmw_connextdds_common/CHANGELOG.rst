@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add ros2_tracing tracepoints (`#120 <https://github.com/ros2/rmw_connextdds/issues/120>`_)
+* Contributors: Christopher Wecht
+
 0.19.0 (2023-11-06)
 -------------------
 * avoid using dds common public mutex directly (`#134 <https://github.com/ros2/rmw_connextdds/issues/134>`_)

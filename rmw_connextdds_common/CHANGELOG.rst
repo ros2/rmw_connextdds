@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.20.0 (2024-01-24)
+-------------------
 * Add ros2_tracing tracepoints (`#120 <https://github.com/ros2/rmw_connextdds/issues/120>`_)
 * Contributors: Christopher Wecht
 

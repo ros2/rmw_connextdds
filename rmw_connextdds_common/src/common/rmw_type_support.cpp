@@ -98,10 +98,7 @@ RMW_Connext_RequestReplyMapping_Basic_serialize(
   if (RMW_RET_OK != rc) {
     return rc;
   }
-  sample_identity.sequence_number.high =
-    static_cast<DDS_Long>((rr_msg->sn & 0xFFFFFFFF00000000) >> 8);
-  sample_identity.sequence_number.low =
-    static_cast<DDS_UnsignedLong>(rr_msg->sn & 0x00000000FFFFFFFF);
+  rmw_connextdds_sn_ros_to_dds(rr_msg->sn, sample_identity.sequence_number);
 
   try {
     // Cyclone only serializes 8 bytes of the writer guid.

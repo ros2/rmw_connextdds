@@ -2723,7 +2723,6 @@ RMW_Connext_Client::send_request(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
 
-
   RMW_Connext_WriteParams write_params;
 
   if (DDS_RETCODE_OK !=
@@ -2737,7 +2736,9 @@ RMW_Connext_Client::send_request(
 
   rmw_ret_t rc = this->request_pub->write(&rr_msg, false /* serialized */, &write_params);
 
-  *sequence_id = write_params.sequence_number;
+  if (this->ctx->request_reply_mapping != RMW_Connext_RequestReplyMapping::Basic) {
+    *sequence_id = write_params.sequence_number;
+  }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[%s] SENT REQUEST: "

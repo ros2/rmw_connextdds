@@ -297,9 +297,9 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
   eprosima::fastcdr::Cdr cdr_stream(
     cdr_buffer,
     eprosima::fastcdr::Cdr::DEFAULT_ENDIAN,
-    eprosima::fastcdr::Cdr::DDS_CDR);
-  cdr_stream.setDDSCdrPlFlag(
-    eprosima::fastcdr::Cdr::DDSCdrPlFlag::DDS_CDR_WITHOUT_PL);
+    eprosima::fastcdr::CdrVersion::XCDRv1);
+  cdr_stream.set_encoding_flag(
+    eprosima::fastcdr::EncodingAlgorithmFlag::PLAIN_CDR);
 
   RMW_CONNEXT_LOG_TRACE_A(
     "[type support] %s serialize: "
@@ -392,7 +392,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
   eprosima::fastcdr::Cdr cdr_stream(
     cdr_buffer,
     eprosima::fastcdr::Cdr::DEFAULT_ENDIAN,
-    eprosima::fastcdr::Cdr::DDS_CDR);
+    eprosima::fastcdr::CdrVersion::XCDRv1);
 
   RMW_CONNEXT_LOG_TRACE_A(
     "[type support] %s deserialize: "

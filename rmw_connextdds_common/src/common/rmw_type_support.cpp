@@ -364,7 +364,7 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
     return RMW_RET_ERROR;
   }
 
-  to_buffer->buffer_length = cdr_stream.getSerializedDataLength();
+  to_buffer->buffer_length = cdr_stream.get_serialized_data_length();
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[type support] %s serialized: "
@@ -475,7 +475,7 @@ RMW_Connext_MessageTypeSupport::deserialize(
     return RMW_RET_ERROR;
   }
 
-  size_out = cdr_stream.getSerializedDataLength();
+  size_out = cdr_stream.get_serialized_data_length();
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[type support] %s deserialized: "

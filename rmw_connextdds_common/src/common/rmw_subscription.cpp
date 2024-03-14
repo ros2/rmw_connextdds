@@ -390,7 +390,7 @@ rmw_api_connextdds_take_serialized_message(
     rmw_take,
     subscription,
     serialized_message,
-    (message_info ? message_info->source_timestamp : 0LL),
+    0LL,
     *taken);
 
   return sub_impl->take_serialized(serialized_message, nullptr, taken);
@@ -424,7 +424,7 @@ rmw_api_connextdds_take_serialized_message_with_info(
     rmw_take,
     subscription,
     serialized_message,
-    (message_info ? message_info->source_timestamp : 0LL),
+    message_info->source_timestamp,
     *taken);
 
   return sub_impl->take_serialized(serialized_message, message_info, taken);

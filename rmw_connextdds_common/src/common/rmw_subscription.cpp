@@ -386,6 +386,8 @@ rmw_api_connextdds_take_serialized_message(
   RMW_Connext_Subscriber * const sub_impl =
     reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
 
+  rmw_ret_t rc = sub_impl->take_serialized(serialized_message, nullptr, taken);
+
   TRACETOOLS_TRACEPOINT(
     rmw_take,
     subscription,
@@ -393,7 +395,7 @@ rmw_api_connextdds_take_serialized_message(
     0LL,
     *taken);
 
-  return sub_impl->take_serialized(serialized_message, nullptr, taken);
+  return rc;
 }
 
 

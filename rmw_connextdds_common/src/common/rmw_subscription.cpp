@@ -422,14 +422,16 @@ rmw_api_connextdds_take_serialized_message_with_info(
   RMW_Connext_Subscriber * const sub_impl =
     reinterpret_cast<RMW_Connext_Subscriber *>(subscription->data);
 
+  rmw_ret_t rc = sub_impl->take_serialized(serialized_message, message_info, taken);
+
   TRACETOOLS_TRACEPOINT(
     rmw_take,
     subscription,
     serialized_message,
-    message_info->source_timestamp,
+    (message_info ? message_info->source_timestamp : 0LL),
     *taken);
 
-  return sub_impl->take_serialized(serialized_message, message_info, taken);
+  return rc;
 }
 
 

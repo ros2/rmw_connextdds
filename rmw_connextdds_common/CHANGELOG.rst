@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Support Fast CDR v2 (`#141 <https://github.com/ros2/rmw_connextdds/issues/141>`_)
+* Contributors: Miguel Company
+
 0.20.1 (2024-03-09)
 -------------------
 * Fix the rmw_connextdds_common build with gcc 13.2. (`#142 <https://github.com/ros2/rmw_connextdds/issues/142>`_)

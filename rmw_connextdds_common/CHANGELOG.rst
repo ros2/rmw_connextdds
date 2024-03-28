@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.21.0 (2024-03-28)
+-------------------
 * Support Fast CDR v2 (`#141 <https://github.com/ros2/rmw_connextdds/issues/141>`_)
 * Contributors: Miguel Company
 

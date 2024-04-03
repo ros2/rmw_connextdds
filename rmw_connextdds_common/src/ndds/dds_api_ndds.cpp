@@ -30,6 +30,8 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
+#include "dds_c/dds_c_infrastructure_impl.h"
+
 const char * const RMW_CONNEXTDDS_ID = "rmw_connextdds";
 const char * const RMW_CONNEXTDDS_SERIALIZATION_FORMAT = "cdr";
 
@@ -750,22 +752,20 @@ rmw_connextdds_write_message(
     const RMW_Connext_RequestReplyMessage * const rr_msg =
       reinterpret_cast<const RMW_Connext_RequestReplyMessage *>(message->user_data);
 
-    if (!rr_msg->request) {
-      /* If this is a reply, propagate the request's sample identity
-         via the related_sample_identity field */
-      rmw_ret_t rc = RMW_RET_ERROR;
+    // Propagate the request's sample identity via the related_sample_identity field
+    int64_t sn_ros = rr_msg->sn >= 0 ? rr_msg->sn : 0;
+    rmw_connextdds_sn_ros_to_dds(
+      sn_ros,
+      write_params.related_sample_identity.sequence_number);
 
-      rmw_connextdds_sn_ros_to_dds(
-        rr_msg->sn,
-        write_params.related_sample_identity.sequence_number);
+    rmw_ret_t rc = rmw_connextdds_gid_to_guid(
+      rr_msg->request ? rr_msg->gid : rr_msg->writer_gid,
+      write_params.related_sample_identity.writer_guid);
+    if (RMW_RET_OK != rc) {
+      return rc;
+    }
 
-      rc = rmw_connextdds_gid_to_guid(
-        rr_msg->gid,
-        write_params.related_sample_identity.writer_guid);
-      if (RMW_RET_OK != rc) {
-        return rc;
-      }
-    } else {
+    if (rr_msg->request) {
       // enable WriteParams::replace_auto to retrieve SN of published message
       write_params.replace_auto = DDS_BOOLEAN_TRUE;
     }
@@ -1597,5 +1597,14 @@ rmw_connextdds_get_cft_filter_expression(
     return RMW_RET_ERROR;
   }
 
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_guid_to_instance_handle(
+  const struct DDS_GUID_t * const guid,
+  DDS_InstanceHandle_t * const instance_handle)
+{
+  DDS_GUID_to_instance_handle(guid, instance_handle);
   return RMW_RET_OK;
 }

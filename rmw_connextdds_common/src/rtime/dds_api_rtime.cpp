@@ -2041,13 +2041,3 @@ rmw_connextdds_get_cft_filter_expression(
   UNUSED_ARG(options);
   return RMW_RET_UNSUPPORTED;
 }
-
-rmw_ret_t
-rmw_connextdds_guid_to_instance_handle(
-  const struct DDS_GUID_t * const guid,
-  DDS_InstanceHandle_t * const instance_handle)
-{
-  UNUSED_ARG(guid);
-  UNUSED_ARG(instance_handle);
-  return RMW_RET_UNSUPPORTED;
-}

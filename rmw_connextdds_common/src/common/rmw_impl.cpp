@@ -658,19 +658,13 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
   dds_writer(dds_writer),
   type_support(type_support),
   created_topic(created_topic),
-  status_condition(dds_writer),
-  matched_subscriptions(DDS_SEQUENCE_INITIALIZER)
+  status_condition(dds_writer)
 {
   rmw_connextdds_get_entity_gid(this->dds_writer, this->ros_gid);
   if (RMW_RET_OK != this->status_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on writer")
     throw std::runtime_error("failed to install condition on writer");
   }
-}
-
-RMW_Connext_Publisher::~RMW_Connext_Publisher()
-{
-  DDS_InstanceHandleSeq_finalize(&matched_subscriptions);
 }
 
 RMW_Connext_Publisher *
@@ -890,6 +884,10 @@ RMW_Connext_Publisher::finalize()
   return RMW_RET_OK;
 }
 
+#ifndef DDS_GUID_INITIALIZER
+#define DDS_GUID_INITIALIZER        DDS_GUID_DEFAULT
+#endif /* DDS_GUID_INITIALIZER */
+
 rmw_ret_t
 RMW_Connext_Publisher::requestreply_header_to_dds(
   const RMW_Connext_RequestReplyMessage * const rr_msg,
@@ -1020,97 +1018,6 @@ RMW_Connext_Publisher::qos(rmw_qos_profile_t * const qos)
 
   DDS_DataWriterQos_finalize(&dw_qos);
   return rc;
-}
-
-std::chrono::microseconds
-RMW_Connext_Publisher::load_max_blocking_time() const
-{
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
-  DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
-#else
-  DDS_DataWriterQos dw_qos;
-  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datawriter qos")
-    return std::chrono::microseconds(0);
-  }
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
-
-  auto scope_exit_dw_qos_delete =
-    rcpputils::make_scope_exit(
-    [&dw_qos]()
-    {
-      if (DDS_RETCODE_OK != DDS_DataWriterQos_finalize(&dw_qos)) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to finalize DataWriterQoS")
-      }
-    });
-
-  if (DDS_DataWriter_get_qos(writer(), &dw_qos)) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to get datawriter qos")
-    return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_DEFAULT);
-  }
-  if (DDS_Duration_is_auto(&dw_qos.reliability.max_blocking_time)) {
-    return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_DEFAULT);
-  }
-  if (DDS_Duration_is_infinite(&dw_qos.reliability.max_blocking_time) ||
-    DDS_Duration_is_auto(&dw_qos.reliability.max_blocking_time))
-  {
-    return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_INFINITE);
-  }
-  if (DDS_Duration_is_zero(&dw_qos.reliability.max_blocking_time)) {
-    return std::chrono::microseconds(0);
-  }
-  std::chrono::microseconds max_blocking_time =
-    std::chrono::duration_cast<std::chrono::milliseconds>(
-    std::chrono::seconds(dw_qos.reliability.max_blocking_time.sec) +
-    std::chrono::nanoseconds(dw_qos.reliability.max_blocking_time.nanosec));
-
-  return max_blocking_time;
-}
-
-rmw_ret_t
-RMW_Connext_Publisher::wait_for_subscription(
-  rmw_gid_t & reader_gid,
-  bool & unmatched,
-  rmw_gid_t & related_writer_gid)
-{
-  unmatched = false;
-
-  struct DDS_GUID_t reader_guid = DDS_GUID_INITIALIZER;
-  rmw_ret_t rc = RMW_RET_ERROR;
-  rc = rmw_connextdds_gid_to_guid(reader_gid, reader_guid);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
-
-  std::unique_lock<std::mutex> lock(matched_mutex);
-  auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(reader_gid));
-  if (endpoint_entry == known_endpoints.end()) {
-    unmatched = true;
-    return RMW_RET_OK;
-  }
-  related_writer_gid = endpoint_entry->second;
-
-  DDS_InstanceHandle_t reader_ih = DDS_HANDLE_NIL;
-  rc = rmw_connextdds_guid_to_instance_handle(&reader_guid, &reader_ih);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
-  auto done_waiting = [this, &reader_ih]() {
-      bool matched = false;
-      const DDS_Long subs_len = DDS_InstanceHandleSeq_get_length(&matched_subscriptions);
-      for (DDS_Long i = 0; i < subs_len && !matched; i++) {
-        DDS_InstanceHandle_t * const matched_ih =
-          DDS_InstanceHandleSeq_get_reference(&matched_subscriptions, i);
-        matched = DDS_InstanceHandle_compare(matched_ih, &reader_ih) == 0;
-      }
-      return matched;
-    };
-
-  if (!matched_cv.wait_for(lock, this->max_blocking_time, done_waiting)) {
-    return RMW_RET_TIMEOUT;
-  }
-
-  return RMW_RET_OK;
 }
 
 rmw_publisher_t *
@@ -1252,8 +1159,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   const bool created_topic,
   DDS_TopicDescription * const dds_topic_cft,
   const char * const cft_expression,
-  const bool internal,
-  RMW_Connext_Publisher * const related_pub)
+  const bool internal)
 : internal(internal),
   ignore_local(ignore_local),
   ctx(ctx),
@@ -1263,8 +1169,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   cft_expression(cft_expression),
   type_support(type_support),
   created_topic(created_topic),
-  status_condition(dds_reader, ignore_local, internal),
-  related_pub(related_pub)
+  status_condition(dds_reader, ignore_local, internal)
 {
   rmw_connextdds_get_entity_gid(this->dds_reader, this->ros_gid);
 
@@ -1275,7 +1180,7 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   this->loan_info = def_info_seq;
   this->loan_len = 0;
   this->loan_next = 0;
-  if (RMW_RET_OK != this->status_condition.install(this, this->related_pub)) {
+  if (RMW_RET_OK != this->status_condition.install(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to install condition on reader")
     throw std::runtime_error("failed to install condition on reader");
   }
@@ -1296,8 +1201,7 @@ RMW_Connext_Subscriber::create(
   const bool intro_members_cpp,
   std::string * const type_name,
   const char * const cft_name,
-  const char * const cft_filter,
-  RMW_Connext_Publisher * const related_pub)
+  const char * const cft_filter)
 {
   RMW_Connext_MessageTypeSupport * const type_support =
     RMW_Connext_MessageTypeSupport::register_type_support(
@@ -1486,8 +1390,7 @@ RMW_Connext_Subscriber::create(
     topic_created,
     cft_topic,
     sub_cft_expr,
-    internal,
-    related_pub);
+    internal);
 
   if (nullptr == rmw_sub_impl) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate RMW subscriber")
@@ -1764,21 +1667,17 @@ RMW_Connext_Subscriber::requestreply_header_from_dds(
 {
   const struct DDS_GUID_t * src_guid = nullptr;
   const struct DDS_SequenceNumber_t * src_sn = nullptr;
-  const struct DDS_GUID_t * writer_guid = nullptr;
 
   if (rr_msg->request) {
-    src_guid = &related_sample_identity->writer_guid;
+    src_guid = &sample_identity->writer_guid;
     src_sn = &sample_identity->sequence_number;
-    writer_guid = &sample_identity->writer_guid;
   } else {
     src_guid = &related_sample_identity->writer_guid;
     src_sn = &related_sample_identity->sequence_number;
-    writer_guid = &sample_identity->writer_guid;
   }
 
   rmw_connextdds_guid_to_gid(*src_guid, rr_msg->gid);
   rmw_connextdds_sn_dds_to_ros(*src_sn, rr_msg->sn);
-  rmw_connextdds_guid_to_gid(*writer_guid, rr_msg->writer_gid);
 }
 
 rmw_ret_t
@@ -2616,7 +2515,7 @@ RMW_Connext_Client::create(
   char * cft_name = nullptr,
   *cft_filter = nullptr;
   auto scope_exit_cft_name = rcpputils::make_scope_exit(
-    [&cft_name, &cft_filter]()
+    [cft_name, cft_filter]()
     {
       if (nullptr != cft_name) {
         DDS_String_free(cft_name);
@@ -2763,11 +2662,9 @@ RMW_Connext_Client::take_response(
   if (taken_msg) {
     request_header->request_id.sequence_number = rr_msg.sn;
 
-    /* (asorbini) although messages are correlated using the reply DataReader's GUID,
-       we report the writer's GUID to upper layers. */
     memcpy(
       request_header->request_id.writer_guid,
-      this->request_pub->gid()->data,
+      rr_msg.gid.data,
       16);
 
     if (this->ctx->cyclone_compatible) {
@@ -2809,15 +2706,10 @@ RMW_Connext_Client::send_request(
   if (this->ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic) {
     *sequence_id = ++this->next_request_id;
     rr_msg.sn = *sequence_id;
-    rr_msg.gid = *this->request_pub->gid();
   } else {
     rr_msg.sn = -1;
-    /* (asorbini) use the reply DataReader's GUID to correlate request and reply, instead of the
-      request DataWriter's GUID, so that the service may try to wait for the DataReader to be
-      matched before writing the reply. */
-    rr_msg.gid = *this->reply_sub->gid();
   }
-
+  rr_msg.gid = *this->request_pub->gid();
   rr_msg.payload = const_cast<void *>(ros_request);
 
   RMW_CONNEXT_LOG_DEBUG_A(
@@ -3031,13 +2923,7 @@ RMW_Connext_Service::create(
     RMW_CONNEXT_MESSAGE_REQUEST,
     svc_members_req,
     svc_members_req_cpp,
-    &request_type,
-    nullptr /* cft_name */,
-    nullptr /* cft_filter */,
-    /* If we are using the extended RPC mapping, then we cache the reply writer
-       so that we can notify it of "subscription_match" events. */
-    (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended ?
-    svc_impl->reply_pub : nullptr));
+    &request_type);
 
   if (nullptr == svc_impl->request_sub) {
     RMW_CONNEXT_LOG_ERROR("failed to create service requester")
@@ -3051,14 +2937,14 @@ RMW_Connext_Service::create(
 rmw_ret_t
 RMW_Connext_Service::enable()
 {
-  rmw_ret_t rc = this->request_sub->enable();
-  if (RMW_RET_OK != rc) {
-    RMW_CONNEXT_LOG_ERROR("failed to enable service's subscription")
-    return rc;
-  }
-  rc = this->reply_pub->enable();
+  rmw_ret_t rc = this->reply_pub->enable();
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to enable service's publisher")
+    return rc;
+  }
+  rc = this->request_sub->enable();
+  if (RMW_RET_OK != rc) {
+    RMW_CONNEXT_LOG_ERROR("failed to enable service's subscription")
     return rc;
   }
   return RMW_RET_OK;
@@ -3097,11 +2983,6 @@ RMW_Connext_Service::take_request(
 
     request_header->source_timestamp = message_info.source_timestamp;
     request_header->received_timestamp = message_info.received_timestamp;
-
-    if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
-      /* Cache the writer/reader GUIDs */
-      reply_pub->push_related_endpoints(rr_msg.gid, rr_msg.writer_gid);
-    }
 
     *taken = true;
 
@@ -3153,59 +3034,6 @@ RMW_Connext_Service::send_response(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
-
-  /* (asorbini) The following logic tries to partially work around some race conditions that exists
-     in the way request/reply interactions between clients and services are mapped to DDS topics
-     and endpoints.
-
-     It is possible for the service's request DataReader to receive a request from the client,
-     handle it, and try to write the response before the service's reply DataWriter has actually
-     matched the client's reply DataReader. If this is the case, the response will be lost
-     (unless the endpoints have been configured with "transient local" or higher Durability QoS,
-     but this is not the default configuration, and it is unlikely to be used in practice...).
-     The data race and loss of reply message may also occur in the case of an
-     "asymmetric discovery" between the client's reply DataReader and the service's reply
-     DataWriter, where the latter has discovered and matched the former, but not viceversa.
-
-     The only way to fully resolve these data races is to have the underlying implementation force
-     a "match ordering" when dealing with pairs of endpoints used for RPC exchanges. The solution
-     is described by the OMG DDS-RPC 1.0 specification, section 7.6.2 (Enhanced Service Mapping).
-     It requires the DDS implementation to prevent the DataWriter from matching its remote
-     counterpart before the associated DataReader has matched. This behavior must be enforced
-     by both service and client for all data races to be resolved.
-
-     This partial workaround relies on (ab)using the "related sample identity" field to communicate
-     the client's reply DataReader's GUID to the service. Normally, this field should would be
-     used to communicate the client's request DataWriter's GUID.
-
-     When the service detects the presence of an unusual DataReader GUID, it will enter a
-     (time-bounded) loop to query the reply DataWriter's list of matched subscriptions, and wait
-     for the GUID to appear.
-
-     If the reader is not matched within the timeout (HistoryQosPolicy::max_blocking_time), the
-     service will return RMW_RET_TIMEOUT to the upper layers. Otherwise, the response is written
-     out as normal.
-
-     It is still possible for the response to be lost by the client, in case of an asymmetric
-     discovery, but this issue partially mitigated by the implementation of
-     Client::is_service_available.
-  */
-  if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
-    struct DDS_GUID_t src_guid = DDS_GUID_INITIALIZER;
-    rmw_ret_t rc = RMW_RET_ERROR;
-    rc = rmw_connextdds_gid_to_guid(rr_msg.gid, src_guid);
-    if (RMW_RET_OK != rc) {
-      return rc;
-    }
-    DDS_RTPS_GUID_t * const rtps_guid = DDS_GUID_as_rtps_guid(&src_guid);
-    if (rtps_guid->entityId.entityKind & 0x04) {
-      bool unmatched = false;
-      rc = reply_pub->wait_for_subscription(rr_msg.gid, unmatched, rr_msg.writer_gid);
-      if (RMW_RET_OK != rc || unmatched) {
-        return rc;
-      }
-    }
-  }
 
   return this->reply_pub->write(&rr_msg, false /* serialized */, &write_params);
 }

@@ -2,6 +2,19 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Revert "Mitigate discovery race condition between clients and services (`#132 <https://github.com/ros2/rmw_connextdds/issues/132>`_)" (`#146 <https://github.com/ros2/rmw_connextdds/issues/146>`_)
+  This reverts commit 7c95abbfc4559b293ebf5e94e20250bdd99d3ac6.
+* Mitigate discovery race condition between clients and services (`#132 <https://github.com/ros2/rmw_connextdds/issues/132>`_)
+  * Mitigate discovery race condition between clients and services.
+* Add: tracepoint for subscribe serialized_message (`#145 <https://github.com/ros2/rmw_connextdds/issues/145>`_)
+  * Add: tracepoint for take_serialized_message
+  * Fix: TRACETOOLS_TRACEPOINT args
+  * Update rmw_connextdds_common/src/common/rmw_subscription.cpp
+  Co-authored-by: Christophe Bedard <bedard.christophe@gmail.com>
+* Contributors: Andrea Sorbini, Chris Lalancette, h-suzuki-isp
+
 0.21.0 (2024-03-28)
 -------------------
 * Support Fast CDR v2 (`#141 <https://github.com/ros2/rmw_connextdds/issues/141>`_)

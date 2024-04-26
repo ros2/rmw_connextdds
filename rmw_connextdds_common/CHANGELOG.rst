@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.22.0 (2024-04-09)
 -------------------
 * Revert "Mitigate discovery race condition between clients and services (`#132 <https://github.com/ros2/rmw_connextdds/issues/132>`_)" (`#146 <https://github.com/ros2/rmw_connextdds/issues/146>`_)

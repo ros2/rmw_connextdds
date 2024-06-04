@@ -77,7 +77,7 @@ rmw_api_connextdds_create_node(
   }
   if (RMW_NAMESPACE_VALID != validation_result) {
     const char * reason =
-      rmw_node_name_validation_result_string(validation_result);
+      rmw_namespace_validation_result_string(validation_result);
     RMW_CONNEXT_LOG_ERROR_A_SET("invalid node namespace: %s", reason)
     return nullptr;
   }

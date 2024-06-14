@@ -70,6 +70,13 @@ bool rmw_connextdds_find_string_in_list(
 DDS_Duration_t rmw_connextdds_duration_from_ros_time(
   const rmw_time_t * const ros_time);
 
+/**
+ * This function returns RMW_RET_UNSUPPORTED when the rmw does not support it.
+ *
+ * \return rmw_ret_t non `RMW_RET_UNSUPPORTED` value if unsupported, if unsuccessful it returns `NULL`
+ */
+rmw_ret_t rmw_notify_participant_dynamic_network_interface(rmw_context_t * context);
+
 /******************************************************************************
  * WaitSet wrapper
  ******************************************************************************/

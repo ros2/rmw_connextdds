@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.24.0 (2024-06-17)
+-------------------
 * Make rmw_service_server_is_available return RMW_RET_INVALID_ARGUMENT (`#150 <https://github.com/ros2/rmw_connextdds/issues/150>`_)
 * Use rmw_namespace_validation_result_string() in rmw_create_node (`#151 <https://github.com/ros2/rmw_connextdds/issues/151>`_)
 * Make rmw_destroy_wait_set return RMW_RET_INVALID_ARGUMENT (`#152 <https://github.com/ros2/rmw_connextdds/issues/152>`_)

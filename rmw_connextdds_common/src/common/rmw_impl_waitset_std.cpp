@@ -614,7 +614,8 @@ RMW_Connext_StatusCondition::update_status_inconsistent_topic(
 
 rmw_ret_t
 RMW_Connext_SubscriberStatusCondition::install(
-  RMW_Connext_Subscriber * const sub)
+  RMW_Connext_Subscriber * const sub,
+  RMW_Connext_Publisher * const related_pub)
 {
   DDS_DataReaderListener listener = DDS_DataReaderListener_INITIALIZER;
   DDS_StatusMask listener_mask = DDS_STATUS_MASK_NONE;
@@ -644,6 +645,9 @@ RMW_Connext_SubscriberStatusCondition::install(
   rmw_connextdds_configure_subscriber_condition_listener(
     this, &listener, &listener_mask);
 
+  this->sub = sub;
+  this->related_pub = related_pub;
+
   if (DDS_RETCODE_OK !=
     DDS_DataReader_set_listener(sub->reader(), &listener, listener_mask))
   {
@@ -661,8 +665,6 @@ RMW_Connext_SubscriberStatusCondition::install(
     RMW_CONNEXT_LOG_ERROR_SET("failed to set topic listener");
     return RMW_RET_ERROR;
   }
-
-  this->sub = sub;
 
   return RMW_RET_OK;
 }
@@ -883,6 +885,10 @@ RMW_Connext_SubscriberStatusCondition::update_status_matched(
   this->status_matched.current_count_change =
     this->status_matched.current_count - this->status_matched_last.current_count;
 
+  if (nullptr != this->sub && nullptr != this->related_pub) {
+    this->related_pub->on_related_subscription_matched(this->sub, status);
+  }
+
   this->notify_new_event(RMW_EVENT_SUBSCRIPTION_MATCHED);
 }
 
@@ -909,6 +915,8 @@ RMW_Connext_PublisherStatusCondition::install(
     DDS_LIVELINESS_LOST_STATUS |
     DDS_PUBLICATION_MATCHED_STATUS;
 
+  this->pub = pub;
+
   if (DDS_RETCODE_OK !=
     DDS_DataWriter_set_listener(
       pub->writer(), &listener, listener_mask))
@@ -933,8 +941,6 @@ RMW_Connext_PublisherStatusCondition::install(
     RMW_CONNEXT_LOG_ERROR_SET("failed to set topic listener");
     return RMW_RET_ERROR;
   }
-
-  this->pub = pub;
 
   return RMW_RET_OK;
 }
@@ -1074,6 +1080,10 @@ RMW_Connext_PublisherStatusCondition::update_status_matched(
     this->status_matched.total_count - this->status_matched_last.total_count;
   this->status_matched.current_count_change =
     this->status_matched.current_count - this->status_matched_last.current_count;
+
+  if (nullptr != this->pub) {
+    this->pub->on_publication_matched(status);
+  }
 
   this->notify_new_event(RMW_EVENT_PUBLICATION_MATCHED);
 }

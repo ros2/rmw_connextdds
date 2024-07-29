@@ -83,13 +83,13 @@ public:
   {
     // Always override the default DomainParticipantQoS obtained at runtime from
     // Connext with RMW-specific configuration. This will include settings derived
-    // from ROS 2 configuration parameters (e.g. "localhost_only", or "enclave"),
-    // but also some additional configurations that the RMW performs arbitrarly
+    // from ROS 2 configuration parameters (e.g. "enclave"),
+    // but also some additional configurations that the RMW performs arbitrary
     // to improve the out of the box experience. Note that some of these customizations
     // can also be disabled individually (e.g. fast endpoint discovery).
     All,
     // Only perform basic modifications on the default DomainParticipantQos value
-    // based on ROS 2 configuration parameters (e.g. "localhost only", and "enclave").
+    // based on ROS 2 configuration parameters (e.g. "enclave").
     // All other RMW-specific customizations will not be applied.
     Basic,
     // Use the default DomainParticipantQoS returned by Connext without any modification.

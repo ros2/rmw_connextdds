@@ -297,9 +297,9 @@ from Connext.
 
 If this variable is unspecified, or set to `all`, then `rmw_connextdds` will modify
 the default DomainParticipantQos with settings derived from ROS 2 options (e.g.
-"localhost only", or "node enclave"), and some additional optimizations meant to
-improve the out of the box experiene (e.g. speed up endpoint discovery, and increase
-the size of type information shared via discovery).
+"node enclave"), and some additional optimizations meant to improve the out of
+the box experiene (e.g. speed up endpoint discovery, and increase the size of type
+information shared via discovery).
 
 If the variable is set to `basic`, then only those settings associated with ROS 2
 options will be modified.

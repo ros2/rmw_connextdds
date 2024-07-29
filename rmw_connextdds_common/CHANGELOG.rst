@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.24.1 (2024-07-29)
+-------------------
+* remove rmw_localhost_only_t. (`#156 <https://github.com/ros2/rmw_connextdds/issues/156>`_)
+* Contributors: Tomoya Fujita
+
 0.24.0 (2024-06-17)
 -------------------
 * Make rmw_service_server_is_available return RMW_RET_INVALID_ARGUMENT (`#150 <https://github.com/ros2/rmw_connextdds/issues/150>`_)

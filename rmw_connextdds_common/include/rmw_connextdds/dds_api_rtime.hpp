@@ -73,4 +73,9 @@ struct DDS_LifespanQosPolicy;
 // Not available function
 #define DDS_DataWriter_wait_for_acknowledgments(writer_, timeout_)    DDS_RETCODE_UNSUPPORTED
 
+#define DDS_Time_is_invalid(timePtr) \
+  ((timePtr)->sec < 0)
+
+#define DDS_TIME_INVALID {-1L, 0UL}
+
 #endif  // RMW_CONNEXTDDS__DDS_API_RTIME_HPP_

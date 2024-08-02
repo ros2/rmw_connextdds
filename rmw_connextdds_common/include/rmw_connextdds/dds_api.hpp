@@ -48,8 +48,8 @@ enum RMW_Connext_MessageType
 
 struct RMW_Connext_WriteParams
 {
-  DDS_Time_t timestamp{DDS_TIME_INVALID};
-  int64_t sequence_number{0};
+  DDS_Time_t timestamp = DDS_TIME_INVALID;
+  int64_t sequence_number = 0L;
 };
 
 RMW_CONNEXTDDS_PUBLIC extern const char * const RMW_CONNEXTDDS_ID;

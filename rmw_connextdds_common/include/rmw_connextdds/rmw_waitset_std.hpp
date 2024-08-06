@@ -15,8 +15,8 @@
 #ifndef RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_
 #define RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_
 
-#include "rmw_connextdds/context.hpp"
 #include <condition_variable>
+#include "rmw_connextdds/context.hpp"
 
 /******************************************************************************
  * Alternative implementation of WaitSets and Conditions using C++ std

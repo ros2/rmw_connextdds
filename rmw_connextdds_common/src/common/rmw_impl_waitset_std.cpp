@@ -121,6 +121,7 @@ RMW_Connext_DataReaderListener_on_data_available(
 
   UNUSED_ARG(reader);
 
+  self->notify_new_data();
   self->set_data_available(true);
 }
 
@@ -706,6 +707,8 @@ RMW_Connext_SubscriberStatusCondition::update_status_deadline(
 
   this->status_deadline.total_count_change = this->status_deadline.total_count;
   this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
+
+  this->notify_new_event(RMW_EVENT_REQUESTED_DEADLINE_MISSED);
 }
 
 void
@@ -720,6 +723,8 @@ RMW_Connext_SubscriberStatusCondition::update_status_liveliness(
   this->status_liveliness.alive_count_change -= this->status_liveliness_last.alive_count;
   this->status_liveliness.not_alive_count_change -=
     this->status_liveliness_last.not_alive_count;
+
+  this->notify_new_event(RMW_EVENT_LIVELINESS_CHANGED);
 }
 
 void
@@ -731,6 +736,7 @@ RMW_Connext_SubscriberStatusCondition::update_status_qos(
 
   this->status_qos.total_count_change = this->status_qos.total_count;
   this->status_qos.total_count_change -= this->status_qos_last.total_count;
+  this->notify_new_event(RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE);
 }
 
 void
@@ -743,6 +749,31 @@ RMW_Connext_SubscriberStatusCondition::update_status_sample_lost(
   this->status_sample_lost.total_count_change = this->status_sample_lost.total_count;
   this->status_sample_lost.total_count_change -=
     this->status_sample_lost_last.total_count;
+  this->notify_new_event(RMW_EVENT_MESSAGE_LOST);
+}
+
+void
+RMW_Connext_SubscriberStatusCondition::notify_new_data()
+{
+  size_t unread_samples = 0;
+  std::unique_lock<std::mutex> lock_mutex(new_data_event_mutex_);
+  perform_action_and_update_state(
+    [this, &unread_samples]() {
+      const rmw_ret_t rc = this->sub->count_unread_samples(unread_samples);
+      if (RMW_RET_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR("failed to count unread samples on DDS Reader")
+      }
+    },
+    [this, &unread_samples]() {
+      if (unread_samples == 0) {
+        return;
+      }
+      if (new_data_event_cb_) {
+        new_data_event_cb_(data_event_user_data_, unread_samples);
+      } else {
+        unread_data_events_count_ += unread_samples;
+      }
+    });
 }
 
 rmw_ret_t
@@ -852,6 +883,8 @@ RMW_Connext_PublisherStatusCondition::update_status_deadline(
 
   this->status_deadline.total_count_change = this->status_deadline.total_count;
   this->status_deadline.total_count_change -= this->status_deadline_last.total_count;
+
+  this->notify_new_event(RMW_EVENT_OFFERED_DEADLINE_MISSED);
 }
 
 void
@@ -863,6 +896,8 @@ RMW_Connext_PublisherStatusCondition::update_status_liveliness(
 
   this->status_liveliness.total_count_change = this->status_liveliness.total_count;
   this->status_liveliness.total_count_change -= this->status_liveliness_last.total_count;
+
+  this->notify_new_event(RMW_EVENT_LIVELINESS_CHANGED);
 }
 
 void
@@ -874,4 +909,6 @@ RMW_Connext_PublisherStatusCondition::update_status_qos(
 
   this->status_qos.total_count_change = this->status_qos.total_count;
   this->status_qos.total_count_change -= this->status_qos_last.total_count;
+
+  this->notify_new_event(RMW_EVENT_OFFERED_QOS_INCOMPATIBLE);
 }

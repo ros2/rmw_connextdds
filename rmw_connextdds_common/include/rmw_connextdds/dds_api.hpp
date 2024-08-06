@@ -139,6 +139,11 @@ rmw_connextdds_take_samples(
   RMW_Connext_Subscriber * const sub);
 
 rmw_ret_t
+rmw_connextdds_count_unread_samples(
+  RMW_Connext_Subscriber * const sub,
+  size_t & unread_count);
+
+rmw_ret_t
 rmw_connextdds_return_samples(
   RMW_Connext_Subscriber * const sub);
 

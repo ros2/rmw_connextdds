@@ -462,6 +462,30 @@ public:
     return has_data;
   }
 
+  rmw_ret_t
+  count_unread_samples(size_t & unread_count)
+  {
+    // The action of counting unread samples is not currently mutually exclusive
+    // with the action of taking samples out of the reader cache. Unfortunately
+    // we cannot use a mutex to synchronize calls between
+    // count_unread_samples() and and take_next() because we would run the risk
+    // of a deadlock. This is because count_unread_samples() is supposed to be
+    // called from within the reader's "exclusive area" (since it is
+    // executed within a listener callback), while take_next() is usually called
+    // from an executor/application thread and it must acquire the reader's
+    // "exclusive area" before taking samples.
+    // This might mean that an application which relies on data callbacks and the
+    // count provided by this function, and which at the same time polls data
+    // on the subscription, might end up missing some samples in the total count
+    // notified to it via callback because the samples were taken out of the
+    // cache before they could be notified to the listener.
+    // Fortunately, in Connext the listener callback is notified right after a
+    // sample is added to the reader cache and before any mutex is released,
+    // which should allow this function to always report a correct number, as
+    // long as it is only called within a (DDS) listener callback.
+    return rmw_connextdds_count_unread_samples(this, unread_count);
+  }
+
   DDS_Subscriber * dds_subscriber() const
   {
     return DDS_DataReader_get_subscriber(this->dds_reader);

@@ -937,7 +937,6 @@ rmw_api_connextdds_init_options_init(
   init_options->implementation_identifier = RMW_CONNEXTDDS_ID;
   init_options->allocator = allocator;
   init_options->impl = nullptr;
-  init_options->localhost_only = RMW_LOCALHOST_ONLY_DEFAULT;
   init_options->domain_id = RMW_DEFAULT_DOMAIN_ID;
   init_options->enclave = nullptr;
   init_options->security_options = rmw_get_zero_initialized_security_options();

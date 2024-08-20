@@ -804,19 +804,29 @@ rmw_connextdds_return_samples(
 {
   void ** data_buffer = reinterpret_cast<void **>(
     RMW_Connext_MessagePtrSeq_get_contiguous_buffer(sub->data_seq()));
-  const DDS_Long data_len =
-    RMW_Connext_MessagePtrSeq_get_length(sub->data_seq());
 
   if (!RMW_Connext_MessagePtrSeq_unloan(sub->data_seq())) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to unloan sample sequence")
     return RMW_RET_ERROR;
   }
+  // DDS_DataReader_return_loan_untypedI is an internal API, and
+  // its signature changed slightly in Connext 7.x.
+#if RTI_DDS_VERSION_MAJOR < 7
+  const DDS_Long data_len =
+    RMW_Connext_MessagePtrSeq_get_length(sub->data_seq());
   if (DDS_RETCODE_OK !=
     DDS_DataReader_return_loan_untypedI(
       sub->reader(),
       data_buffer,
       data_len,
       sub->info_seq()))
+#else
+  if (DDS_RETCODE_OK !=
+    DDS_DataReader_return_loan_untypedI(
+      sub->reader(),
+      data_buffer,
+      sub->info_seq()))
+#endif  // RTI_DDS_VERSION_MAJOR < 7
   {
     RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
     return RMW_RET_ERROR;
@@ -824,6 +834,71 @@ rmw_connextdds_return_samples(
   return RMW_RET_OK;
 }
 
+rmw_ret_t
+rmw_connextdds_count_unread_samples(
+  RMW_Connext_Subscriber * const sub,
+  size_t & unread_count)
+{
+  DDS_Boolean is_loan = DDS_BOOLEAN_TRUE;
+  DDS_Long data_len = 0;
+  void ** data_buffer = nullptr;
+  DDS_SampleInfoSeq info_seq = DDS_SEQUENCE_INITIALIZER;
+
+  unread_count = 0;
+  DDS_ReturnCode_t rc = DDS_RETCODE_ERROR;
+  do {
+    rc = DDS_DataReader_read_or_take_instance_untypedI(
+      sub->reader(),
+      &is_loan,
+      &data_buffer,
+      &data_len,
+      &info_seq,
+      0 /* data_seq_len */,
+      0 /* data_seq_max_len */,
+      DDS_BOOLEAN_TRUE /* data_seq_has_ownership */,
+      NULL /* data_seq_contiguous_buffer_for_copy */,
+      1 /* data_size -- ignored because loaning*/,
+      DDS_LENGTH_UNLIMITED /* max_samples */,
+      &DDS_HANDLE_NIL /* a_handle */,
+  #if !RMW_CONNEXT_DDS_API_PRO_LEGACY
+      NULL /* topic_query_guid */,
+  #endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
+      DDS_NOT_READ_SAMPLE_STATE,
+      DDS_ANY_VIEW_STATE,
+      DDS_ANY_INSTANCE_STATE,
+      DDS_BOOLEAN_FALSE /* take */);
+    if (DDS_RETCODE_NO_DATA == rc) {
+      continue;
+    }
+    if (DDS_RETCODE_OK != rc && DDS_RETCODE_NO_DATA != rc) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to read data from DDS reader")
+      return RMW_RET_ERROR;
+    }
+    if (DDS_RETCODE_OK == rc) {
+      unread_count += data_len;
+      // DDS_DataReader_return_loan_untypedI is an internal API, and
+      // its signature changed slightly in Connext 7.x.
+#if RTI_DDS_VERSION_MAJOR < 7
+      rc = DDS_DataReader_return_loan_untypedI(
+        sub->reader(),
+        data_buffer,
+        data_len,
+        &info_seq);
+#else
+      rc = DDS_DataReader_return_loan_untypedI(
+        sub->reader(),
+        data_buffer,
+        &info_seq);
+#endif  // RTI_DDS_VERSION_MAJOR < 7
+      if (DDS_RETCODE_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
+        return RMW_RET_ERROR;
+      }
+    }
+  } while (rc == DDS_RETCODE_OK);
+
+  return RMW_RET_OK;
+}
 
 rmw_ret_t
 rmw_connextdds_filter_sample(

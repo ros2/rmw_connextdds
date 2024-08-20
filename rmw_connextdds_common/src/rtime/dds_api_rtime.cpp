@@ -1204,6 +1204,40 @@ rmw_connextdds_return_samples(
 }
 
 rmw_ret_t
+rmw_connextdds_count_unread_samples(
+  RMW_Connext_Subscriber * const sub,
+  size_t & unread_count)
+{
+  unread_count = 0;
+  DDS_SampleInfoSeq info_seq = DDS_SEQUENCE_INITIALIZER;
+  DDS_UntypedSampleSeq data_seq = DDS_SEQUENCE_INITIALIZER;
+  DDS_ReturnCode_t rc = DDS_RETCODE_ERROR;
+  do {
+    rc = DDS_DataReader_read(
+      sub->reader(),
+      &data_seq,
+      &info_seq,
+      DDS_LENGTH_UNLIMITED,
+      DDS_ANY_VIEW_STATE,
+      DDS_NOT_READ_SAMPLE_STATE,
+      DDS_ANY_INSTANCE_STATE);
+    if (DDS_RETCODE_OK != rc && DDS_RETCODE_NO_DATA != rc) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to read data from DDS reader")
+      return RMW_RET_ERROR;
+    }
+    if (DDS_RETCODE_OK == rc) {
+      unread_count += DDS_UntypedSampleSeq_get_length(&data_seq);
+      rc = DDS_DataReader_return_loan(sub->reader(), &data_seq, &info_seq);
+      if (DDS_RETCODE_OK != rc) {
+        RMW_CONNEXT_LOG_ERROR_SET("failed to return loan to DDS reader")
+        return RMW_RET_ERROR;
+      }
+    }
+  } while (rc == DDS_RETCODE_OK);
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
 rmw_connextdds_filter_sample(
   RMW_Connext_Subscriber * const sub,
   const void * const sample,

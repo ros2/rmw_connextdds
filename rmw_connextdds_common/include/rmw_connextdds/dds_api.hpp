@@ -33,6 +33,10 @@
 #include "rmw/rmw.h"
 #include "rosidl_typesupport_cpp/message_type_support.hpp"
 
+#ifndef DDS_GUID_INITIALIZER
+#define DDS_GUID_INITIALIZER        DDS_GUID_DEFAULT
+#endif /* DDS_GUID_INITIALIZER */
+
 class RMW_Connext_MessageTypeSupport;
 class RMW_Connext_Publisher;
 class RMW_Connext_Subscriber;
@@ -291,5 +295,10 @@ rmw_connextdds_get_cft_filter_expression(
   DDS_TopicDescription * const topic_desc,
   rcutils_allocator_t * const allocator,
   rmw_subscription_content_filter_options_t * const options);
+
+rmw_ret_t
+rmw_connextdds_guid_to_instance_handle(
+  const struct DDS_GUID_t * const guid,
+  DDS_InstanceHandle_t * const instanceHandle);
 
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

@@ -83,7 +83,7 @@ public:
     bool & already_active,
     FunctorT && check_trigger)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    std::lock_guard<std::recursive_mutex> lock(this->mutex_internal);
     already_active = check_trigger();
     if (!already_active) {
       this->waitset_mutex = waitset_mutex;
@@ -95,7 +95,7 @@ public:
   void
   detach(FunctorT && on_detached)
   {
-    std::lock_guard<std::mutex> lock(this->mutex_internal);
+    std::lock_guard<std::recursive_mutex> lock(this->mutex_internal);
     this->waitset_mutex = nullptr;
     this->waitset_condition = nullptr;
     on_detached();
@@ -107,7 +107,7 @@ public:
   void
   update_state(FunctorT && update_condition, const bool notify)
   {
-    std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
+    std::lock_guard<std::recursive_mutex> internal_lock(this->mutex_internal);
 
     if (nullptr != this->waitset_mutex) {
       std::lock_guard<std::mutex> lock(*this->waitset_mutex);
@@ -125,7 +125,7 @@ public:
   void
   perform_action_and_update_state(FunctorA && action, FunctorT && update_condition)
   {
-    std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
+    std::lock_guard<std::recursive_mutex> internal_lock(this->mutex_internal);
 
     action();
 
@@ -138,7 +138,7 @@ public:
   }
 
 protected:
-  std::mutex mutex_internal;
+  std::recursive_mutex mutex_internal;
   std::mutex * waitset_mutex;
   std::condition_variable * waitset_condition;
 

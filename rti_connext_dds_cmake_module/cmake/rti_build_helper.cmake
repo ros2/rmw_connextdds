@@ -462,7 +462,7 @@ function(rti_guess_connextdds_arch)
   if(EXISTS "${CONNEXTDDS_DIR}/lib/${guessed_architecture}")
     set(CONNEXTDDS_ARCH "${guessed_architecture}")
     message(STATUS
-      "Guessed ${CONNEXTDDS_DIR}/lib/${guessed_architecture} exists")
+      "Guessed ${CONNEXTDDS_DIR}/lib/${guessed_architecture} exists and is selected")
   else()
     # If CONNEXTDDS_ARCH is unspecified, the module tries uses the first
     # architecture installed by looking under $CONNEXTDDS_DIR/lib that matches
@@ -474,8 +474,9 @@ function(rti_guess_connextdds_arch)
     message(STATUS
       "Guessed CONNEXTDDS_ARCH ('${guessed_architecture}') not available.")
     message(STATUS
-      "Pick first from ${CONNEXTDDS_DIR}/lib/[${architectures_installed}]")
+      "Try to search from ${CONNEXTDDS_DIR}/lib/[${architectures_installed}]")
 
+    set(architecture_candidates "")
     foreach(architecture_name ${architectures_installed})
       # Because the lib folder contains both target libraries and
       # Java JAR files, here we exclude the "java" in our algorithm
@@ -516,11 +517,7 @@ function(rti_guess_connextdds_arch)
           endif()
         endif()
         if(NOT CONNEXTDDS_ARCH)
-          message(STATUS
-            "unsupported CMAKE_HOST_SYSTEM_NAME (${CMAKE_HOST_SYSTEM_NAME}) "
-            "or CMAKE_HOST_SYSTEM_PROCESSOR (${CMAKE_HOST_SYSTEM_PROCESSOR}). "
-            "Using architecture ${architecture_name} anyway.")
-          set(CONNEXTDDS_ARCH "${architecture_name}")
+          list(APPEND architecture_candidates ${architecture_name})
         endif()
       else()
         message(STATUS "ignored foreign architecture: ${architecture_name}")
@@ -529,18 +526,27 @@ function(rti_guess_connextdds_arch)
       if(CONNEXTDDS_ARCH)
         break()
       endif()
+
     endforeach()
-  endif()
 
-  if(NOT CONNEXTDDS_ARCH)
-    message(WARNING
-      "CONNEXTDDS_ARCH not specified. Please set "
-      "-DCONNEXTDDS_ARCH= to specify your RTI Connext DDS "
-      " architecture")
-  else()
+    if(CONNEXTDDS_ARCH)
       message(STATUS "Selected CONNEXTDDS_ARCH: ${CONNEXTDDS_ARCH}")
-  endif()
+    else()
+      if(architecture_candidates)
+        list(GET architecture_candidates 0 CONNEXTDDS_ARCH)
+        message(STATUS
+          "unsupported CMAKE_HOST_SYSTEM_NAME (${CMAKE_HOST_SYSTEM_NAME}) "
+          "or CMAKE_HOST_SYSTEM_PROCESSOR (${CMAKE_HOST_SYSTEM_PROCESSOR}). "
+          "Using architecture ${CONNEXTDDS_ARCH} anyway.")
+      else()
+        message(WARNING
+          "CONNEXTDDS_ARCH not specified. Please set "
+          "-DCONNEXTDDS_ARCH= to specify your RTI Connext DDS "
+          " architecture")
+      endif() 
+    endif()
 
+  endif()
 
   set(CONNEXTDDS_ARCH "${CONNEXTDDS_ARCH}" PARENT_SCOPE)
 endfunction()

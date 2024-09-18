@@ -1106,7 +1106,7 @@ rmw_api_connextdds_init(
   auto scope_exit_context_reset = rcpputils::make_scope_exit(
     [context]()
     {
-      *context = rmw_get_zero_initialized_context();
+      *context = rmw_get_default_context();
     });
 
   context->instance_id = options->instance_id;

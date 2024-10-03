@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: "Failed to parse type hash" message was overly spammy (ros2-50) (`#149 <https://github.com/ros2/rmw_connextdds/issues/149>`_)
+* Contributors: Taxo Rubio RTI
+
 0.24.1 (2024-07-29)
 -------------------
 * remove rmw_localhost_only_t. (`#156 <https://github.com/ros2/rmw_connextdds/issues/156>`_)

@@ -670,3 +670,87 @@ rmw_api_connextdds_get_subscriptions_info_by_topic(
     allocator,
     subscriptions_info);
 }
+
+
+rmw_ret_t
+rmw_api_connextdds_get_clients_info_by_service(
+  const rmw_node_t * node,
+  rcutils_allocator_t * allocator,
+  const char * service_name,
+  bool no_mangle,
+  rmw_topic_endpoint_info_array_t * clients_info)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(node, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    node,
+    node->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(allocator, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_ARGUMENT_FOR_NULL(service_name, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_ARGUMENT_FOR_NULL(clients_info, RMW_RET_INVALID_ARGUMENT);
+
+  RCUTILS_CHECK_ALLOCATOR_WITH_MSG(
+    allocator, "allocator argument is invalid", return RMW_RET_INVALID_ARGUMENT);
+
+  if (RMW_RET_OK != rmw_topic_endpoint_info_array_check_zero(clients_info)) {
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+
+  auto common_context = &node->context->impl->common;
+  std::string mangled_rp_topic_name = service_name;
+  DemangleFunction demangle_type = _identity_demangle;
+  if (!no_mangle) {
+    mangled_rp_topic_name =
+      rmw_connextdds_create_topic_name(
+      ROS_SERVICE_RESPONSE_PREFIX, service_name, "Reply", false);
+    demangle_type = _demangle_if_ros_type;
+  }
+  return common_context->graph_cache.get_readers_info_by_topic(
+    mangled_rp_topic_name,
+    demangle_type,
+    allocator,
+    clients_info);
+}
+
+
+rmw_ret_t
+rmw_api_connextdds_get_servers_info_by_service(
+  const rmw_node_t * node,
+  rcutils_allocator_t * allocator,
+  const char * service_name,
+  bool no_mangle,
+  rmw_topic_endpoint_info_array_t * servers_info)
+{
+  RMW_CHECK_ARGUMENT_FOR_NULL(node, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    node,
+    node->implementation_identifier,
+    RMW_CONNEXTDDS_ID,
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+  RMW_CHECK_ARGUMENT_FOR_NULL(allocator, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_ARGUMENT_FOR_NULL(service_name, RMW_RET_INVALID_ARGUMENT);
+  RMW_CHECK_ARGUMENT_FOR_NULL(servers_info, RMW_RET_INVALID_ARGUMENT);
+
+  RCUTILS_CHECK_ALLOCATOR_WITH_MSG(
+    allocator, "allocator argument is invalid", return RMW_RET_INVALID_ARGUMENT);
+
+  if (RMW_RET_OK != rmw_topic_endpoint_info_array_check_zero(servers_info)) {
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+
+  auto common_context = &node->context->impl->common;
+  std::string mangled_rp_topic_name = service_name;
+  DemangleFunction demangle_type = _identity_demangle;
+  if (!no_mangle) {
+    mangled_rp_topic_name =
+      rmw_connextdds_create_topic_name(
+      ROS_SERVICE_RESPONSE_PREFIX, service_name, "Reply", false);
+    demangle_type = _demangle_if_ros_type;
+  }
+  return common_context->graph_cache.get_writers_info_by_topic(
+    mangled_rp_topic_name,
+    demangle_type,
+    allocator,
+    servers_info);
+}

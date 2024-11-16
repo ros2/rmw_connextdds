@@ -2411,6 +2411,7 @@ RMW_Connext_Client::create(
   DDS_Publisher * const pub,
   DDS_Subscriber * const sub,
   const rosidl_service_type_support_t * const type_supports,
+  const rmw_client_t * const rmw_client,
   const char * const svc_name,
   const rmw_qos_profile_t * const qos_policies)
 {
@@ -2423,6 +2424,7 @@ RMW_Connext_Client::create(
   }
 
   client_impl->ctx = ctx;
+  client_impl->rmw_client = rmw_client;
 
   auto scope_exit_client_impl_delete = rcpputils::make_scope_exit(
     [client_impl]()
@@ -2692,6 +2694,13 @@ RMW_Connext_Client::take_response(
       rr_msg.sn)
   }
 
+  TRACETOOLS_TRACEPOINT(
+    rmw_take_response,
+    static_cast<const void *>(this->rmw_client),
+    static_cast<const void *>(ros_response),
+    request_header->request_id.sequence_number,
+    request_header->source_timestamp,
+    *taken);
   return RMW_RET_OK;
 }
 
@@ -2734,10 +2743,28 @@ RMW_Connext_Client::send_request(
     return RMW_RET_ERROR;
   }
 
+#ifndef TRACETOOLS_DISABLED
+  // In this case, we can get the sequence number before the write() call
+  if (this->ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic) {
+    TRACETOOLS_TRACEPOINT(
+      rmw_send_request,
+      static_cast<const void *>(this->rmw_client),
+      static_cast<const void *>(ros_request),
+      *sequence_id);
+  }
+#endif  // TRACETOOLS_DISABLED
+
   rmw_ret_t rc = this->request_pub->write(&rr_msg, false /* serialized */, &write_params);
 
   if (this->ctx->request_reply_mapping != RMW_Connext_RequestReplyMapping::Basic) {
     *sequence_id = write_params.sequence_number;
+
+    // In this other case, we can only get the sequence number after the write() call
+    TRACETOOLS_TRACEPOINT(
+      rmw_send_request,
+      static_cast<const void *>(this->rmw_client),
+      static_cast<const void *>(ros_request),
+      *sequence_id);
   }
 
   RMW_CONNEXT_LOG_DEBUG_A(
@@ -2809,6 +2836,7 @@ RMW_Connext_Service::create(
   DDS_Publisher * const pub,
   DDS_Subscriber * const sub,
   const rosidl_service_type_support_t * const type_supports,
+  const rmw_service_t * const rmw_service,
   const char * const svc_name,
   const rmw_qos_profile_t * const qos_policies)
 {
@@ -2821,6 +2849,7 @@ RMW_Connext_Service::create(
   }
 
   svc_impl->ctx = ctx;
+  svc_impl->rmw_service = rmw_service;
 
   auto scope_exit_svc_impl_delete = rcpputils::make_scope_exit(
     [svc_impl]()
@@ -2998,6 +3027,13 @@ RMW_Connext_Service::take_request(
       rr_msg.sn)
   }
 
+  TRACETOOLS_TRACEPOINT(
+    rmw_take_request,
+    static_cast<const void *>(this->rmw_service),
+    static_cast<const void *>(ros_request),
+    request_header->request_id.writer_guid,
+    request_header->request_id.sequence_number,
+    *taken);
   return RMW_RET_OK;
 }
 
@@ -3034,6 +3070,13 @@ RMW_Connext_Service::send_response(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
+  TRACETOOLS_TRACEPOINT(
+    rmw_send_response,
+    static_cast<const void *>(this->rmw_service),
+    static_cast<const void *>(ros_response),
+    request_id->writer_guid,
+    request_id->sequence_number,
+    dds_time_to_u64(&write_params.timestamp));
 
   return this->reply_pub->write(&rr_msg, false /* serialized */, &write_params);
 }

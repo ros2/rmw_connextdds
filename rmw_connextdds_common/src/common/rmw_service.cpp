@@ -21,6 +21,8 @@
 
 #include "rmw/validate_full_topic_name.h"
 
+#include "tracetools/tracetools.h"
+
 /******************************************************************************
  * Clients/Servers functions
  ******************************************************************************/
@@ -166,6 +168,12 @@ rmw_api_connextdds_create_client(
   rmw_context_impl_t * ctx = node->context->impl;
   std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
+  rmw_client_t * rmw_client = rmw_client_allocate();
+  if (nullptr == rmw_client) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create RMW client")
+    return nullptr;
+  }
+
   RMW_Connext_Client * const client_impl =
     RMW_Connext_Client::create(
     ctx,
@@ -173,6 +181,7 @@ rmw_api_connextdds_create_client(
     ctx->dds_pub,
     ctx->dds_sub,
     type_supports,
+    rmw_client,
     service_name,
     &adapted_qos_policies);
 
@@ -190,12 +199,6 @@ rmw_api_connextdds_create_client(
       }
       delete client_impl;
     });
-
-  rmw_client_t * rmw_client = rmw_client_allocate();
-  if (nullptr == rmw_client) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to create RMW client")
-    return nullptr;
-  }
 
   rmw_client->implementation_identifier = RMW_CONNEXTDDS_ID;
   rmw_client->data = client_impl;
@@ -224,6 +227,10 @@ rmw_api_connextdds_create_client(
   }
 
   scope_exit_client_impl_delete.cancel();
+  TRACETOOLS_TRACEPOINT(
+    rmw_client_init,
+    static_cast<const void *>(rmw_client),
+    client_impl->gid().data);
   return rmw_client;
 }
 
@@ -382,6 +389,12 @@ rmw_api_connextdds_create_service(
   rmw_context_impl_t * ctx = node->context->impl;
   std::lock_guard<std::mutex> guard(ctx->endpoint_mutex);
 
+  rmw_service_t * rmw_service = rmw_service_allocate();
+  if (nullptr == rmw_service) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to create RMW service")
+    return nullptr;
+  }
+
   RMW_Connext_Service * const svc_impl =
     RMW_Connext_Service::create(
     ctx,
@@ -389,6 +402,7 @@ rmw_api_connextdds_create_service(
     ctx->dds_pub,
     ctx->dds_sub,
     type_supports,
+    rmw_service,
     service_name,
     &adapted_qos_policies);
 
@@ -406,12 +420,6 @@ rmw_api_connextdds_create_service(
       }
       delete svc_impl;
     });
-
-  rmw_service_t * rmw_service = rmw_service_allocate();
-  if (nullptr == rmw_service) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to create RMW service")
-    return nullptr;
-  }
 
   rmw_service->implementation_identifier = RMW_CONNEXTDDS_ID;
   rmw_service->data = svc_impl;

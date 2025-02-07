@@ -364,6 +364,8 @@ rmw_connextdds_get_readerwriter_qos(
     history->kind,
     history->depth);
 
+  reliability->max_blocking_time = DDS_DURATION_INFINITE;
+
   switch (qos_policies->reliability) {
     case RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT:
       {

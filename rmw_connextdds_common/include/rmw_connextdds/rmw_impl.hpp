@@ -310,6 +310,12 @@ public:
 
   ~RMW_Connext_Publisher();
 
+  long long int max_blocking_time_nanoseconds() const
+  {
+    return static_cast<long long int>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(this->max_blocking_time).count());
+  }
+
 private:
   DDS_DataWriter * dds_writer;
   RMW_Connext_MessageTypeSupport * type_support;

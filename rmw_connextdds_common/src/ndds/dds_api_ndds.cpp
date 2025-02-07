@@ -674,6 +674,41 @@ rmw_connextdds_get_datareader_qos(
     sub_options);
 }
 
+void on_reliable_reader_activity_changed(
+    void *listener_data,
+    DDS_DataWriter *writer,
+    const struct DDS_ReliableReaderActivityChangedStatus *status)
+{
+  DDS_InstanceHandle_t writer_handle;
+  DDS_GUID_t guid;
+
+  /* Get DataWriter Instance Handle */
+  writer_handle = DDS_Entity_get_instance_handle((DDS_Entity *)writer);
+
+  /* Extract GUID from the Instance Handle */
+  DDS_GUID_from_instance_handle(&guid, &writer_handle);
+
+  RMW_CONNEXT_LOG_INFO_A("[Reliable Reader Activity Changed]\n"
+      "Data Writer GUID: %08X.%08X.%08X.%08X\n"
+      "  active_count: %d\n"
+      "  active_count_change: %d\n"
+      "  inactive_count: %d\n"
+      "  inactive_count_change: %d\n"
+      "  last_instance_handle: %08X.%08X.%08X.%08X\n",
+      reinterpret_cast<const uint32_t *>(guid.value)[0],
+      reinterpret_cast<const uint32_t *>(guid.value)[1],
+      reinterpret_cast<const uint32_t *>(guid.value)[2],
+      reinterpret_cast<const uint32_t *>(guid.value)[3],
+      status->active_count,
+      status->active_count_change,
+      status->inactive_count,
+      status->inactive_count_change,
+      reinterpret_cast<const uint32_t *>(status->last_instance_handle.keyHash.value)[0],
+      reinterpret_cast<const uint32_t *>(status->last_instance_handle.keyHash.value)[1],
+      reinterpret_cast<const uint32_t *>(status->last_instance_handle.keyHash.value)[2],
+      reinterpret_cast<const uint32_t *>(status->last_instance_handle.keyHash.value)[3]);
+}
+
 DDS_DataWriter *
 rmw_connextdds_create_datawriter(
   rmw_context_impl_t * const ctx,
@@ -698,10 +733,13 @@ rmw_connextdds_create_datawriter(
     return nullptr;
   }
 
-  DDS_DataWriter * const writer =
-    DDS_Publisher_create_datawriter(
-    pub, topic, dw_qos,
-    NULL, DDS_STATUS_MASK_NONE);
+  DDS_DataWriterListener listener = DDS_DataWriterListener_INITIALIZER;
+  listener.on_reliable_reader_activity_changed = on_reliable_reader_activity_changed;
+
+  DDS_DataWriter *const writer =
+      DDS_Publisher_create_datawriter(
+          pub, topic, dw_qos,
+          &listener, DDS_RELIABLE_READER_ACTIVITY_CHANGED_STATUS);
 
   return writer;
 }

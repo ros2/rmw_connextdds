@@ -231,6 +231,23 @@ rmw_api_connextdds_create_client(
     rmw_client_init,
     static_cast<const void *>(rmw_client),
     client_impl->gid().data);
+
+  auto publisher_guid = DDS_GUID_t{};
+  rmw_connextdds_gid_to_guid(*client_impl->publisher()->gid(), publisher_guid);
+  auto subscriber_guid = DDS_GUID_t{};
+  rmw_connextdds_gid_to_guid(*client_impl->subscriber()->gid(), subscriber_guid);
+
+  RMW_CONNEXT_LOG_INFO_A("CREATE_CLIENT|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X",
+      rmw_client->service_name,
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3]);
+
   return rmw_client;
 }
 
@@ -448,6 +465,23 @@ rmw_api_connextdds_create_service(
   }
 
   scope_exit_svc_impl_delete.cancel();
+
+  auto publisher_guid = DDS_GUID_t{};
+  rmw_connextdds_gid_to_guid(*svc_impl->publisher()->gid(), publisher_guid);
+  auto subscriber_guid = DDS_GUID_t{};
+  rmw_connextdds_gid_to_guid(*svc_impl->subscriber()->gid(), subscriber_guid);
+
+  RMW_CONNEXT_LOG_INFO_A("CREATE_SERVICE|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X",
+      rmw_service->service_name,
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+      reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3]);
+
   return rmw_service;
 }
 

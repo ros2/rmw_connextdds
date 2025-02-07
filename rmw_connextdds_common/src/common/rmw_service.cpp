@@ -237,7 +237,7 @@ rmw_api_connextdds_create_client(
   auto subscriber_guid = DDS_GUID_t{};
   rmw_connextdds_gid_to_guid(*client_impl->subscriber()->gid(), subscriber_guid);
 
-  RMW_CONNEXT_LOG_INFO_A("CREATE_CLIENT|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X",
+  RMW_CONNEXT_LOG_ERROR_A("CREATE_CLIENT|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X",
       rmw_client->service_name,
       reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
       reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
@@ -471,7 +471,7 @@ rmw_api_connextdds_create_service(
   auto subscriber_guid = DDS_GUID_t{};
   rmw_connextdds_gid_to_guid(*svc_impl->subscriber()->gid(), subscriber_guid);
 
-  RMW_CONNEXT_LOG_INFO_A("CREATE_SERVICE|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X",
+  RMW_CONNEXT_LOG_ERROR_A("CREATE_SERVICE|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X",
       rmw_service->service_name,
       reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
       reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],

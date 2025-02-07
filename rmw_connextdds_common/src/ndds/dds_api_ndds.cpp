@@ -688,7 +688,7 @@ void on_reliable_reader_activity_changed(
   /* Extract GUID from the Instance Handle */
   DDS_GUID_from_instance_handle(&guid, &writer_handle);
 
-  RMW_CONNEXT_LOG_INFO_A("[Reliable Reader Activity Changed]\n"
+  RMW_CONNEXT_LOG_ERROR_A("[Reliable Reader Activity Changed]\n"
       "Data Writer GUID: %08X.%08X.%08X.%08X\n"
       "  active_count: %d\n"
       "  active_count_change: %d\n"

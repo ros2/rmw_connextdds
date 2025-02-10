@@ -58,8 +58,7 @@ function(rtirmw_add_library)
 
     target_link_libraries(${_rti_build_NAME}
         ${_rti_build_LIBRARIES}
-        fastcdr
-	${_rti_build_DEPS})
+        ${_rti_build_DEPS})
 
     set(_extra_defines)
     if("${CMAKE_BUILD_TYPE}" MATCHES "[dD]ebug")
@@ -111,7 +110,7 @@ set(RMW_CONNEXT_TARGET_DEPS
     rmw::rmw
     rmw_dds_common::rmw_dds_common_library
     tracetools::tracetools
-    fastcdr::fastcdr
+    fastcdr
     rosidl_runtime_c::rosidl_runtime_c
     rosidl_runtime_cpp::rosidl_runtime_cpp
     rosidl_typesupport_fastrtps_c::rosidl_typesupport_fastrtps_c

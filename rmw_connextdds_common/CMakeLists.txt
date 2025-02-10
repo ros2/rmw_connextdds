@@ -106,7 +106,7 @@ endfunction()
 # Load external dependencies
 ################################################################################
 set(RMW_CONNEXT_TARGET_DEPS
-    rcutils::rclutils
+    rcutils::rcutils
     rcpputils::rcpputils
     rmw::rmw
     rmw_dds_common::rmw_dds_common_library

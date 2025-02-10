@@ -2742,24 +2742,26 @@ RMW_Connext_Client::is_service_available(bool & available)
           auto remote_subscriber_guid = DDS_GUID_t{};
           DDS_GUID_from_instance_handle(&remote_subscriber_guid, sub_ih);
 
-          RMW_CONNEXT_LOG_ERROR_A("SERVICE_AVAILABLE|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|RDW %08X.%08X.%08X.%08X|RDR %08X.%08X.%08X.%08X",
-              this->rmw_client->service_name,
-              reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-              reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-              reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-              reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-              reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
-              reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
-              reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
-              reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
-              reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[0],
-              reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[1],
-              reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[2],
-              reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[3],
-              reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[0],
-              reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[1],
-              reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[2],
-              reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[3]);
+          if (rmw_is_service_log_active(this->rmw_client->service_name)) {
+            RMW_CONNEXT_LOG_ERROR_A("SERVICE_AVAILABLE|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|RDW %08X.%08X.%08X.%08X|RDR %08X.%08X.%08X.%08X",
+                this->rmw_client->service_name,
+                reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+                reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+                reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+                reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+                reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+                reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+                reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+                reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
+                reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[0],
+                reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[1],
+                reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[2],
+                reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[3],
+                reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[0],
+                reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[1],
+                reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[2],
+                reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[3]);
+          }
       }
     }
   }
@@ -2824,21 +2826,23 @@ RMW_Connext_Client::take_response(
     auto correlation_writer_guid = DDS_GUID_t{};
     rmw_connextdds_gid_to_guid(rr_msg.gid, correlation_writer_guid);
 
-    RMW_CONNEXT_LOG_ERROR_A("TAKE_RESPONSE|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
-        rmw_client->service_name,
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[0],
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[1],
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[2],
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[3],
-        rr_msg.sn);
+    if (rmw_is_service_log_active(rmw_client->service_name)) {
+        RMW_CONNEXT_LOG_ERROR_A("TAKE_RESPONSE|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
+            rmw_client->service_name,
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[3],
+            rr_msg.sn);
+    }
 
     RMW_CONNEXT_LOG_DEBUG_A(
       "[%s] taken RESPONSE: "
@@ -2935,24 +2939,26 @@ RMW_Connext_Client::send_request(
   auto subscriber_guid = DDS_GUID_t{};
   rmw_connextdds_gid_to_guid(*this->subscriber()->gid(), subscriber_guid);
 
-  RMW_CONNEXT_LOG_ERROR_A("SEND_REQUEST|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
-      rmw_client->service_name,
-      // Client DW
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-      // Client DR
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
-      // Correlation DW
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-      *sequence_id);
+  if (rmw_is_service_log_active(rmw_client->service_name)) {
+    RMW_CONNEXT_LOG_ERROR_A("SEND_REQUEST|CLIENT|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
+        rmw_client->service_name,
+        // Client DW
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+        // Client DR
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
+        // Correlation DW
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+        *sequence_id);
+  }
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "[%s] SENT REQUEST: "
@@ -3220,24 +3226,26 @@ RMW_Connext_Service::take_request(
     auto correlation_writer_guid = DDS_GUID_t{};
     rmw_connextdds_gid_to_guid(rr_msg.writer_gid, correlation_writer_guid);
 
-    RMW_CONNEXT_LOG_ERROR_A("TAKE_REQUEST|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
-        rmw_service->service_name,
-        // Service DW
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-        reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-        // Service DR
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
-        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
-        // Correlation DW
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[0],
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[1],
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[2],
-        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[3],
-        rr_msg.sn);
+    if (rmw_is_service_log_active(rmw_service->service_name)) {
+        RMW_CONNEXT_LOG_ERROR_A("TAKE_REQUEST|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
+            rmw_service->service_name,
+            // Service DW
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+            // Service DR
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
+            // Correlation DW
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[3],
+            rr_msg.sn);
+    }
 
     RMW_CONNEXT_LOG_DEBUG_A(
       "[%s] taken REQUEST: "
@@ -3355,44 +3363,51 @@ RMW_Connext_Service::send_response(
       auto remote_subscriber_guid = DDS_GUID_t{};
       rmw_connextdds_gid_to_guid(rr_msg.gid, remote_subscriber_guid);
 
-      RMW_CONNEXT_LOG_ERROR_A("WAIT_FOR_SUBSCRIPTION|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|RDR %08X.%08X.%08X.%08X:%lldns",
-          this->rmw_service->service_name,
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[0],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[1],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[2],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[3],
-          this->reply_pub->max_blocking_time_nanoseconds());
+      if (rmw_is_service_log_active(this->rmw_service->service_name)) {
+        RMW_CONNEXT_LOG_ERROR_A("WAIT_FOR_SUBSCRIPTION|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|RDR %08X.%08X.%08X.%08X:%lldns",
+            this->rmw_service->service_name,
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[3],
+            this->reply_pub->max_blocking_time_nanoseconds());
+      }
+
       rc = reply_pub->wait_for_subscription(rr_msg.gid, unmatched, rr_msg.writer_gid);
 
       auto remote_publisher_guid = DDS_GUID_t{};
       rmw_connextdds_gid_to_guid(rr_msg.writer_gid, remote_publisher_guid);
-      RMW_CONNEXT_LOG_ERROR_A("WAIT_FOR_SUBSCRIPTION_STATUS|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|RDW %08X.%08X.%08X.%08X|RDR %08X.%08X.%08X.%08X:%s",
-          this->rmw_service->service_name,
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-          reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
-          reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
-          reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[0],
-          reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[1],
-          reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[2],
-          reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[3],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[0],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[1],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[2],
-          reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[3],
-          (RMW_RET_OK != rc || unmatched) ? "FALSE" : "TRUE");
+
+      if (rmw_is_service_log_active(this->rmw_service->service_name)) {
+        RMW_CONNEXT_LOG_ERROR_A("WAIT_FOR_SUBSCRIPTION_STATUS|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|RDW %08X.%08X.%08X.%08X|RDR %08X.%08X.%08X.%08X:%s",
+            this->rmw_service->service_name,
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
+            reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(remote_publisher_guid.value)[3],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[0],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[1],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[2],
+            reinterpret_cast<const uint32_t *>(remote_subscriber_guid.value)[3],
+            (RMW_RET_OK != rc || unmatched) ? "FALSE" : "TRUE");
+      }
+
       if (RMW_RET_OK != rc || unmatched) {
         return rc;
       }
@@ -3406,24 +3421,26 @@ RMW_Connext_Service::send_response(
   auto correlation_writer_guid = DDS_GUID_t{};
   rmw_connextdds_gid_to_guid(rr_msg.writer_gid, correlation_writer_guid);
 
-  RMW_CONNEXT_LOG_ERROR_A("SEND_RESPONSE|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
-      rmw_service->service_name,
-      // Service DW
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
-      reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
-      // Service DR
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
-      reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
-      // Correlation DW
-      reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[0],
-      reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[1],
-      reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[2],
-      reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[3],
-      rr_msg.sn);
+  if (rmw_is_service_log_active(rmw_service->service_name)) {
+    RMW_CONNEXT_LOG_ERROR_A("SEND_RESPONSE|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
+        rmw_service->service_name,
+        // Service DW
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[0],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[1],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[2],
+        reinterpret_cast<const uint32_t *>(publisher_guid.value)[3],
+        // Service DR
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[0],
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[1],
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[2],
+        reinterpret_cast<const uint32_t *>(subscriber_guid.value)[3],
+        // Correlation DW
+        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[0],
+        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[1],
+        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[2],
+        reinterpret_cast<const uint32_t *>(correlation_writer_guid.value)[3],
+        rr_msg.sn);
+  }
 
   return this->reply_pub->write(&rr_msg, false /* serialized */, &write_params);
 }

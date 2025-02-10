@@ -19,6 +19,32 @@
 
 #include "rcutils/logging_macros.h"
 
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <sstream>
+
+static inline bool rmw_is_service_log_active(const char * service_name) {
+    const char * env_var = getenv("RMW_CONNEXT_LOG_SERVICE");
+
+    // If the environment variable is not set, default to active logging
+    if (env_var == nullptr) {
+        return true;
+    }
+
+    std::string env_str(env_var);
+    std::stringstream ss(env_str);
+    std::string token;
+
+    // Parse the environment variable string using ';' as a delimiter
+    while (std::getline(ss, token, ';')) {
+        if (token == service_name) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 #if RMW_CONNEXT_LOG_MODE == RMW_CONNEXT_LOG_MODE_ALL
 

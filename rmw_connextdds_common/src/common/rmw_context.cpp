@@ -409,6 +409,11 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   rcutils_string_map_t security_files = rcutils_get_zero_initialized_string_map();
   rcutils_ret_t ret = rcutils_string_map_init(&security_files, 0, allocator);
 
+  if (ret != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("Failed to initialize string map for security");
+    return RMW_RET_ERROR;
+  }
+
   auto scope_exit_ws = rcpputils::make_scope_exit(
     [&security_files]()
     {
@@ -417,11 +422,6 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
         RMW_SET_ERROR_MSG("Failed to fini string map for security");
       }
     });
-
-  if (ret != RMW_RET_OK) {
-    RMW_SET_ERROR_MSG("Failed to initialize string map for security");
-    return RMW_RET_ERROR;
-  }
 
   if (get_security_files(
       uri_prefix, this->base->options.security_options.security_root_path,

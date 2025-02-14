@@ -543,9 +543,12 @@ rmw_context_impl_s::initialize_participant()
     return RMW_RET_ERROR;
   }
 
-  RMW_CONNEXT_LOG_DEBUG_A(
-    "creating DomainParticipant: "
-    "domain=%d", domain_id)
+  RMW_CONNEXT_LOG_ERROR_A(
+      "Creating DomainParticipant: "
+      "domain=%d hb_period=%d",
+      domain_id,
+      dp_qos.discovery_config.publication_writer.heartbeat_period.nanosec /
+          1000000);
 
   this->participant = DDS_DomainParticipantFactory_create_participant(
     RMW_Connext_gv_DomainParticipantFactory,

@@ -46,6 +46,31 @@ static inline bool rmw_is_service_log_active(const char * service_name) {
     return false;
 }
 
+static inline bool rmw_is_service_log_active_with_topic(const char * topic_name) {
+    const char * env_var = getenv("RMW_CONNEXT_LOG_SERVICE");
+
+    // If the environment variable is not set, default to active logging
+    if (env_var == nullptr) {
+        return true;
+    }
+
+    std::string env_str(env_var);
+    std::stringstream ss(env_str);
+    std::string token;
+    std::string topic_name_str(topic_name);
+
+    // Parse the environment variable string using ';' as a delimiter
+    while (std::getline(ss, token, ';')) {
+        // Check if token is a substring
+        if (topic_name_str.find(token) != std::string::npos) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 #if RMW_CONNEXT_LOG_MODE == RMW_CONNEXT_LOG_MODE_ALL
 
 #define RMW_CONNEXT_LOG_ERROR(msg_) \

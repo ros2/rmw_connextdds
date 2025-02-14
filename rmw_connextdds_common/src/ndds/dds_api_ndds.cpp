@@ -736,6 +736,17 @@ rmw_connextdds_create_datawriter(
   DDS_DataWriterListener listener = DDS_DataWriterListener_INITIALIZER;
   listener.on_reliable_reader_activity_changed = on_reliable_reader_activity_changed;
 
+  const char *topicName = DDS_TopicDescription_get_name(
+        DDS_Topic_as_topicdescription(topic));
+
+  if (rmw_is_service_log_active_with_topic(topicName)) {
+    RMW_CONNEXT_LOG_ERROR_A(
+        "Creating DataWriter: "
+        "topic=%s dw hb_period: %d",
+        topicName,
+        dw_qos->protocol.rtps_reliable_writer.heartbeat_period.nanosec/1000000);
+  }
+
   DDS_DataWriter *const writer =
       DDS_Publisher_create_datawriter(
           pub, topic, dw_qos,
@@ -766,6 +777,15 @@ rmw_connextdds_create_datareader(
   {
     RMW_CONNEXT_LOG_ERROR("failed to convert reader QoS")
     return nullptr;
+  }
+
+  const char *topicName = DDS_TopicDescription_get_name(topic_desc);
+
+  if (rmw_is_service_log_active_with_topic(topicName)) {
+    RMW_CONNEXT_LOG_ERROR_A(
+        "Creating DataReader: "
+        "topic=%s",
+        topicName);
   }
 
   return DDS_Subscriber_create_datareader(

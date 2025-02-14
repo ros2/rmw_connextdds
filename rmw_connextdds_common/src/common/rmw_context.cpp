@@ -27,7 +27,7 @@
 #include "rmw_connextdds/discovery.hpp"
 #include "rmw_connextdds/graph_cache.hpp"
 
-#include "rmw_dds_common/security.hpp"
+#include "rmw_security_common/security.hpp"
 
 #include "rcutils/env.h"
 #include "rcutils/filesystem.h"
@@ -405,9 +405,27 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   static const char * const uri_prefix = "";
 #endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
-  std::unordered_map<std::string, std::string> security_files;
-  if (!rmw_dds_common::get_security_files(
-      uri_prefix, this->base->options.security_options.security_root_path, security_files))
+  rcutils_allocator_t allocator = rcutils_get_default_allocator();
+  rcutils_string_map_t security_files = rcutils_get_zero_initialized_string_map();
+  rcutils_ret_t ret = rcutils_string_map_init(&security_files, 0, allocator);
+
+  if (ret != RMW_RET_OK) {
+    RMW_SET_ERROR_MSG("Failed to initialize string map for security");
+    return RMW_RET_ERROR;
+  }
+
+  auto scope_exit_ws = rcpputils::make_scope_exit(
+    [&security_files]()
+    {
+      rcutils_ret_t ret = rcutils_string_map_fini(&security_files);
+      if (ret != RMW_RET_OK) {
+        RMW_SET_ERROR_MSG("Failed to fini string map for security");
+      }
+    });
+
+  if (get_security_files(
+      uri_prefix, this->base->options.security_options.security_root_path,
+    &security_files) != RMW_RET_OK)
   {
     RMW_CONNEXT_LOG_ERROR("couldn't find all security files");
     return RMW_RET_ERROR;
@@ -418,12 +436,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_IDENTITY_CA_PROPERTY,
-      security_files["IDENTITY_CA"].c_str(),
+      std::string(rcutils_string_map_get(&security_files, "IDENTITY_CA")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CA_PROPERTY, security_files["IDENTITY_CA"].c_str())
+      DDS_SECURITY_IDENTITY_CA_PROPERTY,
+      std::string(rcutils_string_map_get(&security_files, "IDENTITY_CA")).c_str())
     return RMW_RET_ERROR;
   }
 
@@ -432,12 +451,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
-      security_files["PERMISSIONS_CA"].c_str(),
+      std::string(rcutils_string_map_get(&security_files, "PERMISSIONS_CA")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY, security_files["PERMISSIONS_CA"].c_str())
+      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
+      std::string(rcutils_string_map_get(&security_files, "PERMISSIONS_CA")).c_str())
     return RMW_RET_ERROR;
   }
 
@@ -446,12 +466,12 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PRIVATE_KEY_PROPERTY,
-      security_files["PRIVATE_KEY"].c_str(),
+      std::string(rcutils_string_map_get(&security_files, "PRIVATE_KEY")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY, security_files["PRIVATE_KEY"].c_str())
+      std::string(rcutils_string_map_get(&security_files, "PRIVATE_KEY")).c_str())
     return RMW_RET_ERROR;
   }
 
@@ -461,12 +481,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
-      security_files["CERTIFICATE"].c_str(),
+      std::string(rcutils_string_map_get(&security_files, "CERTIFICATE")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY, security_files["CERTIFICATE"].c_str())
+      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
+      std::string(rcutils_string_map_get(&security_files, "CERTIFICATE")).c_str())
     return RMW_RET_ERROR;
   }
   /* XML file containing domain governance configuration, signed by
@@ -475,12 +496,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_GOVERNANCE_PROPERTY,
-      security_files["GOVERNANCE"].c_str(),
+      std::string(rcutils_string_map_get(&security_files, "GOVERNANCE")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_GOVERNANCE_PROPERTY, security_files["GOVERNANCE"].c_str())
+      DDS_SECURITY_GOVERNANCE_PROPERTY,
+      std::string(rcutils_string_map_get(&security_files, "GOVERNANCE")).c_str())
     return RMW_RET_ERROR;
   }
 
@@ -490,12 +512,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
       DDS_SECURITY_PERMISSIONS_PROPERTY,
-      security_files["PERMISSIONS"].c_str(),
+      std::string(rcutils_string_map_get(&security_files, "PERMISSIONS")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_PROPERTY, security_files["PERMISSIONS"].c_str())
+      DDS_SECURITY_PERMISSIONS_PROPERTY,
+      std::string(rcutils_string_map_get(&security_files, "PERMISSIONS")).c_str())
     return RMW_RET_ERROR;
   }
 

@@ -122,6 +122,7 @@ set(RMW_CONNEXT_DEPS
     rcpputils
     rmw
     rmw_dds_common
+    rmw_security_common
     tracetools
     fastcdr
     rosidl_runtime_c

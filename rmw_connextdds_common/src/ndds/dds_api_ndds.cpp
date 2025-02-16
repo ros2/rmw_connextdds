@@ -294,8 +294,8 @@ rmw_connextdds_initialize_participant_qos_impl(
 
   dp_qos->resource_limits.type_code_max_serialized_length =
     RMW_CONNEXT_TYPE_CODE_MAX_SERIALIZED_SIZE;
-  dp_qos->resource_limits.type_object_max_serialized_length =
-    RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE;
+  /*dp_qos->resource_limits.type_object_max_serialized_length =
+    RMW_CONNEXT_TYPE_OBJECT_MAX_SERIALIZED_SIZE;*/
 
   dp_qos->database.shutdown_cleanup_period.sec =
     RMW_CONNEXT_SHUTDOWN_CLEANUP_PERIOD_SEC;

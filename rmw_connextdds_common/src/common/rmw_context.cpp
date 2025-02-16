@@ -545,10 +545,12 @@ rmw_context_impl_s::initialize_participant()
 
   RMW_CONNEXT_LOG_ERROR_A(
       "Creating DomainParticipant: "
-      "domain=%d hb_period=%d",
+      "domain=%d hb_period=%d assert_period=%d to_max_serialized=%d",
       domain_id,
       dp_qos.discovery_config.publication_writer.heartbeat_period.nanosec /
-          1000000);
+          1000000,
+      dp_qos.discovery_config.participant_liveliness_assert_period.sec,
+      dp_qos.resource_limits.type_object_max_serialized_length);
 
   this->participant = DDS_DomainParticipantFactory_create_participant(
     RMW_Connext_gv_DomainParticipantFactory,

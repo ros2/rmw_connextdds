@@ -2,6 +2,13 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.25.1 (2025-02-17)
+-------------------
+* Use rmw_security_common (`#167 <https://github.com/ros2/rmw_connextdds/issues/167>`_)
+* Use target_link_libraries instead of ament_target_dependencies (`#169 <https://github.com/ros2/rmw_connextdds/issues/169>`_)
+* introduce RMW_EVENT_TYPE_MAX in rmw_event_type_t. (`#162 <https://github.com/ros2/rmw_connextdds/issues/162>`_)
+* Contributors: Alejandro Hernández Cordero, Shane Loretz, Tomoya Fujita
+
 0.25.0 (2024-12-20)
 -------------------
 * Instrument client/service for end-to-end request/response tracking (`#163 <https://github.com/ros2/rmw_connextdds/issues/163>`_)

@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.0 (2025-02-18)
+------------------
+
 0.25.1 (2025-02-17)
 -------------------
 * Use rmw_security_common (`#167 <https://github.com/ros2/rmw_connextdds/issues/167>`_)

@@ -543,14 +543,23 @@ rmw_context_impl_s::initialize_participant()
     return RMW_RET_ERROR;
   }
 
+  char version_str[DDS_PRODUCTVERSION_MAX_STRING_SIZE];
+  const struct DDS_ProductVersion_t * connext_version =
+    NDDS_Config_Version_get_product_version();
+
+  DDS_ProductVersion_to_string(
+    (struct DDS_ProductVersion_t *) connext_version, version_str);
+
+
   RMW_CONNEXT_LOG_ERROR_A(
       "Creating DomainParticipant: "
-      "domain=%d hb_period=%d assert_period=%d to_max_serialized=%d",
+      "domain=%d hb_period=%d assert_period=%d to_max_serialized=%d connext_version=%s",
       domain_id,
       dp_qos.discovery_config.publication_writer.heartbeat_period.nanosec /
           1000000,
       dp_qos.discovery_config.participant_liveliness_assert_period.sec,
-      dp_qos.resource_limits.type_object_max_serialized_length);
+      dp_qos.resource_limits.type_object_max_serialized_length,
+      version_str);
 
   this->participant = DDS_DomainParticipantFactory_create_participant(
     RMW_Connext_gv_DomainParticipantFactory,

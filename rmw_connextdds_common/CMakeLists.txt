@@ -58,9 +58,6 @@ function(rtirmw_add_library)
 
     target_link_libraries(${_rti_build_NAME}
         ${_rti_build_LIBRARIES}
-        fastcdr)
-
-    ament_target_dependencies(${_rti_build_NAME}
         ${_rti_build_DEPS})
 
     set(_extra_defines)
@@ -107,11 +104,25 @@ endfunction()
 ################################################################################
 # Load external dependencies
 ################################################################################
+set(RMW_CONNEXT_TARGET_DEPS
+    rcutils::rcutils
+    rcpputils::rcpputils
+    rmw::rmw
+    rmw_dds_common::rmw_dds_common_library
+    tracetools::tracetools
+    fastcdr
+    rosidl_runtime_c::rosidl_runtime_c
+    rosidl_runtime_cpp::rosidl_runtime_cpp
+    rosidl_typesupport_fastrtps_c::rosidl_typesupport_fastrtps_c
+    rosidl_typesupport_fastrtps_cpp::rosidl_typesupport_fastrtps_cpp
+    rosidl_typesupport_introspection_c::rosidl_typesupport_introspection_c
+    rosidl_typesupport_introspection_cpp::rosidl_typesupport_introspection_cpp)
 set(RMW_CONNEXT_DEPS
     rcutils
     rcpputils
     rmw
     rmw_dds_common
+    rmw_security_common
     tracetools
     fastcdr
     rosidl_runtime_c
@@ -213,7 +224,7 @@ else()
                   include/rmw_connextdds/typecode.hpp
                   include/rmw_connextdds/dds_api_ndds.hpp
                   include/rmw_connextdds/custom_sql_filter.hpp
-        DEPS      ${RMW_CONNEXT_DEPS}
+        DEPS      ${RMW_CONNEXT_TARGET_DEPS}
         LIBRARIES RTIConnextDDS::c_api
         DEFINES   ${extra_defines})
 endif()
@@ -278,7 +289,7 @@ else()
                 src/rtime/rmw_type_support_rtime.cpp
                 src/rtime/dds_api_rtime.cpp
                 include/rmw_connextdds/dds_api_rtime.hpp
-      DEPS      ${RMW_CONNEXT_DEPS}
+      DEPS      ${RMW_CONNEXT_TARGET_DEPS}
       LIBRARIES RTIConnextDDSMicro::c_api
                 RTIConnextDDSMicro::netiosdm
                 RTIConnextDDSMicro::netioshmem

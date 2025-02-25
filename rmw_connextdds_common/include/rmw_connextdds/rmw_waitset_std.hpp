@@ -408,9 +408,9 @@ public:
 protected:
   DDS_StatusCondition * scond;
   std::mutex new_event_mutex_;
-  rmw_event_callback_t new_event_cb_[RMW_EVENT_INVALID] = {};
-  const void * user_data_[RMW_EVENT_INVALID] = {};
-  uint64_t unread_events_count_[RMW_EVENT_INVALID] = {0};
+  rmw_event_callback_t new_event_cb_[RMW_EVENT_TYPE_MAX] = {};
+  const void * user_data_[RMW_EVENT_TYPE_MAX] = {};
+  uint64_t unread_events_count_[RMW_EVENT_TYPE_MAX] = {0};
 
   bool triggered_inconsistent_topic{false};
 

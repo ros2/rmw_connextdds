@@ -45,6 +45,7 @@ struct RMW_Connext_RequestReplyMessage
 {
   bool request;
   rmw_gid_t gid;
+  rmw_gid_t writer_gid;
   int64_t sn;
   void * payload;
 };

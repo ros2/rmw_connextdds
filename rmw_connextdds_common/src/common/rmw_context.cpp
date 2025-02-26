@@ -471,6 +471,7 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
+      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
       std::string(rcutils_string_map_get(&security_files, "PRIVATE_KEY")).c_str())
     return RMW_RET_ERROR;
   }

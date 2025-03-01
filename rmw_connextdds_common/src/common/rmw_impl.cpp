@@ -30,6 +30,8 @@
 
 #include <dds_c/dds_c_infrastructure_impl.h>
 
+#include <osapi/osapi_thread.h>
+
 #define ROS_SERVICE_REQUESTER_PREFIX_STR "rq"
 #define ROS_SERVICE_RESPONSE_PREFIX_STR  "rr"
 
@@ -3227,6 +3229,13 @@ RMW_Connext_Service::take_request(
     rmw_connextdds_gid_to_guid(rr_msg.writer_gid, correlation_writer_guid);
 
     if (rmw_is_service_log_active(rmw_service->service_name)) {
+        #if 0
+        RTIOsapiThread_logBacktrace(
+                1, /* index */
+                RTI_LOG_BACKTRACE_DETAIL_LEVEL_BEST_DETAIL,
+                0 /* handlingSigsegv */);
+        #endif
+
         RMW_CONNEXT_LOG_ERROR_A("TAKE_REQUEST|SERVICE|%s|DW %08X.%08X.%08X.%08X|DR %08X.%08X.%08X.%08X|CDW %08X.%08X.%08X.%08X|SN %llu",
             rmw_service->service_name,
             // Service DW

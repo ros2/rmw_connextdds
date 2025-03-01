@@ -447,6 +447,13 @@ public:
       return RMW_RET_ERROR;
     }
 
+    DDS_TopicDescription * topicDescription = DDS_DataReader_get_topicdescription(this->dds_reader);
+    const char * topicName = DDS_TopicDescription_get_name(topicDescription);
+
+    if (rmw_is_service_log_active_with_topic(topicName)) {
+      RMW_CONNEXT_LOG_ERROR_A("Enabling DataReader %p", this->dds_reader);
+    }
+
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(DDS_DataReader_as_entity(this->dds_reader)))
     {

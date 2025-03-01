@@ -16,6 +16,10 @@
 
 #include "rmw_connextdds/rmw_impl.hpp"
 
+#include "dds_c/dds_c_infrastructure_impl.h"
+
+#include <osapi/osapi_thread.h>
+
 /******************************************************************************
  * Event
  ******************************************************************************/
@@ -122,7 +126,30 @@ RMW_Connext_DataReaderListener_matched(
   RMW_Connext_SubscriberStatusCondition * const self =
     reinterpret_cast<RMW_Connext_SubscriberStatusCondition *>(listener_data);
 
-  UNUSED_ARG(reader);
+  DDS_TopicDescription * topicDescription = DDS_DataReader_get_topicdescription(reader);
+  const char * topicName = DDS_TopicDescription_get_name(topicDescription);
+
+  if (rmw_is_service_log_active_with_topic(topicName)) {
+    DDS_GUID_t remoteWriterGuid, readerGuid;
+    DDS_InstanceHandle_t last_publication_handle;
+
+    DDS_Entity_get_guid(DDS_DataReader_as_entity(reader), &readerGuid);
+
+    last_publication_handle = status->last_publication_handle;
+    DDS_GUID_from_instance_handle(&remoteWriterGuid, &last_publication_handle);
+
+    printf(
+      "DataReader with pointer %p and GUID %08X.%08X.%08X.%08X matched DataWriter with GUID %08X.%08X.%08X.%08X\n",
+      reader,
+      reinterpret_cast<const uint32_t *>(readerGuid.value)[0],
+      reinterpret_cast<const uint32_t *>(readerGuid.value)[1],
+      reinterpret_cast<const uint32_t *>(readerGuid.value)[2],
+      reinterpret_cast<const uint32_t *>(readerGuid.value)[3],
+      reinterpret_cast<const uint32_t *>(remoteWriterGuid.value)[0],
+      reinterpret_cast<const uint32_t *>(remoteWriterGuid.value)[1],
+      reinterpret_cast<const uint32_t *>(remoteWriterGuid.value)[2],
+      reinterpret_cast<const uint32_t *>(remoteWriterGuid.value)[3]);
+  }
 
   self->on_matched(status);
 }
@@ -547,6 +574,13 @@ RMW_Connext_WaitSet::wait(
 
   bool timedout = false;
 
+  #if 0
+  RTIOsapiThread_logBacktrace(
+        1, /* index */
+        RTI_LOG_BACKTRACE_DETAIL_LEVEL_BEST_DETAIL,
+        0 /* handlingSigsegv */);
+  #endif
+
   if (!already_active) {
     std::unique_lock<std::mutex> lock(this->mutex_internal);
     RMW_CONNEXT_LOG_DEBUG_A(
@@ -647,6 +681,17 @@ RMW_Connext_SubscriberStatusCondition::install(
 
   this->sub = sub;
   this->related_pub = related_pub;
+
+  DDS_TopicDescription * topicDescription = DDS_DataReader_get_topicdescription(sub->reader());
+  const char * topicName = DDS_TopicDescription_get_name(topicDescription);
+
+  if (rmw_is_service_log_active_with_topic(topicName)) {
+    RMW_CONNEXT_LOG_ERROR_A(
+        "Setting DataReader %p listener: "
+        "enabled=%d",
+        sub->reader(),
+        DDS_Entity_is_enabled(DDS_DataReader_as_entity(sub->reader())));
+  }
 
   if (DDS_RETCODE_OK !=
     DDS_DataReader_set_listener(sub->reader(), &listener, listener_mask))

@@ -771,6 +771,8 @@ rmw_connextdds_create_datareader(
   UNUSED_ARG(participant);
   UNUSED_ARG(internal);
 
+  DDS_DataReader *reader;
+
   if (RMW_RET_OK !=
     rmw_connextdds_get_datareader_qos(
       ctx, type_support, topic_desc, dr_qos, qos_policies, subscriber_options))
@@ -781,15 +783,21 @@ rmw_connextdds_create_datareader(
 
   const char *topicName = DDS_TopicDescription_get_name(topic_desc);
 
+
+  reader = DDS_Subscriber_create_datareader(
+    sub, topic_desc, dr_qos, NULL, DDS_STATUS_MASK_NONE);
+
   if (rmw_is_service_log_active_with_topic(topicName)) {
     RMW_CONNEXT_LOG_ERROR_A(
-        "Creating DataReader: "
-        "topic=%s",
-        topicName);
+        "Creating DataReader %p: "
+        "topic=%s enabled=%d",
+        reader,
+        topicName,
+        DDS_Entity_is_enabled(DDS_DataReader_as_entity(reader)));
   }
 
-  return DDS_Subscriber_create_datareader(
-    sub, topic_desc, dr_qos, NULL, DDS_STATUS_MASK_NONE);
+
+  return reader;
 }
 
 rmw_ret_t

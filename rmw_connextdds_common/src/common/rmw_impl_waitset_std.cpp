@@ -605,7 +605,22 @@ RMW_Connext_WaitSet::wait(
       };
 
     if (nullptr == wait_timeout || rmw_time_equal(*wait_timeout, RMW_DURATION_INFINITE)) {
-      this->condition.wait(lock, on_condition_active);
+      static char print_infinite_timeout = 0;
+
+      if (!print_infinite_timeout) {
+        RMW_CONNEXT_LOG_ERROR("waiting indefinitely on waitset");
+        print_infinite_timeout = 1;
+      }
+
+      auto n = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::seconds(1));
+      n += std::chrono::nanoseconds(0);
+
+      do {
+      timedout = !this->condition.wait_for(lock, n, on_condition_active);
+      } while (timedout);
+
+      //this->condition.wait(lock, on_condition_active);
     } else if (wait_timeout->sec > 0 || wait_timeout->nsec > 0) {
       auto n = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::seconds(wait_timeout->sec));

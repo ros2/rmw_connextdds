@@ -993,15 +993,19 @@ rmw_api_connextdds_init_options_copy(
   rmw_init_options_t tmp = *src;
 
   const rcutils_allocator_t * allocator = &src->allocator;
-  tmp.enclave = rcutils_strdup(tmp.enclave, *allocator);
-  if (nullptr != src->enclave && nullptr == tmp.enclave) {
-    return RMW_RET_BAD_ALLOC;
+  rmw_ret_t ret;
+  if (src->enclave != NULL) {
+    ret = rmw_enclave_options_copy(src->enclave, allocator, &tmp.enclave);
+    if (RMW_RET_OK != ret) {
+      return ret;
+    }
   }
   tmp.security_options = rmw_get_zero_initialized_security_options();
-  rmw_ret_t ret =
+  ret =
     rmw_security_options_copy(&src->security_options, allocator, &tmp.security_options);
   if (RMW_RET_OK != ret) {
-    allocator->deallocate(tmp.enclave, allocator->state);
+    rmw_enclave_options_fini(tmp.enclave, allocator);
+    // Error already set
     return ret;
   }
 
@@ -1026,8 +1030,14 @@ rmw_api_connextdds_init_options_fini(rmw_init_options_t * init_options)
 
   rcutils_allocator_t * allocator = &init_options->allocator;
   RCUTILS_CHECK_ALLOCATOR(allocator, return RMW_RET_INVALID_ARGUMENT);
-  allocator->deallocate(init_options->enclave, allocator->state);
-  rmw_ret_t ret = rmw_security_options_fini(&init_options->security_options, allocator);
+  rmw_ret_t ret;
+  if (init_options->enclave != NULL) {
+    ret = rmw_enclave_options_fini(init_options->enclave, allocator);
+    if (ret != RMW_RET_OK) {
+      return ret;
+    }
+  }
+  ret = rmw_security_options_fini(&init_options->security_options, allocator);
 
   *init_options = rmw_get_zero_initialized_init_options();
   return ret;

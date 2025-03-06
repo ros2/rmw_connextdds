@@ -65,7 +65,7 @@ rmw_api_connextdds_publisher_event_init(
 
 
 bool
-rmw_event_check_compatible(rmw_event_type_t rmw_event_type)
+rmw_event_type_is_supported(rmw_event_type_t rmw_event_type)
 {
   return is_event_supported(rmw_event_type);
 }

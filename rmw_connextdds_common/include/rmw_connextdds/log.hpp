@@ -137,16 +137,9 @@
     (fmt_), \
     __VA_ARGS__);
 
-#define RMW_CONNEXT_LOG_DEBUG(msg_) \
-  RCUTILS_LOG_DEBUG_NAMED( \
-    RMW_CONNEXTDDS_ID, \
-    (msg_));
+#define RMW_CONNEXT_LOG_DEBUG(msg_)
 
-#define RMW_CONNEXT_LOG_DEBUG_A(fmt_, ...) \
-  RCUTILS_LOG_DEBUG_NAMED( \
-    RMW_CONNEXTDDS_ID, \
-    (fmt_), \
-    __VA_ARGS__);
+#define RMW_CONNEXT_LOG_DEBUG_A(fmt_, ...)
 
 #define RMW_CONNEXT_LOG_TRACE(msg_)
 

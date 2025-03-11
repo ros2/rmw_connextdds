@@ -96,6 +96,10 @@ rmw_api_connextdds_event_set_callback(
   const rmw_event_callback_t callback,
   const void * const user_data);
 
+RMW_CONNEXTDDS_PUBLIC
+bool
+rmw_api_connextdds_event_type_is_supported(rmw_event_type_t rmw_event_type);
+
 /*****************************************************************************
  * Info API
  *****************************************************************************/

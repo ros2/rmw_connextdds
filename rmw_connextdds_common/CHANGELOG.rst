@@ -2,6 +2,13 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.1 (2025-03-11)
+------------------
+* Added rmw_event_type_is_supported (`#173 <https://github.com/ros2/rmw_connextdds/issues/173>`_)
+* use rmw_enclave_options_xxx APIs instead. (`#172 <https://github.com/ros2/rmw_connextdds/issues/172>`_)
+* fix security certificate error message format. (`#171 <https://github.com/ros2/rmw_connextdds/issues/171>`_)
+* Contributors: Alejandro Hernández Cordero, Tomoya Fujita
+
 1.0.0 (2025-02-18)
 ------------------
 

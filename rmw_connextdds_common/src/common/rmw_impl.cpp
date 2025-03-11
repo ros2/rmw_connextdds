@@ -3146,11 +3146,16 @@ RMW_Connext_Service::take_request(
       rr_msg.sn)
   }
 
+  uint8_t *trace_gid = request_header->request_id.writer_guid;
+  if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
+    trace_gid = rr_msg.writer_gid.data;
+  }
+
   TRACETOOLS_TRACEPOINT(
     rmw_take_request,
     static_cast<const void *>(this->rmw_service),
     static_cast<const void *>(ros_request),
-    request_header->request_id.writer_guid,
+    trace_gid,
     request_header->request_id.sequence_number,
     *taken);
   return RMW_RET_OK;
@@ -3189,13 +3194,6 @@ RMW_Connext_Service::send_response(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn)
-  TRACETOOLS_TRACEPOINT(
-    rmw_send_response,
-    static_cast<const void *>(this->rmw_service),
-    static_cast<const void *>(ros_response),
-    request_id->writer_guid,
-    request_id->sequence_number,
-    dds_time_to_u64(&write_params.timestamp));
 
   /* (asorbini) The following logic tries to partially work around some race conditions that exists
      in the way request/reply interactions between clients and services are mapped to DDS topics
@@ -3249,6 +3247,19 @@ RMW_Connext_Service::send_response(
       }
     }
   }
+
+  uint8_t *trace_gid = rr_msg.gid.data;
+  if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
+    trace_gid = rr_msg.writer_gid.data;
+  }
+
+  TRACETOOLS_TRACEPOINT(
+    rmw_send_response,
+    static_cast<const void *>(this->rmw_service),
+    static_cast<const void *>(ros_response),
+    trace_gid,
+    request_id->sequence_number,
+    dds_time_to_u64(&write_params.timestamp));
 
   return this->reply_pub->write(&rr_msg, false /* serialized */, &write_params);
 }

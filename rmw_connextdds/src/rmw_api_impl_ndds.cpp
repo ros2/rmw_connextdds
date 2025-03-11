@@ -138,6 +138,13 @@ rmw_event_set_callback(
 {
   return rmw_api_connextdds_event_set_callback(event, callback, user_data);
 }
+
+bool
+rmw_event_type_is_supported(rmw_event_type_t rmw_event_type)
+{
+  return rmw_api_connextdds_event_type_is_supported(rmw_event_type);
+}
+
 /*****************************************************************************
  * Info API
  *****************************************************************************/

@@ -670,7 +670,9 @@ RMW_Connext_Publisher::RMW_Connext_Publisher(
 
 RMW_Connext_Publisher::~RMW_Connext_Publisher()
 {
-  DDS_InstanceHandleSeq_finalize(&matched_subscriptions);
+  if (!DDS_InstanceHandleSeq_finalize(&matched_subscriptions)) {
+    RMW_CONNEXT_LOG_ERROR("failed to finalize matched subscriptions sequence");
+  }
 }
 
 RMW_Connext_Publisher *
@@ -1044,15 +1046,12 @@ RMW_Connext_Publisher::load_max_blocking_time() const
       }
     });
 
-  if (DDS_DataWriter_get_qos(writer(), &dw_qos)) {
+  if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(writer(), &dw_qos)) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get datawriter qos")
-    return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_DEFAULT);
+    return std::chrono::microseconds(
+        RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_INFINITE);
   }
-  if (DDS_Duration_is_auto(&dw_qos.reliability.max_blocking_time)) {
-    return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_DEFAULT);
-  }
-  if (DDS_Duration_is_infinite(&dw_qos.reliability.max_blocking_time) ||
-    DDS_Duration_is_auto(&dw_qos.reliability.max_blocking_time))
+  if (DDS_Duration_is_infinite(&dw_qos.reliability.max_blocking_time))
   {
     return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_INFINITE);
   }
@@ -1060,7 +1059,7 @@ RMW_Connext_Publisher::load_max_blocking_time() const
     return std::chrono::microseconds(0);
   }
   std::chrono::microseconds max_blocking_time =
-    std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::duration_cast<std::chrono::microseconds>(
     std::chrono::seconds(dw_qos.reliability.max_blocking_time.sec) +
     std::chrono::nanoseconds(dw_qos.reliability.max_blocking_time.nanosec));
 
@@ -1070,10 +1069,10 @@ RMW_Connext_Publisher::load_max_blocking_time() const
 rmw_ret_t
 RMW_Connext_Publisher::wait_for_subscription(
   rmw_gid_t & reader_gid,
-  bool & unmatched,
+  bool & unknown,
   rmw_gid_t & related_writer_gid)
 {
-  unmatched = false;
+  unknown = false;
 
   struct DDS_GUID_t reader_guid = DDS_GUID_INITIALIZER;
   rmw_ret_t rc = RMW_RET_ERROR;
@@ -1085,7 +1084,7 @@ RMW_Connext_Publisher::wait_for_subscription(
   std::unique_lock<std::mutex> lock(matched_mutex);
   auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(reader_gid));
   if (endpoint_entry == known_endpoints.end()) {
-    unmatched = true;
+    unknown = true;
     return RMW_RET_OK;
   }
   related_writer_gid = endpoint_entry->second;
@@ -1767,6 +1766,8 @@ RMW_Connext_Subscriber::requestreply_header_from_dds(
   const struct DDS_GUID_t * writer_guid = nullptr;
 
   if (rr_msg->request) {
+    // For extended request reply mapping this is the Client's DataReader GUID
+    // which we are sending as part of the related_sample_identity
     src_guid = &related_sample_identity->writer_guid;
     src_sn = &sample_identity->sequence_number;
     writer_guid = &sample_identity->writer_guid;
@@ -3240,9 +3241,9 @@ RMW_Connext_Service::send_response(
     }
     DDS_RTPS_GUID_t * const rtps_guid = DDS_GUID_as_rtps_guid(&src_guid);
     if (rtps_guid->entityId.entityKind & 0x04) {
-      bool unmatched = false;
-      rc = reply_pub->wait_for_subscription(rr_msg.gid, unmatched, rr_msg.writer_gid);
-      if (RMW_RET_OK != rc || unmatched) {
+      bool unknown = false;
+      rc = reply_pub->wait_for_subscription(rr_msg.gid, unknown, rr_msg.writer_gid);
+      if (RMW_RET_OK != rc || unknown) {
         return rc;
       }
     }

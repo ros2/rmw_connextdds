@@ -41,13 +41,16 @@
 #include "rosidl_typesupport_introspection_c/service_introspection.h"
 #include "rosidl_typesupport_introspection_c/visibility_control.h"
 
-struct RMW_Connext_RequestReplyMessage
-{
+// This type is internal to the implementation and it is not sent over the wire
+struct RMW_Connext_RequestReplyMessage {
   bool request;
+  // In basic mapping, this is the GID of the client's DataWriter
+  // In extended mapping, this is the GID of the client's DataReader
   rmw_gid_t gid;
+  // This is the GID of the writer that sent the request
   rmw_gid_t writer_gid;
   int64_t sn;
-  void * payload;
+  void *payload;
 };
 
 class RMW_Connext_MessageTypeSupport

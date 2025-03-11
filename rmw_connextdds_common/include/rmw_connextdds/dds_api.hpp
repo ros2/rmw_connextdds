@@ -299,6 +299,6 @@ rmw_connextdds_get_cft_filter_expression(
 rmw_ret_t
 rmw_connextdds_guid_to_instance_handle(
   const struct DDS_GUID_t * const guid,
-  DDS_InstanceHandle_t * const instanceHandle);
+  DDS_InstanceHandle_t * const instance_andle);
 
 #endif  // RMW_CONNEXTDDS__DDS_API_HPP_

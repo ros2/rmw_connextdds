@@ -242,10 +242,25 @@ public:
     DDS_SampleIdentity_t * const sample_identity,
     DDS_SampleIdentity_t * const related_sample_identity);
 
+  // Waits for the `RMW_Connext_Publisher`'s DataWriter to match a known
+  // DataReader with GID `reader_gid`.
+  //
+  // A DataReader is considered known if its GID is present in the
+  // `known_endpoints` map.
+  //
+  // If this API is called with a `reader_gid` that is not in `known_endpoints`,
+  // it returns `RMW_RET_OK` with `unknown` set to `true`.
+  //
+  // An `RMW_Connext_Service` (using Extended mapping) uses this API to wait for
+  // an `RMW_Connext_Client`'s DataReader, identified by `reader_gid`, to match
+  // its DataWriter.
+  //
+  // An `RMW_Connext_Service` adds a DataReader's GID to `known_endpoints` when
+  // it receives a request from its own DataReader.
   rmw_ret_t
   wait_for_subscription(
     rmw_gid_t & reader_gid,
-    bool & unmatched,
+    bool & unknown,
     rmw_gid_t & related_writer_gid);
 
   DDS_Topic * dds_topic() const
@@ -273,11 +288,20 @@ public:
     known_endpoints.emplace(RMW_Connext_OrderedGid(related), endpoint);
   }
 
+  // This method is called by a RMW_Connext_Service when a RMW_Connext_Client's
+  // DataWriter is matched/unmatched with the Service's DataReader
   void
   on_publication_matched(
     const DDS_PublicationMatchedStatus * const status)
   {
     std::lock_guard<std::mutex> lock(matched_mutex);
+
+    // This callback is only used by the RMW_Connext_Service's
+    // RMW_Connext_Publisher
+    if (this->type_support->message_type() != RMW_CONNEXT_MESSAGE_REPLY) {
+      return;
+    }
+
     DDS_ReturnCode_t dds_rc =
       DDS_DataWriter_get_matched_subscriptions(writer(), &matched_subscriptions);
     if (DDS_RETCODE_OK != dds_rc) {
@@ -298,6 +322,13 @@ public:
   {
     UNUSED_ARG(sub);
     std::lock_guard<std::mutex> lock(matched_mutex);
+
+    // This callback is only used by the RMW_Connext_Service's
+    // RMW_Connext_Publisher
+    if (this->type_support->message_type() != RMW_CONNEXT_MESSAGE_REPLY) {
+      return;
+    }
+
     if (status->current_count_change < 0) {
       rmw_gid_t unmatched_gid;
       rmw_connextdds_ih_to_gid(status->last_publication_handle, unmatched_gid);
@@ -319,6 +350,13 @@ private:
   std::mutex matched_mutex;
   std::condition_variable matched_cv;
   std::chrono::microseconds max_blocking_time;
+  // Map of endpoints to related endpoints associated with a
+  // RMW_Connext_Publisher.
+  //
+  // In a RMW_Connext_Service's RMW_Connext_Publisher, this map
+  // contains two pairs for each matched RMW_Connext_Client:
+  // (RMW_Connext_Client's DataWriter, RMW_Connext_Client's DataReader)
+  // (RMW_Connext_Client's DataReader, RMW_Connext_Client's DataWriter)
   std::map<RMW_Connext_OrderedGid, rmw_gid_t> known_endpoints;
   DDS_InstanceHandleSeq matched_subscriptions;
 

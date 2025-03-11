@@ -2,6 +2,11 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.1 (2025-03-11)
+------------------
+* Added rmw_event_type_is_supported (`#173 <https://github.com/ros2/rmw_connextdds/issues/173>`_)
+* Contributors: Alejandro Hernández Cordero
+
 1.0.0 (2025-02-18)
 ------------------
 

@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.22.1 (2025-03-12)
+-------------------
+* Added rmw_event_type_is_supported (`#173 <https://github.com/ros2/rmw_connextdds/issues/173>`_) (`#175 <https://github.com/ros2/rmw_connextdds/issues/175>`_)
+* Contributors: mergify[bot]
+
 0.22.0 (2024-04-09)
 -------------------
 

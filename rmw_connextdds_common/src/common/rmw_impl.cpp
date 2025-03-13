@@ -1068,26 +1068,25 @@ RMW_Connext_Publisher::load_max_blocking_time() const
 
 rmw_ret_t
 RMW_Connext_Publisher::wait_for_subscription(
-  rmw_gid_t & reader_gid,
-  bool & unknown,
-  rmw_gid_t & related_writer_gid)
+  rmw_gid_t & client_writer_gid,
+  bool & unknown)
 {
   unknown = false;
 
   struct DDS_GUID_t reader_guid = DDS_GUID_INITIALIZER;
   rmw_ret_t rc = RMW_RET_ERROR;
-  rc = rmw_connextdds_gid_to_guid(reader_gid, reader_guid);
-  if (RMW_RET_OK != rc) {
-    return rc;
-  }
 
   std::unique_lock<std::mutex> lock(matched_mutex);
-  auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(reader_gid));
+  auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(client_writer_gid));
   if (endpoint_entry == known_endpoints.end()) {
     unknown = true;
     return RMW_RET_OK;
   }
-  related_writer_gid = endpoint_entry->second;
+  auto reader_gid = endpoint_entry->second;
+  rc = rmw_connextdds_gid_to_guid(reader_gid, reader_guid);
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
 
   DDS_InstanceHandle_t reader_ih = DDS_HANDLE_NIL;
   rc = rmw_connextdds_guid_to_instance_handle(&reader_guid, &reader_ih);
@@ -3120,18 +3119,18 @@ RMW_Connext_Service::take_request(
   if (taken_msg) {
     request_header->request_id.sequence_number = rr_msg.sn;
 
-    memcpy(
-      request_header->request_id.writer_guid,
-      rr_msg.gid.data,
-      16);
+    // In Extended mapping, rr_msg.gid contains the Client's Subscriber Gid.
+    if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
+      std::copy_n(
+        rr_msg.writer_gid.data, RMW_GID_STORAGE_SIZE, request_header->request_id.writer_guid);
+      /* Cache the writer/reader GUIDs */
+      reply_pub->push_related_endpoints(rr_msg.gid, rr_msg.writer_gid);
+    } else {
+      std::copy_n(rr_msg.gid.data, RMW_GID_STORAGE_SIZE, request_header->request_id.writer_guid);
+    }
 
     request_header->source_timestamp = message_info.source_timestamp;
     request_header->received_timestamp = message_info.received_timestamp;
-
-    if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
-      /* Cache the writer/reader GUIDs */
-      reply_pub->push_related_endpoints(rr_msg.gid, rr_msg.writer_gid);
-    }
 
     *taken = true;
 
@@ -3147,16 +3146,11 @@ RMW_Connext_Service::take_request(
       rr_msg.sn)
   }
 
-  uint8_t *trace_gid = request_header->request_id.writer_guid;
-  if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
-    trace_gid = rr_msg.writer_gid.data;
-  }
-
   TRACETOOLS_TRACEPOINT(
     rmw_take_request,
     static_cast<const void *>(this->rmw_service),
     static_cast<const void *>(ros_request),
-    trace_gid,
+    request_header->request_id.writer_guid,
     request_header->request_id.sequence_number,
     *taken);
   return RMW_RET_OK;
@@ -3170,8 +3164,10 @@ RMW_Connext_Service::send_response(
   RMW_Connext_RequestReplyMessage rr_msg;
   rr_msg.request = false;
   rr_msg.sn = request_id->sequence_number;
-  memcpy(rr_msg.gid.data, request_id->writer_guid, 16);
+  std::copy_n(request_id->writer_guid, RMW_GID_STORAGE_SIZE, rr_msg.gid.data);
   rr_msg.gid.implementation_identifier = RMW_CONNEXTDDS_ID;
+  std::copy_n(request_id->writer_guid, RMW_GID_STORAGE_SIZE, rr_msg.writer_gid.data);
+  rr_msg.writer_gid.implementation_identifier = RMW_CONNEXTDDS_ID;
   rr_msg.payload = const_cast<void *>(ros_response);
 
   RMW_Connext_WriteParams write_params;
@@ -3194,7 +3190,15 @@ RMW_Connext_Service::send_response(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[1],
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
-    rr_msg.sn)
+    rr_msg.sn);
+  
+  TRACETOOLS_TRACEPOINT(
+    rmw_send_response,
+    static_cast<const void *>(this->rmw_service),
+    static_cast<const void *>(ros_response),
+    request_id->writer_guid,
+    request_id->sequence_number,
+    dds_time_to_u64(&write_params.timestamp));
 
   /* (asorbini) The following logic tries to partially work around some race conditions that exists
      in the way request/reply interactions between clients and services are mapped to DDS topics
@@ -3240,27 +3244,17 @@ RMW_Connext_Service::send_response(
       return rc;
     }
     DDS_RTPS_GUID_t * const rtps_guid = DDS_GUID_as_rtps_guid(&src_guid);
-    if (rtps_guid->entityId.entityKind & 0x04) {
+    if (rtps_guid->entityId.entityKind & 0x03) {
       bool unknown = false;
-      rc = reply_pub->wait_for_subscription(rr_msg.gid, unknown, rr_msg.writer_gid);
+      rmw_gid_t client_writer_gid;
+      client_writer_gid.implementation_identifier = RMW_CONNEXTDDS_ID;
+      std::copy_n(request_id->writer_guid, RMW_GID_STORAGE_SIZE, client_writer_gid.data);
+      rc = reply_pub->wait_for_subscription(client_writer_gid, unknown);
       if (RMW_RET_OK != rc || unknown) {
         return rc;
       }
     }
   }
-
-  uint8_t *trace_gid = rr_msg.gid.data;
-  if (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended) {
-    trace_gid = rr_msg.writer_gid.data;
-  }
-
-  TRACETOOLS_TRACEPOINT(
-    rmw_send_response,
-    static_cast<const void *>(this->rmw_service),
-    static_cast<const void *>(ros_response),
-    trace_gid,
-    request_id->sequence_number,
-    dds_time_to_u64(&write_params.timestamp));
 
   return this->reply_pub->write(&rr_msg, false /* serialized */, &write_params);
 }

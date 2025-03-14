@@ -242,22 +242,20 @@ public:
     DDS_SampleIdentity_t * const sample_identity,
     DDS_SampleIdentity_t * const related_sample_identity);
 
-  // Waits for the `RMW_Connext_Publisher`'s DataWriter to match a known
-  // DataReader associated with the `related_writer_gid`.
+  // When invoked in a Service's RMW_Connext_Publisher, this API waits for the
+  // RMW_Connext_Publisher's DataWriter to match the Client's DataReader associated with the
+  // Client's DataWriter identified by client_writer_gid.
   //
-  // A DataReader is considered known if the associated DataWriter identified by
-  // the `related_writer_gid` is in the `known_endpoints` map.
+  // If this API is not invoked in a Service's RMW_Connext_Publisher, it returns RMW_RET_ERROR.
   //
-  // If this API is called with a `related_writer_gid` that is not in the
-  // `known_endpoints`, it returns `RMW_RET_OK` with `unknown` set to `true`.
+  // If the client_writer_gid is not in the known_endpoints, it returns RMW_RET_OK with unknown set
+  // to true.
   //
-  // An `RMW_Connext_Service` (using Extended mapping) uses this API to wait for
-  // an `RMW_Connext_Client`'s DataReader, associated with the DataWriter identified by `related_writer_gid`, to match
-  // the Service's DataWriter.
-  //
-  // An `RMW_Connext_Service` adds the `related_writer_gid` to `known_endpoints` when
-  // it receives a request from its own DataReader.
-  rmw_ret_t wait_for_subscription(rmw_gid_t &related_writer_gid, bool &unknown);
+  // Known endpoints are added to the known_endpoints map when a Service's DataReader receives a
+  // request from a Client's DataWriter using the API push_related_endpoints
+  rmw_ret_t wait_for_client_subscription(
+    rmw_gid_t & client_writer_gid,
+    bool & unknown);
 
   DDS_Topic * dds_topic() const
   {

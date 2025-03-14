@@ -42,7 +42,8 @@
 #include "rosidl_typesupport_introspection_c/visibility_control.h"
 
 // This type is internal to the implementation and it is not sent over the wire
-struct RMW_Connext_RequestReplyMessage {
+struct RMW_Connext_RequestReplyMessage
+{
   bool request;
   // In basic mapping, this is the GID of the client's DataWriter
   // In extended mapping, this is the GID of the client's DataReader

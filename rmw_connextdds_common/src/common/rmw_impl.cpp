@@ -1051,8 +1051,7 @@ RMW_Connext_Publisher::load_max_blocking_time() const
     return std::chrono::microseconds(
         RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_INFINITE);
   }
-  if (DDS_Duration_is_infinite(&dw_qos.reliability.max_blocking_time))
-  {
+  if (DDS_Duration_is_infinite(&dw_qos.reliability.max_blocking_time)) {
     return std::chrono::microseconds(RMW_CONNEXT_LIMIT_DEFAULT_BLOCKING_TIME_INFINITE);
   }
   if (DDS_Duration_is_zero(&dw_qos.reliability.max_blocking_time)) {
@@ -1066,12 +1065,14 @@ RMW_Connext_Publisher::load_max_blocking_time() const
   return max_blocking_time;
 }
 
-rmw_ret_t
-RMW_Connext_Publisher::wait_for_subscription(
-  rmw_gid_t & client_writer_gid,
-  bool & unknown)
+rmw_ret_t RMW_Connext_Publisher::wait_for_client_subscription(
+  rmw_gid_t & client_writer_gid, bool & unknown)
 {
   unknown = false;
+
+  if (this->type_support->message_type() != RMW_CONNEXT_MESSAGE_REPLY) {
+    return RMW_RET_ERROR;
+  }
 
   struct DDS_GUID_t reader_guid = DDS_GUID_INITIALIZER;
   rmw_ret_t rc = RMW_RET_ERROR;
@@ -3191,7 +3192,7 @@ RMW_Connext_Service::send_response(
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[2],
     reinterpret_cast<const uint32_t *>(rr_msg.gid.data)[3],
     rr_msg.sn);
-  
+
   TRACETOOLS_TRACEPOINT(
     rmw_send_response,
     static_cast<const void *>(this->rmw_service),
@@ -3249,7 +3250,7 @@ RMW_Connext_Service::send_response(
       rmw_gid_t client_writer_gid;
       client_writer_gid.implementation_identifier = RMW_CONNEXTDDS_ID;
       std::copy_n(request_id->writer_guid, RMW_GID_STORAGE_SIZE, client_writer_gid.data);
-      rc = reply_pub->wait_for_subscription(client_writer_gid, unknown);
+      rc = reply_pub->wait_for_client_subscription(client_writer_gid, unknown);
       if (RMW_RET_OK != rc || unknown) {
         return rc;
       }

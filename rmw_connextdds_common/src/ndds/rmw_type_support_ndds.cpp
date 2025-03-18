@@ -180,6 +180,14 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
   unsigned int current_alignment,
   const void * sample);
 
+static
+unsigned int
+RMW_Connext_TypePlugin_get_serialized_key_max_size(
+  PRESTypePluginEndpointData endpoint_data,
+  RTIBool include_encapsulation,
+  RTIEncapsulationId encapsulation_id,
+  unsigned int size);
+
 RTIBool
 RMW_Connext_TypePlugin_get_buffer(
   PRESTypePluginEndpointData endpointData,
@@ -268,6 +276,44 @@ RMW_Connext_TypePlugin_destroy_data(void ** sample, void * user_data)
   delete msg;
 }
 
+static
+RTIBool
+RMW_Connext_TypePlugin_create_key(void ** key, void * user_data)
+{
+  RMW_Connext_MessageTypeSupport * const type_support =
+    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(user_data);
+
+  const auto buffer_size = (type_support->unbounded_key()) ?
+    0 : type_support->type_key_serialized_size_max();
+
+  RMW_Connext_Message * msg = new (std::nothrow) RMW_Connext_Message();
+  if (nullptr == msg) {
+    return RTI_FALSE;
+  }
+  if (RMW_RET_OK != RMW_Connext_Message_initialize(msg, type_support, buffer_size)) {
+    delete msg;
+    return RTI_FALSE;
+  }
+  *key = msg;
+
+  return RTI_TRUE;
+}
+
+static
+void
+RMW_Connext_TypePlugin_destroy_key(void ** key, void * user_data)
+{
+  RMW_Connext_MessageTypeSupport * const type_support =
+    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(user_data);
+
+  UNUSED_ARG(type_support);
+
+  RMW_Connext_Message * msg = reinterpret_cast<RMW_Connext_Message *>(*key);
+  RMW_Connext_Message_finalize(msg);
+  delete msg;
+}
+
+
 /* ----------------------------------------------------------------------------
 Callback functions:
 * ---------------------------------------------------------------------------- */
@@ -332,6 +378,8 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
   RMW_Connext_NddsParticipantData * const pdata =
     reinterpret_cast<RMW_Connext_NddsParticipantData *>(participant_data);
 
+  const bool keyed = pdata->type_plugin->wrapper->keyed();
+
   PRESTypePluginDefaultEndpointData * const epd =
     reinterpret_cast<PRESTypePluginDefaultEndpointData *>(
     PRESTypePluginDefaultEndpointData_newWithNotification(
@@ -343,14 +391,32 @@ RMW_Connext_TypePlugin_on_endpoint_attached(
       (REDAFastBufferPoolBufferFinalizeFunction)
       RMW_Connext_TypePlugin_destroy_data,
       pdata->type_plugin->wrapper,
-      NULL, NULL,
-      NULL, NULL));
+      (REDAFastBufferPoolBufferInitializeFunction)
+      (keyed ? RMW_Connext_TypePlugin_create_key : NULL),
+      (keyed ? pdata->type_plugin->wrapper : NULL),
+      (REDAFastBufferPoolBufferFinalizeFunction)
+      (keyed ? RMW_Connext_TypePlugin_destroy_key : NULL),
+      (keyed ? pdata->type_plugin->wrapper : NULL)));
 
   if (epd == NULL) {
     return NULL;
   }
 
   epd->userData = pdata->type_plugin->wrapper;
+
+  if (keyed) {
+    const unsigned int serialized_key_max_size =
+      RMW_Connext_TypePlugin_get_serialized_key_max_size(
+        epd, RTI_FALSE, RTI_CDR_ENCAPSULATION_ID_CDR_BE, 0);
+
+    if (!PRESTypePluginDefaultEndpointData_createMD5StreamWithInfo(
+          epd, endpoint_info, serialized_key_max_size, 0))
+    {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to allocate keyed endpoint stream")
+      PRESTypePluginDefaultEndpointData_delete(epd);
+      return NULL;
+    }
+  }
 
   if (endpoint_info->endpointKind == PRES_TYPEPLUGIN_ENDPOINT_WRITER) {
     const unsigned int serialized_sample_max_size =
@@ -383,7 +449,9 @@ void
 RMW_Connext_TypePlugin_on_endpoint_detached(
   PRESTypePluginEndpointData endpoint_data)
 {
-  PRESTypePluginDefaultEndpointData_delete(endpoint_data);
+  if (nullptr != endpoint_data) {
+    PRESTypePluginDefaultEndpointData_delete(endpoint_data);
+  }
 }
 
 static
@@ -441,13 +509,9 @@ RMW_Connext_TypePlugin_serialize(
   UNUSED_ARG(endpoint_plugin_qos);
   UNUSED_ARG(encapsulation_id);
 
-  if (!serialize_encapsulation) {
-    // currently not supported
-    return RTI_FALSE;
-  }
-
   if (!serialize_sample) {
-    // currently not supported
+    // Not currently supported. As a result, users cannot enable batching by
+    // setting writer_qos.batch.enabled to TRUE.
     return RTI_FALSE;
   }
 
@@ -470,7 +534,8 @@ RMW_Connext_TypePlugin_serialize(
   data_buffer.buffer_capacity = data_buffer.buffer_length;
 
   if (!msg->serialized) {
-    rmw_ret_t rc = msg->type_support->serialize(msg->user_data, &data_buffer);
+    rmw_ret_t rc = msg->type_support->serialize(
+      msg->user_data, &data_buffer, serialize_encapsulation);
     if (RMW_RET_OK != rc) {
       return RTI_FALSE;
     }
@@ -480,8 +545,9 @@ RMW_Connext_TypePlugin_serialize(
   } else {
     const rcutils_uint8_array_t * const user_buffer =
       reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
+    // prevent rcutils_uint8_array_copy from trying to reallocate the target buffer.
     if (RCUTILS_RET_OK !=
-      rcutils_uint8_array_copy(&data_buffer, user_buffer))
+      rcutils_uint8_array_copy(&data_buffer, user_buffer, false /* realloc_if_needed */))
     {
       return RTI_FALSE;
     }
@@ -557,8 +623,10 @@ RMW_Connext_TypePlugin_get_serialized_sample_max_size(
   RMW_Connext_MessageTypeSupport * const type_support =
     reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
 
-  // For unbounded types this function will only return the maximum size of
-  // the "bounded" part of the message.
+  if (type_support->unbounded()) {
+    return RTI_CDR_MAX_SERIALIZED_SIZE;
+  }
+
   current_alignment += type_support->type_serialized_size_max();
 
   if (!include_encapsulation) {
@@ -577,6 +645,15 @@ RMW_Connext_TypePlugin_get_serialized_sample_min_size(
   RTIEncapsulationId encapsulation_id,
   unsigned int current_alignment)
 {
+  // The serialized sample min size is not currently available. As a workaround,
+  // we set it equal to the serialized sample max size.
+  //
+  // This effectively limits the number of samples in a batch to one when
+  // batching is constrained by max_data_bytes
+  // (writer_qos.batching.max_data_bytes).
+  //
+  // To allow multiple samples per batch, the user must configure batching based
+  // on the number of samples instead (writer_qos.batching.max_samples).
   return RMW_Connext_TypePlugin_get_serialized_sample_max_size(
     endpoint_data,
     include_encapsulation,
@@ -611,9 +688,14 @@ RMW_Connext_TypePlugin_get_serialized_sample_size(
   // user_data pointer. The only samples which do not use that pointers are
   // the ones created internally in the DataReader queue, and it would be
   // unexpected for them to be passed to this function.
-  RMW_CONNEXT_ASSERT(nullptr != msg->user_data)
+  RMW_CONNEXT_ASSERT(
+    nullptr != msg->user_data ||
+    (nullptr != msg->data_buffer.buffer && msg->data_buffer.buffer_length > 0));
 
-  if (msg->serialized) {
+  if (nullptr == msg->user_data) {
+    RMW_CONNEXT_ASSERT(msg->data_buffer.buffer_length <= UINT32_MAX - current_alignment);
+    current_alignment += static_cast<unsigned int>(msg->data_buffer.buffer_length);
+  } else if (msg->serialized) {
     const rcutils_uint8_array_t * const serialized_msg =
       reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
     RMW_CONNEXT_ASSERT(serialized_msg->buffer_length <= UINT32_MAX - current_alignment)
@@ -638,10 +720,347 @@ Key Management functions:
 * -------------------------------------------------------------------------------------- */
 static
 PRESTypePluginKeyKind
-RMW_Connext_TypePlugin_get_key_kind(void)
+RMW_Connext_TypePlugin_get_key_kind_unkeyed(void)
 {
   return PRES_TYPEPLUGIN_NO_KEY;
 }
+
+static
+PRESTypePluginKeyKind
+RMW_Connext_TypePlugin_get_key_kind_keyed(void)
+{
+  return PRES_TYPEPLUGIN_USER_KEY;
+}
+
+static
+RTIBool
+RMW_Connext_TypePlugin_serialize_key(
+  PRESTypePluginEndpointData endpoint_data,
+  const void *key,
+  struct RTICdrStream *stream,
+  RTIBool serialize_encapsulation,
+  RTIEncapsulationId encapsulation_id,
+  RTIBool serialize_key,
+  void *endpoint_plugin_qos)
+{
+  UNUSED_ARG(endpoint_data);
+  UNUSED_ARG(endpoint_plugin_qos);
+  UNUSED_ARG(encapsulation_id);
+
+  if (!serialize_key) {
+    // Not currently supported. As a result, users cannot enable batching by
+    // setting writer_qos.batch.enabled to TRUE.
+    return RTI_FALSE;
+  }
+
+  // key contains the serialized data of the sample, so we need to deserialize
+  // it because the TypePlugin deserialization just copies the serialized
+  // data to the sample buffer. The actual deserialization in a ROS2 message
+  // is done in upper layers.
+  const RMW_Connext_Message * const msg =
+    reinterpret_cast<const RMW_Connext_Message *>(key);
+
+  if (nullptr != msg->user_data) {
+    // Writer codepath
+    rcutils_uint8_array_t data_buffer;
+    data_buffer.allocator = rcutils_get_default_allocator();
+    data_buffer.buffer =
+      reinterpret_cast<uint8_t *>(RTICdrStream_getCurrentPosition(stream));
+    data_buffer.buffer_length = RTICdrStream_getRemainder(stream);
+    data_buffer.buffer_capacity = data_buffer.buffer_length;
+
+    if (!msg->serialized) {
+      rmw_ret_t rc = msg->type_support->serialize_key(
+        msg->user_data, &data_buffer, serialize_encapsulation);
+      if (RMW_RET_OK != rc) {
+        return RTI_FALSE;
+      }
+      RMW_CONNEXT_LOG_DEBUG_A(
+        "serialized key: msg=%p, size=%lu",
+        msg->user_data, data_buffer.buffer_length)
+    } else {
+      const rcutils_uint8_array_t * const user_buffer =
+        reinterpret_cast<const rcutils_uint8_array_t *>(msg->user_data);
+      // prevent rcutils_uint8_array_copy from trying to reallocate the target buffer.
+      if (RCUTILS_RET_OK !=
+        rcutils_uint8_array_copy(&data_buffer, user_buffer, false /* realloc_if_needed */))
+      {
+        return RTI_FALSE;
+      }
+    }
+
+    RTICdrStream_setCurrentPosition(
+      stream,
+      reinterpret_cast<char *>(data_buffer.buffer) + data_buffer.buffer_length);
+  } else {
+    // Reader codepath
+    const auto allocator = rcutils_get_default_allocator();
+    void * deserialized_message = nullptr;
+
+    if (msg->type_support->is_cpp()) {
+      const auto message_type_support =
+        static_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(
+        msg->type_support->message_type_support()->data);
+      deserialized_message = allocator.allocate(
+        message_type_support->size_of_,
+        nullptr);
+      if (nullptr == deserialized_message) {
+        return RTI_FALSE;
+      }
+      message_type_support->init_function(
+        deserialized_message,
+        rosidl_runtime_cpp::MessageInitialization::SKIP);
+    } else {
+      const auto message_type_support =
+        static_cast<const rosidl_typesupport_introspection_c__MessageMembers *>(
+        msg->type_support->message_type_support()->data);
+      deserialized_message = allocator.allocate(
+        message_type_support->size_of_,
+        nullptr);
+      if (nullptr == deserialized_message) {
+        return RTI_FALSE;
+      }
+      message_type_support->init_function(
+        deserialized_message,
+        ROSIDL_RUNTIME_C_MSG_INIT_SKIP);
+    }
+    auto retcode = msg->type_support->deserialize(
+      deserialized_message,
+      &msg->data_buffer);
+    if (RMW_RET_OK != retcode) {
+      allocator.deallocate(deserialized_message, nullptr);
+      return RTI_FALSE;
+    }
+
+    rcutils_uint8_array_t data_buffer;
+    data_buffer.allocator = allocator;
+    data_buffer.buffer =
+      reinterpret_cast<uint8_t *>(RTICdrStream_getCurrentPosition(stream));
+    data_buffer.buffer_length = RTICdrStream_getRemainder(stream);
+    data_buffer.buffer_capacity = data_buffer.buffer_length;
+
+    retcode = msg->type_support->serialize_key(
+      deserialized_message,
+      &data_buffer,
+      serialize_encapsulation);
+    allocator.deallocate(deserialized_message, nullptr);
+    if (RMW_RET_OK != retcode) {
+      return RTI_FALSE;
+    }
+
+    RTICdrStream_setCurrentPosition(
+      stream,
+      reinterpret_cast<char *>(data_buffer.buffer) + data_buffer.buffer_length);
+  }
+
+  return RTI_TRUE;
+}
+
+static
+RTIBool
+RMW_Connext_TypePlugin_deserialize_key(
+  PRESTypePluginEndpointData endpoint_data,
+  void ** key,
+  RTIBool * drop_key,
+  struct RTICdrStream *stream,
+  RTIBool deserialize_encapsulation,
+  RTIBool deserialize_key,
+  void *endpoint_plugin_qos)
+{
+  UNUSED_ARG(endpoint_data);
+  UNUSED_ARG(drop_key);
+  UNUSED_ARG(endpoint_plugin_qos);
+
+  if (!deserialize_encapsulation) {
+    // Currently not supported
+    return RTI_FALSE;
+  }
+  if (!deserialize_key) {
+    // Currently not supported
+    return RTI_FALSE;
+  }
+
+  RMW_Connext_Message * const msg =
+    reinterpret_cast<RMW_Connext_Message *>(*key);
+
+  const size_t deserialize_size = RTICdrStream_getRemainder(stream);
+  void * const src_ptr = RTICdrStream_getCurrentPosition(stream);
+
+  if (msg->data_buffer.buffer_capacity < deserialize_size) {
+    if (RCUTILS_RET_OK !=
+      rcutils_uint8_array_resize(&msg->data_buffer, deserialize_size))
+    {
+      return RTI_FALSE;
+    }
+  }
+
+  memcpy(msg->data_buffer.buffer, src_ptr, deserialize_size);
+  msg->data_buffer.buffer_length = deserialize_size;
+
+  RTICdrStream_setCurrentPosition(stream, reinterpret_cast<char *>(src_ptr) + deserialize_size);
+
+  return RTI_TRUE;
+}
+
+static
+unsigned int
+RMW_Connext_TypePlugin_get_serialized_key_max_size(
+  PRESTypePluginEndpointData endpoint_data,
+  RTIBool include_encapsulation,
+  RTIEncapsulationId encapsulation_id,
+  unsigned int size)
+{
+  unsigned int initial_alignment = size;
+
+  UNUSED_ARG(encapsulation_id);
+
+  PRESTypePluginDefaultEndpointData * const epd =
+    reinterpret_cast<PRESTypePluginDefaultEndpointData *>(endpoint_data);
+  RMW_Connext_MessageTypeSupport * const type_support =
+    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
+
+  if (type_support->unbounded_key()) {
+    return RTI_CDR_MAX_SERIALIZED_SIZE;
+  }
+
+  size += type_support->type_key_serialized_size_max();
+
+  if (!include_encapsulation) {
+    size -=
+      RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
+  }
+
+  return size - initial_alignment;
+}
+
+static
+RTIBool
+RMW_Connext_TypePlugin_instance_to_key_hash(
+  PRESTypePluginEndpointData endpoint_data,
+  MIGRtpsKeyHash *key_hash,
+  const void *sample,
+  RTIEncapsulationId encapsulation_id)
+{
+  UNUSED_ARG(encapsulation_id);
+
+  RMW_Connext_MessageTypeSupport *const type_support =
+    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(
+    PRESTypePluginDefaultEndpointData_getUserData(endpoint_data));
+
+  char * buffer = NULL;
+  RTICdrStreamState cdr_state;
+  RTICdrStreamState_init(&cdr_state);
+
+  RTICdrStream * const md5_stream =
+    PRESTypePluginDefaultEndpointData_getMD5Stream(endpoint_data);
+  if (nullptr == md5_stream) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to look up md5 stream for endpoint")
+    return RTI_FALSE;
+  }
+  RTICdrStream_resetPosition(md5_stream);
+  RTICdrStream_setDirtyBit(md5_stream, RTI_TRUE);
+
+  if (!RMW_Connext_TypePlugin_serialize_key(
+      endpoint_data,
+      sample,
+      md5_stream,
+      RTI_FALSE /* serialize_encapsulation */,
+      RTI_CDR_ENCAPSULATION_ID_CDR_BE,
+      RTI_TRUE /* serialize_key */,
+      NULL /* endpoint_plugin_qos */))
+  {
+    RTICdrStream_pushState(md5_stream, &cdr_state, -1);
+
+    int size = RMW_Connext_TypePlugin_get_serialized_sample_size(
+      endpoint_data,
+      RTI_FALSE /* include_encapsulation */,
+      RTI_CDR_ENCAPSULATION_ID_CDR_BE,
+      0 /* current_alignment */,
+      sample);
+
+    if (size <= RTICdrStream_getBufferLength(md5_stream)) {
+      RTICdrStream_popState(md5_stream, &cdr_state);
+      return RTI_FALSE;
+    }
+
+    RTIOsapiHeap_allocateBuffer(&buffer, size, 0);
+
+    if (nullptr == buffer) {
+      RTICdrStream_popState(md5_stream, &cdr_state);
+      return RTI_FALSE;
+    }
+
+    RTICdrStream_set(md5_stream, buffer, size);
+    RTIOsapiMemory_zero(
+        RTICdrStream_getBuffer(md5_stream),
+        RTICdrStream_getBufferLength(md5_stream));
+    RTICdrStream_resetPosition(md5_stream);
+    RTICdrStream_setDirtyBit(md5_stream, RTI_TRUE);
+
+    if (!RMW_Connext_TypePlugin_serialize_key(
+        endpoint_data,
+        sample,
+        md5_stream,
+        RTI_FALSE /* serialize_encapsulation */,
+        RTI_CDR_ENCAPSULATION_ID_CDR_BE,
+        RTI_TRUE /* serialize_key */,
+        NULL /* endpoint_plugin_qos */))
+    {
+      RTICdrStream_popState(md5_stream, &cdr_state);
+      RTIOsapiHeap_freeBuffer(buffer);
+      return RTI_FALSE;
+    }
+  }
+
+  if (MIG_RTPS_KEY_HASH_MAX_LENGTH < type_support->type_key_serialized_size_max() ||
+    PRESTypePluginDefaultEndpointData_forceMD5KeyHash(endpoint_data))
+  {
+    RTICdrStream_computeMD5(md5_stream, key_hash->value);
+  } else {
+    RTIOsapiMemory_zero(key_hash->value, MIG_RTPS_KEY_HASH_MAX_LENGTH);
+    RTIOsapiMemory_copy(
+      key_hash->value,
+      RTICdrStream_getBuffer(md5_stream),
+      RTICdrStream_getCurrentPositionOffset(md5_stream));
+  }
+
+  key_hash->length = MIG_RTPS_KEY_HASH_MAX_LENGTH;
+
+  if (NULL != buffer) {
+    RTICdrStream_popState(md5_stream, &cdr_state);
+    RTIOsapiHeap_freeBuffer(buffer);
+  }
+
+  return RTI_TRUE;
+}
+
+// type_plugin->serializedSampleToKeyHashFnc
+RTIBool
+RMW_Connext_TypePlugin_serialized_sample_to_key_hash(
+  PRESTypePluginEndpointData endpointData,
+  struct RTICdrStream *stream,
+  struct MIGRtpsKeyHash *keyHash,
+  RTIBool deserializeEncapsulation,
+  void *endpointPluginQos)
+{
+  return RTI_FALSE;
+}
+
+// This function is not currently supported. The function is needed when
+// dispose messages are sent with a serialized key and without a key hash.
+// This can happen if the writer configures writer_qos.protocol.serialize_key_with_dispose
+// to TRUE and set the property data_writer.protocol.disable_inline_keyhash_in_dispose
+// to TRUE.
+// RTIBool
+// RMW_Connext_TypePlugin_serialized_key_to_key_hash(
+//   PRESTypePluginEndpointData endpointData,
+//   struct RTICdrStream *stream,
+//   struct MIGRtpsKeyHash *keyHash,
+//   RTIBool deserializeEncapsulation,
+//   void *endpointPluginQos)
+// {
+//   return RTI_FALSE;
+// }
 
 /* ------------------------------------------------------------------------
 * Plug-in Life-cycle
@@ -651,7 +1070,8 @@ void
 RMW_Connext_TypePlugin_initialize(
   struct PRESTypePlugin * const plugin,
   struct RTICdrTypeCode * const type_code,
-  const char * const type_name)
+  const char * const type_name,
+  const bool keyed)
 {
   const struct PRESTypePluginVersion PLUGIN_VERSION =
     PRES_TYPE_PLUGIN_VERSION_2_0;
@@ -662,88 +1082,74 @@ RMW_Connext_TypePlugin_initialize(
   plugin->endpointTypeName = type_name;
   plugin->typeCodeName = type_name;
 
-  /* Partcipant/endpoint events */
-  plugin->onParticipantAttached =
-    (PRESTypePluginOnParticipantAttachedCallback)
-    RMW_Connext_TypePlugin_on_participant_attached;
-  plugin->onParticipantDetached =
-    (PRESTypePluginOnParticipantDetachedCallback)
-    RMW_Connext_TypePlugin_on_participant_detached;
-  plugin->onEndpointAttached =
-    (PRESTypePluginOnEndpointAttachedCallback)
-    RMW_Connext_TypePlugin_on_endpoint_attached;
-  plugin->onEndpointDetached =
-    (PRESTypePluginOnEndpointDetachedCallback)
-    RMW_Connext_TypePlugin_on_endpoint_detached;
+  /* Participant/endpoint events */
+  plugin->onParticipantAttached = RMW_Connext_TypePlugin_on_participant_attached;
+  plugin->onParticipantDetached = RMW_Connext_TypePlugin_on_participant_detached;
+  plugin->onEndpointAttached = RMW_Connext_TypePlugin_on_endpoint_attached;
+  plugin->onEndpointDetached = RMW_Connext_TypePlugin_on_endpoint_detached;
 
   /* Sample management */
-  plugin->copySampleFnc =
-    (PRESTypePluginCopySampleFunction)
-    RMW_Connext_TypePlugin_copy_sample;
-  plugin->createSampleFnc =
-    (PRESTypePluginCreateSampleFunction)
-    RMW_Connext_TypePlugin_create_sample;
-  plugin->destroySampleFnc =
-    (PRESTypePluginDestroySampleFunction)
-    RMW_Connext_TypePlugin_destroy_sample;
-  plugin->getSampleFnc =
-    (PRESTypePluginGetSampleFunction)
-    RMW_Connext_TypePlugin_get_sample;
-  plugin->returnSampleFnc =
-    (PRESTypePluginReturnSampleFunction)
-    RMW_Connext_TypePlugin_return_sample;
-  plugin->finalizeOptionalMembersFnc =
-    (PRESTypePluginFinalizeOptionalMembersFunction)
-    NULL /* TODO(asorbini): implement? */;
+  plugin->copySampleFnc = RMW_Connext_TypePlugin_copy_sample;
+  plugin->createSampleFnc = RMW_Connext_TypePlugin_create_sample;
+  plugin->destroySampleFnc = RMW_Connext_TypePlugin_destroy_sample;
+  plugin->getSampleFnc = RMW_Connext_TypePlugin_get_sample;
+  plugin->returnSampleFnc = RMW_Connext_TypePlugin_return_sample;
+  plugin->finalizeOptionalMembersFnc = nullptr /* TODO(asorbini): implement? */;
 
   /* Serialization/deserialization */
-  plugin->serializeFnc =
-    (PRESTypePluginSerializeFunction)
-    RMW_Connext_TypePlugin_serialize;
-  plugin->deserializeFnc =
-    (PRESTypePluginDeserializeFunction)
-    RMW_Connext_TypePlugin_deserialize;
-  plugin->getSerializedSampleMaxSizeFnc =
-    (PRESTypePluginGetSerializedSampleMaxSizeFunction)
-    RMW_Connext_TypePlugin_get_serialized_sample_max_size;
-  plugin->getSerializedSampleMinSizeFnc =
-    (PRESTypePluginGetSerializedSampleMinSizeFunction)
-    RMW_Connext_TypePlugin_get_serialized_sample_min_size;
-  plugin->getBuffer =
-    (PRESTypePluginGetBufferFunction)
-    RMW_Connext_TypePlugin_get_buffer;
-  plugin->returnBuffer =
-    (PRESTypePluginReturnBufferFunction)
-    RMW_Connext_TypePlugin_return_buffer;
-  plugin->getSerializedSampleSizeFnc =
-    (PRESTypePluginGetSerializedSampleSizeFunction)
-    RMW_Connext_TypePlugin_get_serialized_sample_size;
+  plugin->serializeFnc = RMW_Connext_TypePlugin_serialize;
+  plugin->deserializeFnc = RMW_Connext_TypePlugin_deserialize;
+  plugin->getSerializedSampleMaxSizeFnc = RMW_Connext_TypePlugin_get_serialized_sample_max_size;
+  plugin->getSerializedSampleMinSizeFnc = RMW_Connext_TypePlugin_get_serialized_sample_min_size;
+  plugin->getBuffer = RMW_Connext_TypePlugin_get_buffer;
+  plugin->returnBuffer = RMW_Connext_TypePlugin_return_buffer;
+  plugin->getSerializedSampleSizeFnc = RMW_Connext_TypePlugin_get_serialized_sample_size;
+
+  /* Unused callbacks*/
+  plugin->getDeserializedSampleMaxSizeFnc = nullptr;
+
+  /* Deprecated callbacks */
+  plugin->getKeyFnc = nullptr;         // Deprecated
+  plugin->returnKeyFnc = nullptr;      // Deprecated
+  plugin->instanceToKeyFnc = nullptr;  // Deprecated
+  plugin->keyToInstanceFnc = nullptr;  // Deprecated
 
   /* Key management */
-  plugin->getKeyKindFnc =
-    (PRESTypePluginGetKeyKindFunction)
-    RMW_Connext_TypePlugin_get_key_kind;
-  plugin->serializeKeyFnc = NULL;
-  plugin->deserializeKeyFnc = NULL;
-  plugin->getKeyFnc = NULL;
-  plugin->returnKeyFnc = NULL;
-  plugin->instanceToKeyFnc = NULL;
-  plugin->keyToInstanceFnc = NULL;
-  plugin->getSerializedKeyMaxSizeFnc = NULL;
-  plugin->instanceToKeyHashFnc = NULL;
-  plugin->serializedSampleToKeyHashFnc = NULL;
-  plugin->serializedKeyToKeyHashFnc = NULL;
+  if (!keyed) {
+    plugin->getKeyKindFnc = RMW_Connext_TypePlugin_get_key_kind_unkeyed;
+    plugin->serializeKeyFnc = nullptr;
+    plugin->deserializeKeyFnc = nullptr;
+    plugin->getSerializedKeyMaxSizeFnc = nullptr;
+    plugin->instanceToKeyHashFnc = nullptr;
+    plugin->serializedSampleToKeyHashFnc = nullptr;
+    plugin->serializedKeyToKeyHashFnc = nullptr;
+    plugin->deserializeKeySampleFnc = nullptr;
+  } else {
+    plugin->getKeyKindFnc = RMW_Connext_TypePlugin_get_key_kind_keyed;
+    plugin->serializeKeyFnc = RMW_Connext_TypePlugin_serialize_key;
+    // This callback is not supported yet, but the PRES TypePlugin requires it to be non-NULL. For
+    // that reason we are leaving it like this, as it is not going to be called anyway.
+    plugin->deserializeKeyFnc = RMW_Connext_TypePlugin_deserialize_key;
+    plugin->getSerializedKeyMaxSizeFnc = RMW_Connext_TypePlugin_get_serialized_key_max_size;
+    plugin->instanceToKeyHashFnc = RMW_Connext_TypePlugin_instance_to_key_hash;
+    // TODO(fgallegosalido): Not implemented yet
+    plugin->serializedSampleToKeyHashFnc = RMW_Connext_TypePlugin_serialized_sample_to_key_hash;
+    // TODO(fgallegosalido): Not supported yet
+    plugin->serializedKeyToKeyHashFnc = nullptr;
+    // TODO(fgallegosalido) Consider in the future over deserializeKeyFnc
+    plugin->deserializeKeySampleFnc = nullptr;
+  }
 
 #if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   /* This functions are not part of the pre-6.x type plugin */
   plugin->isMetpType = RTI_FALSE;
-  plugin->getWriterLoanedSampleFnc = NULL;
-  plugin->returnWriterLoanedSampleFnc = NULL;
-  plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
-  plugin->validateWriterLoanedSampleFnc = NULL;
-  plugin->setWriterLoanedSampleSerializedStateFnc = NULL;
-  plugin->getBufferWithParams = NULL;
-  plugin->returnBufferWithParams = NULL;
+  plugin->getWriterLoanedSampleFnc = nullptr;
+  plugin->returnWriterLoanedSampleFnc = nullptr;
+  plugin->returnWriterLoanedSampleFromCookieFnc = nullptr;
+  plugin->validateWriterLoanedSampleFnc = nullptr;
+  plugin->setWriterLoanedSampleSerializedStateFnc = nullptr;
+  plugin->getBufferWithParams = nullptr;
+  plugin->returnBufferWithParams = nullptr;
 #endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
 }
 
@@ -880,7 +1286,8 @@ rmw_connextdds_register_type_support(
     RMW_Connext_TypePlugin_initialize(
       &type_plugin->base,
       &type_plugin->type_code.base,
-      type_support->type_name());
+      type_support->type_name(),
+      type_support->keyed());
 
     if (DDS_RETCODE_OK !=
       DDS_DomainParticipant_register_type(

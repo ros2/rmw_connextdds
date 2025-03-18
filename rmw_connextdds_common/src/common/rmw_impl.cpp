@@ -69,10 +69,15 @@ rmw_connextdds_create_topic_name(
 rcutils_ret_t
 rcutils_uint8_array_copy(
   rcutils_uint8_array_t * const dst,
-  const rcutils_uint8_array_t * const src)
+  const rcutils_uint8_array_t * const src,
+  const bool realloc_if_needed)
 {
   if (src->buffer_length > 0) {
     if (src->buffer_length > dst->buffer_capacity) {
+      if (!realloc_if_needed) {
+        return RCUTILS_RET_ERROR;
+      }
+
       rcutils_ret_t rc =
         rcutils_uint8_array_resize(dst, src->buffer_length);
 
@@ -1729,12 +1734,9 @@ RMW_Connext_Subscriber::take_next(
         // request header.
         if (this->type_support->type_requestreply()) {
           if (this->ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic) {
-            size_t deserialized_size = 0;
-            UNUSED_ARG(deserialized_size);
-
             if (RMW_RET_OK !=
               this->type_support->deserialize(
-                ros_message, &msg->data_buffer, deserialized_size, true /* header_only */))
+                ros_message, &msg->data_buffer, true /* header_only */))
             {
               RMW_CONNEXT_LOG_ERROR_SET("failed to deserialize taken sample")
               rc_exit = RMW_RET_ERROR;
@@ -1780,11 +1782,8 @@ RMW_Connext_Subscriber::take_next(
             continue;
           }
         } else {
-          size_t deserialized_size = 0;
-
           if (RMW_RET_OK !=
-            this->type_support->deserialize(
-              ros_message, &msg->data_buffer, deserialized_size))
+            this->type_support->deserialize(ros_message, &msg->data_buffer))
           {
             RMW_CONNEXT_LOG_ERROR_SET(
               "failed to deserialize taken sample")

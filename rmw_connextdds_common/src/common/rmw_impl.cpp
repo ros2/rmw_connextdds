@@ -1080,13 +1080,26 @@ rmw_ret_t RMW_Connext_Publisher::wait_for_client_subscription(
   std::unique_lock<std::mutex> lock(matched_mutex);
   auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(client_writer_gid));
   if (endpoint_entry == known_endpoints.end()) {
+    // We can hit this codepath if the service endpoints 
+    // (DataWriter or DataReader) unmatch their client's counterparts while
+    // the response is being sent.
     unknown = true;
     return RMW_RET_OK;
   }
+
   auto reader_gid = endpoint_entry->second;
   rc = rmw_connextdds_gid_to_guid(reader_gid, reader_guid);
   if (RMW_RET_OK != rc) {
     return rc;
+  }
+
+  if (DDS_GUID_compare(&reader_guid, &DDS_GUID_UNKNOWN) == 0) {
+    // We can hit this codepath if we receive the request from an old client
+    // that is not sending the client's DataReader GUID as part of the 
+    // related sample identity inline QoS in the Connext sample. We can also
+    // hit the codepath if we receive a request from a different vendor.
+    unknown = true;
+    return RMW_RET_OK;
   }
 
   DDS_InstanceHandle_t reader_ih = DDS_HANDLE_NIL;
@@ -3251,8 +3264,39 @@ RMW_Connext_Service::send_response(
       client_writer_gid.implementation_identifier = RMW_CONNEXTDDS_ID;
       std::copy_n(request_id->writer_guid, RMW_GID_STORAGE_SIZE, client_writer_gid.data);
       rc = reply_pub->wait_for_client_subscription(client_writer_gid, unknown);
-      if (RMW_RET_OK != rc || unknown) {
+      if (RMW_RET_OK != rc) {
         return rc;
+      }
+
+      if (unknown) {
+        // The client_writer_gid or its associated client_reader_gid is not 
+        // known to the service.
+        //
+        // This can happen for two reasons:
+        // 1) The client is an old client that is not sending information about
+        //   its client_reader_gid as part of the related sample identity in the
+        //   request sample. This condition also happens if the client is from
+        //   a different vendor.
+        // 2) The client's writer or reader has unmatched the service's reader or
+        //   writer, respectively after the request was received.
+        //
+        // In these cases, we print an debug message and we continue
+        // sending the response. There is the probability that the message
+        // will be lost, but this is the best we can do.
+        //
+        // Condition 1) is not expected to happen unless the client is an old
+        // client or is from a different vendor. In this case, we keep old 
+        // behavior to avoid breaking compatibility with old clients.
+        // Condition 2) is unlikely to happen but, if it does, it is better to
+        // try to send the message anyway.
+        RMW_CONNEXT_LOG_DEBUG_A(
+          "[%s] The client's writer with gid=%08X.%08X.%08X.%08X or its reader is "
+          "not known to the service.",
+          this->reply_pub->message_type_support()->type_name(),
+          reinterpret_cast<const uint32_t *>(client_writer_gid.data)[0],
+          reinterpret_cast<const uint32_t *>(client_writer_gid.data)[1],
+          reinterpret_cast<const uint32_t *>(client_writer_gid.data)[2],
+          reinterpret_cast<const uint32_t *>(client_writer_gid.data)[3]);
       }
     }
   }

@@ -1080,7 +1080,7 @@ rmw_ret_t RMW_Connext_Publisher::wait_for_client_subscription(
   std::unique_lock<std::mutex> lock(matched_mutex);
   auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(client_writer_gid));
   if (endpoint_entry == known_endpoints.end()) {
-    // We can hit this codepath if the service endpoints 
+    // We can hit this codepath if the service endpoints
     // (DataWriter or DataReader) unmatch their client's counterparts while
     // the response is being sent.
     unknown = true;
@@ -1095,7 +1095,7 @@ rmw_ret_t RMW_Connext_Publisher::wait_for_client_subscription(
 
   if (DDS_GUID_compare(&reader_guid, &DDS_GUID_UNKNOWN) == 0) {
     // We can hit this codepath if we receive the request from an old client
-    // that is not sending the client's DataReader GUID as part of the 
+    // that is not sending the client's DataReader GUID as part of the
     // related sample identity inline QoS in the Connext sample. We can also
     // hit the codepath if we receive a request from a different vendor.
     unknown = true;
@@ -3269,7 +3269,7 @@ RMW_Connext_Service::send_response(
       }
 
       if (unknown) {
-        // The client_writer_gid or its associated client_reader_gid is not 
+        // The client_writer_gid or its associated client_reader_gid is not
         // known to the service.
         //
         // This can happen for two reasons:
@@ -3285,7 +3285,7 @@ RMW_Connext_Service::send_response(
         // will be lost, but this is the best we can do.
         //
         // Condition 1) is not expected to happen unless the client is an old
-        // client or is from a different vendor. In this case, we keep old 
+        // client or is from a different vendor. In this case, we keep old
         // behavior to avoid breaking compatibility with old clients.
         // Condition 2) is unlikely to happen but, if it does, it is better to
         // try to send the message anyway.

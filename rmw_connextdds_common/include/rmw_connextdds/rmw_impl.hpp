@@ -248,8 +248,8 @@ public:
   //
   // If this API is not invoked in a Service's RMW_Connext_Publisher, it returns RMW_RET_ERROR.
   //
-  // If the client_writer_gid is not in the known_endpoints or the 
-  // client_writer_gid is in the known_endpoints but with an unknown 
+  // If the client_writer_gid is not in the known_endpoints or the
+  // client_writer_gid is in the known_endpoints but with an unknown
   // client_reader_guid, it returns RMW_RET_OK with unknown set to true.
   //
   // Known endpoints are added to the known_endpoints map when a Service's DataReader receives a

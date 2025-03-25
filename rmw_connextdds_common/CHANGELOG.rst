@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.11.4 (2025-03-25)
+-------------------
+
 0.11.3 (2024-11-25)
 -------------------
 * Backport rmw callbacks implementation to Humble [ros2-73] (`#157 <https://github.com/ros2/rmw_connextdds/issues/157>`_)

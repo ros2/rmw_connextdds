@@ -509,6 +509,7 @@ rmw_ret_t
 RMW_Connext_MessageTypeSupport::serialize_key(
   const void * const ros_msg,
   rcutils_uint8_array_t * const to_buffer,
+  RTIEncapsulationId encapsulation_id,
   const bool include_encapsulation)
 {
   if (!this->keyed()) {
@@ -520,7 +521,9 @@ RMW_Connext_MessageTypeSupport::serialize_key(
     to_buffer->buffer_capacity);
   eprosima::fastcdr::Cdr cdr_stream(
     cdr_buffer,
-    eprosima::fastcdr::Cdr::DEFAULT_ENDIAN,
+    (RTICdrEncapsulation_isBigEndianCdrEncapsulationId(encapsulation_id))
+      ? eprosima::fastcdr::Cdr::BIG_ENDIANNESS
+      : eprosima::fastcdr::Cdr::LITTLE_ENDIANNESS,
     eprosima::fastcdr::CdrVersion::XCDRv1);
   cdr_stream.set_encoding_flag(
     eprosima::fastcdr::EncodingAlgorithmFlag::PLAIN_CDR);
@@ -815,6 +818,8 @@ void RMW_Connext_MessageTypeSupport::type_info(
   if (!unbounded) {
     serialized_size_max +=
       RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
+  } else {
+    serialized_size_max = RTI_CDR_MAX_SERIALIZED_SIZE;
   }
 
   if (keyed) {
@@ -824,6 +829,8 @@ void RMW_Connext_MessageTypeSupport::type_info(
     if (!unbounded_key) {
       key_serialized_size_max +=
         RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
+    } else {
+      key_serialized_size_max = RTI_CDR_MAX_SERIALIZED_SIZE;
     }
   }
 }

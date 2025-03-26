@@ -745,7 +745,6 @@ RMW_Connext_TypePlugin_serialize_key(
 {
   UNUSED_ARG(endpoint_data);
   UNUSED_ARG(endpoint_plugin_qos);
-  UNUSED_ARG(encapsulation_id);
 
   if (!serialize_key) {
     // Not currently supported. As a result, users cannot enable batching by
@@ -771,7 +770,7 @@ RMW_Connext_TypePlugin_serialize_key(
 
     if (!msg->serialized) {
       rmw_ret_t rc = msg->type_support->serialize_key(
-        msg->user_data, &data_buffer, serialize_encapsulation);
+        msg->user_data, &data_buffer, encapsulation_id, serialize_encapsulation);
       if (RMW_RET_OK != rc) {
         return RTI_FALSE;
       }
@@ -842,6 +841,7 @@ RMW_Connext_TypePlugin_serialize_key(
     retcode = msg->type_support->serialize_key(
       deserialized_message,
       &data_buffer,
+      encapsulation_id,
       serialize_encapsulation);
     allocator.deallocate(deserialized_message, nullptr);
     if (RMW_RET_OK != retcode) {

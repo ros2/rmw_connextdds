@@ -179,6 +179,7 @@ public:
   rmw_ret_t serialize_key(
     const void * const ros_msg,
     rcutils_uint8_array_t * const to_buffer,
+    RTIEncapsulationId encapsulation_id,
     const bool include_encapsulation = true);
 
   // Not available in message_type_support_key_callbacks_t yet

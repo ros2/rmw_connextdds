@@ -521,9 +521,9 @@ RMW_Connext_MessageTypeSupport::serialize_key(
     to_buffer->buffer_capacity);
   eprosima::fastcdr::Cdr cdr_stream(
     cdr_buffer,
-    (RTICdrEncapsulation_isBigEndianCdrEncapsulationId(encapsulation_id))
-      ? eprosima::fastcdr::Cdr::BIG_ENDIANNESS
-      : eprosima::fastcdr::Cdr::LITTLE_ENDIANNESS,
+    (RTICdrEncapsulation_isBigEndianCdrEncapsulationId(encapsulation_id)) ?
+    eprosima::fastcdr::Cdr::BIG_ENDIANNESS :
+    eprosima::fastcdr::Cdr::LITTLE_ENDIANNESS,
     eprosima::fastcdr::CdrVersion::XCDRv1);
   cdr_stream.set_encoding_flag(
     eprosima::fastcdr::EncodingAlgorithmFlag::PLAIN_CDR);

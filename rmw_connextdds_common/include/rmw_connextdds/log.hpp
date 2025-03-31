@@ -45,7 +45,7 @@
     __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_INFO(msg_) \
-  RCUTILS_LOG_DEBUG_NAMED( \
+  RCUTILS_LOG_INFO_NAMED( \
     RMW_CONNEXTDDS_ID, \
     (msg_));
 
@@ -127,7 +127,7 @@
     __VA_ARGS__);
 
 #define RMW_CONNEXT_LOG_INFO(msg_) \
-  RCUTILS_LOG_DEBUG_NAMED( \
+  RCUTILS_LOG_INFO_NAMED( \
     RMW_CONNEXTDDS_ID, \
     (msg_));
 

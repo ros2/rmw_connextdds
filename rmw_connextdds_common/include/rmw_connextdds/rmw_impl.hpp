@@ -21,6 +21,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <chrono>
 
 #include "rmw_connextdds/context.hpp"
 #include "rmw_connextdds/type_support.hpp"
@@ -72,6 +73,28 @@ bool rmw_connextdds_find_string_in_list(
 
 DDS_Duration_t rmw_connextdds_duration_from_ros_time(
   const rmw_time_t * const ros_time);
+
+class RMW_Connext_OrderedGid
+{
+public:
+  explicit RMW_Connext_OrderedGid(const rmw_gid_t & value)
+  : value(value)
+  {
+  }
+
+  bool operator<(const RMW_Connext_OrderedGid & other) const
+  {
+    return memcmp(value.data, other.value.data, RMW_GID_STORAGE_SIZE) < 0;
+  }
+
+  bool operator==(const RMW_Connext_OrderedGid & other) const
+  {
+    return memcmp(value.data, other.value.data, RMW_GID_STORAGE_SIZE) == 0;
+  }
+
+private:
+  rmw_gid_t value;
+};
 
 /******************************************************************************
  * WaitSet wrapper
@@ -160,7 +183,7 @@ public:
     RMW_Connext_WriteParams * const params);
 
   rmw_ret_t
-  enable() const
+  enable()
   {
     if (DDS_RETCODE_OK !=
       DDS_Entity_enable(
@@ -185,6 +208,8 @@ public:
         this->type_support->type_name())
       return RMW_RET_ERROR;
     }
+
+    max_blocking_time = load_max_blocking_time();
 
     return RMW_RET_OK;
   }
@@ -218,6 +243,22 @@ public:
     DDS_SampleIdentity_t * const sample_identity,
     DDS_SampleIdentity_t * const related_sample_identity);
 
+  // When invoked in a Service's RMW_Connext_Publisher, this API waits for the
+  // RMW_Connext_Publisher's DataWriter to match the Client's DataReader associated with the
+  // Client's DataWriter identified by client_writer_gid.
+  //
+  // If this API is not invoked in a Service's RMW_Connext_Publisher, it returns RMW_RET_ERROR.
+  //
+  // If the client_writer_gid is not in the known_endpoints or the
+  // client_writer_gid is in the known_endpoints but with an unknown
+  // client_reader_guid, it returns RMW_RET_OK with unknown set to true.
+  //
+  // Known endpoints are added to the known_endpoints map when a Service's DataReader receives a
+  // request from a Client's DataWriter using the API push_related_endpoints
+  rmw_ret_t wait_for_client_subscription(
+    rmw_gid_t & client_writer_gid,
+    bool & unknown);
+
   DDS_Topic * dds_topic() const
   {
     return DDS_DataWriter_get_topic(this->dds_writer);
@@ -235,19 +276,105 @@ public:
     return DDS_Publisher_get_participant(pub);
   }
 
+  void
+  push_related_endpoints(const rmw_gid_t & endpoint, const rmw_gid_t & related)
+  {
+    std::lock_guard<std::mutex> lock(matched_mutex);
+    known_endpoints.emplace(RMW_Connext_OrderedGid(endpoint), related);
+    known_endpoints.emplace(RMW_Connext_OrderedGid(related), endpoint);
+  }
+
+  // This method is called by a RMW_Connext_Service when a RMW_Connext_Client's
+  // DataWriter is matched/unmatched with the Service's DataReader
+  void
+  on_publication_matched(
+    const DDS_PublicationMatchedStatus * const status)
+  {
+    std::lock_guard<std::mutex> lock(matched_mutex);
+
+    // This callback is only used by the RMW_Connext_Service's
+    // RMW_Connext_Publisher
+    if (this->type_support->message_type() != RMW_CONNEXT_MESSAGE_REPLY) {
+      return;
+    }
+
+    DDS_ReturnCode_t dds_rc =
+      DDS_DataWriter_get_matched_subscriptions(writer(), &matched_subscriptions);
+    if (DDS_RETCODE_OK != dds_rc) {
+      RMW_CONNEXT_LOG_ERROR_A_SET("failed to list matched subscriptions: dds_rc=%d", dds_rc)
+    }
+    if (status->current_count_change < 0) {
+      rmw_gid_t unmatched_gid;
+      rmw_connextdds_ih_to_gid(status->last_subscription_handle, unmatched_gid);
+      pop_related_endpoints(unmatched_gid);
+    }
+    matched_cv.notify_all();
+  }
+
+  void
+  on_related_subscription_matched(
+    RMW_Connext_Subscriber * const sub,
+    const DDS_SubscriptionMatchedStatus * const status)
+  {
+    UNUSED_ARG(sub);
+    std::lock_guard<std::mutex> lock(matched_mutex);
+
+    // This callback is only used by the RMW_Connext_Service's
+    // RMW_Connext_Publisher
+    if (this->type_support->message_type() != RMW_CONNEXT_MESSAGE_REPLY) {
+      return;
+    }
+
+    if (status->current_count_change < 0) {
+      rmw_gid_t unmatched_gid;
+      rmw_connextdds_ih_to_gid(status->last_publication_handle, unmatched_gid);
+      pop_related_endpoints(unmatched_gid);
+    }
+    matched_cv.notify_all();
+  }
+
+  rmw_context_impl_t * const ctx;
+
+  ~RMW_Connext_Publisher();
+
 private:
-  rmw_context_impl_t * ctx;
   DDS_DataWriter * dds_writer;
   RMW_Connext_MessageTypeSupport * type_support;
   const bool created_topic;
   rmw_gid_t ros_gid;
   RMW_Connext_PublisherStatusCondition status_condition;
+  std::mutex matched_mutex;
+  std::condition_variable matched_cv;
+  std::chrono::microseconds max_blocking_time;
+  // Map of endpoints to related endpoints associated with a
+  // RMW_Connext_Publisher.
+  //
+  // In a RMW_Connext_Service's RMW_Connext_Publisher, this map
+  // contains two pairs for each matched RMW_Connext_Client:
+  // (RMW_Connext_Client's DataWriter, RMW_Connext_Client's DataReader)
+  // (RMW_Connext_Client's DataReader, RMW_Connext_Client's DataWriter)
+  std::map<RMW_Connext_OrderedGid, rmw_gid_t> known_endpoints;
+  DDS_InstanceHandleSeq matched_subscriptions;
 
   RMW_Connext_Publisher(
     rmw_context_impl_t * const ctx,
     DDS_DataWriter * const dds_writer,
     RMW_Connext_MessageTypeSupport * const type_support,
     const bool created_topic);
+
+  void
+  pop_related_endpoints(const rmw_gid_t & endpoint)
+  {
+    auto endpoint_entry = known_endpoints.find(RMW_Connext_OrderedGid(endpoint));
+    if (endpoint_entry == known_endpoints.end()) {
+      return;
+    }
+    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint));
+    known_endpoints.erase(RMW_Connext_OrderedGid(endpoint_entry->second));
+  }
+
+  std::chrono::microseconds
+  load_max_blocking_time() const;
 };
 
 rmw_publisher_t *
@@ -289,7 +416,8 @@ public:
     const bool intro_members_cpp = false,
     std::string * const type_name = nullptr,
     const char * const cft_name = nullptr,
-    const char * const cft_filter = nullptr);
+    const char * const cft_filter = nullptr,
+    RMW_Connext_Publisher * const related_pub = nullptr);
 
   rmw_ret_t
   finalize();
@@ -524,7 +652,7 @@ public:
   const bool ignore_local;
 
 private:
-  rmw_context_impl_t * ctx;
+  rmw_context_impl_t * const ctx;
   DDS_DataReader * dds_reader;
   DDS_Topic * dds_topic;
   DDS_TopicDescription * dds_topic_cft;
@@ -538,6 +666,7 @@ private:
   size_t loan_len;
   size_t loan_next;
   std::mutex loan_mutex;
+  RMW_Connext_Publisher * const related_pub;
 
   RMW_Connext_Subscriber(
     rmw_context_impl_t * const ctx,
@@ -548,7 +677,8 @@ private:
     const bool created_topic,
     DDS_TopicDescription * const dds_topic_cft,
     const char * const cft_expression,
-    const bool internal);
+    const bool internal,
+    RMW_Connext_Publisher * const related_pub);
 
   friend class RMW_Connext_SubscriberStatusCondition;
 };

@@ -19,5 +19,10 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    
+    <deprecated>
+        The Connext Micro RMW, rmw_connextddsmicro, will be removed in a future ROS 2 distro. Use
+        the Connext Pro RMW, rmw_connextdds, instead.
+    </deprecated>
   </export>
 </package>

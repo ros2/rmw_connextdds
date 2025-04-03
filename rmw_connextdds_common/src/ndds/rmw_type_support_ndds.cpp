@@ -943,9 +943,10 @@ RMW_Connext_TypePlugin_instance_to_key_hash(
 {
   UNUSED_ARG(encapsulation_id);
 
-  RMW_Connext_MessageTypeSupport *const type_support =
-    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(
-    PRESTypePluginDefaultEndpointData_getUserData(endpoint_data));
+  PRESTypePluginDefaultEndpointData * const epd =
+    reinterpret_cast<PRESTypePluginDefaultEndpointData *>(endpoint_data);
+  RMW_Connext_MessageTypeSupport * const type_support =
+    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
 
   char * buffer = NULL;
   RTICdrStreamState cdr_state;

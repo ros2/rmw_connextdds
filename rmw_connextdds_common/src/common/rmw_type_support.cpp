@@ -536,10 +536,13 @@ RMW_Connext_MessageTypeSupport::serialize_key(
       return RMW_RET_ERROR;
     }
   } catch(const eprosima::fastcdr::exception::NotEnoughMemoryException & exc) {
-      // RMW_Connext_TypePlugin_serialize_key is called twice in
-      // RMW_Connext_TypePlugin_instance_to_key_hash. It can fail the first time
-      // it is called due to not enough memory, and then allocate the necessary
-      // memory, so we should not print an error message here.
+    // In Release mode, the logging is disabled at compile time, so we mark this
+    // variable as unused to avoid a warning.
+    UNUSED_ARG(exc);
+    // RMW_Connext_TypePlugin_serialize_key is called twice in
+    // RMW_Connext_TypePlugin_instance_to_key_hash. It can fail the first time
+    // it is called due to not enough memory, and then allocate the necessary
+    // memory, so we should not print an error message here.
     RMW_CONNEXT_LOG_DEBUG_A(
       "Failed to serialize key for %s sample: %s", this->type_name(), exc.what());
     return RMW_RET_ERROR;

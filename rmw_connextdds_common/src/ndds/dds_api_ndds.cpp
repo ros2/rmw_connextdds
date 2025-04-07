@@ -882,7 +882,7 @@ rmw_connextdds_count_unread_samples(
   DDS_ReturnCode_t rc = DDS_RETCODE_ERROR;
   do {
     // TODO(fgallegosalido): Use DDS_DataReader_read_or_take_instance_untypedI
-    // when ROS2 support for instances is added.
+    // when ROS 2 support for instances is added.
     rc = DDS_DataReader_read_or_take_untypedI(
       sub->reader(),
       &is_loan,

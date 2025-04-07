@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <exception>
 #include <string.h>
 #include <string>
 
@@ -566,6 +567,7 @@ RMW_Connext_MessageTypeSupport::serialize_key(
   return RMW_RET_OK;
 }
 
+// TODO(fgallegosalido): Revisit key deserialization in the future.
 // rmw_ret_t
 // RMW_Connext_MessageTypeSupport::deserialize_key(
 //   void * const ros_msg,

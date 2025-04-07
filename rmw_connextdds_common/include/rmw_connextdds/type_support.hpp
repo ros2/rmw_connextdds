@@ -15,6 +15,7 @@
 #ifndef RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 #define RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 
+#include <cstdint>
 #include <string>
 #include <stdexcept>
 

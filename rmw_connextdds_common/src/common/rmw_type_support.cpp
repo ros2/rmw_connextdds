@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <exception>
 #include <string.h>
 #include <string>
 
@@ -224,12 +225,17 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
   const rosidl_message_type_support_t * const type_supports,
   const char * const type_name,
   rmw_context_impl_t * const ctx)
-: _type_support_fastrtps(
+: _message_type_support(nullptr),
+  _type_support_fastrtps(
     RMW_Connext_MessageTypeSupport::get_type_support_fastrtps(
       type_supports)),
   _unbounded(false),
   _empty(false),
+  _keyed(false),
+  _unbounded_key(false),
+  _is_cpp(false),
   _serialized_size_max(0),
+  _key_serialized_size_max(0),
   _type_name(),
   _message_type(message_type),
   _ctx(ctx)
@@ -261,7 +267,16 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
     this->_type_support_fastrtps,
     this->_serialized_size_max,
     this->_unbounded,
-    this->_empty);
+    this->_empty,
+    this->_keyed,
+    this->_unbounded_key,
+    this->_key_callbacks,
+    this->_key_serialized_size_max);
+
+  if (keyed()) {
+    _message_type_support = RMW_Connext_MessageTypeSupport::get_type_support_intro(
+      type_supports, _is_cpp);
+  }
 
   if (this->type_requestreply() &&
     this->_ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Basic)
@@ -270,22 +285,34 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
       RMW_Connext_RequestReplyMapping_Basic_serialized_size_max(this);
   }
 
+  // TODO(fgallegosalido) preallocate serialized key buffer
+  // if (this->keyed() && !this->unbounded_key()) {
+  //   // ...
+  // }
+
   RMW_CONNEXT_LOG_DEBUG_A(
     "[type support] new %s: "
     "type.unbounded=%d, "
     "type.empty=%d, "
+    "type.keyed=%d,"
+    "type.unbounded_key=%d,"
     "type.serialized_size_max=%u, "
+    "type.key_serialized_size_max=%u, "
     "type.reqreply=%d",
     this->type_name(),
     this->_unbounded,
     this->_empty,
+    this->_keyed,
+    this->_unbounded_key,
     this->_serialized_size_max,
+    this->_key_serialized_size_max,
     this->type_requestreply())
 }
 
 rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
   const void * const ros_msg,
-  rcutils_uint8_array_t * const to_buffer)
+  rcutils_uint8_array_t * const to_buffer,
+  const bool include_encapsulation)
 {
   auto callbacks =
     static_cast<const message_type_support_callbacks_t *>(
@@ -316,7 +343,9 @@ rmw_ret_t RMW_Connext_MessageTypeSupport::serialize(
   const void * payload = ros_msg;
 
   try {
-    cdr_stream.serialize_encapsulation();
+    if (include_encapsulation) {
+      cdr_stream.serialize_encapsulation();
+    }
 
     if (this->type_requestreply()) {
       const RMW_Connext_RequestReplyMessage * const rr_msg =
@@ -379,7 +408,6 @@ rmw_ret_t
 RMW_Connext_MessageTypeSupport::deserialize(
   void * const ros_msg,
   const rcutils_uint8_array_t * const from_buffer,
-  size_t & size_out,
   const bool header_only)
 {
   auto callbacks =
@@ -475,17 +503,106 @@ RMW_Connext_MessageTypeSupport::deserialize(
     return RMW_RET_ERROR;
   }
 
-  size_out = cdr_stream.get_serialized_data_length();
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+RMW_Connext_MessageTypeSupport::serialize_key(
+  const void * const ros_msg,
+  rcutils_uint8_array_t * const to_buffer,
+  RTIEncapsulationId encapsulation_id,
+  const bool include_encapsulation)
+{
+  if (!this->keyed()) {
+    return RMW_RET_ERROR;
+  }
+
+  eprosima::fastcdr::FastBuffer cdr_buffer(
+    reinterpret_cast<char *>(to_buffer->buffer),
+    to_buffer->buffer_capacity);
+  eprosima::fastcdr::Cdr cdr_stream(
+    cdr_buffer,
+    (RTICdrEncapsulation_isBigEndianCdrEncapsulationId(encapsulation_id)) ?
+    eprosima::fastcdr::Cdr::BIG_ENDIANNESS :
+    eprosima::fastcdr::Cdr::LITTLE_ENDIANNESS,
+    eprosima::fastcdr::CdrVersion::XCDRv1);
+  cdr_stream.set_encoding_flag(
+    eprosima::fastcdr::EncodingAlgorithmFlag::PLAIN_CDR);
+
+  try {
+    if (include_encapsulation) {
+      cdr_stream.serialize_encapsulation();
+    }
+    if (!this->_key_callbacks.cdr_serialize_key(ros_msg, cdr_stream)) {
+      return RMW_RET_ERROR;
+    }
+  } catch(const eprosima::fastcdr::exception::NotEnoughMemoryException & exc) {
+    // In Release mode, the logging is disabled at compile time, so we mark this
+    // variable as unused to avoid a warning.
+    UNUSED_ARG(exc);
+    // RMW_Connext_TypePlugin_serialize_key is called twice in
+    // RMW_Connext_TypePlugin_instance_to_key_hash. It can fail the first time
+    // it is called due to not enough memory, and then allocate the necessary
+    // memory, so we should not print an error message here.
+    RMW_CONNEXT_LOG_DEBUG_A(
+      "Failed to serialize key for %s sample: %s", this->type_name(), exc.what());
+    return RMW_RET_ERROR;
+  } catch (const std::exception & exc) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "Failed to serialize key for %s sample: %s", this->type_name(), exc.what())
+    return RMW_RET_ERROR;
+  } catch (...) {
+    RMW_CONNEXT_LOG_ERROR_A_SET("Failed to serialize key for %s sample", this->type_name())
+    return RMW_RET_ERROR;
+  }
+
+  to_buffer->buffer_length = cdr_stream.get_serialized_data_length();
 
   RMW_CONNEXT_LOG_DEBUG_A(
-    "[type support] %s deserialized: "
-    "consumed=%lu",
+    "[type support] %s serialized key: "
+    "buffer.length=%lu",
     this->_type_name.c_str(),
-    size_out)
+    to_buffer->buffer_length);
 
   return RMW_RET_OK;
 }
 
+// TODO(fgallegosalido): Revisit key deserialization in the future.
+// rmw_ret_t
+// RMW_Connext_MessageTypeSupport::deserialize_key(
+//   void * const ros_msg,
+//   const rcutils_uint8_array_t * const from_buffer)
+// {
+//   if (!this->keyed()) {
+//     return RMW_RET_ERROR;
+//   }
+
+//   eprosima::fastcdr::FastBuffer cdr_buffer(
+//     reinterpret_cast<char *>(from_buffer->buffer),
+//     from_buffer->buffer_length);
+//   eprosima::fastcdr::Cdr cdr_stream(
+//     cdr_buffer,
+//     eprosima::fastcdr::Cdr::DEFAULT_ENDIAN,
+//     eprosima::fastcdr::CdrVersion::XCDRv1);
+
+//   void * payload = ros_msg;
+
+//   try {
+//     cdr_stream.read_encapsulation();
+//     if (!this->_key_callbacks.cdr_deserialize_key(cdr_stream, payload)) {
+//       return RMW_RET_ERROR;
+//     }
+//   } catch (const std::exception & exc) {
+//     RMW_CONNEXT_LOG_ERROR_A_SET(
+//       "Failed to deserialize key for %s sample: %s", this->type_name(), exc.what())
+//     return RMW_RET_ERROR;
+//   } catch (...) {
+//     RMW_CONNEXT_LOG_ERROR_A_SET("Failed to deserialize key for %s sample", this->type_name())
+//     return RMW_RET_ERROR;
+//   }
+
+//   return RMW_RET_OK;
+// }
 
 uint32_t RMW_Connext_MessageTypeSupport::serialized_size_max(
   const void * const ros_msg,
@@ -664,14 +781,21 @@ void RMW_Connext_MessageTypeSupport::type_info(
   const rosidl_message_type_support_t * const type_support,
   uint32_t & serialized_size_max,
   bool & unbounded,
-  bool & empty)
+  bool & empty,
+  bool & keyed,
+  bool & unbounded_key,
+  message_type_support_key_callbacks_t & key_callbacks,
+  uint32_t & key_serialized_size_max)
 {
   serialized_size_max = 0;
   unbounded = false;
   empty = false;
+  keyed = false;
+  unbounded_key = false;
 
   auto callbacks =
     static_cast<const message_type_support_callbacks_t *>(type_support->data);
+  keyed = callbacks->key_callbacks != nullptr;
 
   /* The fastrtps type support sets full_bounded to false if unbounded,
      but assumes full_bounded == true by default */
@@ -687,17 +811,33 @@ void RMW_Connext_MessageTypeSupport::type_info(
     static_cast<uint32_t>(callbacks->max_serialized_size(full_bounded));
 #endif
 
-  unbounded = !full_bounded;
-
   if (full_bounded && serialized_size_max == 0) {
     /* Empty message */
     empty = true;
     serialized_size_max = 1;
   }
 
+  unbounded = !full_bounded;
+
   /* add encapsulation size to static serialized_size_max */
-  serialized_size_max +=
-    RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
+  if (!unbounded) {
+    serialized_size_max +=
+      RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
+  } else {
+    serialized_size_max = RTI_CDR_MAX_SERIALIZED_SIZE;
+  }
+
+  if (keyed) {
+    key_callbacks = *callbacks->key_callbacks;
+    key_serialized_size_max = key_callbacks.max_serialized_size_key(unbounded_key);
+    /* add encapsulation size to static serialized_size_max */
+    if (!unbounded_key) {
+      key_serialized_size_max +=
+        RMW_Connext_MessageTypeSupport::ENCAPSULATION_HEADER_SIZE;
+    } else {
+      key_serialized_size_max = RTI_CDR_MAX_SERIALIZED_SIZE;
+    }
+  }
 }
 
 

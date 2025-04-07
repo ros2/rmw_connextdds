@@ -44,7 +44,8 @@
 rcutils_ret_t
 rcutils_uint8_array_copy(
   rcutils_uint8_array_t * const dst,
-  const rcutils_uint8_array_t * const src);
+  const rcutils_uint8_array_t * const src,
+  const bool realloc_if_needed = true);
 
 rmw_qos_policy_kind_t
 dds_qos_policy_to_rmw_qos_policy(const DDS_QosPolicyId_t last_policy_id);

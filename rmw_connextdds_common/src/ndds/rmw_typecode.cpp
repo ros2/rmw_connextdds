@@ -1057,6 +1057,8 @@ rmw_connextdds_convert_type_members(
     if (nullptr == tc_member->type) {
       return RMW_RET_ERROR;
     }
+
+    tc_member->is_key = (member->is_key_) ? RTI_TRUE : RTI_FALSE;
   }
 
   return RMW_RET_OK;

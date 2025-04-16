@@ -1039,11 +1039,11 @@ RMW_Connext_TypePlugin_instance_to_key_hash(
 // type_plugin->serializedSampleToKeyHashFnc
 RTIBool
 RMW_Connext_TypePlugin_serialized_sample_to_key_hash(
-  PRESTypePluginEndpointData endpointData,
-  struct RTICdrStream *stream,
-  struct MIGRtpsKeyHash *keyHash,
-  RTIBool deserializeEncapsulation,
-  void *endpointPluginQos)
+  PRESTypePluginEndpointData /*endpointData*/,
+  struct RTICdrStream /**stream*/,
+  struct MIGRtpsKeyHash /**keyHash*/,
+  RTIBool /*deserializeEncapsulation*/,
+  void /**endpointPluginQos*/)
 {
   return RTI_FALSE;
 }

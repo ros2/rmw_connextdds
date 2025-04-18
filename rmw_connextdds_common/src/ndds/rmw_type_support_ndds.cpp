@@ -1045,6 +1045,11 @@ RMW_Connext_TypePlugin_serialized_sample_to_key_hash(
   RTIBool deserializeEncapsulation,
   void *endpointPluginQos)
 {
+  UNUSED_ARG(endpointData);
+  UNUSED_ARG(stream);
+  UNUSED_ARG(keyHash);
+  UNUSED_ARG(deserializeEncapsulation);
+  UNUSED_ARG(endpointPluginQos);
   return RTI_FALSE;
 }
 

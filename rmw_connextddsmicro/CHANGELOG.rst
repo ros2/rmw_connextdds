@@ -2,6 +2,12 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.0 (2025-04-18)
+------------------
+* Mark the package rmw_connextddsmicro as deprecated (`#182 <https://github.com/ros2/rmw_connextdds/issues/182>`_)
+* Switch buildtool to ament_cmake package (`#183 <https://github.com/ros2/rmw_connextdds/issues/183>`_)
+* Contributors: Francisco Gallego Salido, Scott K Logan
+
 1.0.1 (2025-03-11)
 ------------------
 * Added rmw_event_type_is_supported (`#173 <https://github.com/ros2/rmw_connextdds/issues/173>`_)

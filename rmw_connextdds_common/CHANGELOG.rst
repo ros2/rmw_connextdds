@@ -2,6 +2,14 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.0 (2025-04-18)
+------------------
+* Address cpplit and gcc warnings. (`#184 <https://github.com/ros2/rmw_connextdds/issues/184>`_)
+* Support topic instances (`#178 <https://github.com/ros2/rmw_connextdds/issues/178>`_)
+* Switch buildtool to ament_cmake package (`#183 <https://github.com/ros2/rmw_connextdds/issues/183>`_)
+* Discovery race condition mitigation (`#174 <https://github.com/ros2/rmw_connextdds/issues/174>`_)
+* Contributors: Francisco Gallego Salido, Scott K Logan, Tomoya Fujita
+
 1.0.1 (2025-03-11)
 ------------------
 * Added rmw_event_type_is_supported (`#173 <https://github.com/ros2/rmw_connextdds/issues/173>`_)

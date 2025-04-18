@@ -2,6 +2,11 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.0 (2025-04-18)
+------------------
+* Update Connext to 7.3.0 (`#181 <https://github.com/ros2/rmw_connextdds/issues/181>`_)
+* Contributors: lobolanja
+
 1.0.1 (2025-03-11)
 ------------------
 

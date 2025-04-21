@@ -830,7 +830,8 @@ void RMW_Connext_MessageTypeSupport::type_info(
 
   if (keyed) {
     key_callbacks = *callbacks->key_callbacks;
-    key_serialized_size_max = key_callbacks.max_serialized_size_key(unbounded_key);
+    key_serialized_size_max = static_cast<uint32_t>(
+      key_callbacks.max_serialized_size_key(unbounded_key));
     /* add encapsulation size to static serialized_size_max */
     if (!unbounded_key) {
       key_serialized_size_max +=

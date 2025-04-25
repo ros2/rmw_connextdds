@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.0 (2025-04-25)
+------------------
+
 1.1.0 (2025-04-18)
 ------------------
 * Address cpplit and gcc warnings. (`#184 <https://github.com/ros2/rmw_connextdds/issues/184>`_)

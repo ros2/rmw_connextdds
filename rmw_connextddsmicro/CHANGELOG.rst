@@ -2,6 +2,9 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.0 (2025-04-25)
+------------------
+
 1.1.0 (2025-04-18)
 ------------------
 * Mark the package rmw_connextddsmicro as deprecated (`#182 <https://github.com/ros2/rmw_connextdds/issues/182>`_)

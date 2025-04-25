@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.0 (2025-04-25)
+------------------
+
 1.1.0 (2025-04-18)
 ------------------
 * Switch buildtool to ament_cmake package (`#183 <https://github.com/ros2/rmw_connextdds/issues/183>`_)

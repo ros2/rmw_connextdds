@@ -652,7 +652,7 @@ RMW_Connext_TypePlugin_get_serialized_sample_min_size(
     reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
 
   // The serialized sample min size is not currently available. As a workaround,
-  // we set it equal to the serialized sample max size in case the type is 
+  // we set it equal to the serialized sample max size in case the type is
   // bounded, or a fix value of 32 in the case the type is unbounded.
   //
   // A proper solution would require generating code to retrieve the minimum

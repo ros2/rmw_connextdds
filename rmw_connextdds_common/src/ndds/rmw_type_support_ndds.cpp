@@ -646,20 +646,31 @@ RMW_Connext_TypePlugin_get_serialized_sample_min_size(
   RTIEncapsulationId encapsulation_id,
   unsigned int current_alignment)
 {
+  PRESTypePluginDefaultEndpointData *const epd =
+    reinterpret_cast<PRESTypePluginDefaultEndpointData *>(endpoint_data);
+  RMW_Connext_MessageTypeSupport *const type_support =
+    reinterpret_cast<RMW_Connext_MessageTypeSupport *>(epd->userData);
+
   // The serialized sample min size is not currently available. As a workaround,
-  // we set it equal to the serialized sample max size.
+  // we set it equal to the serialized sample max size in case the type is
+  // bounded, or a fix value of 32 in the case the type is unbounded.
   //
-  // This effectively limits the number of samples in a batch to one when
-  // batching is constrained by max_data_bytes
+  // A proper solution would require generating code to retrieve the minimum
+  // serialized size of a sample.
+  //
+  // For bounded types, this effectively limits the number of samples in a batch
+  // to one when batching is constrained by max_data_bytes
   // (writer_qos.batching.max_data_bytes).
   //
   // To allow multiple samples per batch, the user must configure batching based
   // on the number of samples instead (writer_qos.batching.max_samples).
-  return RMW_Connext_TypePlugin_get_serialized_sample_max_size(
-    endpoint_data,
-    include_encapsulation,
-    encapsulation_id,
-    current_alignment);
+  return (type_support->unbounded()) ?
+         32 :
+         RMW_Connext_TypePlugin_get_serialized_sample_max_size(
+           endpoint_data,
+           include_encapsulation,
+           encapsulation_id,
+           current_alignment);
 }
 
 static

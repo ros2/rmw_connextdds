@@ -354,11 +354,11 @@ rmw_api_connextdds_count_services(
   }
 
   auto common_context = &node->context->impl->common;
-  const std::string mangled_rp_service_name =
+  const std::string mangled_rq_service_name =
     rmw_connextdds_create_topic_name(
-    ROS_SERVICE_RESPONSE_PREFIX, service_name, "Reply", false);
-  return common_context->graph_cache.get_writer_count(
-    mangled_rp_service_name, count);
+      ROS_SERVICE_REQUESTER_PREFIX, service_name, "Request", false);
+  return common_context->graph_cache.get_reader_count(
+    mangled_rq_service_name, count);
 }
 
 

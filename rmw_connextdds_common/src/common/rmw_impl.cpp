@@ -316,7 +316,8 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_UserDataQosPolicy * const user_data,
   const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
-  const rmw_subscription_options_t * const sub_options)
+  const rmw_subscription_options_t * const sub_options,
+  const rosidl_type_hash_t * ser_type_hash)
 {
   UNUSED_ARG(writer_qos);
   UNUSED_ARG(publish_mode);
@@ -473,6 +474,14 @@ rmw_connextdds_get_readerwriter_qos(
     user_data_str.clear();
     // We handled the error, so clear it out
     rmw_reset_error();
+  }
+  if (ser_type_hash) {
+    std::string typehash_str;
+    if (RMW_RET_OK == rmw_dds_common::encode_sertype_hash_for_user_data_qos(
+        *ser_type_hash, typehash_str))
+    {
+      user_data_str += typehash_str;
+    }
   }
   DDS_OctetSeq_from_array(
     &user_data->value,
@@ -693,7 +702,8 @@ RMW_Connext_Publisher::create(
   const RMW_Connext_MessageType msg_type,
   const void * const intro_members,
   const bool intro_members_cpp,
-  std::string * const type_name)
+  std::string * const type_name,
+  const rosidl_type_hash_t * ser_type_hash)
 {
   UNUSED_ARG(internal);
 
@@ -812,7 +822,8 @@ RMW_Connext_Publisher::create(
     internal,
     type_support,
     topic,
-    &dw_qos);
+    &dw_qos,
+    ser_type_hash);
 
   if (nullptr == dds_writer) {
     RMW_CONNEXT_LOG_ERROR("failed to create DDS writer")
@@ -1314,7 +1325,8 @@ RMW_Connext_Subscriber::create(
   std::string * const type_name,
   const char * const cft_name,
   const char * const cft_filter,
-  RMW_Connext_Publisher * const related_pub)
+  RMW_Connext_Publisher * const related_pub,
+  const rosidl_type_hash_t * ser_type_hash)
 {
   RMW_Connext_MessageTypeSupport * const type_support =
     RMW_Connext_MessageTypeSupport::register_type_support(
@@ -1474,7 +1486,8 @@ RMW_Connext_Subscriber::create(
     internal,
     type_support,
     sub_topic,
-    &dr_qos);
+    &dr_qos,
+    ser_type_hash);
 
   if (nullptr == dds_reader) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to create DDS reader")
@@ -2592,7 +2605,7 @@ RMW_Connext_Client::create(
 
   rmw_publisher_options_t pub_options = rmw_get_default_publisher_options();
   rmw_subscription_options_t sub_options = rmw_get_default_subscription_options();
-
+  const rosidl_type_hash_t * ser_type_hash = type_supports->get_type_hash_func(type_supports);
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating request publisher: "
@@ -2614,7 +2627,8 @@ RMW_Connext_Client::create(
     RMW_CONNEXT_MESSAGE_REQUEST,
     svc_members_req,
     svc_members_req_cpp,
-    &request_type);
+    &request_type,
+    ser_type_hash);
 
   if (nullptr == client_impl->request_pub) {
     RMW_CONNEXT_LOG_ERROR("failed to create client requester")
@@ -2666,7 +2680,9 @@ RMW_Connext_Client::create(
     svc_members_res_cpp,
     &reply_type,
     cft_name,
-    cft_filter);
+    cft_filter,
+    nullptr,
+    ser_type_hash);
 
   if (nullptr == client_impl->reply_sub) {
     RMW_CONNEXT_LOG_ERROR("failed to create client replier")
@@ -3025,6 +3041,7 @@ RMW_Connext_Service::create(
 
   rmw_publisher_options_t pub_options = rmw_get_default_publisher_options();
   rmw_subscription_options_t sub_options = rmw_get_default_subscription_options();
+  const rosidl_type_hash_t * ser_type_hash = type_supports->get_type_hash_func(type_supports);
 
   RMW_CONNEXT_LOG_DEBUG_A(
     "creating reply publisher: "
@@ -3046,7 +3063,8 @@ RMW_Connext_Service::create(
     RMW_CONNEXT_MESSAGE_REPLY,
     svc_members_res,
     svc_members_res_cpp,
-    &reply_type);
+    &reply_type,
+    ser_type_hash);
 
   if (nullptr == svc_impl->reply_pub) {
     RMW_CONNEXT_LOG_ERROR("failed to create service replier")
@@ -3079,7 +3097,8 @@ RMW_Connext_Service::create(
     /* If we are using the extended RPC mapping, then we cache the reply writer
        so that we can notify it of "subscription_match" events. */
     (ctx->request_reply_mapping == RMW_Connext_RequestReplyMapping::Extended ?
-    svc_impl->reply_pub : nullptr));
+    svc_impl->reply_pub : nullptr),
+    ser_type_hash);
 
   if (nullptr == svc_impl->request_sub) {
     RMW_CONNEXT_LOG_ERROR("failed to create service requester")

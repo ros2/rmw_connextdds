@@ -152,7 +152,8 @@ public:
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
     const bool intro_members_cpp = false,
-    std::string * const type_name = nullptr);
+    std::string * const type_name = nullptr,
+    const rosidl_type_hash_t * ser_type_hash = nullptr);
 
   rmw_ret_t
   finalize();
@@ -417,7 +418,8 @@ public:
     std::string * const type_name = nullptr,
     const char * const cft_name = nullptr,
     const char * const cft_filter = nullptr,
-    RMW_Connext_Publisher * const related_pub = nullptr);
+    RMW_Connext_Publisher * const related_pub = nullptr,
+    const rosidl_type_hash_t * ser_type_hash = nullptr);
 
   rmw_ret_t
   finalize();
@@ -978,7 +980,8 @@ rmw_connextdds_get_readerwriter_qos(
   DDS_UserDataQosPolicy * const user_data,
   const rmw_qos_profile_t * const qos_policies,
   const rmw_publisher_options_t * const pub_options,
-  const rmw_subscription_options_t * const sub_options);
+  const rmw_subscription_options_t * const sub_options,
+  const rosidl_type_hash_t * ser_type_hash = nullptr);
 
 rmw_ret_t
 rmw_connextdds_readerwriter_qos_to_ros(

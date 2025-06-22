@@ -224,6 +224,24 @@ rmw_api_connextdds_get_subscriptions_info_by_topic(
   bool no_mangle,
   rmw_topic_endpoint_info_array_t * subscriptions_info);
 
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_get_clients_info_by_service(
+  const rmw_node_t * node,
+  rcutils_allocator_t * allocator,
+  const char * service_name,
+  bool no_mangle,
+  rmw_service_endpoint_info_array_t * clients_info);
+
+RMW_CONNEXTDDS_PUBLIC
+rmw_ret_t
+rmw_api_connextdds_get_servers_info_by_service(
+  const rmw_node_t * node,
+  rcutils_allocator_t * allocator,
+  const char * service_name,
+  bool no_mangle,
+  rmw_service_endpoint_info_array_t * servers_info);
+
 /*****************************************************************************
  * Node API
  *****************************************************************************/

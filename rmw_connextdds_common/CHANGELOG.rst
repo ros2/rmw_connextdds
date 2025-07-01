@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.1 (2025-07-01)
+------------------
 * Fixed serialized minimum sample size callback (`#196 <https://github.com/ros2/rmw_connextdds/issues/196>`_)
 * Removed warning (`#187 <https://github.com/ros2/rmw_connextdds/issues/187>`_)
 * Contributors: Alejandro Hernández Cordero, Francisco Gallego Salido

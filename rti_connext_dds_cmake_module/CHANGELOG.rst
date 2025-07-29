@@ -2,6 +2,11 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix cmake deprecation (`#198 <https://github.com/ros2/rmw_connextdds/issues/198>`_)
+* Contributors: mosfet80
+
 1.2.1 (2025-07-01)
 ------------------
 

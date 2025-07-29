@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix cmake deprecation (`#198 <https://github.com/ros2/rmw_connextdds/issues/198>`_)
+* Contributors: mosfet80
+
 1.2.1 (2025-07-01)
 ------------------
 * Fixed serialized minimum sample size callback (`#196 <https://github.com/ros2/rmw_connextdds/issues/196>`_)

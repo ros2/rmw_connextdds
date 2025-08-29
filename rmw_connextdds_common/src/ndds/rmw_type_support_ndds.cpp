@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <cstring>
+#include <limits>
 #include <string>
 
 #include "rcpputils/scope_exit.hpp"

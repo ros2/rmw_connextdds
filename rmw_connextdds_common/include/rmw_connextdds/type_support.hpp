@@ -15,6 +15,7 @@
 #ifndef RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 #define RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <stdexcept>
@@ -181,6 +182,8 @@ public:
     void * const ros_msg,
     const rcutils_uint8_array_t * const from_buffer,
     const bool header_only = false);
+
+  std::size_t serialized_key_size_max(const void * const ros_msg);
 
   rmw_ret_t serialize_key(
     const void * const ros_msg,

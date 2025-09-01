@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <cstring>
+#include <limits>
 #include <string>
 
 #include "rcpputils/scope_exit.hpp"
@@ -984,13 +985,18 @@ RMW_Connext_TypePlugin_instance_to_key_hash(
   {
     RTICdrStream_pushState(md5_stream, &cdr_state, -1);
 
-    int size = RMW_Connext_TypePlugin_get_serialized_sample_size(
-      endpoint_data,
-      RTI_FALSE /* include_encapsulation */,
-      RTI_CDR_ENCAPSULATION_ID_CDR_BE,
-      0 /* current_alignment */,
-      sample);
+    const RMW_Connext_Message *const msg =
+      reinterpret_cast<const RMW_Connext_Message *>(sample);
+    const auto size_unsigned = (nullptr != msg->user_data) ?
+      type_support->serialized_key_size_max(msg->user_data) :
+      msg->data_buffer.buffer_length;
 
+    // Make sure the size fits in an int32
+    RMW_CONNEXT_ASSERT(size_unsigned <= std::numeric_limits<int>::max());
+    const auto size = static_cast<int>(size_unsigned);
+
+    // If there's already enough size when serializing, the serialization failed
+    // for a different reason, so we return an error
     if (size <= RTICdrStream_getBufferLength(md5_stream)) {
       RTICdrStream_popState(md5_stream, &cdr_state);
       return RTI_FALSE;

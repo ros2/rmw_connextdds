@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
+#include <cstddef>
+#include <cstring>
 
 #include <exception>
 #include <string>
@@ -505,6 +506,12 @@ RMW_Connext_MessageTypeSupport::deserialize(
   }
 
   return RMW_RET_OK;
+}
+
+std::size_t RMW_Connext_MessageTypeSupport::serialized_key_size_max(
+  const void * const ros_msg)
+{
+  return (this->keyed()) ? _key_callbacks.get_serialized_size_key(ros_msg) : 0;
 }
 
 rmw_ret_t

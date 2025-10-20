@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.1 (2025-10-20)
+------------------
+* Fix cmake deprecation (`#198 <https://github.com/ros2/rmw_connextdds/issues/198>`_) (`#199 <https://github.com/ros2/rmw_connextdds/issues/199>`_)
+* Contributors: mergify[bot]
+
 1.1.0 (2025-04-18)
 ------------------
 * Switch buildtool to ament_cmake package (`#183 <https://github.com/ros2/rmw_connextdds/issues/183>`_)

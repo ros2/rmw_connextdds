@@ -2,6 +2,12 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.3 (2025-10-20)
+------------------
+* [rmw_connextdds_common]: Remove <member_of_group>rosidl_interface_packages (`#202 <https://github.com/ros2/rmw_connextdds/issues/202>`_)
+* Correctly calculate the size of a serialized key (`#200 <https://github.com/ros2/rmw_connextdds/issues/200>`_)
+* Contributors: Chris Lalancette, Francisco Gallego Salido
+
 1.2.2 (2025-07-29)
 ------------------
 * Fix cmake deprecation (`#198 <https://github.com/ros2/rmw_connextdds/issues/198>`_)

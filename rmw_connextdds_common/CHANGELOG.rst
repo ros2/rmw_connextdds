@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.11.5 (2025-10-21)
+-------------------
+* [rmw_connextdds_common]: Remove <member_of_group>rosidl_interface_packages (`#202 <https://github.com/ros2/rmw_connextdds/issues/202>`_) (`#205 <https://github.com/ros2/rmw_connextdds/issues/205>`_)
+* Contributors: mergify[bot]
+
 0.11.4 (2025-03-25)
 -------------------
 

@@ -2,6 +2,9 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.22.2 (2025-10-21)
+-------------------
+
 0.22.1 (2025-03-12)
 -------------------
 * Quiet a warning when CONNEXTDDS_DIR or NDDSHOME is not found. (`#158 <https://github.com/ros2/rmw_connextdds/issues/158>`_) (`#161 <https://github.com/ros2/rmw_connextdds/issues/161>`_)

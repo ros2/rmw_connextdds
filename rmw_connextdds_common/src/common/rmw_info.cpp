@@ -796,6 +796,9 @@ rmw_api_connextdds_get_servers_info_by_service(
   RCUTILS_CHECK_ALLOCATOR_WITH_MSG(
     allocator, "allocator argument is invalid", return RMW_RET_INVALID_ARGUMENT);
 
+  if (RMW_RET_OK != rmw_service_endpoint_info_array_check_zero(servers_info)) {
+    return RMW_RET_INVALID_ARGUMENT;
+  }
   if (no_mangle) {
     // Services in DDS require mangled topic names
     // because they internally use separate readers and writers.

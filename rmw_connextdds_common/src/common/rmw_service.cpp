@@ -220,7 +220,8 @@ rmw_api_connextdds_create_client(
   }
 
   if (RMW_RET_OK !=
-    rmw_connextdds_graph_on_client_created(ctx, node, client_impl))
+    rmw_connextdds_graph_on_client_created(
+      ctx, node, client_impl, type_supports->get_type_hash_func(type_supports)))
   {
     RMW_CONNEXT_LOG_ERROR("failed to update graph for client")
     return nullptr;
@@ -441,7 +442,8 @@ rmw_api_connextdds_create_service(
   }
 
   if (RMW_RET_OK !=
-    rmw_connextdds_graph_on_service_created(ctx, node, svc_impl))
+    rmw_connextdds_graph_on_service_created(
+      ctx, node, svc_impl, type_supports->get_type_hash_func(type_supports)))
   {
     RMW_CONNEXT_LOG_ERROR("failed to update graph for service")
     return nullptr;

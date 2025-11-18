@@ -2,6 +2,12 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.4 (2025-11-18)
+------------------
+* add : get clients,servers info (`#154 <https://github.com/ros2/rmw_connextdds/issues/154>`_)
+* fix: remove superflous `buildtool_export_depend` (`#206 <https://github.com/ros2/rmw_connextdds/issues/206>`_)
+* Contributors: Bas Zalmstra, Minju, Lee
+
 1.2.3 (2025-10-20)
 ------------------
 

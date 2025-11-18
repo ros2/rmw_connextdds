@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.4 (2025-11-18)
+------------------
+* add : get clients,servers info (`#154 <https://github.com/ros2/rmw_connextdds/issues/154>`_)
+* Contributors: Minju, Lee
+
 1.2.3 (2025-10-20)
 ------------------
 * [rmw_connextdds_common]: Remove <member_of_group>rosidl_interface_packages (`#202 <https://github.com/ros2/rmw_connextdds/issues/202>`_)

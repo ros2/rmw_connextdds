@@ -49,8 +49,7 @@ extern "C" {
 // be registered as "built-in". We need this because we want this custom filter
 // to be a replacement for the built-in SQL-like filter.
 RMW_CONNEXTDDS_PUBLIC
-DDS_ReturnCode_t
-DDS_ContentFilter_register_filter(
+DDS_ReturnCode_t DDS_DomainParticipant_register_contentfilterI(
   DDS_DomainParticipant * participant,
   const char * name,
   const struct DDS_ContentFilter * filter,

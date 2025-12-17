@@ -1037,11 +1037,13 @@ rmw_feature_supported(rmw_feature_t feature)
       {
         return true;
       }
-    default:
+    case RMW_MIDDLEWARE_SUPPORTS_TYPE_DISCOVERY:
+    case RMW_MIDDLEWARE_CAN_TAKE_DYNAMIC_MESSAGE:
       {
         return false;
       }
   }
+  return false;
 }
 
 /******************************************************************************

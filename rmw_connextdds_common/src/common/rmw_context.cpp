@@ -188,11 +188,6 @@ rmw_context_impl_s::initialize_discovery_options(DDS_DomainParticipantQos & dp_q
         return RMW_RET_ERROR;
       }
       break;
-    default:
-      RMW_CONNEXT_LOG_ERROR_A_SET(
-        "Unknown value provided for automatic discovery range: %i",
-        range);
-      return RMW_RET_ERROR;
   }
 
   if (RMW_AUTOMATIC_DISCOVERY_RANGE_OFF == range) {
@@ -353,7 +348,7 @@ rmw_context_impl_s::initialize_participant_qos(DDS_DomainParticipantQos & dp_qos
         }
       }
       break;
-    default:
+    case rmw_context_impl_s::participant_qos_override_policy_t::Never:
       break;
   }
 

@@ -414,11 +414,6 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
         verbosity = OSAPI_LOG_VERBOSITY_ERROR;
         break;
       }
-    default:
-      {
-        RMW_CONNEXT_LOG_ERROR_A_SET("invalid log level: %d", severity)
-        return RMW_RET_INVALID_ARGUMENT;
-      }
   }
 
   OSAPI_Log_set_verbosity(verbosity);

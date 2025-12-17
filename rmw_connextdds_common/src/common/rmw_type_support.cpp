@@ -132,7 +132,7 @@ RMW_Connext_RequestReplyMapping_Basic_serialize(
           cdr_stream << sample_rc;
           break;
         }
-      default:
+      case RMW_CONNEXT_MESSAGE_USERDATA:
         {
           RMW_CONNEXT_LOG_ERROR_A_SET(
             "invalid mapping type to serialize: %d",
@@ -196,7 +196,7 @@ RMW_Connext_RequestReplyMapping_Basic_deserialize(
           UNUSED_ARG(sample_rc);
           break;
         }
-      default:
+      case RMW_CONNEXT_MESSAGE_USERDATA:
         {
           RMW_CONNEXT_LOG_ERROR_A_SET(
             "invalid mapping type to deserialize: %d",
@@ -260,9 +260,6 @@ RMW_Connext_MessageTypeSupport::RMW_Connext_MessageTypeSupport(
         this->_type_name = type_name;
         break;
       }
-    default:
-      // should never get here
-      break;
   }
 
   RMW_Connext_MessageTypeSupport::type_info(

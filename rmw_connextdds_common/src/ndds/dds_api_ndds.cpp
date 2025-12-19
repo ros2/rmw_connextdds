@@ -87,11 +87,6 @@ rmw_connextdds_set_log_verbosity(rmw_log_severity_t severity)
         verbosity = NDDS_CONFIG_LOG_VERBOSITY_ERROR;
         break;
       }
-    default:
-      {
-        RMW_CONNEXT_LOG_ERROR_A_SET("invalid log level: %d", severity)
-        return RMW_RET_INVALID_ARGUMENT;
-      }
   }
 
   NDDS_Config_Logger_set_verbosity(logger, verbosity);
@@ -266,7 +261,7 @@ rmw_connextdds_initialize_participant_qos_impl(
         }
         break;
       }
-    default:
+    case rmw_context_impl_t::participant_qos_override_policy_t::Never:
       {
         // No customization of DomainParticipantQos request, return immediately.
         RMW_CONNEXT_LOG_DEBUG("using default Connext's DomainParticipantQos")
@@ -985,8 +980,6 @@ rmw_connextdds_filter_sample(
             rr_msg->gid, related_sample_identity.writer_guid);
           break;
         }
-      default:
-        return RMW_RET_ERROR;
     }
 
     // Convert instance handle to guid

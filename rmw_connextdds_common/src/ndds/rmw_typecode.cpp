@@ -981,7 +981,7 @@ rmw_connextdds_convert_type_members(
             }
             break;
           }
-        default:
+        case RMW_CONNEXT_MESSAGE_USERDATA:
           {
             RMW_CONNEXT_LOG_ERROR_A_SET(
               "invalid message type for typecode: %d",

@@ -385,6 +385,7 @@ rmw_connextdds_get_readerwriter_qos(
         break;
       }
     case RMW_QOS_POLICY_RELIABILITY_UNKNOWN:
+      [[fallthrough]];
     case RMW_QOS_POLICY_RELIABILITY_BEST_AVAILABLE:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
@@ -409,6 +410,7 @@ rmw_connextdds_get_readerwriter_qos(
         break;
       }
     case RMW_QOS_POLICY_DURABILITY_UNKNOWN:
+      [[fallthrough]];
     case RMW_QOS_POLICY_DURABILITY_BEST_AVAILABLE:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
@@ -442,6 +444,7 @@ rmw_connextdds_get_readerwriter_qos(
         break;
       }
     case RMW_QOS_POLICY_LIVELINESS_UNKNOWN:
+      [[fallthrough]];
     case RMW_QOS_POLICY_LIVELINESS_BEST_AVAILABLE:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
@@ -3409,6 +3412,7 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
         return DDS_SAMPLE_LOST_STATUS;
       }
     case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+      [[fallthrough]];
     case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
       {
         return DDS_INCONSISTENT_TOPIC_STATUS;
@@ -3422,6 +3426,7 @@ ros_event_to_dds(const rmw_event_type_t ros, bool * const invalid)
         return DDS_SUBSCRIPTION_MATCHED_STATUS;
       }
     case RMW_EVENT_INVALID:
+      [[fallthrough]];
     case RMW_EVENT_TYPE_MAX:
       {
         if (nullptr != invalid) {
@@ -3484,20 +3489,31 @@ ros_event_for_reader(const rmw_event_type_t ros)
 {
   switch (ros) {
     case RMW_EVENT_LIVELINESS_CHANGED:
+      [[fallthrough]];
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
+      [[fallthrough]];
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+      [[fallthrough]];
     case RMW_EVENT_MESSAGE_LOST:
+      [[fallthrough]];
     case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
+      [[fallthrough]];
     case RMW_EVENT_SUBSCRIPTION_MATCHED:
       {
         return true;
       }
     case RMW_EVENT_INVALID:
+      [[fallthrough]];
     case RMW_EVENT_LIVELINESS_LOST:
+      [[fallthrough]];
     case RMW_EVENT_OFFERED_DEADLINE_MISSED:
+      [[fallthrough]];
     case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
+      [[fallthrough]];
     case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+      [[fallthrough]];
     case RMW_EVENT_PUBLICATION_MATCHED:
+      [[fallthrough]];
     case RMW_EVENT_TYPE_MAX:
       {
         return false;
@@ -3562,11 +3578,17 @@ RMW_Connext_SubscriberStatusCondition::get_status(
         break;
       }
     case RMW_EVENT_INVALID:
+      [[fallthrough]];
     case RMW_EVENT_LIVELINESS_LOST:
+      [[fallthrough]];
     case RMW_EVENT_OFFERED_DEADLINE_MISSED:
+      [[fallthrough]];
     case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
+      [[fallthrough]];
     case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+      [[fallthrough]];
     case RMW_EVENT_PUBLICATION_MATCHED:
+      [[fallthrough]];
     case RMW_EVENT_TYPE_MAX:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET(
@@ -3627,12 +3649,19 @@ RMW_Connext_PublisherStatusCondition::get_status(
         break;
       }
     case RMW_EVENT_INVALID:
+      [[fallthrough]];
     case RMW_EVENT_LIVELINESS_CHANGED:
+      [[fallthrough]];
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
+      [[fallthrough]];
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+      [[fallthrough]];
     case RMW_EVENT_MESSAGE_LOST:
+      [[fallthrough]];
     case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
+      [[fallthrough]];
     case RMW_EVENT_SUBSCRIPTION_MATCHED:
+      [[fallthrough]];
     case RMW_EVENT_TYPE_MAX:
       {
         RMW_CONNEXT_LOG_ERROR_A_SET("unsupported publisher qos: %d", event_type)

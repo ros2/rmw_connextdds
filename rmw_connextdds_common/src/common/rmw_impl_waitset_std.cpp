@@ -714,11 +714,17 @@ RMW_Connext_SubscriberStatusCondition::has_status(
 {
   switch (event_type) {
     case RMW_EVENT_INVALID:
+      [[fallthrough]];
     case RMW_EVENT_LIVELINESS_LOST:
+      [[fallthrough]];
     case RMW_EVENT_OFFERED_DEADLINE_MISSED:
+      [[fallthrough]];
     case RMW_EVENT_OFFERED_QOS_INCOMPATIBLE:
+      [[fallthrough]];
     case RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE:
+      [[fallthrough]];
     case RMW_EVENT_PUBLICATION_MATCHED:
+      [[fallthrough]];
     case RMW_EVENT_TYPE_MAX:
       {
         RMW_CONNEXT_ASSERT(0)
@@ -749,6 +755,7 @@ RMW_Connext_SubscriberStatusCondition::has_status(
         return this->triggered_matched;
       }
   }
+  return false;
 }
 
 void
@@ -970,12 +977,19 @@ RMW_Connext_PublisherStatusCondition::has_status(
 {
   switch (event_type) {
     case RMW_EVENT_INVALID:
+      [[fallthrough]];
     case RMW_EVENT_LIVELINESS_CHANGED:
+      [[fallthrough]];
     case RMW_EVENT_REQUESTED_DEADLINE_MISSED:
+      [[fallthrough]];
     case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+      [[fallthrough]];
     case RMW_EVENT_MESSAGE_LOST:
+      [[fallthrough]];
     case RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE:
+      [[fallthrough]];
     case RMW_EVENT_SUBSCRIPTION_MATCHED:
+      [[fallthrough]];
     case RMW_EVENT_TYPE_MAX:
       {
         RMW_CONNEXT_ASSERT(0)
@@ -1002,6 +1016,7 @@ RMW_Connext_PublisherStatusCondition::has_status(
         return this->triggered_matched;
       }
   }
+  return false;
 }
 
 

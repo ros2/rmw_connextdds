@@ -2,6 +2,16 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: remove superflous `buildtool_export_depend` (backport `#206 <https://github.com/ros2/rmw_connextdds/issues/206>`_) (`#208 <https://github.com/ros2/rmw_connextdds/issues/208>`_)
+  * fix: remove superflous `buildtool_export_depend` (`#206 <https://github.com/ros2/rmw_connextdds/issues/206>`_)
+  As far as I understand this package does not expose an build time interface that requires `amend_cmake` so the `buildtool_export_depend` is not needed.
+  (cherry picked from commit 78ab48e6c43a8040599f0fa97e8e4d39a6121435)
+  Co-authored-by: Bas Zalmstra <4995967+baszalmstra@users.noreply.github.com>
+  Co-authored-by: Alejandro Hernandez Cordero <ahcorde@gmail.com>
+* Contributors: mergify[bot]
+
 0.22.2 (2025-10-21)
 -------------------
 

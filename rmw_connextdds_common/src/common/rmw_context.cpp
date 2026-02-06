@@ -430,13 +430,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
-      DDS_SECURITY_IDENTITY_CA_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_AUTH_IDENTITY_CA,
       std::string(rcutils_string_map_get(&security_files, "IDENTITY_CA")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CA_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_AUTH_IDENTITY_CA,
       std::string(rcutils_string_map_get(&security_files, "IDENTITY_CA")).c_str())
     return RMW_RET_ERROR;
   }
@@ -445,13 +445,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_ACCESS_PERMISSIONS_CA,
       std::string(rcutils_string_map_get(&security_files, "PERMISSIONS_CA")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_CA_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_ACCESS_PERMISSIONS_CA,
       std::string(rcutils_string_map_get(&security_files, "PERMISSIONS_CA")).c_str())
     return RMW_RET_ERROR;
   }
@@ -460,13 +460,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_AUTH_PRIVATE_KEY,
       std::string(rcutils_string_map_get(&security_files, "PRIVATE_KEY")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PRIVATE_KEY_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_AUTH_PRIVATE_KEY,
       std::string(rcutils_string_map_get(&security_files, "PRIVATE_KEY")).c_str())
     return RMW_RET_ERROR;
   }
@@ -476,13 +476,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_AUTH_IDENTITY_CERTIFICATE,
       std::string(rcutils_string_map_get(&security_files, "CERTIFICATE")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_IDENTITY_CERTIFICATE_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_AUTH_IDENTITY_CERTIFICATE,
       std::string(rcutils_string_map_get(&security_files, "CERTIFICATE")).c_str())
     return RMW_RET_ERROR;
   }
@@ -491,13 +491,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
-      DDS_SECURITY_GOVERNANCE_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_ACCESS_GOVERNANCE,
       std::string(rcutils_string_map_get(&security_files, "GOVERNANCE")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_GOVERNANCE_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_ACCESS_GOVERNANCE,
       std::string(rcutils_string_map_get(&security_files, "GOVERNANCE")).c_str())
     return RMW_RET_ERROR;
   }
@@ -507,13 +507,13 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
   if (DDS_RETCODE_OK !=
     DDS_PropertyQosPolicyHelper_assert_property(
       &qos->property,
-      DDS_SECURITY_PERMISSIONS_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_ACCESS_PERMISSIONS,
       std::string(rcutils_string_map_get(&security_files, "PERMISSIONS")).c_str(),
       RTI_FALSE))
   {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "failed to assert DDS property: '%s' = '%s'",
-      DDS_SECURITY_PERMISSIONS_PROPERTY,
+      PROPERTY_NAME_DDS_SEC_ACCESS_PERMISSIONS,
       std::string(rcutils_string_map_get(&security_files, "PERMISSIONS")).c_str())
     return RMW_RET_ERROR;
   }
@@ -1124,6 +1124,10 @@ rmw_api_connextdds_init(
     RMW_CONNEXT_LOG_ERROR_SET("expected a zero-initialized context")
     return RMW_RET_INVALID_ARGUMENT;
   }
+
+  NDDS_Config_Logger *logger = NDDS_Config_Logger_get_instance();
+  NDDS_Config_LogVerbosity verbosity = NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL;
+  NDDS_Config_Logger_set_verbosity(logger, verbosity);
 
   if (options->domain_id >= INT32_MAX &&
     options->domain_id != RMW_DEFAULT_DOMAIN_ID)

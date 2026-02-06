@@ -1125,10 +1125,6 @@ rmw_api_connextdds_init(
     return RMW_RET_INVALID_ARGUMENT;
   }
 
-  NDDS_Config_Logger *logger = NDDS_Config_Logger_get_instance();
-  NDDS_Config_LogVerbosity verbosity = NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL;
-  NDDS_Config_Logger_set_verbosity(logger, verbosity);
-
   if (options->domain_id >= INT32_MAX &&
     options->domain_id != RMW_DEFAULT_DOMAIN_ID)
   {

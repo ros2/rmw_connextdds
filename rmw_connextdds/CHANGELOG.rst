@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: remove superflous `buildtool_export_depend` (backport `#206 <https://github.com/ros2/rmw_connextdds/issues/206>`_) (`#209 <https://github.com/ros2/rmw_connextdds/issues/209>`_)
+* Contributors: mergify[bot]
+
 0.11.5 (2025-10-21)
 -------------------
 

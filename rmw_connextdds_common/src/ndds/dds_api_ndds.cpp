@@ -321,6 +321,25 @@ rmw_connextdds_initialize_participant_qos_impl(
   }
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */
 
+  // Set dds.ros.demangle_topic_and_type_names to TRUE.
+  // This will announce a demangled topic name as a topic alias.
+  // This will enable interoperability with Connext applications using the
+  // demangled topic name. This should not impact compatibility with any other
+  // vendors, as the “mangled” topic name will still be announced as the real
+  // topic name. Set this property for versions 7.5+
+#if (RTI_DDS_VERSION_MAJOR > 7) || (RTI_DDS_VERSION_MAJOR == 7 && RTI_DDS_VERSION_MINOR >= 5)
+  if (DDS_RETCODE_OK != DDS_PropertyQosPolicyHelper_assert_property(
+    &dp_qos->property,
+    "dds.ros.demangle_topic_and_type_names",
+    "TRUE",
+    DDS_BOOLEAN_FALSE))
+  {
+    RMW_CONNEXT_LOG_ERROR_SET(
+      "failed to assert property on participant:  dds.ros.demangle_topic_and_type_names");
+    return RMW_RET_ERROR;
+  }
+#endif
+
   return RMW_RET_OK;
 }
 

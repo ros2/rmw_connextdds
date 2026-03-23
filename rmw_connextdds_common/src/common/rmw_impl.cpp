@@ -2041,6 +2041,7 @@ rmw_connextdds_create_subscriber(
   rmw_subscriber->options = *subscriber_options;
   rmw_subscriber->can_loan_messages = false;
   rmw_subscriber->is_cft_enabled = rmw_sub_impl->is_cft_enabled();
+  rmw_subscriber->is_cft_supported = true;
 
   if (!internal) {
     if (RMW_RET_OK != rmw_sub_impl->enable()) {

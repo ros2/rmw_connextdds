@@ -259,6 +259,12 @@ rmw_connextdds_initialize_participant_qos_impl(
           RMW_CONNEXT_LOG_ERROR_SET("failed to set user_data")
           return RMW_RET_ERROR;
         }
+
+        // Force the use of the TypeObject V1
+        dp_qos->resource_limits.type_object_max_serialized_length = 8192;
+        dp_qos->discovery_config.enabled_builtin_channels =
+        DDS_DISCOVERYCONFIG_SERVICE_REQUEST_CHANNEL;
+
         break;
       }
     case rmw_context_impl_t::participant_qos_override_policy_t::Never:

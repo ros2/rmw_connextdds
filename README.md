@@ -391,11 +391,19 @@ This variable is not used by `rmw_connextdds`.
 ### RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE
 
 `rmw_connextdds` will always set `DDS_DataWriterQos::publish_mode::kind` of
-any DataWriter it creates to `DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS`, in order to
-enable out of the box support for "large data".
+any DataWriter it creates to `DDS_SYNCHRONOUS_PUBLISH_MODE_QOS`.
 
-This behavior might not be always desirable, and it can be disabled by setting
-`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE` to a non-empty value.
+In order to enable support for "large data", it can be done by setting
+`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE` to a non-empty value and setting the
+corresponding QoS in your XML file:
+
+```xml
+<datawriter_qos>
+    <publish_mode>
+        <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+    </publish_mode>
+</datawriter_qos>
+```
 
 This variable is not used by `rmw_connextddsmicro`, since it doesn't
 automatically override `DDS_DataWriterQos::publish_mode::kind`.

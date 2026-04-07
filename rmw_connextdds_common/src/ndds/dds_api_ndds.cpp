@@ -525,7 +525,7 @@ rmw_connextdds_get_datawriter_qos(
   }
 
   if (!ctx->use_default_publish_mode) {
-    qos->publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+    qos->publish_mode.kind = DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
   }
 
 #if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS

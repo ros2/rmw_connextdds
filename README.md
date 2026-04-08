@@ -1,6 +1,6 @@
 # ROS 2 Middleware Layer for RTI Connext DDS
 
-This repository contains a implementation of the [ROS 2](https://docs.ros.org/en/rolling)
+This repository contains an implementation of the [ROS 2](https://docs.ros.org/en/rolling)
 RMW layer which allow developers to deploy their ROS applications on top of
 [RTI Connext DDS Professional](https://www.rti.com/products/connext-dds-professional)
 
@@ -33,11 +33,11 @@ For any questions or feedback, feel free to reach out to rti-ros-team@rti.com.
 2. Configure RTI Connext DDS Professional and/or RTI Connext DDS Micro on your
    system (see [Requirements](#rti-connext-dds-requirements)). Make the installation(s)
    available via environment variables, e.g. by using the provided
-   `rtisetenv_<architecture>.bash` script (replace `~/rti_connext_dds-7.3.0` with
+   `rtisetenv_<architecture>.bash` script (replace `~/rti_connext_dds-7.7.0` with
    the path of your Connext installation):
 
    ```sh
-    source ~/rti_connext_dds-7.3.0/resource/scripts/rtisetenv_x64Linux4gcc7.3.0.bash
+    source ~/rti_connext_dds-7.7.0/resource/scripts/rtisetenv_x64Linux4gcc8.5.0.bash
     export CONNEXTDDS_DIR=${NDDSHOME}
     ```
 
@@ -84,6 +84,7 @@ release:
 |ROS 2 Release|Branch|Status|
 |-------------|------|------|
 |Rolling      |`rolling`|Developed|
+|Kilted       |`kilted`|Supported until November 2026|
 |Iron         |`iron`|Supported until November 2024 (EOL)|
 |Humble       |`humble`|Supported until May 2027|
 |Galactic     |`galactic`|Supported until November 2022 (EOL)|
@@ -110,8 +111,8 @@ valid installation is detected, the packages will be skipped and not be built.
 
 |RMW|RTI Product|Environment Variable(s)|Required|Default|
 |---|-----------|-----------------------|--------|-------|
-|`rmw_connextdds`|RTI Connext DDS Professional 7.3.0|`CONNEXTDDS_DIR`, or `NDDSHOME`|Yes|None|
-|`rmw_connextddsmicro`|RTI Connext DDS Micro 3.x |`RTIMEHOME`|No (if RTI Connext DDS Professional 7.3.0 is available)|Guessed from contents of RTI Connext DDS Professional installation|
+|`rmw_connextdds`|RTI Connext DDS Professional 7.7.0|`CONNEXTDDS_DIR`, or `NDDSHOME`|Yes|None|
+|`rmw_connextddsmicro`|RTI Connext DDS Micro 3.x |`RTIMEHOME`|No (if RTI Connext DDS Professional 7.7.0 is available)|Guessed from contents of RTI Connext DDS Professional installation|
 
 ### Multiple versions of RTI Connext DDS Professional
 
@@ -390,11 +391,19 @@ This variable is not used by `rmw_connextdds`.
 ### RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE
 
 `rmw_connextdds` will always set `DDS_DataWriterQos::publish_mode::kind` of
-any DataWriter it creates to `DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS`, in order to
-enable out of the box support for "large data".
+any DataWriter it creates to `DDS_SYNCHRONOUS_PUBLISH_MODE_QOS`.
 
-This behavior might not be always desirable, and it can be disabled by setting
-`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE` to a non-empty value.
+In order to enable support for "large data", it can be done by setting
+`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE` to a non-empty value and setting the
+corresponding QoS in your XML file:
+
+```xml
+<datawriter_qos>
+    <publish_mode>
+        <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
+    </publish_mode>
+</datawriter_qos>
+```
 
 This variable is not used by `rmw_connextddsmicro`, since it doesn't
 automatically override `DDS_DataWriterQos::publish_mode::kind`.

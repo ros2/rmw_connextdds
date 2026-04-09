@@ -1185,8 +1185,9 @@ rmw_api_connextdds_init(
   // context->actual_domain_id in rmw_context_impl_s::initialize_node()
   ctx_impl->domain_id = actual_domain_id;
 
-  // All publishers will use asynchronous publish mode unless
-  // RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE is set.
+  // RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE is now deprecated and will be
+  // removed in a future release. It will not have any effect on the publish
+  // mode, and a warning is logged if it is set.
   const char * use_default_publish_mode_env = nullptr;
   const char * lookup_rc = rcutils_get_env(
     RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE, &use_default_publish_mode_env);
@@ -1200,7 +1201,45 @@ rmw_api_connextdds_init(
       lookup_rc)
     return RMW_RET_ERROR;
   }
-  ctx_impl->use_default_publish_mode = '\0' != use_default_publish_mode_env[0];
+
+  if ('\0' != use_default_publish_mode_env[0]) {
+    RMW_CONNEXT_LOG_WARNING_A(
+      "environment variable '%s' is deprecated and will be ignored. Use '%s' "
+      "instead.",
+      RMW_CONNEXT_ENV_USE_DEFAULT_PUBLISH_MODE,
+      RMW_CONNEXT_ENV_USER_TOPICS_PUBLISH_MODE)
+  }
+
+  // All publishers will use synchronous publish mode (Connext default) or unless
+  // RMW_CONNEXT_ENV_USER_TOPICS_PUBLISH_MODE is set.
+  const char * user_topics_publish_mode_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_USER_TOPICS_PUBLISH_MODE, &user_topics_publish_mode_env);
+
+  if (nullptr != lookup_rc || nullptr == user_topics_publish_mode_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_USER_TOPICS_PUBLISH_MODE,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  if (0 == std::strcmp(user_topics_publish_mode_env, "synchronous")) {
+    ctx_impl->user_topics_publish_mode = RMW_Connext_PublishMode::Synchronous;
+  } else if (0 == std::strcmp(user_topics_publish_mode_env, "asynchronous")) {
+    ctx_impl->user_topics_publish_mode = RMW_Connext_PublishMode::Asynchronous;
+  } else if (0 == std::strcmp(user_topics_publish_mode_env, "auto")) {
+    ctx_impl->user_topics_publish_mode = RMW_Connext_PublishMode::Auto;
+  } else if (0 != std::strcmp(user_topics_publish_mode_env, "")) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "unexpected value for environment variable '%s': '%s'. "
+      "Allowed values are: 'synchronous', 'asynchronous', 'auto'",
+      RMW_CONNEXT_ENV_USER_TOPICS_PUBLISH_MODE,
+      user_topics_publish_mode_env)
+    return RMW_RET_ERROR;
+  }
 
   // Check if the user specified a custom override policy for participant qos.
   const char * participant_qos_policy = nullptr;

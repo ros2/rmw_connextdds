@@ -158,7 +158,8 @@ variables.
 - [RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#RMW_CONNEXT_REQUEST_REPLY_MAPPING)
 - [RMW_CONNEXT_UDP_INTERFACE](#RMW_CONNEXT_UDP_INTERFACE)
-- [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE)
+- [RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE](#RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE) (Deprecated)
+- [RMW_CONNEXT_USER_TOPICS_PUBLISH_MODE](#RMW_CONNEXT_USER_TOPICS_PUBLISH_MODE)
 
 ### RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE
 
@@ -390,20 +391,25 @@ This variable is not used by `rmw_connextdds`.
 
 ### RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE
 
-`rmw_connextdds` will always set `DDS_DataWriterQos::publish_mode::kind` of
-any DataWriter it creates to `DDS_SYNCHRONOUS_PUBLISH_MODE_QOS`.
+**DEPRECATION NOTICE**
 
-In order to enable support for "large data", it can be done by setting
-`RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE` to a non-empty value and setting the
-corresponding QoS in your XML file:
+This environment variable is deprecated and will be ignored. It will be removed
+in a future release.
 
-```xml
-<datawriter_qos>
-    <publish_mode>
-        <kind>ASYNCHRONOUS_PUBLISH_MODE_QOS</kind>
-    </publish_mode>
-</datawriter_qos>
-```
+Use [RMW_CONNEXT_USER_TOPICS_PUBLISH_MODE](#RMW_CONNEXT_USER_TOPICS_PUBLISH_MODE)
+instead.
+
+### RMW_CONNEXT_USER_TOPICS_PUBLISH_MODE
+
+`rmw_connextdds` will always set `DDS_DataWriterQos::publish_mode::kind` of any
+user Data Writer it creates to the default value of Connext (Synchronous publish
+mode) or to the value of a provided XML file.
+
+To override this behavior, you can set this variable to any of these values:
+
+- *synchronous*: Set publish mode of every user Data Writer to Synchronous.
+- *asynchronous*: Set publish mode of every user Data Writer to Asynchronous.
+- *auto*: Let Connext chose the publish mode.
 
 This variable is not used by `rmw_connextddsmicro`, since it doesn't
 automatically override `DDS_DataWriterQos::publish_mode::kind`.

@@ -409,7 +409,9 @@ To override this behavior, you can set this variable to any of these values:
 
 - *synchronous*: Set publish mode of every user Data Writer to Synchronous.
 - *asynchronous*: Set publish mode of every user Data Writer to Asynchronous.
-- *auto*: Let Connext chose the publish mode.
+- *auto*: Connext will choose the publish mode according to the QoS XML
+  configuration. If no XML file is used, Connext will use the default publish
+  mode (Synchronous).
 
 This variable is not used by `rmw_connextddsmicro`, since it doesn't
 automatically override `DDS_DataWriterQos::publish_mode::kind`.

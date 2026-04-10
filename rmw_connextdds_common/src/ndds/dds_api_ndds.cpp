@@ -554,9 +554,6 @@ rmw_connextdds_get_datawriter_qos(
       // Leave the publish mode as is, which means it will be determined by
       // Connext based on the QoS settings and topic type.
       break;
-    default:
-      RMW_CONNEXT_LOG_ERROR_SET("invalid user topics publish mode")
-      return RMW_RET_ERROR;
   }
 
 #if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS

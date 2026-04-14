@@ -2,6 +2,14 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.5 (2026-04-14)
+------------------
+
+* Remove default from switch with enum to enable compiler warnings (`#216 <https://github.com/ros2/rmw_connextdds/issues/216>`_)
+* Remove superfluous ``buildtool_export_depend`` (`#210 <https://github.com/ros2/rmw_connextdds/issues/210>`_)
+
+* Contributors: Tomoya Fujita
+
 1.2.4 (2025-11-18)
 ------------------
 * add : get clients,servers info (`#154 <https://github.com/ros2/rmw_connextdds/issues/154>`_)

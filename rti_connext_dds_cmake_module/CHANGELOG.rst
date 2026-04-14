@@ -2,6 +2,13 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.5 (2026-04-14)
+------------------
+
+* Update Connext from 7.3.0 to 7.7.0, disable monitoring library by default, and use synchronous publishing mode (`#219 <https://github.com/ros2/rmw_connextdds/issues/219>`_)
+
+* Contributors: Francisco Gallego Salido
+
 1.2.4 (2025-11-18)
 ------------------
 

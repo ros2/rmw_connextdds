@@ -2,6 +2,20 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.5 (2026-04-14)
+------------------
+
+* Add variable ``RMW_CONNEXT_USER_TOPICS_PUBLISH_MODE`` and deprecate ``RMW_CONNEXT_USE_DEFAULT_PUBLISH_MODE`` (`#224 <https://github.com/ros2/rmw_connextdds/issues/224>`_)
+* Update Connext from 7.3.0 to 7.7.0, disable monitoring library by default, and use synchronous publishing mode (`#219 <https://github.com/ros2/rmw_connextdds/issues/219>`_)
+* Enable property ``dds.ros.demangle_topic_and_type_names`` to announce demangled topic name as topic alias (`#221 <https://github.com/ros2/rmw_connextdds/issues/221>`_)
+* Enable content filtering flag (`#223 <https://github.com/ros2/rmw_connextdds/issues/223>`_)
+* Remove deprecated security properties and use new ones (`#217 <https://github.com/ros2/rmw_connextdds/issues/217>`_)
+* Remove default from switch with enum to enable compiler warnings (`#216 <https://github.com/ros2/rmw_connextdds/issues/216>`_)
+* Replace ``DDS_ContentFilter_register_filter`` with ``DDS_DomainParticipant_register_contentfilterI`` (`#215 <https://github.com/ros2/rmw_connextdds/issues/215>`_)
+* Remove superfluous ``buildtool_export_depend`` (`#210 <https://github.com/ros2/rmw_connextdds/issues/210>`_)
+
+* Contributors: Barry Xu, Francisco Gallego Salido, Tomoya Fujita
+
 1.2.4 (2025-11-18)
 ------------------
 * add : get clients,servers info (`#154 <https://github.com/ros2/rmw_connextdds/issues/154>`_)

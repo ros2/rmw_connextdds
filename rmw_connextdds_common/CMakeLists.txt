@@ -71,6 +71,7 @@ function(rtirmw_add_library)
             RMW_VERSION_MINOR=${rmw_VERSION_MINOR}
             RMW_VERSION_PATCH=${rmw_VERSION_PATCH}
             RMW_CONNEXT_DDS_API=RMW_CONNEXT_DDS_API_${_rti_build_API}
+            $<$<PLATFORM_ID:Windows>:NOMINMAX>
             ${_rti_build_DEFINES}
             ${_extra_defines}
     )

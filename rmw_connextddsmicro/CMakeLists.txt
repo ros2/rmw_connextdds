@@ -55,6 +55,8 @@ target_link_libraries(${PROJECT_NAME}
   PUBLIC
     rmw_connextdds_common::rmw_connextdds_common_micro)
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<PLATFORM_ID:Windows>:NOMINMAX>)
+
 configure_rmw_library(${PROJECT_NAME})
 
 register_rmw_implementation(

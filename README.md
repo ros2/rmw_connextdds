@@ -1,5 +1,11 @@
 # ROS 2 Middleware Layer for RTI Connext DDS
 
+>[!IMPORTANT]
+The information in this README has been replaced by the
+[RTI Connext and ROS 2](https://community.rti.com/static/documentation/ros/index.html)
+User's Manual. See that manual for the most current Connext RMW installation and
+usage documentation.
+
 This repository contains an implementation of the [ROS 2](https://docs.ros.org/en/rolling)
 RMW layer which allow developers to deploy their ROS applications on top of
 [RTI Connext DDS Professional](https://www.rti.com/products/connext-dds-professional)
@@ -20,11 +26,6 @@ Please consider reporting any [issue](https://github.com/rticommunity/rmw_connex
 that you may experience, while monitoring the repository for frequent updates.*
 
 For any questions or feedback, feel free to reach out to rti-ros-team@rti.com.
-
->[!NOTE]
-These instructions are being replaced by the
-[ROS 2 and RTI Connext](https://community.rti.com/static/documentation/ros/index.html)
-documentation. Please see that documentation for the latest information.
 
 ## Quick Start
 

@@ -21,6 +21,11 @@ that you may experience, while monitoring the repository for frequent updates.*
 
 For any questions or feedback, feel free to reach out to rti-ros-team@rti.com.
 
+>[!NOTE]
+These instructions are being replaced by the
+[ROS 2 and RTI Connext](https://community.rti.com/static/documentation/ros/index.html)
+documentation. Please see that documentation for the latest information.
+
 ## Quick Start
 
 1. Load ROS into the shell environment (Rolling if using the `master` branch,

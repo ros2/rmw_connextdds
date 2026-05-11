@@ -447,21 +447,13 @@ RTI_CustomSqlFilter_writer_evaluated_result(
   writer_data->matched_readers_buffer.resize(readers_size);
 
   if (sql_matched_len > 0) {
-    DDS_Cookie_t ** const sql_matched_discont_buffer =
+    DDS_Cookie_t ** const sql_matched_buffer =
       DDS_CookieSeq_get_discontiguous_buffer(sql_matched);
-    if (nullptr != sql_matched_discont_buffer) {
-      memcpy(
-        &(writer_data->matched_readers_buffer[matched_readers_start]),
-        sql_matched_discont_buffer,
-        sizeof(DDS_Cookie_t *) * sql_matched_len);
-    } else {
-      DDS_Cookie_t * const sql_matched_cont_buffer =
-        DDS_CookieSeq_get_contiguous_buffer(sql_matched);
-      for (size_t i = 0; i < sql_matched_len; ++i) {
-        writer_data->matched_readers_buffer[matched_readers_start + i] =
-          &sql_matched_cont_buffer[i];
-      }
-    }
+    RMW_CONNEXT_ASSERT(nullptr != sql_matched_buffer)
+    memcpy(
+      &(writer_data->matched_readers_buffer[matched_readers_start]),
+      sql_matched_buffer,
+      sizeof(DDS_Cookie_t *) * sql_matched_len);
     matched_readers_start += sql_matched_len;
   }
 

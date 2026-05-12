@@ -449,6 +449,7 @@ RTI_CustomSqlFilter_writer_evaluated_result(
   if (sql_matched_len > 0) {
     DDS_Cookie_t ** const sql_matched_buffer =
       DDS_CookieSeq_get_discontiguous_buffer(sql_matched);
+    RMW_CONNEXT_ASSERT(nullptr != sql_matched_buffer)
     memcpy(
       &(writer_data->matched_readers_buffer[matched_readers_start]),
       sql_matched_buffer,

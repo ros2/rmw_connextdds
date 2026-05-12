@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix content filtering on Windows with modern Connext DDS (`#226 <https://github.com/ros2/rmw_connextdds/issues/226>`_) (`#230 <https://github.com/ros2/rmw_connextdds/issues/230>`_)
+* Contributors: mergify[bot]
+
 1.2.6 (2026-04-30)
 ------------------
 * fix: Fixed compilation on MSVC 2022 (`#225 <https://github.com/ros2/rmw_connextdds/issues/225>`_)

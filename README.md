@@ -85,7 +85,13 @@ release:
 |ROS 2 Release|Branch|Status|
 |-------------|------|------|
 |Rolling      |`rolling`|Developed|
+<<<<<<< HEAD
 |Iron         |`iron`|Supported until November 2024|
+=======
+|Lyrical      |`lyrical`|Supported until May 2031|
+|Kilted       |`kilted`|Supported until November 2026|
+|Iron         |`iron`|Supported until November 2024 (EOL)|
+>>>>>>> af3b951 (add Lyrical Luth in README.md. (#234))
 |Humble       |`humble`|Supported until May 2027|
 |Galactic     |`galactic`|Supported until November 2022 (EOL)|
 |Foxy         |`foxy`|Supported until May 2023 (EOL)|

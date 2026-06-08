@@ -84,6 +84,8 @@ release:
 |ROS 2 Release|Branch|Status|
 |-------------|------|------|
 |Rolling      |`rolling`|Developed|
+|Lyrical      |`lyrical`|Supported until May 2031|
+|Kilted       |`kilted`|Supported until November 2026|
 |Iron         |`iron`|Supported until November 2024 (EOL)|
 |Humble       |`humble`|Supported until May 2027|
 |Galactic     |`galactic`|Supported until November 2022 (EOL)|

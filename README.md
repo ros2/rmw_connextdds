@@ -84,12 +84,6 @@ release:
 
 |ROS 2 Release|Branch|Status|
 |-------------|------|------|
-<<<<<<< HEAD
-|Rolling      |`master`|Developed|
-|Foxy         |`foxy`|LTS (May 2023)|
-|Eloquent     |`eloquent`|EOL (Nov 2020)|
-|Dashing      |`dashing`|LTS (May 2021)|
-=======
 |Rolling      |`rolling`|Developed|
 |Lyrical      |`lyrical`|Supported until May 2031|
 |Kilted       |`kilted`|Supported until November 2026|
@@ -99,7 +93,6 @@ release:
 |Foxy         |`foxy`|Supported until May 2023 (EOL)|
 |Eloquent     |`eloquent`|Supported until November 2020 (EOL)|
 |Dashing      |`dashing`|Supported until May 2021 (EOL)|
->>>>>>> af3b951 (add Lyrical Luth in README.md. (#234))
 
 Branch `master` is actively developed and maintained. It is used to create
 other branches for specific ROS 2 releases (starting from Galactic).

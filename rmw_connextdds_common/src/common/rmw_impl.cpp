@@ -668,12 +668,10 @@ RMW_Connext_Node::finalize()
 RMW_Connext_Publisher::RMW_Connext_Publisher(
   rmw_context_impl_t * const ctx,
   DDS_DataWriter * const dds_writer,
-  RMW_Connext_MessageTypeSupport * const type_support,
-  const bool created_topic)
+  RMW_Connext_MessageTypeSupport * const type_support)
 : ctx(ctx),
   dds_writer(dds_writer),
   type_support(type_support),
-  created_topic(created_topic),
   status_condition(dds_writer),
   matched_subscriptions(DDS_SEQUENCE_INITIALIZER)
 {
@@ -751,7 +749,6 @@ RMW_Connext_Publisher::create(
   }
 
   DDS_Topic * topic = nullptr;
-  bool topic_created = false;
 
   if (RMW_RET_OK !=
     ctx->assert_topic(
@@ -759,8 +756,7 @@ RMW_Connext_Publisher::create(
       fqtopic_name.c_str(),
       type_support->type_name(),
       internal,
-      &topic,
-      topic_created))
+      &topic))
   {
     RMW_CONNEXT_LOG_ERROR_A(
       "failed to assert topic: "
@@ -772,15 +768,12 @@ RMW_Connext_Publisher::create(
   }
 
   auto scope_exit_topic_delete = rcpputils::make_scope_exit(
-    [topic_created, dp, topic]()
+    [ctx, dp, topic]()
     {
-      if (topic_created) {
-        if (DDS_RETCODE_OK !=
-        DDS_DomainParticipant_delete_topic(dp, topic))
-        {
-          RMW_CONNEXT_LOG_ERROR_SET(
-            "failed to delete writer's topic")
-        }
+      if (!ctx->release_topic(dp, topic))
+      {
+        RMW_CONNEXT_LOG_ERROR_SET(
+          "failed to delete writer's topic")
       }
     });
 
@@ -846,7 +839,7 @@ RMW_Connext_Publisher::create(
 
   RMW_Connext_Publisher * rmw_pub_impl =
     new (std::nothrow) RMW_Connext_Publisher(
-    ctx, dds_writer, type_support, topic_created);
+    ctx, dds_writer, type_support);
 
   if (nullptr == rmw_pub_impl) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to allocate RMW publisher")
@@ -879,22 +872,16 @@ RMW_Connext_Publisher::finalize()
   }
 
   DDS_DomainParticipant * const participant = this->dds_participant();
+  DDS_Topic * const topic = this->dds_topic();
 
-  if (this->created_topic) {
-    DDS_Topic * const topic = this->dds_topic();
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "deleting topic: name=%s",
+    DDS_TopicDescription_get_name(
+      DDS_Topic_as_topicdescription(topic)))
 
-    RMW_CONNEXT_LOG_DEBUG_A(
-      "deleting topic: name=%s",
-      DDS_TopicDescription_get_name(
-        DDS_Topic_as_topicdescription(topic)))
-
-    DDS_ReturnCode_t rc =
-      DDS_DomainParticipant_delete_topic(participant, topic);
-
-    if (DDS_RETCODE_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS Topic")
-      return RMW_RET_ERROR;
-    }
+  if (!this->ctx->release_topic(participant, topic)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS Topic")
+    return RMW_RET_ERROR;
   }
 
   rmw_ret_t rc = RMW_Connext_MessageTypeSupport::unregister_type_support(
@@ -1279,7 +1266,6 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   DDS_Topic * const dds_topic,
   RMW_Connext_MessageTypeSupport * const type_support,
   const bool ignore_local,
-  const bool created_topic,
   DDS_TopicDescription * const dds_topic_cft,
   const char * const cft_expression,
   const bool internal,
@@ -1292,7 +1278,6 @@ RMW_Connext_Subscriber::RMW_Connext_Subscriber(
   dds_topic_cft(dds_topic_cft),
   cft_expression(cft_expression),
   type_support(type_support),
-  created_topic(created_topic),
   status_condition(dds_reader, ignore_local, internal),
   related_pub(related_pub)
 {
@@ -1373,7 +1358,6 @@ RMW_Connext_Subscriber::create(
 
   DDS_Topic * topic = nullptr;
   DDS_TopicDescription * cft_topic = nullptr;
-  bool topic_created = false;
 
   if (RMW_RET_OK !=
     ctx->assert_topic(
@@ -1381,8 +1365,7 @@ RMW_Connext_Subscriber::create(
       fqtopic_name.c_str(),
       type_support->type_name(),
       internal,
-      &topic,
-      topic_created))
+      &topic))
   {
     RMW_CONNEXT_LOG_ERROR_A(
       "failed to assert topic: "
@@ -1394,7 +1377,7 @@ RMW_Connext_Subscriber::create(
   }
 
   auto scope_exit_topic_delete = rcpputils::make_scope_exit(
-    [ctx, &topic_created, dp, &topic, &cft_topic]()
+    [ctx, dp, &topic, &cft_topic]()
     {
       if (nullptr != cft_topic) {
         if (RMW_RET_OK !=
@@ -1403,13 +1386,10 @@ RMW_Connext_Subscriber::create(
           RMW_CONNEXT_LOG_ERROR("failed to delete content-filtered topic")
         }
       }
-      if (topic_created) {
-        if (DDS_RETCODE_OK !=
-        DDS_DomainParticipant_delete_topic(dp, topic))
-        {
-          RMW_CONNEXT_LOG_ERROR_SET(
-            "failed to delete reader's topic")
-        }
+      if (!ctx->release_topic(dp, topic))
+      {
+        RMW_CONNEXT_LOG_ERROR_SET(
+          "failed to delete reader's topic")
       }
     });
 
@@ -1515,7 +1495,6 @@ RMW_Connext_Subscriber::create(
     topic,
     type_support,
     subscriber_options->ignore_local_publications,
-    topic_created,
     cft_topic,
     sub_cft_expr,
     internal,
@@ -1569,21 +1548,16 @@ RMW_Connext_Subscriber::finalize()
     }
   }
 
-  if (this->created_topic) {
-    DDS_Topic * const topic = this->dds_topic;
+  DDS_Topic * const topic = this->dds_topic;
 
-    RMW_CONNEXT_LOG_DEBUG_A(
-      "deleting topic: name=%s",
-      DDS_TopicDescription_get_name(
-        DDS_Topic_as_topicdescription(topic)))
+  RMW_CONNEXT_LOG_DEBUG_A(
+    "deleting topic: name=%s",
+    DDS_TopicDescription_get_name(
+      DDS_Topic_as_topicdescription(topic)))
 
-    DDS_ReturnCode_t rc =
-      DDS_DomainParticipant_delete_topic(participant, topic);
-
-    if (DDS_RETCODE_OK != rc) {
-      RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS Topic")
-      return RMW_RET_ERROR;
-    }
+  if (!this->ctx->release_topic(participant, topic)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS Topic")
+    return RMW_RET_ERROR;
   }
 
   rmw_ret_t rc = RMW_Connext_MessageTypeSupport::unregister_type_support(

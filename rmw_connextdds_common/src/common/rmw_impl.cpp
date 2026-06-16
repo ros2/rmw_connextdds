@@ -770,8 +770,7 @@ RMW_Connext_Publisher::create(
   auto scope_exit_topic_delete = rcpputils::make_scope_exit(
     [ctx, dp, topic]()
     {
-      if (!ctx->release_topic(dp, topic))
-      {
+      if (!ctx->release_topic(dp, topic)) {
         RMW_CONNEXT_LOG_ERROR_SET(
           "failed to delete writer's topic")
       }
@@ -1386,8 +1385,7 @@ RMW_Connext_Subscriber::create(
           RMW_CONNEXT_LOG_ERROR("failed to delete content-filtered topic")
         }
       }
-      if (!ctx->release_topic(dp, topic))
-      {
+      if (!ctx->release_topic(dp, topic)) {
         RMW_CONNEXT_LOG_ERROR_SET(
           "failed to delete reader's topic")
       }

@@ -19,6 +19,7 @@
 #include <mutex>
 #include <regex>
 #include <string>
+#include <unordered_map>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"

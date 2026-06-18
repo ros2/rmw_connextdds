@@ -860,32 +860,18 @@ rmw_context_impl_s::assert_topic(
   const char * const topic_name,
   const char * const type_name,
   const bool internal,
-  DDS_Topic ** const topic,
-  bool & created)
+  DDS_Topic ** const topic)
 {
   DDS_TopicDescription * const topic_existing =
     DDS_DomainParticipant_lookup_topicdescription(participant, topic_name);
 
   if (nullptr != topic_existing) {
-    if (internal) {
-      /* topics for "internal" endpoints are created while the participant
-         is still disabled, so find_topic() cannot be called.
-         Instead, we cast the topicdescription to a topic. The deletion
-         path will have to keep track that the endpoint didn't create
-         its topic, so not to try to delete it */
-      *topic = DDS_Topic_narrow(topic_existing);
-      created = false;
-    } else {
-      *topic =
-        DDS_DomainParticipant_find_topic(
-        participant,
-        DDS_TopicDescription_get_name(topic_existing),
-        &DDS_DURATION_ZERO);
-      if (nullptr == *topic) {
-        RMW_CONNEXT_LOG_ERROR_SET("failed to find topic from description")
-        return RMW_RET_ERROR;
-      }
-      created = true;
+    // Reuse the existing topic entity and rely on context-level ref counting
+    // to make topic deletion independent from endpoint destruction order.
+    *topic = DDS_Topic_narrow(topic_existing);
+    if (nullptr == *topic) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to narrow topic from description")
+      return RMW_RET_ERROR;
     }
     RMW_CONNEXT_LOG_DEBUG_A(
       "found topic: name=%s, type=%s\n",
@@ -902,20 +888,58 @@ rmw_context_impl_s::assert_topic(
       RMW_CONNEXT_LOG_ERROR_SET("failed to create reader's topic")
       return RMW_RET_ERROR;
     }
-    created = true;
     RMW_CONNEXT_LOG_DEBUG_A(
       "created topic: name=%s, type=%s\n",
       topic_name, type_name);
   }
 
+  this->retain_topic(*topic);
+
   if (!internal) {
     if (DDS_RETCODE_OK != DDS_Entity_enable(DDS_Topic_as_entity(*topic))) {
       RMW_CONNEXT_LOG_ERROR_SET("failed to enable topic")
+      if (!this->release_topic(participant, *topic)) {
+        RMW_CONNEXT_LOG_ERROR("failed to release topic after enable failure")
+      }
       return RMW_RET_ERROR;
     }
   }
 
   return RMW_RET_OK;
+}
+
+void
+rmw_context_impl_s::retain_topic(DDS_Topic * const topic)
+{
+  if (!this->topic_ref_counts.contains(topic)) {
+    this->topic_ref_counts.emplace(topic, 1);
+  } else {
+    ++this->topic_ref_counts[topic];
+  }
+}
+
+bool
+rmw_context_impl_s::release_topic(
+  DDS_DomainParticipant * const participant,
+  DDS_Topic * const topic)
+{
+  if (!this->topic_ref_counts.contains(topic)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to release unknown topic reference")
+    return false;
+  }
+
+  // Only release the topic when no other entities reference it
+  if (--this->topic_ref_counts[topic] > 0) {
+    return true;
+  }
+
+  this->topic_ref_counts.erase(topic);
+  if (DDS_RETCODE_OK != DDS_DomainParticipant_delete_topic(participant, topic)) {
+    RMW_CONNEXT_LOG_ERROR_SET("failed to delete DDS Topic")
+    return false;
+  }
+
+  return true;
 }
 
 /******************************************************************************

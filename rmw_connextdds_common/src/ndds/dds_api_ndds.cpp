@@ -282,6 +282,25 @@ rmw_connextdds_initialize_participant_qos_impl(
     return RMW_RET_OK;
   }
 
+  switch (ctx->discovery_topics_publish_mode) {
+  case RMW_Connext_PublishMode::Synchronous:
+    dp_qos->discovery_config.publication_writer_publish_mode.kind =
+      DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
+    dp_qos->discovery_config.subscription_writer_publish_mode.kind =
+      DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
+    break;
+  case RMW_Connext_PublishMode::Asynchronous:
+    dp_qos->discovery_config.publication_writer_publish_mode.kind =
+      DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+    dp_qos->discovery_config.subscription_writer_publish_mode.kind =
+      DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+    break;
+  case RMW_Connext_PublishMode::Auto:
+    // Leave the publish mode as is, which means it will be determined by
+    // Connext based on the QoS settings and topic type.
+    break;
+  }
+
 #if RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID
   dp_qos->wire_protocol.rtps_auto_id_kind = DDS_RTPS_AUTO_ID_FROM_UUID;
 #endif /* RMW_CONNEXT_RTPS_AUTO_ID_FROM_UUID */

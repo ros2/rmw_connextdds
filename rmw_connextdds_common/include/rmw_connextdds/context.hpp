@@ -19,6 +19,7 @@
 #include <mutex>
 #include <regex>
 #include <string>
+#include <unordered_map>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
@@ -132,6 +133,7 @@ public:
   bool is_shutdown{false};
 
   std::map<std::string, RMW_Connext_MessageTypeSupport *> registered_types;
+  std::unordered_map<DDS_Topic *, std::size_t> topic_ref_counts;
   std::mutex endpoint_mutex;
 
   explicit rmw_context_impl_s(rmw_context_t * const base);
@@ -153,8 +155,15 @@ public:
     const char * const topic_name,
     const char * const type_name,
     const bool internal,
-    DDS_Topic ** const topic,
-    bool & created);
+    DDS_Topic ** const topic);
+
+  void
+  retain_topic(DDS_Topic * const topic);
+
+  bool
+  release_topic(
+    DDS_DomainParticipant * const participant,
+    DDS_Topic * const topic);
 
   rmw_ret_t
   finalize();

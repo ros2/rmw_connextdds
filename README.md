@@ -408,13 +408,13 @@ instead.
 ### RMW_CONNEXT_USER_TOPICS_PUBLISH_MODE
 
 `rmw_connextdds` will always set `DDS_DataWriterQos::publish_mode::kind` of any
-user Data Writer it creates to the default value of Connext (Synchronous publish
+user DataWriter it creates to the default value of Connext (Synchronous publish
 mode) or to the value of a provided XML file.
 
 To override this behavior, you can set this variable to any of these values:
 
-- *synchronous*: Set publish mode of every user Data Writer to Synchronous.
-- *asynchronous*: Set publish mode of every user Data Writer to Asynchronous.
+- *synchronous*: Set publish mode of every user DataWriter to Synchronous.
+- *asynchronous*: Set publish mode of every user DataWriter to Asynchronous.
 - *auto*: Connext will choose the publish mode according to the QoS XML
   configuration. If no XML file is used, Connext will use the default publish
   mode (Synchronous).
@@ -427,19 +427,19 @@ automatically override `DDS_DataWriterQos::publish_mode::kind`.
 `rmw_connextdds` will always set
 `DDS_DiscoveryConfigQosPolicy::publication_writer_publish_mode::kind` and
 `DDS_DiscoveryConfigQosPolicy::subscription_writer_publish_mode::kind` of any
-built-in Publication and Subscription Data Writer to the default value of
+built-in publication and subscription DataWriter to the default value of
 Connext (Synchronous publish mode) or to the value of a provided XML file.
 
 To override this behavior, you can set this variable to any of these values:
 
-- *synchronous*: Set publish mode of every built-in Publication and Subscription
-  Data Writer to Synchronous.
-- *asynchronous*: Set publish mode of every built-in Publication and
-  Subscription Data Writer to Asynchronous.
-- *auto*: Connext will choose the publish mode according to the QoS XML
+- *synchronous*: Set publish mode of every built-in publication and subscription
+  DataWriter to Synchronous.
+- *asynchronous*: Set publish mode of every built-in publication and
+  subscription DataWriter to Asynchronous.
+- *auto*: Connext chooses the publish mode according to the QoS XML
   configuration. If no XML file is used, Connext will use the default publish
   mode (Synchronous).
 
-This variable is not used by `rmw_connextddsmicro`, since it doesn't
+This variable is not used by `rmw_connextddsmicro` because it doesn't
 expose `DDS_DiscoveryConfigQosPolicy::publication_writer_publish_mode::kind` and
 `DDS_DiscoveryConfigQosPolicy::subscription_writer_publish_mode::kind`.

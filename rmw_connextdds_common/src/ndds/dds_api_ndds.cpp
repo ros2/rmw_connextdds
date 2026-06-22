@@ -288,11 +288,15 @@ rmw_connextdds_initialize_participant_qos_impl(
         DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
       dp_qos->discovery_config.subscription_writer_publish_mode.kind =
         DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
+      dp_qos->discovery_config.participant_configuration_writer_publish_mode.kind =
+        DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
       break;
     case RMW_Connext_PublishMode::Asynchronous:
       dp_qos->discovery_config.publication_writer_publish_mode.kind =
         DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
       dp_qos->discovery_config.subscription_writer_publish_mode.kind =
+        DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+      dp_qos->discovery_config.participant_configuration_writer_publish_mode.kind =
         DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
       break;
     case RMW_Connext_PublishMode::Auto:

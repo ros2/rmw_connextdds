@@ -1131,6 +1131,8 @@ rmw_connextdds_parse_endpoint_qos_override_policy(
 static std::optional<RMW_Connext_PublishMode>
 parse_publish_mode_qos(const char * publish_mode_str)
 {
+  RMW_CONNEXT_ASSERT(nullptr != publish_mode_str);
+
   if (0 == std::strcmp(publish_mode_str, "synchronous")) {
     return RMW_Connext_PublishMode::Synchronous;
   }

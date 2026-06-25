@@ -159,6 +159,34 @@ rmw_connextdds_finalize_participant_factory_context(
   for (DDS_Long i = 0; i < pending; i++) {
     DDS_DomainParticipant * const participant =
       *DDS_DomainParticipantSeq_get_reference(&participants, i);
+
+    DDS_DomainParticipantQos qos = DDS_DomainParticipantQos_INITIALIZER;
+    auto scope_exit_qos = rcpputils::make_scope_exit(
+      [&qos]() {
+        if (DDS_RETCODE_OK != DDS_DomainParticipantQos_finalize(&qos)) {
+          RMW_CONNEXT_LOG_ERROR_SET("failed to finalize participant QoS")
+        }
+      });
+    if (DDS_RETCODE_OK != DDS_DomainParticipant_get_qos(participant, &qos)) {
+      RMW_CONNEXT_LOG_ERROR_SET("failed to get participant QoS")
+      continue;
+    }
+
+    DDS_Boolean isMonitoring2Participant = DDS_BOOLEAN_FALSE;
+    if (DDS_RETCODE_OK == DDS_PropertyQosPolicyHelper_lookup_boolean_property(
+        &qos.property,
+        &isMonitoring2Participant,
+        PROPERTY_NAME_RTI_MONITORING2_PARTICIPANT,
+        DDS_BOOLEAN_FALSE))
+    {
+      if (DDS_BOOLEAN_TRUE == isMonitoring2Participant) {
+        // If this is a dedicated Participant created by Monitoring 2.0, its
+        // deletion is done when the DomainParticipantFactory is finalized.
+        //
+        // For that reason, skip the deletion of this Participant here.
+        continue;
+      }
+    }
 #if RMW_CONNEXT_DEBUG
     // If we are building in Debug mode, an issue in Connext may prevent the
     // participant from being able to delete any content-filtered topic if

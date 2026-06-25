@@ -72,6 +72,7 @@ public:
 
   /* Global configuration for QoS profiles */
   RMW_Connext_PublishMode user_topics_publish_mode = RMW_Connext_PublishMode::Auto;
+  RMW_Connext_PublishMode discovery_topics_publish_mode = RMW_Connext_PublishMode::Auto;
   RMW_Connext_RequestReplyMapping request_reply_mapping;
   bool cyclone_compatible{false};
 #if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE

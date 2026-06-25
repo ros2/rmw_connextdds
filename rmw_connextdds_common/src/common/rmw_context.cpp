@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstring>
+
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <regex>
 #include <string>
 #include <unordered_map>
@@ -1125,6 +1128,23 @@ rmw_connextdds_parse_endpoint_qos_override_policy(
   return RMW_RET_OK;
 }
 
+static std::optional<RMW_Connext_PublishMode>
+parse_publish_mode_qos(const char * publish_mode_str)
+{
+  RMW_CONNEXT_ASSERT(nullptr != publish_mode_str);
+
+  if (0 == std::strcmp(publish_mode_str, "synchronous")) {
+    return RMW_Connext_PublishMode::Synchronous;
+  }
+  if (0 == std::strcmp(publish_mode_str, "asynchronous")) {
+    return RMW_Connext_PublishMode::Asynchronous;
+  }
+  if (0 == std::strcmp(publish_mode_str, "auto") || 0 == std::strcmp(publish_mode_str, "")) {
+    return RMW_Connext_PublishMode::Auto;
+  }
+  return std::nullopt;
+}
+
 rmw_ret_t
 rmw_api_connextdds_init(
   const rmw_init_options_t * options,
@@ -1250,20 +1270,47 @@ rmw_api_connextdds_init(
     return RMW_RET_ERROR;
   }
 
-  if (0 == std::strcmp(user_topics_publish_mode_env, "synchronous")) {
-    ctx_impl->user_topics_publish_mode = RMW_Connext_PublishMode::Synchronous;
-  } else if (0 == std::strcmp(user_topics_publish_mode_env, "asynchronous")) {
-    ctx_impl->user_topics_publish_mode = RMW_Connext_PublishMode::Asynchronous;
-  } else if (0 == std::strcmp(user_topics_publish_mode_env, "auto")) {
-    ctx_impl->user_topics_publish_mode = RMW_Connext_PublishMode::Auto;
-  } else if (0 != std::strcmp(user_topics_publish_mode_env, "")) {
+  const auto user_topics_publish_mode =
+    parse_publish_mode_qos(user_topics_publish_mode_env);
+  if (!user_topics_publish_mode.has_value()) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+        "unexpected value for environment variable '%s': '%s'. "
+        "Allowed values are: 'synchronous', 'asynchronous', 'auto'",
+        RMW_CONNEXT_ENV_USER_TOPICS_PUBLISH_MODE,
+        user_topics_publish_mode_env)
+    return RMW_RET_ERROR;
+  }
+
+  ctx_impl->user_topics_publish_mode = user_topics_publish_mode.value();
+
+  // All built-in DataWriters will use synchronous publish mode (Connext default) unless
+  // RMW_CONNEXT_ENV_DISCOVERY_TOPICS_PUBLISH_MODE is set.
+  const char * discovery_topics_publish_mode_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_DISCOVERY_TOPICS_PUBLISH_MODE, &discovery_topics_publish_mode_env);
+
+  if (nullptr != lookup_rc || nullptr == discovery_topics_publish_mode_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_DISCOVERY_TOPICS_PUBLISH_MODE,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+
+  const auto discovery_topics_publish_mode =
+    parse_publish_mode_qos(discovery_topics_publish_mode_env);
+  if (!discovery_topics_publish_mode.has_value()) {
     RMW_CONNEXT_LOG_ERROR_A_SET(
       "unexpected value for environment variable '%s': '%s'. "
       "Allowed values are: 'synchronous', 'asynchronous', 'auto'",
-      RMW_CONNEXT_ENV_USER_TOPICS_PUBLISH_MODE,
-      user_topics_publish_mode_env)
+      RMW_CONNEXT_ENV_DISCOVERY_TOPICS_PUBLISH_MODE,
+      discovery_topics_publish_mode_env)
     return RMW_RET_ERROR;
   }
+
+  ctx_impl->discovery_topics_publish_mode = discovery_topics_publish_mode.value();
 
   // Check if the user specified a custom override policy for participant qos.
   const char * participant_qos_policy = nullptr;

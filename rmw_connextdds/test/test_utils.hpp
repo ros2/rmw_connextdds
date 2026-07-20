@@ -52,7 +52,7 @@ class ROSTypeFinderListener
 {
 public:
   explicit ROSTypeFinderListener(const std::string & topic_name)
-  : topic_name(topic_name) {}
+  : topic_name_(topic_name) {}
   // This gets called when a subscriber has been discovered
   void on_data_available(
     dds::sub::DataReader<dds::topic::PublicationBuiltinTopicData> & reader) override
@@ -66,23 +66,26 @@ public:
         continue;
       }
 
-      if (sample.data().topic_name().to_std_string() == topic_name &&
-        sample.data()->get_type_no_copy().has_value())
-      {
-        type = std::make_unique<dds::core::xtypes::DynamicType>(sample.data()->type().value());
-        break;
+      if (sample.data().topic_name().to_std_string() != topic_name_) {
+        continue;
       }
+
+      if (!sample.data()->get_type_no_copy().has_value()) {
+        continue;
+      }
+
+      type_ = std::make_unique<dds::core::xtypes::DynamicType>(sample.data()->type().value());
     }
   }
 
   const std::unique_ptr<dds::core::xtypes::DynamicType> & get_type() const
   {
-    return type;
+    return type_;
   }
 
 private:
-  std::unique_ptr<dds::core::xtypes::DynamicType> type;
-  std::string topic_name;
+  std::unique_ptr<dds::core::xtypes::DynamicType> type_;
+  std::string topic_name_;
 };
 
 }  // namespace rmw_connextdds::test

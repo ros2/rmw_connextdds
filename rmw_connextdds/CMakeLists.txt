@@ -59,6 +59,25 @@ register_rmw_implementation(
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     ament_lint_auto_find_test_dependencies()
+
+
+    find_package(ament_cmake_gtest REQUIRED)
+    find_package(osrf_testing_tools_cpp REQUIRED)
+    find_package(rmw REQUIRED)
+    find_package(test_msgs REQUIRED)
+
+    ament_add_gtest(test_keyed_topics test/test_keyed_topics.cpp)
+    if(TARGET test_keyed_topics)
+        target_sources(test_keyed_topics PRIVATE test/test_utils.hpp)
+        target_link_libraries(test_keyed_topics
+            osrf_testing_tools_cpp::memory_tools
+            rcutils::rcutils
+            rmw::rmw
+            RTIConnextDDS::cpp2_api
+            ${PROJECT_NAME}
+            ${test_msgs_TARGETS}
+        )
+    endif()
 endif()
 
 install(

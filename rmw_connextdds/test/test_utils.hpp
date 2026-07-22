@@ -14,8 +14,9 @@
 
 #pragma once
 
+#include <algorithm>
 #include <chrono>
-#include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -53,38 +54,36 @@ class ROSTypeFinderListener
 public:
   explicit ROSTypeFinderListener(const std::string & topic_name)
   : topic_name_(topic_name) {}
+
   // This gets called when a subscriber has been discovered
   void on_data_available(
     dds::sub::DataReader<dds::topic::PublicationBuiltinTopicData> & reader) override
   {
     // We only process newly seen subscribers
-    dds::sub::LoanedSamples<dds::topic::PublicationBuiltinTopicData> samples =
+    const auto samples =
       reader.select().state(dds::sub::status::DataState::new_instance()).take();
 
-    for (const auto & sample : samples) {
-      if (!sample.info().valid()) {
-        continue;
-      }
+    const auto sample_found = std::ranges::find_if(
+      samples,
+      [this](const auto & sample) {
+        return sample.info().valid() &&
+               sample.data().topic_name().to_std_string() == topic_name_ &&
+               sample.data().extensions().get_type_no_copy().has_value();
+      });
 
-      if (sample.data().topic_name().to_std_string() != topic_name_) {
-        continue;
-      }
-
-      if (!sample.data()->get_type_no_copy().has_value()) {
-        continue;
-      }
-
-      type_ = std::make_unique<dds::core::xtypes::DynamicType>(sample.data()->type().value());
+    if (sample_found != samples.end()) {
+      type_ = sample_found->data().extensions().type().value();
+      reader.set_listener(nullptr);
     }
   }
 
-  const std::unique_ptr<dds::core::xtypes::DynamicType> & get_type() const
+  const std::optional<dds::core::xtypes::DynamicType> & get_type() const
   {
     return type_;
   }
 
 private:
-  std::unique_ptr<dds::core::xtypes::DynamicType> type_;
+  std::optional<dds::core::xtypes::DynamicType> type_;
   std::string topic_name_;
 };
 

@@ -216,7 +216,7 @@ TYPED_TEST(TestKeyedTopics, test_keyhash)
     rmw_connextdds::test::wait_for(
       [&publication_listener]
       {
-        return publication_listener->get_type() != nullptr;
+        return std::nullopt != publication_listener->get_type();
       }));
 
   auto topic = dds::topic::Topic<dds::core::xtypes::DynamicData>(

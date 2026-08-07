@@ -70,6 +70,28 @@ rmw_connextdds_initialize_participant_factory_qos()
 
   qos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
 
+  // Keep RTI Monitoring Library 2.0 disabled unless explicitly requested,
+  // since the monitoring participant and its threads are not finalized until
+  // DDS_DomainParticipantFactory_finalize_instance(), which crashes on
+  // process exit on Windows (see https://github.com/ros2/rmw_connextdds/issues/248).
+  const char * enable_monitoring_env = nullptr;
+  const char * const lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_ENABLE_MONITORING, &enable_monitoring_env);
+
+  if (nullptr != lookup_rc || nullptr == enable_monitoring_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_ENABLE_MONITORING,
+      lookup_rc)
+    DDS_DomainParticipantFactoryQos_finalize(&qos);
+    return RMW_RET_ERROR;
+  }
+  if ('\0' == enable_monitoring_env[0]) {
+    qos.monitoring.enable = DDS_BOOLEAN_FALSE;
+  }
+
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipantFactory_set_qos(
       RMW_Connext_gv_DomainParticipantFactory, &qos))

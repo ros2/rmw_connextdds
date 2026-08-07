@@ -157,6 +157,7 @@ variables.
 - [RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS](#RMW_CONNEXT_DISABLE_LARGE_DATA_OPTIMIZATIONS)
 - [RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY](#RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY)
 - [RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS](#RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS)
+- [RMW_CONNEXT_ENABLE_MONITORING](#RMW_CONNEXT_ENABLE_MONITORING)
 - [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_INITIAL_PEERS](#RMW_CONNEXT_INITIAL_PEERS)
 - [RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE](#RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE)
@@ -225,6 +226,23 @@ is sped up from 3 seconds to 100 milliseconds.
 
 These optimizations may be disabled using variable
 `RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS`.
+
+### RMW_CONNEXT_ENABLE_MONITORING
+
+By default, `rmw_connextdds` disables [RTI Monitoring Library 2.0](https://community.rti.com/static/documentation/connext-dds/7.3.0/doc/manuals/addon_products/monitoring2/index.html)
+on the DomainParticipantFactory, overriding any value loaded from XML QoS
+profiles.
+
+Set variable `RMW_CONNEXT_ENABLE_MONITORING` to a non-empty value to leave
+the monitoring QoS untouched, allowing the Monitoring Library to be enabled
+(e.g. via the `<monitoring>` settings in an XML QoS profile, or Connext's
+built-in defaults if they enable it).
+
+Note that when the Monitoring Library is enabled, the dedicated monitoring
+DomainParticipant is only finalized by
+`DDS_DomainParticipantFactory_finalize_instance()`, which is known to cause
+an access violation during process teardown on Windows (see
+[rmw_connextdds#248](https://github.com/ros2/rmw_connextdds/issues/248)).
 
 ### RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY
 

@@ -69,6 +69,11 @@ rmw_connextdds_initialize_participant_factory_qos()
   }
 
   qos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
+#ifdef RTI_WIN32
+  // Disable monitoring on windows due to issues with cleanup of monitoring
+  // resources
+  qos.monitoring.enable = DDS_BOOLEAN_FALSE;
+#endif
 
   if (DDS_RETCODE_OK !=
     DDS_DomainParticipantFactory_set_qos(

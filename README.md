@@ -226,6 +226,19 @@ is sped up from 3 seconds to 100 milliseconds.
 These optimizations may be disabled using variable
 `RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS`.
 
+### RTI_MONITORING2_ENABLE
+
+By default, Connext enables [RTI Monitoring Library 2.0](https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/observability/library.html)
+on the DomainParticipantFactory. This can be changed in an XML QoS profile via
+the `<monitoring>` settings or by setting the environment variable
+`RTI_MONITORING2_ENABLE`. Setting `RTI_MONITORING2_ENABLE` to false will disable
+the Monitoring Library. For more information on enabling and using the 
+RTI Monitoring 2.0 Library, see [Enabling Monitoring Library 2.0](https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/observability/library.html#enabling-monitoringlibrary2-heading).
+
+Monitoring is currently disabled entirely on Windows to avoid an access
+violation during process teardown (see
+[rmw_connextdds#248](https://github.com/ros2/rmw_connextdds/issues/248)).
+
 ### RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY
 
 When this variable is not set or set to `always`, the QoS settings specified in

@@ -60,20 +60,19 @@ public:
     dds::sub::DataReader<dds::topic::PublicationBuiltinTopicData> & reader) override
   {
     // We only process newly seen subscribers
-    const auto samples =
-      reader.select().state(dds::sub::status::DataState::new_instance()).take();
+    auto sample_data = dds::topic::PublicationBuiltinTopicData();
+    auto sample_info = dds::sub::SampleInfo();
+    while (reader.extensions().take(sample_data, sample_info)) {
+      if (!sample_info.valid() ||
+        sample_data.topic_name().to_std_string() != topic_name_ ||
+        !sample_data.extensions().type().has_value())
+      {
+        continue;
+      }
 
-    const auto sample_found = std::ranges::find_if(
-      samples,
-      [this](const auto & sample) {
-        return sample.info().valid() &&
-               sample.data().topic_name().to_std_string() == topic_name_ &&
-               sample.data().extensions().get_type_no_copy().has_value();
-      });
-
-    if (sample_found != samples.end()) {
-      type_ = sample_found->data().extensions().type().value();
+      type_ = sample_data.extensions().type().value();
       reader.set_listener(nullptr);
+      break;
     }
   }
 

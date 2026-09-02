@@ -60,7 +60,6 @@ if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     ament_lint_auto_find_test_dependencies()
 
-
     find_package(ament_cmake_gtest REQUIRED)
     find_package(osrf_testing_tools_cpp REQUIRED)
     find_package(rmw REQUIRED)
@@ -70,6 +69,19 @@ if(BUILD_TESTING)
     if(TARGET test_keyed_topics)
         target_sources(test_keyed_topics PRIVATE test/test_utils.hpp)
         target_link_libraries(test_keyed_topics
+            osrf_testing_tools_cpp::memory_tools
+            rcutils::rcutils
+            rmw::rmw
+            RTIConnextDDS::cpp2_api
+            ${PROJECT_NAME}
+            ${test_msgs_TARGETS}
+        )
+    endif()
+
+    ament_add_gtest(test_typeobject_v2 test/test_typeobject_v2.cpp)
+    if(TARGET test_typeobject_v2)
+        target_sources(test_typeobject_v2 PRIVATE test/test_utils.hpp)
+        target_link_libraries(test_typeobject_v2
             osrf_testing_tools_cpp::memory_tools
             rcutils::rcutils
             rmw::rmw

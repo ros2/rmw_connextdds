@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include <atomic>
 #include <algorithm>
 #include <chrono>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <thread>
@@ -47,20 +49,36 @@ bool wait_for(
   return false;
 }
 
+template<typename BuiltinTopicData>
 class ROSTypeFinderListener
-  : public dds::sub::NoOpDataReaderListener<
-    dds::topic::PublicationBuiltinTopicData>
+  : public dds::sub::NoOpDataReaderListener<BuiltinTopicData>
 {
 public:
   explicit ROSTypeFinderListener(const std::string & topic_name)
   : topic_name_(topic_name) {}
 
-  // This gets called when a subscriber has been discovered
   void on_data_available(
-    dds::sub::DataReader<dds::topic::PublicationBuiltinTopicData> & reader) override
+    dds::sub::DataReader<BuiltinTopicData> & reader) override
+  {
+    std::scoped_lock lock(mutex_);
+    if (type_) {
+      return;
+    }
+    process_samples(reader);
+  }
+
+  const std::optional<dds::core::xtypes::DynamicType> & get_type() const
+  {
+    std::scoped_lock lock(mutex_);
+    return type_;
+  }
+
+private:
+  void process_samples(
+    dds::sub::DataReader<BuiltinTopicData> & reader)
   {
     // We only process newly seen subscribers
-    auto sample_data = dds::topic::PublicationBuiltinTopicData();
+    auto sample_data = BuiltinTopicData();
     auto sample_info = dds::sub::SampleInfo();
     while (reader.extensions().take(sample_data, sample_info)) {
       if (!sample_info.valid() ||
@@ -72,18 +90,48 @@ public:
 
       type_ = sample_data.extensions().type().value();
       reader.set_listener(nullptr);
-      break;
     }
   }
 
-  const std::optional<dds::core::xtypes::DynamicType> & get_type() const
-  {
-    return type_;
-  }
-
-private:
+  mutable std::mutex mutex_;
   std::optional<dds::core::xtypes::DynamicType> type_;
   std::string topic_name_;
+};
+
+class TypeLookupEndpointListener
+  : public dds::sub::NoOpDataReaderListener<dds::topic::ParticipantBuiltinTopicData>
+{
+public:
+  static constexpr uint32_t TYPELOOKUP_REQUEST_WRITER = 1u << 12;
+  static constexpr uint32_t TYPELOOKUP_REQUEST_READER = 1u << 13;
+  static constexpr uint32_t TYPELOOKUP_REPLY_WRITER = 1u << 14;
+  static constexpr uint32_t TYPELOOKUP_REPLY_READER = 1u << 15;
+  static constexpr uint32_t TYPELOOKUP_ALL =
+    TYPELOOKUP_REQUEST_WRITER | TYPELOOKUP_REQUEST_READER |
+    TYPELOOKUP_REPLY_WRITER | TYPELOOKUP_REPLY_READER;
+
+  void on_data_available(
+    dds::sub::DataReader<dds::topic::ParticipantBuiltinTopicData> & reader) override
+  {
+    if (found_.load()) {
+      return;
+    }
+    for (const auto & sample : reader.take()) {
+      if (!sample.info().valid()) {
+        continue;
+      }
+      uint32_t endpoints = sample.data()->dds_builtin_endpoints();
+      if ((endpoints & TYPELOOKUP_ALL) == TYPELOOKUP_ALL) {
+        found_.store(true);
+        return;
+      }
+    }
+  }
+
+  bool found() const {return found_.load();}
+
+private:
+  std::atomic_bool found_{false};
 };
 
 }  // namespace rmw_connextdds::test

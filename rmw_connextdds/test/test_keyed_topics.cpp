@@ -199,7 +199,8 @@ TYPED_TEST(TestKeyedTopics, test_keyhash)
 
   // Create shared pointer to BuiltinParticipantListener class
   auto publication_listener =
-    std::make_shared<rmw_connextdds::test::ROSTypeFinderListener>(connext_topic_name);
+    std::make_shared<rmw_connextdds::test::ROSTypeFinderListener<
+        dds::topic::PublicationBuiltinTopicData>>(connext_topic_name);
 
   // Get builtin subscriber's datareader for publications.
   auto publication_reader =
@@ -292,12 +293,10 @@ TYPED_TEST(TestKeyedTopics, test_keyhash)
   ASSERT_TRUE(
     rmw_connextdds::test::wait_for(
       [&] {
-        auto sample_data = dds::core::xtypes::DynamicData(*publication_listener->get_type());
-        auto sample_info = dds::sub::SampleInfo();
-        while (reader.extensions().take(sample_data, sample_info)) {
-          if (sample_info.valid()) {
-            dds_received_messages_from_ros.first.push_back(sample_info.instance_handle());
-            dds_received_messages_from_ros.second.push_back(sample_data);
+        for (const auto & sample : reader.take()) {
+          if (sample.info().valid()) {
+            dds_received_messages_from_ros.first.push_back(sample.info().instance_handle());
+            dds_received_messages_from_ros.second.push_back(sample.data());
           }
         }
         return dds_message_instances.size() == dds_received_messages_from_ros.second.size();
@@ -322,12 +321,10 @@ TYPED_TEST(TestKeyedTopics, test_keyhash)
   ASSERT_TRUE(
     rmw_connextdds::test::wait_for(
       [&] {
-        auto sample_data = dds::core::xtypes::DynamicData(*publication_listener->get_type());
-        auto sample_info = dds::sub::SampleInfo();
-        while (reader.extensions().take(sample_data, sample_info)) {
-          if (sample_info.valid()) {
-            dds_received_messages_from_dds.first.push_back(sample_info.instance_handle());
-            dds_received_messages_from_dds.second.push_back(sample_data);
+        for (const auto & sample : reader.take()) {
+          if (sample.info().valid()) {
+            dds_received_messages_from_dds.first.push_back(sample.info().instance_handle());
+            dds_received_messages_from_dds.second.push_back(sample.data());
           }
         }
         return dds_message_instances.size() == dds_received_messages_from_dds.second.size();

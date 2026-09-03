@@ -42,6 +42,7 @@
 
 #include "rcutils/allocator.h"
 #include "rcutils/strdup.h"
+#include "rcutils/env.h"
 
 #include <dds/core/xtypes/DynamicData.hpp>
 #include <dds/dds.hpp>
@@ -113,8 +114,8 @@ protected:
     // explicitly enable TypeObject V2: LENGTH_AUTO for
     // type_object_max_serialized_length and the TypeLookup Service builtin channel
     // for enabled_builtin_channels.
-    setenv("RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY", "never", 1);
-    setenv(
+    ASSERT_TRUE(rcutils_set_env("RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY", "never"));
+    ASSERT_TRUE(rcutils_set_env(
       "NDDS_QOS_PROFILES",
       "str://\"<dds>"
         "<qos_library name=\"TestLib\">"
@@ -132,8 +133,7 @@ protected:
             "</domain_participant_qos>"
           "</qos_profile>"
         "</qos_library>"
-      "</dds>\"",
-      1);
+      "</dds>\""));
 
     auto options = rmw_get_zero_initialized_init_options();
     auto ret = rmw_init_options_init(&options, rcutils_get_default_allocator());
@@ -164,8 +164,8 @@ protected:
     EXPECT_EQ(RMW_RET_OK, ret) << rmw_get_error_string().str;
     ret = rmw_context_fini(&context_);
     EXPECT_EQ(RMW_RET_OK, ret) << rmw_get_error_string().str;
-    unsetenv("NDDS_QOS_PROFILES");
-    unsetenv("RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY");
+    ASSERT_TRUE(rcutils_set_env("NDDS_QOS_PROFILES", NULL));
+    ASSERT_TRUE(rcutils_set_env("RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY", NULL));
     dds::domain::DomainParticipant::finalize_participant_factory();
   }
 
@@ -311,9 +311,11 @@ TEST_F(TypeObjectV2Test, connext_writer_connext_reader)
   std::vector<dds::core::xtypes::DynamicData> received;
   ASSERT_TRUE(
     rmw_connextdds::test::wait_for([&] {
-      for (const auto & sample : reader.take()) {
-        if (sample.info().valid()) {
-          received.push_back(sample.data());
+      auto sample_data = dds::core::xtypes::DynamicData(rtype);
+      auto sample_info = dds::sub::SampleInfo();
+      while (reader.extensions().take(sample_data, sample_info)) {
+        if (sample_info.valid()) {
+          received.push_back(sample_data);
         }
       }
       return received.size() == num_samples;
@@ -454,9 +456,11 @@ TEST_F(TypeObjectV2Test, rmw_writer_connext_reader)
   std::vector<dds::core::xtypes::DynamicData> received;
   ASSERT_TRUE(
     rmw_connextdds::test::wait_for([&] {
-      for (const auto & sample : reader.take()) {
-        if (sample.info().valid()) {
-          received.push_back(sample.data());
+      auto sample_data = dds::core::xtypes::DynamicData(subset_type);
+      auto sample_info = dds::sub::SampleInfo();
+      while (reader.extensions().take(sample_data, sample_info)) {
+        if (sample_info.valid()) {
+          received.push_back(sample_data);
         }
       }
       return received.size() == num_samples;

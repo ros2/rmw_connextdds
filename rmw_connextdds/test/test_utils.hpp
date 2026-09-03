@@ -90,6 +90,7 @@ private:
 
       type_ = sample_data.extensions().type().value();
       reader.set_listener(nullptr);
+      break;
     }
   }
 

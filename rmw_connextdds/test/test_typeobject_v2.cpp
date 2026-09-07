@@ -244,9 +244,9 @@ protected:
     endpoint_reader.set_listener(listener);
     auto participant_reader =
       rti::sub::find_datareader_by_topic_name<
-        dds::sub::DataReader<dds::topic::ParticipantBuiltinTopicData>>(
-          dds::sub::builtin_subscriber(connext_participant_),
-          dds::topic::participant_topic_name());
+      dds::sub::DataReader<dds::topic::ParticipantBuiltinTopicData>>(
+        dds::sub::builtin_subscriber(connext_participant_),
+        dds::topic::participant_topic_name());
     if (participant_reader == dds::core::null) {
       ADD_FAILURE() << "No participant built-in topic reader found";
       return false;

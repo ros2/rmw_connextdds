@@ -199,7 +199,8 @@ TYPED_TEST(TestKeyedTopics, test_keyhash)
 
   // Create shared pointer to BuiltinParticipantListener class
   auto publication_listener =
-    std::make_shared<rmw_connextdds::test::ROSTypeFinderListener>(connext_topic_name);
+    std::make_shared<rmw_connextdds::test::ROSTypeFinderListener<
+        dds::topic::PublicationBuiltinTopicData>>(connext_topic_name);
 
   // Get builtin subscriber's datareader for publications.
   auto publication_reader =

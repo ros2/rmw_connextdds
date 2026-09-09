@@ -127,20 +127,12 @@
  * DDS Implementation
  * Select the DDS implementation used to build the RMW library.
  ******************************************************************************/
-#define RMW_CONNEXT_DDS_API_PRO         0
-#define RMW_CONNEXT_DDS_API_MICRO       1
-
-#ifndef RMW_CONNEXT_DDS_API
-#define RMW_CONNEXT_DDS_API             RMW_CONNEXT_DDS_API_PRO
-#endif /* RMW_CONNEXT_DDS_API */
-
 #ifndef RMW_CONNEXT_DDS_API_PRO_LEGACY
 #define RMW_CONNEXT_DDS_API_PRO_LEGACY  0
 #endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
 #ifndef RMW_CONNEXT_ENABLE_SECURITY
-#define RMW_CONNEXT_ENABLE_SECURITY \
-  (RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO)
+#define RMW_CONNEXT_ENABLE_SECURITY     1
 #endif /* RMW_CONNEXT_ENABLE_SECURITY */
 
 /******************************************************************************
@@ -181,8 +173,7 @@
  * This option is enabled by default only for RTI Connext DDS Micro.
  ******************************************************************************/
 #ifndef RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC
-#define RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC \
-  (RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO)
+#define RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC  0
 #endif /* RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC */
 
 /******************************************************************************

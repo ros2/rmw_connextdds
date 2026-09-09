@@ -27,7 +27,6 @@ find_package(ament_cmake REQUIRED)
 ################################################################################
 # rtirmw_add_library(
 #     NAME      <library name>
-#     API       PRO|MICRO
 #     SOURCES   <source and header files>
 #     DEPS      <ament package dependencies>
 #     INCLUDES  <extra include directories>
@@ -39,7 +38,7 @@ find_package(ament_cmake REQUIRED)
 function(rtirmw_add_library)
     cmake_parse_arguments(_rti_build
       "" # boolean arguments
-      "NAME;API;EXPORT" # single value arguments
+      "NAME;EXPORT" # single value arguments
       "SOURCES;DEPS;INCLUDES;LIBRARIES;DEFINES" # multi-value arguments
       ${ARGN} # current function arguments
     )
@@ -76,7 +75,6 @@ function(rtirmw_add_library)
             RMW_VERSION_MAJOR=${rmw_VERSION_MAJOR}
             RMW_VERSION_MINOR=${rmw_VERSION_MINOR}
             RMW_VERSION_PATCH=${rmw_VERSION_PATCH}
-            RMW_CONNEXT_DDS_API=RMW_CONNEXT_DDS_API_${_rti_build_API}
             $<$<PLATFORM_ID:Windows>:NOMINMAX>
             ${_rti_build_DEFINES}
             ${_extra_defines}
@@ -208,7 +206,6 @@ set(RMW_CONNEXT_COMMON_SOURCE
 
 rtirmw_add_library(
     NAME      ${PROJECT_NAME}
-    API       PRO
     EXPORT    export_${PROJECT_NAME}
     SOURCES   ${RMW_CONNEXT_COMMON_SOURCE}
               src/ndds/rmw_type_support_ndds.cpp

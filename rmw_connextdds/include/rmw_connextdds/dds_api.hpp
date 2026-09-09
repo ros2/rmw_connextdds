@@ -18,13 +18,7 @@
 #include "rmw_connextdds/static_config.hpp"
 #include "rmw_connextdds/visibility_control.h"
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-#include "rmw_connextdds/dds_api_rtime.hpp"
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 #include "rmw_connextdds/dds_api_ndds.hpp"
-#else
-#error "invalid DDS API selected"
-#endif /* RMW_CONNEXT_DDS_API */
 
 #ifndef UNUSED_ARG
 #define UNUSED_ARG(arg_)        (void)(arg_)

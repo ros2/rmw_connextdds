@@ -822,11 +822,7 @@ rmw_connextdds_graph_add_local_publisherEA(
     &dw_qos.durability,
     &dw_qos.deadline,
     &dw_qos.liveliness,
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     &dw_qos.lifespan,
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    nullptr /* Micro doesn't support LifespanQosPolicy */,
-#endif /* RMW_CONNEXT_DDS_API */
     false /* is_reader */,
     true /* local */,
     ser_type_hash);

@@ -453,19 +453,11 @@ rmw_connextdds_get_readerwriter_qos(
       }
   }
 
-  // LifespanQosPolicy is a writer-only policy, so `lifespan` might be NULL.
-  // Micro does not support this policy, so the value will always be NULL.
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-  assert(nullptr == lifespan);
-#else /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   if (lifespan != nullptr &&
     !rmw_time_equal(qos_policies->lifespan, RMW_DURATION_UNSPECIFIED))
   {
-    // Guard access to type since it's not defined by Micro (only forward declared
-    // by rmw_connextdds/dds_api_rtime.hpp)
     lifespan->duration = rmw_time_to_dds_duration(qos_policies->lifespan);
   }
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 
   std::string user_data_str;
   if (RMW_RET_OK != rmw_dds_common::encode_type_hash_for_user_data_qos(
@@ -588,13 +580,7 @@ rmw_connextdds_readerwriter_qos_to_ros(
   }
 
   if (nullptr != lifespan) {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     qos_policies->lifespan = dds_duration_to_rmw_time(lifespan->duration);
-#else
-    // Only emit a debug message in this case, since we don't want to pollute the
-    // output too much. We print a warning when going from ROS to DDS.
-    RMW_CONNEXT_LOG_DEBUG("lifespan qos policy not supported")
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
   }
 
   return RMW_RET_OK;
@@ -612,11 +598,7 @@ rmw_connextdds_datawriter_qos_to_ros(
     &qos->durability,
     &qos->deadline,
     &qos->liveliness,
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
     &qos->lifespan,
-#elif RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-    nullptr,
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
     qos_policies);
 }
 
@@ -978,12 +960,6 @@ rmw_ret_t
 RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
 {
   DDS_Duration_t timeout = rmw_connextdds_duration_from_ros_time(&wait_timeout);
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-  // Avoid warnings for unused variable in micro, since wait_for_ack() is
-  // mapped to an empty call.
-  UNUSED_ARG(timeout);
-#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-
   const DDS_ReturnCode_t dds_rc =
     DDS_DataWriter_wait_for_acknowledgments(this->dds_writer, &timeout);
 
@@ -1960,7 +1936,7 @@ rmw_connextdds_create_subscriber(
       }
       delete rmw_sub_impl;
     });
-#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+#if RMW_CONNEXT_DEBUG
   auto scope_exit_enable_participant_on_error =
     rcpputils::make_scope_exit(
     [ctx]()
@@ -1978,7 +1954,7 @@ rmw_connextdds_create_subscriber(
           "failed to enable DomainParticipant on subscriber creation error")
       }
     });
-#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+#endif  // RMW_CONNEXT_DEBUG
 
   rmw_subscription_t * rmw_subscriber = rmw_subscription_allocate();
   if (nullptr == rmw_subscriber) {
@@ -2013,11 +1989,7 @@ rmw_connextdds_create_subscriber(
   rmw_subscriber->options = *subscriber_options;
   rmw_subscriber->can_loan_messages = false;
   rmw_subscriber->is_cft_enabled = rmw_sub_impl->is_cft_enabled();
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
   rmw_subscriber->is_cft_supported = true;
-#else
-  rmw_subscriber->is_cft_supported = false;
-#endif
 
   if (!internal) {
     if (RMW_RET_OK != rmw_sub_impl->enable()) {
@@ -2036,9 +2008,9 @@ rmw_connextdds_create_subscriber(
 
   TRACETOOLS_TRACEPOINT(rmw_subscription_init, rmw_subscriber, rmw_sub_impl->gid()->data);
 
-#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+#if RMW_CONNEXT_DEBUG
   scope_exit_enable_participant_on_error.cancel();
-#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+#endif  // RMW_CONNEXT_DEBUG
   scope_exit_rmw_reader_impl_delete.cancel();
   scope_exit_rmw_reader_delete.cancel();
   return rmw_subscriber;
@@ -2094,13 +2066,9 @@ rmw_connextdds_message_info_from_dds(
   to->publication_sequence_number =
     static_cast<uint64_t>((from->publication_sequence_number).high) << 32 |
     static_cast<uint64_t>((from->publication_sequence_number).low);
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
   to->reception_sequence_number =
     static_cast<uint64_t>((from->reception_sequence_number).high) << 32 |
     static_cast<uint64_t>((from->reception_sequence_number).low);
-#else
-  to->reception_sequence_number = RMW_MESSAGE_INFO_SEQUENCE_NUMBER_UNSUPPORTED;
-#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 }
 
 /******************************************************************************
@@ -2691,12 +2659,6 @@ RMW_Connext_Client::enable()
 rmw_ret_t
 RMW_Connext_Client::is_service_available(bool & available)
 {
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_MICRO
-  available = 0 < this->request_pub->subscriptions_count() &&
-    0 < this->reply_sub->publications_count();
-  return RMW_RET_OK;
-#else /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
-
   // mark service as available if we have at least one writer and one reader
   // matched from the same remote DomainParticipant.
   struct DDS_InstanceHandleSeq matched_req_subs = DDS_SEQUENCE_INITIALIZER,
@@ -2741,7 +2703,6 @@ RMW_Connext_Client::is_service_available(bool & available)
   }
 
   return RMW_RET_OK;
-#endif /* RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO */
 }
 
 rmw_ret_t

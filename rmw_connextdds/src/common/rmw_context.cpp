@@ -705,7 +705,7 @@ rmw_ret_t
 rmw_context_impl_s::finalize_participant()
 {
   RMW_CONNEXT_LOG_DEBUG("finalizing DDS DomainParticipant")
-#if RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+#if RMW_CONNEXT_DEBUG
   // If we are building in Debug mode, an issue in Connext may prevent the
   // participant from being able to delete any content-filtered topic if
   // the participant has not been enabled.
@@ -719,7 +719,7 @@ rmw_context_impl_s::finalize_participant()
       "failed to enable DomainParticipant before deletion")
     return RMW_RET_ERROR;
   }
-#endif  // RMW_CONNEXT_DEBUG && RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
+#endif  // RMW_CONNEXT_DEBUG
   if (RMW_RET_OK != rmw_connextdds_graph_finalize(this)) {
     RMW_CONNEXT_LOG_ERROR("failed to finalize graph cache")
     return RMW_RET_ERROR;

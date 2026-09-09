@@ -16,8 +16,6 @@
 
 #include "rmw_connextdds/dds_api.hpp"
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
-
 namespace rti_connext_dds_custom_sql_filter
 {
 
@@ -62,7 +60,5 @@ DDS_ReturnCode_t DDS_DomainParticipant_register_contentfilterI(
 }
 #endif  // RMW_CONNEXT_DDS_API_PRO_LEGACY
 #endif  // RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
-
-#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
 #endif  // RMW_CONNEXTDDS__CUSTOM_SQL_FILTER_HPP_

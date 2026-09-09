@@ -358,7 +358,6 @@ public:
     const rosidl_service_type_support_t * const type_supports);
 };
 
-#if RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 DDS_SEQUENCE(RMW_Connext_MessagePtrSeq, RMW_Connext_Message *);
 
 typedef RMW_Connext_MessagePtrSeq RMW_Connext_UntypedSampleSeq;
@@ -370,7 +369,5 @@ typedef RMW_Connext_MessagePtrSeq RMW_Connext_UntypedSampleSeq;
 
 #define DDS_UntypedSampleSeq_get_length(seq_) \
   RMW_Connext_MessagePtrSeq_get_length(seq_)
-
-#endif  // RMW_CONNEXT_DDS_API == RMW_CONNEXT_DDS_API_PRO
 
 #endif  // RMW_CONNEXTDDS__TYPE_SUPPORT_HPP_

@@ -40,11 +40,6 @@
 /******************************************************************************
  * Environment Variables
  ******************************************************************************/
-#ifndef RMW_CONNEXT_ENV_UDP_INTERFACE
-#define RMW_CONNEXT_ENV_UDP_INTERFACE \
-  "RMW_CONNEXT_UDP_INTERFACE"
-#endif /* RMW_CONNEXT_ENV_UDP_INTERFACE */
-
 #ifndef RMW_CONNEXT_ENV_INITIAL_PEERS
 #define RMW_CONNEXT_ENV_INITIAL_PEERS \
   "RMW_CONNEXT_INITIAL_PEERS"

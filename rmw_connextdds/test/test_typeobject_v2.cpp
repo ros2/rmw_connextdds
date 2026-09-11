@@ -300,10 +300,10 @@ TEST_F(TypeObjectV2Test, connext_writer_connext_reader)
     })) << "Writer and reader did not discover each other";
 
   // Write samples
-  for (int32_t i = 0; i < num_samples; ++i) {
+  for (std::size_t i = 0; i < num_samples; ++i) {
     auto sample = dds::core::xtypes::DynamicData(wtype);
-    sample.value("x", i + 1);
-    sample.value("y", (i + 1) * 10);
+    sample.value("x", static_cast<int32_t>(i + 1));
+    sample.value("y", static_cast<int32_t>((i + 1) * 10));
     writer.write(sample);
   }
 
@@ -322,8 +322,8 @@ TEST_F(TypeObjectV2Test, connext_writer_connext_reader)
     })) << "Reader did not receive all samples, received "
         << received.size() << " of " << num_samples;
 
-  for (int32_t i = 0; i < num_samples; ++i) {
-    EXPECT_EQ(received[i].value<int32_t>("x"), i + 1);
+  for (std::size_t i = 0; i < num_samples; ++i) {
+    EXPECT_EQ(received[i].value<int32_t>("x"), static_cast<int32_t>(i + 1));
   }
 }
 
@@ -370,10 +370,10 @@ TEST_F(TypeObjectV2Test, connext_writer_rmw_reader)
     })) << "Connext writer did not match RMW reader";
 
   // Write samples with superset type
-  for (int32_t i = 0; i < num_samples; ++i) {
+  for (std::size_t i = 0; i < num_samples; ++i) {
     auto sample = dds::core::xtypes::DynamicData(superset_type);
-    sample.value("key", i + 1);
-    sample.value("value", (i + 1) * 10);
+    sample.value("key", static_cast<int32_t>(i + 1));
+    sample.value("value", static_cast<int32_t>((i + 1) * 10));
     sample.value("extra_field", static_cast<int32_t>(999));
     writer.write(sample);
   }
@@ -393,9 +393,9 @@ TEST_F(TypeObjectV2Test, connext_writer_rmw_reader)
     })) << "RMW reader did not receive all samples, received "
         << received.size() << " of " << num_samples;
 
-  for (int32_t i = 0; i < num_samples; ++i) {
-    EXPECT_EQ(received[i].key, i + 1);
-    EXPECT_EQ(received[i].value, (i + 1) * 10);
+  for (std::size_t i = 0; i < num_samples; ++i) {
+    EXPECT_EQ(received[i].key, static_cast<int32_t>(i + 1));
+    EXPECT_EQ(received[i].value, static_cast<int32_t>((i + 1) * 10));
   }
 }
 
@@ -444,10 +444,10 @@ TEST_F(TypeObjectV2Test, rmw_writer_connext_reader)
     })) << "RMW writer and Connext reader did not match";
 
   // Publish via RMW
-  for (int32_t i = 0; i < num_samples; ++i) {
+  for (std::size_t i = 0; i < num_samples; ++i) {
     test_msgs::msg::KeyedLong msg;
-    msg.key = i + 1;
-    msg.value = (i + 1) * 10;
+    msg.key = static_cast<int32_t>(i + 1);
+    msg.value = static_cast<int32_t>((i + 1) * 10);
     auto ret = rmw_publish(pub, &msg, nullptr);
     ASSERT_EQ(RMW_RET_OK, ret) << rmw_get_error_string().str;
   }
@@ -467,8 +467,10 @@ TEST_F(TypeObjectV2Test, rmw_writer_connext_reader)
     })) << "Connext reader did not receive all samples, received "
         << received.size() << " of " << num_samples;
 
-  for (int32_t i = 0; i < num_samples; ++i) {
-    EXPECT_EQ(received[i].value<int32_t>(base_type.member(0).name()), i + 1);
+  for (std::size_t i = 0; i < num_samples; ++i) {
+    EXPECT_EQ(
+      received[i].value<int32_t>(base_type.member(0).name()),
+      static_cast<int32_t>(i + 1));
   }
 }
 
@@ -509,10 +511,10 @@ TEST_F(TypeObjectV2Test, rmw_writer_rmw_reader)
     })) << "RMW writer and reader did not match";
 
   // Publish via RMW
-  for (int32_t i = 0; i < num_samples; ++i) {
+  for (std::size_t i = 0; i < num_samples; ++i) {
     test_msgs::msg::KeyedLong msg;
-    msg.key = i + 1;
-    msg.value = (i + 1) * 10;
+    msg.key = static_cast<int32_t>(i + 1);
+    msg.value = static_cast<int32_t>((i + 1) * 10);
     auto ret = rmw_publish(pub, &msg, nullptr);
     ASSERT_EQ(RMW_RET_OK, ret) << rmw_get_error_string().str;
   }
@@ -532,8 +534,8 @@ TEST_F(TypeObjectV2Test, rmw_writer_rmw_reader)
     })) << "RMW reader did not receive all samples, received "
         << received.size() << " of " << num_samples;
 
-  for (int32_t i = 0; i < num_samples; ++i) {
-    EXPECT_EQ(received[i].key, i + 1);
-    EXPECT_EQ(received[i].value, (i + 1) * 10);
+  for (std::size_t i = 0; i < num_samples; ++i) {
+    EXPECT_EQ(received[i].key, static_cast<int32_t>(i + 1));
+    EXPECT_EQ(received[i].value, static_cast<int32_t>((i + 1) * 10));
   }
 }

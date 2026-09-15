@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_) (`#245 <https://github.com/ros2/rmw_connextdds/issues/245>`_)
+* Contributors: mergify[bot]
+
 1.2.7 (2026-05-12)
 ------------------
 

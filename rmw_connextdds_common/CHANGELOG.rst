@@ -2,6 +2,14 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Disable monitoring on Windows, update README to include monitoring env var (`#250 <https://github.com/ros2/rmw_connextdds/issues/250>`_) (`#252 <https://github.com/ros2/rmw_connextdds/issues/252>`_)
+* Enable Monitoring Library by default (`#243 <https://github.com/ros2/rmw_connextdds/issues/243>`_) (`#251 <https://github.com/ros2/rmw_connextdds/issues/251>`_)
+* Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_) (`#245 <https://github.com/ros2/rmw_connextdds/issues/245>`_)
+* Use reference counting for Topics deletion (`#239 <https://github.com/ros2/rmw_connextdds/issues/239>`_) (`#241 <https://github.com/ros2/rmw_connextdds/issues/241>`_)
+* Contributors: Tomoya Fujita, mergify[bot]
+
 1.2.7 (2026-05-12)
 ------------------
 * Fix content filtering on Windows with modern Connext DDS (`#226 <https://github.com/ros2/rmw_connextdds/issues/226>`_) (`#230 <https://github.com/ros2/rmw_connextdds/issues/230>`_)

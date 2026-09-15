@@ -117,11 +117,13 @@ public:
     if (found_.load()) {
       return;
     }
-    for (const auto & sample : reader.take()) {
-      if (!sample.info().valid()) {
+    auto sample_data = dds::topic::ParticipantBuiltinTopicData();
+    auto sample_info = dds::sub::SampleInfo();
+    while (reader.extensions().take(sample_data, sample_info)) {
+      if (!sample_info.valid()) {
         continue;
       }
-      uint32_t endpoints = sample.data()->dds_builtin_endpoints();
+      uint32_t endpoints = sample_data.extensions().dds_builtin_endpoints();
       if ((endpoints & TYPELOOKUP_ALL) == TYPELOOKUP_ALL) {
         found_.store(true);
         return;

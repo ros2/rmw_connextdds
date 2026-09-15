@@ -2,8 +2,8 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.8 (2026-09-15)
+------------------
 * Disable monitoring on Windows, update README to include monitoring env var (`#250 <https://github.com/ros2/rmw_connextdds/issues/250>`_) (`#252 <https://github.com/ros2/rmw_connextdds/issues/252>`_)
 * Enable Monitoring Library by default (`#243 <https://github.com/ros2/rmw_connextdds/issues/243>`_) (`#251 <https://github.com/ros2/rmw_connextdds/issues/251>`_)
 * Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_) (`#245 <https://github.com/ros2/rmw_connextdds/issues/245>`_)

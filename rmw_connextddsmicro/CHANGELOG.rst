@@ -2,8 +2,8 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.8 (2026-09-15)
+------------------
 * Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_) (`#245 <https://github.com/ros2/rmw_connextdds/issues/245>`_)
 * Contributors: mergify[bot]
 

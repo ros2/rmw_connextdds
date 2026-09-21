@@ -758,18 +758,7 @@ RMW_Connext_Publisher::create(
       }
     });
 
-  // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
-  // DDS_DataWriterQos_initialize() for older versions.
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
-#else
-  DDS_DataWriterQos dw_qos;
-  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datawriter qos")
-    return nullptr;
-  }
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   DDS_DataWriterQos * const dw_qos_ptr = &dw_qos;
   auto scope_exit_dw_qos_delete =
@@ -980,18 +969,7 @@ RMW_Connext_Publisher::wait_for_all_acked(rmw_time_t wait_timeout)
 rmw_ret_t
 RMW_Connext_Publisher::qos(rmw_qos_profile_t * const qos)
 {
-  // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
-  // DDS_DataWriterQos_initialize() for older versions.
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
-#else
-  DDS_DataWriterQos dw_qos;
-  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datawriter qos")
-    return RMW_RET_ERROR;
-  }
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   if (DDS_RETCODE_OK != DDS_DataWriter_get_qos(this->dds_writer, &dw_qos)) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS writer's qos")
@@ -1007,15 +985,7 @@ RMW_Connext_Publisher::qos(rmw_qos_profile_t * const qos)
 std::chrono::microseconds
 RMW_Connext_Publisher::load_max_blocking_time() const
 {
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataWriterQos dw_qos = DDS_DataWriterQos_INITIALIZER;
-#else
-  DDS_DataWriterQos dw_qos;
-  if (DDS_RETCODE_OK != DDS_DataWriterQos_initialize(&dw_qos)) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datawriter qos")
-    return std::chrono::microseconds(0);
-  }
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   auto scope_exit_dw_qos_delete =
     rcpputils::make_scope_exit(
@@ -1404,18 +1374,7 @@ RMW_Connext_Subscriber::create(
     sub_topic = cft_topic;
   }
 
-  // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
-  // DDS_DataWriterQos_initialize() for older versions.
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
-#else
-  DDS_DataReaderQos dr_qos;
-  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datareader qos")
-    return nullptr;
-  }
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   DDS_DataReaderQos * const dr_qos_ptr = &dr_qos;
   auto scope_exit_dr_qos_delete =
@@ -1569,18 +1528,7 @@ RMW_Connext_Subscriber::publications_count()
 rmw_ret_t
 RMW_Connext_Subscriber::qos(rmw_qos_profile_t * const qos)
 {
-  // The following initialization generates warnings when built
-  // with RTI Connext DDS Professional < 6 (e.g. 5.3.1), so use
-  // DDS_DataWriterQos_initialize() for older versions.
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   DDS_DataReaderQos dr_qos = DDS_DataReaderQos_INITIALIZER;
-#else
-  DDS_DataReaderQos dr_qos;
-  if (DDS_RETCODE_OK != DDS_DataReaderQos_initialize(&dr_qos)) {
-    RMW_CONNEXT_LOG_ERROR_SET("failed to initialize datareader qos")
-    return RMW_RET_ERROR;
-  }
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   if (DDS_RETCODE_OK != DDS_DataReader_get_qos(this->dds_reader, &dr_qos)) {
     RMW_CONNEXT_LOG_ERROR_SET("failed to get DDS reader's qos")

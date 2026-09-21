@@ -177,7 +177,6 @@ RTI_CustomSqlFilter_compile(
   return DDS_RETCODE_OK;
 }
 
-#if !RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
 static
 int
 RTI_CustomSqlFilter_compare_reader_data(
@@ -673,14 +672,9 @@ RTI_CustomSqlFilter_query(void * filter_data, void * handle)
   return DDS_SqlFilter_query(filter_data, program->base);
 }
 
-#endif  // !RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
-
-// This function is only called when RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
-// is enabled. In that flag is set, the filter will be registered as a user
-// filter instead of built-in one, so it won't be able to do filtering on
-// serialized samples. When this function is used, we don't perform
-// writer-side optimizations and we rely only on reader-side filtering to
-// avoid having to serialize the sample unnecessarily.
+// This function is no longer called, as the filter is always registered as
+// built-in. However, the DDS_ContentFilter API still requires this callback to
+// be set. For that reason, we are leaving this function untouched.
 DDS_Boolean
 RTI_CustomSqlFilter_evaluate(
   void * filter_data,
@@ -773,13 +767,6 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
   filter.evaluate = RTI_CustomSqlFilter_evaluate;
   filter.finalize = RTI_CustomSqlFilter_finalize;
   filter.filter_data = filter_data;
-
-#if RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
-  rc = DDS_DomainParticipant_register_contentfilter(
-    participant,
-    PLUGIN_NAME,
-    &filter);
-#else
   filter.writer_attach = RTI_CustomSqlFilter_writer_attach;
   filter.writer_compile = RTI_CustomSqlFilter_writer_compile;
   filter.writer_detach = RTI_CustomSqlFilter_writer_detach;
@@ -795,7 +782,6 @@ rti_connext_dds_custom_sql_filter::register_content_filter(
     RTI_CustomSqlFilter_writer_evaluate_on_serialized,
     RTI_CustomSqlFilter_query,
     DDS_BOOLEAN_TRUE);
-#endif  // RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
   if (DDS_RETCODE_OK != rc) {
     // TODO(asorbini) log error
     return DDS_RETCODE_ERROR;

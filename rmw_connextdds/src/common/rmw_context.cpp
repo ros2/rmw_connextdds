@@ -401,12 +401,7 @@ rmw_context_impl_s::configure_security(DDS_DomainParticipantQos * const qos)
     return rc;
   }
 
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
   static const char * const uri_prefix = "file:";
-#else
-  // Connext Pro 5.3.1 does not support the "file:" prefix
-  static const char * const uri_prefix = "";
-#endif /* !RMW_CONNEXT_DDS_API_PRO_LEGACY */
 
   rcutils_allocator_t allocator = rcutils_get_default_allocator();
   rcutils_string_map_t security_files = rcutils_get_zero_initialized_string_map();

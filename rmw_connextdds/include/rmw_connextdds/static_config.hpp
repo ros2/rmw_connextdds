@@ -122,10 +122,6 @@
  * DDS Implementation
  * Select the DDS implementation used to build the RMW library.
  ******************************************************************************/
-#ifndef RMW_CONNEXT_DDS_API_PRO_LEGACY
-#define RMW_CONNEXT_DDS_API_PRO_LEGACY  0
-#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
-
 #ifndef RMW_CONNEXT_ENABLE_SECURITY
 #define RMW_CONNEXT_ENABLE_SECURITY     1
 #endif /* RMW_CONNEXT_ENABLE_SECURITY */
@@ -324,14 +320,6 @@
  ******************************************************************************/
 #ifndef RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
 #define RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE     1
-#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
-
-/******************************************************************************
- * On windows, the custom SQL filter cannot be registered as "built-in", so we
- * must enable some additional code to register it as a user plugin.
- ******************************************************************************/
-#ifndef RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE
-#define RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE     0
 #endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
 #include "resource_limits.hpp"

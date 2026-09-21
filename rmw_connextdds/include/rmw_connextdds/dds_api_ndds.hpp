@@ -19,12 +19,6 @@
 
 #include "rcutils/types.h"
 
-#if RMW_CONNEXT_DDS_API_PRO_LEGACY
-#ifndef RTIXCdrLong_MAX
-#define RTIXCdrLong_MAX 2147483647
-#endif /* RTIXCdrLong_MAX */
-#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
-
 // Define a common initializer for DDS_SampleIdentity_t, which initializes
 // the guid with 0's.
 #define DDS_SampleIdentity_UNKNOWN      DDS_SAMPLEIDENTITY_DEFAULT

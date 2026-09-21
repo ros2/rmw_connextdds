@@ -75,15 +75,10 @@
   "RMW_CONNEXT_CYCLONE_COMPATIBILITY_MODE"
 #endif /* RMW_CONNEXT_ENV_REQUEST_REPLY_MAPPING */
 
-#ifndef RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE
-#define RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE \
-  "RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE"
-#endif /* RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE */
-
 #ifndef RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY
 #define RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY \
   "RMW_CONNEXT_DISABLE_FAST_ENDPOINT_DISCOVERY"
-#endif /* RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE */
+#endif /* RMW_CONNEXT_ENV_DISABLE_FAST_ENDPOINT_DISCOVERY */
 
 #ifndef RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS
 #define RMW_CONNEXT_ENV_DISABLE_LARGE_DATA_OPTIMIZATIONS \
@@ -311,16 +306,6 @@
 #ifndef RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE
 #define RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE     0
 #endif /* RMW_CONNEXT_DONT_IGNORE_LOOPBACK_INTERFACE */
-
-/******************************************************************************
- * Enable support for running in "compatibility mode" with the previous RMW for
- * Connext (rmw_connext_cpp). If this option is enable, the mode can be
- * enabled via env variable. Once the mode is enabled, rmw_connextdds will:
- * - Add suffix "_" to member names of types propagated via DDS discovery.
- ******************************************************************************/
-#ifndef RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
-#define RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE     1
-#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
 #include "resource_limits.hpp"
 

@@ -1026,31 +1026,10 @@ rmw_connextdds_convert_type_members(
       return RMW_RET_ERROR;
     }
 
-    /* Names in the introspection plugin don't actually end with "_" */
-#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
-    if (type_support->ctx()->legacy_rmw_compatible) {
-      const DDS_UnsignedLong member_name_len_u =
-        static_cast<DDS_UnsignedLong>(member_name_len) + 1;
-      tc_member->name = DDS_String_alloc(member_name_len_u);
-      if (nullptr == tc_member->name) {
-        return RMW_RET_BAD_ALLOC;
-      }
-      const int rc_written =
-        snprintf(tc_member->name, member_name_len_u + 1, "%s_", member->name_);
-      if (rc_written < 0 ||
-        static_cast<DDS_UnsignedLong>(rc_written) != member_name_len_u)
-      {
-        return RMW_RET_ERROR;
-      }
-    } else {
-#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
     tc_member->name = DDS_String_dup(member->name_);
     if (nullptr == tc_member->name) {
       return RMW_RET_BAD_ALLOC;
     }
-#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
-  }
-#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 
     tc_member->type =
       rmw_connextdds_convert_type_member(type_support, tc_factory, member, tc_cache);

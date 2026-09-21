@@ -1415,24 +1415,6 @@ rmw_api_connextdds_init(
   ctx_impl->request_reply_mapping = RMW_Connext_RequestReplyMapping::Basic;
 #endif /* RMW_CONNEXT_FORCE_REQUEST_REPLY_MAPPING_BASIC */
 
-#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
-  // Check if we should run in "compatibility mode" with the old RMW for Connext
-  const char * legacy_rmw_compatible_env = nullptr;
-  lookup_rc = rcutils_get_env(
-    RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE, &legacy_rmw_compatible_env);
-
-  if (nullptr != lookup_rc || nullptr == legacy_rmw_compatible_env) {
-    RMW_CONNEXT_LOG_ERROR_A_SET(
-      "failed to lookup from environment: "
-      "var=%s, "
-      "rc=%s ",
-      RMW_CONNEXT_ENV_OLD_RMW_COMPATIBILITY_MODE,
-      lookup_rc)
-    return RMW_RET_ERROR;
-  }
-  ctx_impl->legacy_rmw_compatible = '\0' != legacy_rmw_compatible_env[0];
-#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
-
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   // Check if we should disable modifying the DomainParticipantQos to enable
   // faster endpoint discovery (but also increase discovery traffic).

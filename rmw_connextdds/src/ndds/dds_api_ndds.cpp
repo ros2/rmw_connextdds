@@ -610,9 +610,7 @@ rmw_connextdds_get_datawriter_qos(
 #if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
   // The default settings for the RTPS reliability protocol are not very
   // responsive, and they cause some unit tests to fail. These optimizations
-  // have been derived from profile `Optimization.ReliabilityProtocol.Common`
-  // available in Connext 6+. `Generic.StrictReliable` is the equivalent
-  // profile in 5.3.1. Changes are limited to `DDS_RtpsReliableWriterProtocol_t`.
+  // have been derived from profile `Optimization.ReliabilityProtocol.Common`.
   if (ctx->optimize_reliability) {
     // All write() calls will block (for at most max_blocking_time) once the send_window
     // is filled with samples that haven't yet been acknowledged by all active readers.

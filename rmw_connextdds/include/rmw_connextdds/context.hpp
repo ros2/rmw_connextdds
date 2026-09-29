@@ -75,9 +75,6 @@ public:
   RMW_Connext_PublishMode discovery_topics_publish_mode = RMW_Connext_PublishMode::Auto;
   RMW_Connext_RequestReplyMapping request_reply_mapping;
   bool cyclone_compatible{false};
-#if RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE
-  bool legacy_rmw_compatible{false};
-#endif /* RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE */
 #if RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY
   bool fast_endp_discovery{true};
 #endif /* RMW_CONNEXT_FAST_ENDPOINT_DISCOVERY */

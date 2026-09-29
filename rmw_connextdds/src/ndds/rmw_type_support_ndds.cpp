@@ -1165,8 +1165,6 @@ RMW_Connext_TypePlugin_initialize(
     plugin->deserializeKeySampleFnc = nullptr;
   }
 
-#if !RMW_CONNEXT_DDS_API_PRO_LEGACY
-  /* This functions are not part of the pre-6.x type plugin */
   plugin->isMetpType = RTI_FALSE;
   plugin->isRecursiveType = RTI_FALSE;
   plugin->getWriterLoanedSampleFnc = nullptr;
@@ -1176,7 +1174,6 @@ RMW_Connext_TypePlugin_initialize(
   plugin->setWriterLoanedSampleSerializedStateFnc = nullptr;
   plugin->getBufferWithParams = nullptr;
   plugin->returnBufferWithParams = nullptr;
-#endif /* RMW_CONNEXT_DDS_API_PRO_LEGACY */
 }
 
 /******************************************************************************

@@ -155,12 +155,6 @@ if(NOT RTIConnextDDS_FOUND)
 endif()
 
 set(extra_defines)
-if("${CONNEXTDDS_VERSION}" VERSION_LESS "6.0.0")
-  list(APPEND extra_defines "RMW_CONNEXT_DDS_API_PRO_LEGACY=1")
-endif()
-if(CONNEXTDDS_ARCH MATCHES ".*Win.*" AND "${CONNEXTDDS_VERSION}" VERSION_LESS "6.0.0")
-  list(APPEND extra_defines "RMW_CONNEXT_BUILTIN_CFT_COMPATIBILITY_MODE=1")
-endif()
 
 set(RMW_CONNEXT_COMMON_SOURCE_CPP
     src/common/rmw_context.cpp

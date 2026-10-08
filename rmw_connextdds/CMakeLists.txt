@@ -268,5 +268,8 @@ ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
 )
 
+# Connext prints a licensing notice on stdout when it starts up under a
+# non-commercial license. This resource lets launch_testing_ros filter it out,
+# so that tests matching process output exactly are not thrown off by it.
 ament_index_register_resource("rmw_output_prefixes"
-  CONTENT "RTI Data Distribution Service\nRTI Connext DDS\nExpires on")
+  CONTENT "RTI Data Distribution Service\nRTI Connext DDS\nExpires on\n[RTI LICENSE]\nPlease contact support@rti.com")

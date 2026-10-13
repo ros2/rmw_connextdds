@@ -337,11 +337,19 @@ RTI_CustomSqlFilter_writer_compile(
 
   REDASkiplistNode * node = nullptr;
   RTIBool precise_match = RTI_FALSE;
+#if defined(_MSC_VER)
+// The RTI macro expands to code using the removed 'register' storage class
+#pragma warning(push)
+#pragma warning(disable : 5033)
+#endif
   REDASkiplist_findNode(
     &writer_data->readers,
     const_cast<const REDASkiplistNode **>(&node),
     &precise_match,
     static_cast<void *>(&lookup_data));
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
   if (!precise_match) {
     node = nullptr;
   }

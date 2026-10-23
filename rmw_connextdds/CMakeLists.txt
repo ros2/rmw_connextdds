@@ -268,5 +268,11 @@ ament_package(
   CONFIG_EXTRAS_POST "${PROJECT_NAME}-extras.cmake.in"
 )
 
+# Lets launch_testing_ros filter the multi-line licensing notice that Connext
+# prints on stdout under a non-commercial or evaluation license out of process
+# output. Each line of the notice starts with the corresponding line of the
+# prefix, and the trailing empty line matches the blank line that ends it.
+# Licenses with an expiry date add an "Expires on" line, so register one
+# prefix per variant.
 ament_index_register_resource("rmw_output_prefixes"
-  CONTENT "RTI Data Distribution Service\nRTI Connext DDS\nExpires on")
+  CONTENT "[RTI LICENSE]\\nPlease contact support@rti.com\\n\n[RTI LICENSE]\\nExpires on\\nPlease contact support@rti.com\\n")

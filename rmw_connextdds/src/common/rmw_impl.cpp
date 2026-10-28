@@ -15,7 +15,11 @@
 #include "rmw_connextdds/rmw_impl.hpp"
 
 #include <algorithm>
+#include <chrono>
+#include <cinttypes>
 #include <string>
+#include <thread>
+#include <unordered_map>
 #include <vector>
 #include <stdexcept>
 
@@ -644,6 +648,259 @@ RMW_Connext_Node::finalize()
 }
 
 /******************************************************************************
+ * Local endpoint matching
+ ******************************************************************************/
+// Both directions must be linked before data flows: the writer must know the
+// reader to send to it, and the reader must know the writer to accept from it.
+static bool
+rmw_connextdds_local_pair_matched(
+  DDS_DataWriter * const writer,
+  DDS_DataReader * const reader)
+{
+  const DDS_InstanceHandle_t writer_handle =
+    DDS_Entity_get_instance_handle(DDS_DataWriter_as_entity(writer));
+  const DDS_InstanceHandle_t reader_handle =
+    DDS_Entity_get_instance_handle(DDS_DataReader_as_entity(reader));
+
+  struct DDS_SubscriptionBuiltinTopicData sub_data =
+    DDS_SubscriptionBuiltinTopicData_INITIALIZER;
+  const DDS_ReturnCode_t writer_rc =
+    DDS_DataWriter_get_matched_subscription_data(writer, &sub_data, &reader_handle);
+  DDS_SubscriptionBuiltinTopicData_finalize(&sub_data);
+  if (DDS_RETCODE_OK != writer_rc) {
+    return false;
+  }
+
+  struct DDS_PublicationBuiltinTopicData pub_data =
+    DDS_PublicationBuiltinTopicData_INITIALIZER;
+  const DDS_ReturnCode_t reader_rc =
+    DDS_DataReader_get_matched_publication_data(reader, &pub_data, &writer_handle);
+  DDS_PublicationBuiltinTopicData_finalize(&pub_data);
+  return DDS_RETCODE_OK == reader_rc;
+}
+
+// A local counterpart whose QoS is incompatible never shows up in the new
+// endpoint's matched list; Connext records it in the incompatible-QoS status
+// instead, synchronously while the endpoint is enabled.  The endpoint has
+// just been enabled, so its total_count can only hold such local rejections
+// (or, rarely, a remote one found in the same instant), and every one of
+// them is a pending counterpart that will never match.  Counting them ends
+// the wait immediately for incompatible pairs instead of at the timeout.
+// Reading the status here does not disturb event reporting: the rmw's
+// listeners compute their own deltas from total_count instead of relying on
+// Connext's *_change fields.
+template<typename RemainingFn, typename IncompatibleFn>
+static void
+rmw_connextdds_wait_for_local_matches(
+  rmw_context_impl_t * const ctx,
+  const char * const kind,
+  DDS_Topic * const topic,
+  const size_t pending_count,
+  RemainingFn && remaining,
+  IncompatibleFn && incompatible)
+{
+  if (0 == pending_count) {
+    return;
+  }
+  const auto deadline = std::chrono::steady_clock::now() +
+    std::chrono::milliseconds(ctx->local_match_timeout_ms);
+  size_t left = remaining();
+  while (left > incompatible() && std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    left = remaining();
+  }
+  if (left > incompatible()) {
+    RMW_CONNEXT_LOG_WARNING_A(
+      "new %s on topic '%s' neither matched with nor rejected by %zu of %zu "
+      "local endpoint(s) after %" PRIu64 " ms; samples published before the match "
+      "completes may be lost (see %s)",
+      kind,
+      DDS_TopicDescription_get_name(DDS_Topic_as_topicdescription(topic)),
+      left,
+      pending_count,
+      ctx->local_match_timeout_ms,
+      RMW_CONNEXT_ENV_LOCAL_MATCH_TIMEOUT)
+  }
+}
+
+static size_t
+rmw_connextdds_reader_incompatible_count(DDS_DataReader * const reader)
+{
+  struct DDS_RequestedIncompatibleQosStatus status =
+    DDS_RequestedIncompatibleQosStatus_INITIALIZER;
+  size_t count = 0;
+  if (DDS_RETCODE_OK ==
+    DDS_DataReader_get_requested_incompatible_qos_status(reader, &status))
+  {
+    count = static_cast<size_t>(status.total_count);
+  }
+  DDS_RequestedIncompatibleQosStatus_finalize(&status);
+  return count;
+}
+
+static size_t
+rmw_connextdds_writer_incompatible_count(DDS_DataWriter * const writer)
+{
+  struct DDS_OfferedIncompatibleQosStatus status =
+    DDS_OfferedIncompatibleQosStatus_INITIALIZER;
+  size_t count = 0;
+  if (DDS_RETCODE_OK ==
+    DDS_DataWriter_get_offered_incompatible_qos_status(writer, &status))
+  {
+    count = static_cast<size_t>(status.total_count);
+  }
+  DDS_OfferedIncompatibleQosStatus_finalize(&status);
+  return count;
+}
+
+static std::string
+rmw_connextdds_topic_name(DDS_Topic * const topic)
+{
+  return DDS_TopicDescription_get_name(DDS_Topic_as_topicdescription(topic));
+}
+
+template<typename EndpointT>
+static void
+rmw_connextdds_registry_add(
+  std::unordered_map<std::string, std::vector<EndpointT *>> & registry,
+  const std::string & topic_name,
+  EndpointT * const endpoint)
+{
+  registry[topic_name].push_back(endpoint);
+}
+
+template<typename EndpointT>
+static void
+rmw_connextdds_registry_remove(
+  std::unordered_map<std::string, std::vector<EndpointT *>> & registry,
+  const std::string & topic_name,
+  EndpointT * const endpoint)
+{
+  auto it = registry.find(topic_name);
+  if (it == registry.end()) {
+    return;
+  }
+  auto & endpoints = it->second;
+  endpoints.erase(std::remove(endpoints.begin(), endpoints.end(), endpoint), endpoints.end());
+  if (endpoints.empty()) {
+    registry.erase(it);
+  }
+}
+
+void
+rmw_connextdds_register_local_writer(
+  rmw_context_impl_t * const ctx,
+  DDS_DataWriter * const writer,
+  DDS_Topic * const topic)
+{
+  std::lock_guard<std::mutex> lock(ctx->local_endpoints_mutex);
+  rmw_connextdds_registry_add(ctx->local_writers, rmw_connextdds_topic_name(topic), writer);
+}
+
+void
+rmw_connextdds_unregister_local_writer(
+  rmw_context_impl_t * const ctx,
+  DDS_DataWriter * const writer,
+  DDS_Topic * const topic)
+{
+  std::lock_guard<std::mutex> lock(ctx->local_endpoints_mutex);
+  rmw_connextdds_registry_remove(ctx->local_writers, rmw_connextdds_topic_name(topic), writer);
+}
+
+void
+rmw_connextdds_register_local_reader(
+  rmw_context_impl_t * const ctx,
+  DDS_DataReader * const reader,
+  DDS_Topic * const topic)
+{
+  std::lock_guard<std::mutex> lock(ctx->local_endpoints_mutex);
+  rmw_connextdds_registry_add(ctx->local_readers, rmw_connextdds_topic_name(topic), reader);
+}
+
+void
+rmw_connextdds_unregister_local_reader(
+  rmw_context_impl_t * const ctx,
+  DDS_DataReader * const reader,
+  DDS_Topic * const topic)
+{
+  std::lock_guard<std::mutex> lock(ctx->local_endpoints_mutex);
+  rmw_connextdds_registry_remove(ctx->local_readers, rmw_connextdds_topic_name(topic), reader);
+}
+
+template<typename EndpointT>
+static std::vector<EndpointT *>
+rmw_connextdds_local_counterparts(
+  rmw_context_impl_t * const ctx,
+  std::unordered_map<std::string, std::vector<EndpointT *>> & registry,
+  DDS_Topic * const topic)
+{
+  std::lock_guard<std::mutex> lock(ctx->local_endpoints_mutex);
+  auto it = registry.find(rmw_connextdds_topic_name(topic));
+  if (it == registry.end()) {
+    return {};
+  }
+  return it->second;
+}
+
+rmw_ret_t
+rmw_connextdds_wait_for_local_writers(
+  rmw_context_impl_t * const ctx,
+  DDS_DataReader * const reader,
+  DDS_Topic * const topic)
+{
+  if (0 == ctx->local_match_timeout_ms) {
+    return RMW_RET_OK;
+  }
+  std::vector<DDS_DataWriter *> pending =
+    rmw_connextdds_local_counterparts(ctx, ctx->local_writers, topic);
+  rmw_connextdds_wait_for_local_matches(
+    ctx, "DataReader", topic, pending.size(),
+    [&pending, reader]() {
+      pending.erase(
+        std::remove_if(
+          pending.begin(), pending.end(),
+          [reader](DDS_DataWriter * const writer) {
+            return rmw_connextdds_local_pair_matched(writer, reader);
+          }),
+        pending.end());
+      return pending.size();
+    },
+    [reader]() {
+      return rmw_connextdds_reader_incompatible_count(reader);
+    });
+  return RMW_RET_OK;
+}
+
+rmw_ret_t
+rmw_connextdds_wait_for_local_readers(
+  rmw_context_impl_t * const ctx,
+  DDS_DataWriter * const writer,
+  DDS_Topic * const topic)
+{
+  if (0 == ctx->local_match_timeout_ms) {
+    return RMW_RET_OK;
+  }
+  std::vector<DDS_DataReader *> pending =
+    rmw_connextdds_local_counterparts(ctx, ctx->local_readers, topic);
+  rmw_connextdds_wait_for_local_matches(
+    ctx, "DataWriter", topic, pending.size(),
+    [&pending, writer]() {
+      pending.erase(
+        std::remove_if(
+          pending.begin(), pending.end(),
+          [writer](DDS_DataReader * const reader) {
+            return rmw_connextdds_local_pair_matched(writer, reader);
+          }),
+        pending.end());
+      return pending.size();
+    },
+    [writer]() {
+      return rmw_connextdds_writer_incompatible_count(writer);
+    });
+  return RMW_RET_OK;
+}
+
+/******************************************************************************
  * Publisher Implementation functions
  ******************************************************************************/
 
@@ -832,6 +1089,8 @@ RMW_Connext_Publisher::finalize()
 
   // Make sure publisher's condition is detached from any waitset
   this->status_condition.invalidate();
+
+  rmw_connextdds_unregister_local_writer(this->ctx, this->dds_writer, this->dds_topic());
 
   if (DDS_RETCODE_OK !=
     DDS_Publisher_delete_datawriter(
@@ -1155,6 +1414,13 @@ rmw_connextdds_create_publisher(
       RMW_CONNEXT_LOG_ERROR("failed to enable publisher")
       return nullptr;
     }
+    if (RMW_RET_OK !=
+      rmw_connextdds_wait_for_local_readers(
+        ctx, rmw_pub_impl->writer(), rmw_pub_impl->dds_topic()))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to wait for local subscriptions")
+      return nullptr;
+    }
 
     if (RMW_RET_OK !=
       rmw_connextdds_graph_on_publisher_created(
@@ -1461,6 +1727,8 @@ RMW_Connext_Subscriber::finalize()
       return RMW_RET_ERROR;
     }
   }
+
+  rmw_connextdds_unregister_local_reader(this->ctx, this->dds_reader, this->dds_topic);
 
   if (DDS_RETCODE_OK !=
     DDS_Subscriber_delete_datareader(
@@ -1942,6 +2210,13 @@ rmw_connextdds_create_subscriber(
   if (!internal) {
     if (RMW_RET_OK != rmw_sub_impl->enable()) {
       RMW_CONNEXT_LOG_ERROR("failed to enable subscription")
+      return nullptr;
+    }
+    if (RMW_RET_OK !=
+      rmw_connextdds_wait_for_local_writers(
+        ctx, rmw_sub_impl->reader(), rmw_sub_impl->topic()))
+    {
+      RMW_CONNEXT_LOG_ERROR("failed to wait for local publishers")
       return nullptr;
     }
 
@@ -2596,12 +2871,18 @@ RMW_Connext_Client::enable()
     RMW_CONNEXT_LOG_ERROR("failed to enable client's publisher")
     return rc;
   }
+  rc = rmw_connextdds_wait_for_local_readers(
+    this->ctx, this->request_pub->writer(), this->request_pub->dds_topic());
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
   rc = this->reply_sub->enable();
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to enable client's subscription")
     return rc;
   }
-  return RMW_RET_OK;
+  return rmw_connextdds_wait_for_local_writers(
+    this->ctx, this->reply_sub->reader(), this->reply_sub->topic());
 }
 
 rmw_ret_t
@@ -3005,12 +3286,18 @@ RMW_Connext_Service::enable()
     RMW_CONNEXT_LOG_ERROR("failed to enable service's subscription")
     return rc;
   }
+  rc = rmw_connextdds_wait_for_local_writers(
+    this->ctx, this->request_sub->reader(), this->request_sub->topic());
+  if (RMW_RET_OK != rc) {
+    return rc;
+  }
   rc = this->reply_pub->enable();
   if (RMW_RET_OK != rc) {
     RMW_CONNEXT_LOG_ERROR("failed to enable service's publisher")
     return rc;
   }
-  return RMW_RET_OK;
+  return rmw_connextdds_wait_for_local_readers(
+    this->ctx, this->reply_pub->writer(), this->reply_pub->dds_topic());
 }
 
 rmw_ret_t

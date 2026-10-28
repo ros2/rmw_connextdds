@@ -136,61 +136,6 @@ public:
  * Publication support
  ******************************************************************************/
 
-/******************************************************************************
- * Local endpoint matching
- *
- * Connext links a newly enabled DataReader or DataWriter to the endpoints
- * already present in the same DomainParticipant from its event thread, after
- * create/enable has returned to the application.  A sample written in that
- * window is not delivered to a volatile reader.  Fast DDS and Cyclone DDS
- * complete local matching before returning, and ROS 2 applications rely on
- * that, so these helpers block until every local counterpart on the same
- * topic reports the new endpoint as matched, bounded by
- * rmw_context_impl_t::local_match_timeout_ms.  Expiry of the timeout is
- * logged, not treated as an error.
- *
- * The counterparts come from ctx->local_writers / ctx->local_readers, which
- * RMW_Connext_Publisher::enable() and RMW_Connext_Subscriber::enable() add to
- * and finalize() removes from, so only enabled endpoints are ever waited
- * for.  Call the wait right after enabling an endpoint, while holding
- * ctx->endpoint_mutex so that no counterpart is destroyed meanwhile.
- ******************************************************************************/
-void
-rmw_connextdds_register_local_writer(
-  rmw_context_impl_t * const ctx,
-  DDS_DataWriter * const writer,
-  DDS_Topic * const topic);
-
-void
-rmw_connextdds_unregister_local_writer(
-  rmw_context_impl_t * const ctx,
-  DDS_DataWriter * const writer,
-  DDS_Topic * const topic);
-
-void
-rmw_connextdds_register_local_reader(
-  rmw_context_impl_t * const ctx,
-  DDS_DataReader * const reader,
-  DDS_Topic * const topic);
-
-void
-rmw_connextdds_unregister_local_reader(
-  rmw_context_impl_t * const ctx,
-  DDS_DataReader * const reader,
-  DDS_Topic * const topic);
-
-rmw_ret_t
-rmw_connextdds_wait_for_local_writers(
-  rmw_context_impl_t * const ctx,
-  DDS_DataReader * const reader,
-  DDS_Topic * const topic);
-
-rmw_ret_t
-rmw_connextdds_wait_for_local_readers(
-  rmw_context_impl_t * const ctx,
-  DDS_DataWriter * const writer,
-  DDS_Topic * const topic);
-
 class RMW_Connext_Publisher
 {
 public:
@@ -264,7 +209,6 @@ public:
         this->type_support->type_name())
       return RMW_RET_ERROR;
     }
-    rmw_connextdds_register_local_writer(this->ctx, this->dds_writer, this->dds_topic());
 
     max_blocking_time = load_max_blocking_time();
 
@@ -541,7 +485,6 @@ public:
         this->type_support->type_name())
       return RMW_RET_ERROR;
     }
-    rmw_connextdds_register_local_reader(this->ctx, this->dds_reader, this->dds_topic);
 
     return RMW_RET_OK;
   }

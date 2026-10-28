@@ -90,11 +90,6 @@
   "RMW_CONNEXT_DISABLE_RELIABILITY_OPTIMIZATIONS"
 #endif /* RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS */
 
-#ifndef RMW_CONNEXT_ENV_LOCAL_MATCH_TIMEOUT
-#define RMW_CONNEXT_ENV_LOCAL_MATCH_TIMEOUT \
-  "RMW_CONNEXT_LOCAL_MATCH_TIMEOUT"
-#endif /* RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS */
-
 // TODO(security-wg): These are intended to be temporary, and need to be
 // refactored into a proper abstraction.
 #ifndef RMW_CONNEXT_ENV_SECURITY_LOG_FILE
@@ -236,15 +231,6 @@
 #ifndef RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS
 #define RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS     1
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
-
-/******************************************************************************
- * Maximum time (in milliseconds) to wait for a newly enabled DataReader or
- * DataWriter to be matched with the DataWriters/DataReaders that already exist
- * on the same topic in the same DomainParticipant.  Set to 0 to disable.
- ******************************************************************************/
-#ifndef RMW_CONNEXT_DEFAULT_LOCAL_MATCH_TIMEOUT_MS
-#define RMW_CONNEXT_DEFAULT_LOCAL_MATCH_TIMEOUT_MS     500
-#endif /* RMW_CONNEXT_DEFAULT_LOCAL_MATCH_TIMEOUT_MS */
 
 /******************************************************************************
  * Threshold of the maximum serialized size for a message to be considered

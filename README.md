@@ -160,7 +160,6 @@ variables.
 - [RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_ENDPOINT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_INITIAL_PEERS](#RMW_CONNEXT_INITIAL_PEERS)
 - [RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE](#RMW_CONNEXT_LEGACY_RMW_COMPATIBILITY_MODE)
-- [RMW_CONNEXT_LOCAL_MATCH_TIMEOUT](#RMW_CONNEXT_LOCAL_MATCH_TIMEOUT)
 - [RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY](#RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY)
 - [RMW_CONNEXT_REQUEST_REPLY_MAPPING](#RMW_CONNEXT_REQUEST_REPLY_MAPPING)
 - [RMW_CONNEXT_UDP_INTERFACE](#RMW_CONNEXT_UDP_INTERFACE)
@@ -310,25 +309,6 @@ a "compatibility" mode with these older implementation.
 In particular, when this mode is enabled, `rmw_connextdds` will revert to adding
 a suffix (`_`) to the end of the names of the attributes of the ROS 2 data types
 propagated via DDS discovery.
-
-### RMW_CONNEXT_LOCAL_MATCH_TIMEOUT
-
-RTI Connext DDS matches a newly created DataReader or DataWriter with the
-DataWriters and DataReaders that already exist on the same topic in the same
-DomainParticipant asynchronously, from an internal thread, after the create
-call has returned.  A message published in that window is not delivered to a
-volatile subscription, even though both endpoints belong to the same process.
-Other RMW implementations complete this matching before returning, and ROS 2
-applications commonly rely on it, for example by publishing right after
-creating a subscription on the same node.
-
-`rmw_connextdds` therefore waits, when it creates a publisher or subscription,
-until the endpoint has been matched with every local endpoint on the same
-topic, for at most the number of milliseconds given by
-`RMW_CONNEXT_LOCAL_MATCH_TIMEOUT` (default: 500).  The wait costs nothing when
-there is no local endpoint on the topic, and typically completes within a few
-milliseconds otherwise.  If the timeout expires a warning is logged and the
-endpoint is created as before.  Set the variable to `0` to disable the wait.
 
 ### RMW_CONNEXT_PARTICIPANT_QOS_OVERRIDE_POLICY
 

@@ -20,7 +20,6 @@
 #include <regex>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "rmw_connextdds/dds_api.hpp"
 #include "rmw_connextdds/log.hpp"
@@ -85,18 +84,6 @@ public:
 #if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
   bool optimize_reliability{true};
 #endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
-  uint64_t local_match_timeout_ms{RMW_CONNEXT_DEFAULT_LOCAL_MATCH_TIMEOUT_MS};
-
-  // The enabled DataWriters and DataReaders of this participant, by topic
-  // name.  A newly enabled endpoint consults them to find the local
-  // counterparts it has to wait for, so that the lookup costs a hash probe
-  // rather than a walk over every endpoint in the participant.
-  // local_endpoints_mutex is a leaf lock: nothing else is called while it is
-  // held.  The pointers stay valid for as long as a waiter uses them because
-  // endpoints are created and destroyed under endpoint_mutex.
-  std::mutex local_endpoints_mutex;
-  std::unordered_map<std::string, std::vector<DDS_DataWriter *>> local_writers;
-  std::unordered_map<std::string, std::vector<DDS_DataReader *>> local_readers;
 
   enum class participant_qos_override_policy_t
   {

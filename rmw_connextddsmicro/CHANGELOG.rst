@@ -2,6 +2,9 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.22.4 (2026-11-03)
+-------------------
+
 0.22.3 (2026-01-21)
 -------------------
 * fix: remove superflous buildtool_export_depend. (backport `#210 <https://github.com/ros2/rmw_connextdds/issues/210>`_) (`#212 <https://github.com/ros2/rmw_connextdds/issues/212>`_)

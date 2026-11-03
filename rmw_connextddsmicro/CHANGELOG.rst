@@ -2,6 +2,11 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.2 (2026-11-03)
+------------------
+* fix: remove superflous buildtool_export_depend. (`#210 <https://github.com/ros2/rmw_connextdds/issues/210>`_) (`#211 <https://github.com/ros2/rmw_connextdds/issues/211>`_)
+* Contributors: mergify[bot]
+
 1.1.1 (2025-10-20)
 ------------------
 * Fix cmake deprecation (`#198 <https://github.com/ros2/rmw_connextdds/issues/198>`_) (`#199 <https://github.com/ros2/rmw_connextdds/issues/199>`_)

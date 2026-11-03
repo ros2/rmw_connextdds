@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.2 (2026-11-03)
+------------------
+* fix: remove superflous `buildtool_export_depend` (`#206 <https://github.com/ros2/rmw_connextdds/issues/206>`_) (`#207 <https://github.com/ros2/rmw_connextdds/issues/207>`_)
+* Contributors: mergify[bot]
+
 1.1.1 (2025-10-20)
 ------------------
 * Fix cmake deprecation (`#198 <https://github.com/ros2/rmw_connextdds/issues/198>`_) (`#199 <https://github.com/ros2/rmw_connextdds/issues/199>`_)

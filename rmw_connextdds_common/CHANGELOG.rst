@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.2 (2026-11-03)
+------------------
+* fix: remove superflous buildtool_export_depend. (`#210 <https://github.com/ros2/rmw_connextdds/issues/210>`_) (`#211 <https://github.com/ros2/rmw_connextdds/issues/211>`_)
+* Contributors: mergify[bot]
+
 1.1.1 (2025-10-20)
 ------------------
 * [rmw_connextdds_common]: Remove <member_of_group>rosidl_interface_packages (`#202 <https://github.com/ros2/rmw_connextdds/issues/202>`_) (`#203 <https://github.com/ros2/rmw_connextdds/issues/203>`_)

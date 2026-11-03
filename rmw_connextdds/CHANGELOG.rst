@@ -2,6 +2,21 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.3.1 (2026-11-03)
+------------------
+* Revert "Wait for same-participant matches when creating endpoints."
+* Wait for same-participant matches when creating endpoints.
+* Register multi-line rmw_output_prefixes for the RTI license notice (`#255 <https://github.com/ros2/rmw_connextdds/issues/255>`_)
+* Silence MSVC C5033 from the RTI skiplist macro (`#262 <https://github.com/ros2/rmw_connextdds/issues/262>`_)
+* deleted ament_export_libraries() (`#260 <https://github.com/ros2/rmw_connextdds/issues/260>`_)
+* Use the SPDX identifier Apache-2.0 in package.xml license tags (`#258 <https://github.com/ros2/rmw_connextdds/issues/258>`_)
+* Clean up legacy functionality (`#257 <https://github.com/ros2/rmw_connextdds/issues/257>`_)
+* Remove rmw_connextdds_common as a dependency of rmw_connextdds (`#254 <https://github.com/ros2/rmw_connextdds/issues/254>`_)
+* Add TypeObject V2 tests to Connext RMW, fix initialization of Connext type plugins (`#253 <https://github.com/ros2/rmw_connextdds/issues/253>`_)
+* Add Keyed Topics unit tests along with unit tests skeleton (`#247 <https://github.com/ros2/rmw_connextdds/issues/247>`_)
+* Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_)
+* Contributors: Chris Lalancette, Ekeno Lokwakai, Francisco Gallego Salido, Michael Carroll, oliviadorenczrti
+
 1.3.0 (2026-05-07)
 ------------------
 * fix: Fixed compilation on MSVC 2022 (`#225 <https://github.com/ros2/rmw_connextdds/issues/225>`_)

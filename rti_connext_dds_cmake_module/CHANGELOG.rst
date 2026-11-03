@@ -2,6 +2,11 @@
 Changelog for package rti_connext_dds_cmake_module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.3.1 (2026-11-03)
+------------------
+* Use the SPDX identifier Apache-2.0 in package.xml license tags (`#258 <https://github.com/ros2/rmw_connextdds/issues/258>`_)
+* Contributors: Michael Carroll
+
 1.3.0 (2026-05-07)
 ------------------
 

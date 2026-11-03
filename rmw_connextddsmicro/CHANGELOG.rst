@@ -2,6 +2,12 @@
 Changelog for package rmw_connextddsmicro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.3.1 (2026-11-03)
+------------------
+* Use the SPDX identifier Apache-2.0 in package.xml license tags (`#258 <https://github.com/ros2/rmw_connextdds/issues/258>`_)
+* Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_)
+* Contributors: Francisco Gallego Salido, Michael Carroll
+
 1.3.0 (2026-05-07)
 ------------------
 * fix: Fixed compilation on MSVC 2022 (`#225 <https://github.com/ros2/rmw_connextdds/issues/225>`_)

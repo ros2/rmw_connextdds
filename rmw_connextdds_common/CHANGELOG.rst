@@ -2,6 +2,19 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.3.1 (2026-11-03)
+------------------
+* Silence MSVC C5033 from the RTI skiplist macro (`#262 <https://github.com/ros2/rmw_connextdds/issues/262>`_)
+* Use the SPDX identifier Apache-2.0 in package.xml license tags (`#258 <https://github.com/ros2/rmw_connextdds/issues/258>`_)
+* Add TypeObject V2 tests to Connext RMW, fix initialization of Connext type plugins (`#253 <https://github.com/ros2/rmw_connextdds/issues/253>`_)
+* Disable monitoring on Windows, update README to include monitoring env var (`#250 <https://github.com/ros2/rmw_connextdds/issues/250>`_)
+* Enable Monitoring Library by default (`#243 <https://github.com/ros2/rmw_connextdds/issues/243>`_)
+* Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_)
+* Added new variable RMW_CONNEXT_DISCOVERY_TOPICS_PUBLISH_MODE (`#240 <https://github.com/ros2/rmw_connextdds/issues/240>`_)
+* Use reference counting for Topics deletion (`#239 <https://github.com/ros2/rmw_connextdds/issues/239>`_)
+* Fix content filtering on Windows with modern Connext DDS (`#226 <https://github.com/ros2/rmw_connextdds/issues/226>`_)
+* Contributors: Francisco Gallego Salido, Michael Carroll, oliviadorenczrti
+
 1.3.0 (2026-05-07)
 ------------------
 * fix: Fixed compilation on MSVC 2022 (`#225 <https://github.com/ros2/rmw_connextdds/issues/225>`_)

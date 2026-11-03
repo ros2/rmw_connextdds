@@ -2,6 +2,9 @@
 Changelog for package rmw_connextdds_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.9 (2026-11-03)
+------------------
+
 1.2.8 (2026-09-15)
 ------------------
 * Disable monitoring on Windows, update README to include monitoring env var (`#250 <https://github.com/ros2/rmw_connextdds/issues/250>`_) (`#252 <https://github.com/ros2/rmw_connextdds/issues/252>`_)

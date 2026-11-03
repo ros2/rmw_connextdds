@@ -2,6 +2,11 @@
 Changelog for package rmw_connextdds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.9 (2026-11-03)
+------------------
+* Register multi-line rmw_output_prefixes for the RTI license notice (`#255 <https://github.com/ros2/rmw_connextdds/issues/255>`_) (`#264 <https://github.com/ros2/rmw_connextdds/issues/264>`_)
+* Contributors: mergify[bot]
+
 1.2.8 (2026-09-15)
 ------------------
 * Switch to C++20 (`#244 <https://github.com/ros2/rmw_connextdds/issues/244>`_) (`#245 <https://github.com/ros2/rmw_connextdds/issues/245>`_)

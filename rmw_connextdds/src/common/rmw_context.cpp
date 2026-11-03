@@ -1505,6 +1505,37 @@ rmw_api_connextdds_init(
   ctx_impl->optimize_reliability = '\0' == disable_optimize_reliability_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
 
+  // Check if the user overrode how long to wait for a new endpoint to be
+  // matched with the local endpoints on the same topic.
+  const char * local_match_timeout_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_LOCAL_MATCH_TIMEOUT,
+    &local_match_timeout_env);
+
+  if (nullptr != lookup_rc || nullptr == local_match_timeout_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_LOCAL_MATCH_TIMEOUT,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+  if ('\0' != local_match_timeout_env[0]) {
+    char * end = nullptr;
+    errno = 0;
+    const unsigned long long timeout_ms =  // NOLINT(runtime/int)
+      strtoull(local_match_timeout_env, &end, 10);
+    if (0 != errno || nullptr == end || '\0' != *end) {
+      RMW_CONNEXT_LOG_ERROR_A_SET(
+        "invalid value for %s: '%s' (expected a number of milliseconds)",
+        RMW_CONNEXT_ENV_LOCAL_MATCH_TIMEOUT,
+        local_match_timeout_env)
+      return RMW_RET_ERROR;
+    }
+    ctx_impl->local_match_timeout_ms = timeout_ms;
+  }
+
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_ASSERT(1 == RMW_Connext_gv_ContextCount)
     RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")

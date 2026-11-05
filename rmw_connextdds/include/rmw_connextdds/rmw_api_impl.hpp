@@ -415,7 +415,7 @@ rmw_ret_t
 rmw_api_connextdds_send_response(
   const rmw_service_t * service,
   rmw_request_id_t * request_id,
-  void * ros_response);
+  const void * ros_response);
 
 RMW_CONNEXTDDS_PUBLIC
 rmw_ret_t

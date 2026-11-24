@@ -15,6 +15,8 @@
 #ifndef RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_
 #define RMW_CONNEXTDDS__RMW_WAITSET_STD_HPP_
 
+#include <map>
+
 #include "rmw_connextdds/context.hpp"
 
 /******************************************************************************
@@ -70,9 +72,7 @@ class RMW_Connext_Condition
 {
 public:
   RMW_Connext_Condition()
-  : mutex_internal(),
-    waitset_mutex(nullptr),
-    waitset_condition(nullptr)
+  : mutex_internal()
   {}
 
   template<typename FunctorT>
@@ -86,19 +86,17 @@ public:
     std::lock_guard<std::mutex> lock(this->mutex_internal);
     already_active = check_trigger();
     if (!already_active) {
-      this->waitset_mutex = waitset_mutex;
-      this->waitset_condition = waitset_condition;
+      this->waitsets[waitset_mutex] = waitset_condition;
     }
   }
 
   template<typename FunctorT>
   void
-  detach(FunctorT && on_detached)
+  detach(std::mutex * const waitset_mutex, FunctorT && on_detached)
   {
     std::lock_guard<std::mutex> lock(this->mutex_internal);
-    this->waitset_mutex = nullptr;
-    this->waitset_condition = nullptr;
-    on_detached();
+    this->waitsets.erase(waitset_mutex);
+    lock_waitsets_and_update(this->waitsets.begin(), on_detached);
   }
 
   virtual bool owns(DDS_Condition * const cond) = 0;
@@ -109,15 +107,12 @@ public:
   {
     std::lock_guard<std::mutex> internal_lock(this->mutex_internal);
 
-    if (nullptr != this->waitset_mutex) {
-      std::lock_guard<std::mutex> lock(*this->waitset_mutex);
-      update_condition();
-    } else {
-      update_condition();
-    }
+    lock_waitsets_and_update(this->waitsets.begin(), update_condition);
 
-    if (notify && nullptr != this->waitset_condition) {
-      this->waitset_condition->notify_one();
+    if (notify) {
+      for (const auto & waitset : this->waitsets) {
+        waitset.second->notify_one();
+      }
     }
   }
 
@@ -129,18 +124,27 @@ public:
 
     action();
 
-    if (nullptr != this->waitset_mutex) {
-      std::lock_guard<std::mutex> lock(*this->waitset_mutex);
-      update_condition();
-    } else {
-      update_condition();
-    }
+    lock_waitsets_and_update(this->waitsets.begin(), update_condition);
   }
 
 protected:
   std::mutex mutex_internal;
-  std::mutex * waitset_mutex;
-  std::condition_variable * waitset_condition;
+  // Ordered by mutex address, so every update locks shared wait sets in the same order.
+  std::map<std::mutex *, std::condition_variable *> waitsets;
+
+  template<typename FunctorT>
+  void
+  lock_waitsets_and_update(
+    std::map<std::mutex *, std::condition_variable *>::iterator it,
+    FunctorT && update_condition)
+  {
+    if (it == this->waitsets.end()) {
+      update_condition();
+      return;
+    }
+    std::lock_guard<std::mutex> lock(*it->first);
+    lock_waitsets_and_update(std::next(it), update_condition);
+  }
 
   static rmw_ret_t
   _attach(
